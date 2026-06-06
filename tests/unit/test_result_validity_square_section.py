@@ -6,7 +6,12 @@ from pathlib import Path
 import core.validation.result_validity_gate as gate
 
 
-def _minimal_modal_job(job_dir: Path) -> dict:
+def _minimal_modal_job(
+    job_dir: Path,
+    *,
+    frequency_hz: float = 21.8866546846,
+    cutoff_status: str = "insufficient_modes_below_50hz",
+) -> dict:
     job_dir.mkdir()
     (job_dir / "input.json").write_text(json.dumps({"support": {"support_type": "S2"}}), encoding="utf-8")
     for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS", "Mode.oup"):
@@ -17,8 +22,9 @@ def _minimal_modal_job(job_dir: Path) -> dict:
         "modal_results": [
             {
                 "mode": 240,
-                "frequency_hz": 21.8866546846,
-                "modal_cutoff_status": "insufficient_modes_below_50hz",
+                "mt_mode": 240,
+                "frequency_hz": frequency_hz,
+                "modal_cutoff_status": cutoff_status,
             }
         ],
         "evaluation_summary": [{"check_id": "square_support.support_bending", "ratio": 0.9, "allowable_value": 234.3}],
@@ -44,9 +50,22 @@ def _requirements_for_method(analysis_method: str) -> dict:
     }
 
 
-def test_result_gate_allows_static_modal_rows_below_50hz(tmp_path: Path, monkeypatch) -> None:
+def test_result_gate_blocks_static_modal_rows_below_50hz(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "static-job"
     result = _minimal_modal_job(job_dir)
+    monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _requirements_for_method("static"))
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)
+
+    modal_gate = [item for item in payload["checks"] if item["check_id"] == "modal_mt_cutoff"]
+    assert modal_gate
+    assert modal_gate[0]["status"] == "fail"
+    assert payload["status"] == "fail"
+
+
+def test_result_gate_allows_static_modal_rows_above_50hz(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "static-covered-job"
+    result = _minimal_modal_job(job_dir, frequency_hz=51.2, cutoff_status="pass")
     monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _requirements_for_method("static"))
 
     payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)

@@ -1,12 +1,12 @@
 {
     "schema":  "cabletrayai_codex_recovery_state_v1",
-    "updated_at":  "2026-06-06T22:03:00+08:00",
+    "updated_at":  "2026-06-06T22:33:00+08:00",
     "purpose":  "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
     "project_root":  "E:/CODEX/tray_platform/CableTrayAI",
     "current_objective":  [
-                              "Current 18185NI-LXSJ4213 modal_mt_cutoff web-side failure is fixed and deployed.",
-                              "Static-method steel-platform jobs require Mode.oup modal rows for report traceability but do not require response-spectrum 50 Hz modal coverage. Response-spectrum jobs still require a modal row above 50 Hz.",
-                              "Local deployment and web service have been refreshed from the latest package. Any future calculation-rule change must rerun unit tests, hardcode scan, package gate, and relevant real ANSYS acceptance."
+                              "Current 18185NI-LXSJ4213 modal_mt_cutoff failure is fixed in source, verified with real ANSYS18.2, packaged, deployed, and service-restarted.",
+                              "Static-method steel-platform jobs also require Mode.oup coverage above 50 Hz. The correct fix is audited MT source/retry policy, not bypassing the result gate.",
+                              "Standard static 4120 model commands provide MODOPT/MXPAND 887 in the 01 model stream; 02 static stream contains the ANTYPE,0/ACEL load steps. Future code must preserve this split."
                           ],
     "must_read_next":  [
                            "docs/CURRENT_WORK_STATE.md",
@@ -146,13 +146,17 @@
                            "2026-06-06 deployment package rebuilt at C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip, size about 75.43 MB, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_193731.",
                            "2026-06-06 installed service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 38056; /health returned ok; installed hashes match source for touched files and calibration caches.",
                            "2026-06-06 verification for section-learning v6 passed: py_compile, target section tests, full unit tests, hardcode scan over core/apps/templates, package gate, real ANSYS validation, installed hash check and installed learning-hit check.",
-                           "2026-06-06 fixed web-side 18185NI-LXSJ4213 modal_mt_cutoff failure: core/validation/result_validity_gate.py now passes modal_mt_cutoff for analysis_method=static when Mode.oup has modal rows, while response-spectrum jobs still require 50 Hz coverage.",
-                           "2026-06-06 reassembled installed job D:/CableTrayAI/jobs/18185NI-LXSJ4213 with the fixed gate. result.json has result_status=usable and embedded result_validation.status=pass; result_validation.json has fail_count=0, modal_row_count=232, last_frequency_hz=21.8866546846. ansys_run_audit.json remains status=success, returncode=0.",
-                           "2026-06-06 regression tests added for static below-50 Hz modal rows passing and response-spectrum below-50 Hz modal rows failing. Verification passed: py_compile, target result-validity tests, full unit tests, hardcode scan over core/apps/templates, package gate, installed hash check, and service /health.",
-                           "2026-06-06 deployment after the static modal gate fix: rebuilt C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip size 79091232 bytes, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_215835, service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 40768, /health returned ok."
+                           "2026-06-06 corrected the static modal fix after user pointed to 4120 static source files: static jobs also need Mode.oup > 50 Hz. core/validation/result_validity_gate.py again blocks static jobs when modal_cutoff_status is not pass.",
+                           "2026-06-06 standard 4120 static command review: 01 双侧同类型电缆桥架-方钢托臂.PIP contains MODOPT,LANB,887 and MXPAND,887; 02静力法-计算文件.PIP contains the ANTYPE,0/ACEL static load steps.",
+                           "2026-06-06 core/apdl/intake_standard_family_renderer.py now inserts a standard modal block with EQSLV, MXPAND, LUMPM, PSTRES, second MODOPT and /OUTPUT,'Mode','oup'. If the selected 01 family lacks modal commands, it searches same-name standard-library model files and records their literal audited modal count.",
+                           "2026-06-06 core/pipeline/one_click.py now uses audited source MT as a high retry target after normal smart retries hit the 240 cap. For 18185NI-LXSJ4213, source_modal_mode_count is recovered as 887.",
+                           "2026-06-06 real ANSYS18.2 validation job jobs/verify_4213_static_modal887_20260606_221633 succeeded with MT=887, returncode=0, result_validation pass. First mode above 50 Hz is 493 at 50.00458560826 Hz; mode 497 is 50.25466922999 Hz; mode 887 is 270.0014312982 Hz.",
+                           "2026-06-06 data/calibration/modal_mode_count_cache.json learned compact static 4213 recommendation recommended_modal_mode_count=497; audited source fallback remains 887 if the learned count fails.",
+                           "2026-06-06 verification after corrected static MT policy: full unit tests passed, targeted modal/result/renderer/retry tests passed, hardcode scan over core/apps/templates had no runtime hits, source_materials remained unchanged.",
+                           "2026-06-06 deployment after corrected static MT policy: rebuilt C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip size 79098955 bytes, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_223517, service restarted as PID 47364, /health returned ok. Installed 4213 modal-policy smoke returns learned MT 497 and source MT 887."
                        ],
     "open_tasks":  [
-                       "No blocking item remains for the current 18185NI-LXSJ4213 modal_mt_cutoff web-side failure.",
+                       "No blocking item remains for the corrected 18185NI-LXSJ4213 static MT policy.",
                        "Future successful real jobs may update data/calibration/square_section_selection_cache.json; keep the cache compact and review diffs before committing."
                    ],
     "do_not_do":  [

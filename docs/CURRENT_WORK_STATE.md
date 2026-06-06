@@ -455,12 +455,14 @@ Conclusion: the unit raw result-extraction command stream itself does not reprod
 
 ## 2026-06-06 static modal gate fix for 18185NI-LXSJ4213
 
-Resolved in source, installed job evidence, package, and local web service:
+Superseded correction after reviewing the user's 4120 static command files:
 
-1. The web-side failure for `18185NI-LXSJ4213` was not an ANSYS solve failure. `D:/CableTrayAI/jobs/18185NI-LXSJ4213/ansys_run_audit.json` reports `status=success` and `returncode=0`.
-2. The job is a steel-platform static-method calculation (`analysis_method=static`). Modal output is still required for appendix/table traceability, but the 50 Hz modal coverage rule is a response-spectrum truncation gate and must not block equivalent-static seismic calculation.
-3. `core/validation/result_validity_gate.py` now passes `modal_mt_cutoff` for static-method jobs when `Mode.oup` has modal rows. Response-spectrum jobs still require a modal row above 50 Hz.
-4. Regression tests were added in `tests/unit/test_result_validity_square_section.py`: static below-50 Hz modal rows pass, response-spectrum below-50 Hz modal rows fail.
-5. Reassembling `D:/CableTrayAI/jobs/18185NI-LXSJ4213` with the fixed gate gives `result_status=usable`, `result_validation.status=pass`, `fail_count=0`; `modal_mt_cutoff` evidence records 232 modal rows and last frequency `21.8866546846 Hz`.
-6. Verification passed: `py_compile`, targeted result-validity tests, full unit tests, hardcode scan over `core/apps/templates`, package gate, installed hash check, and service `/health`.
-7. Latest package: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `79091232` bytes. Installed backup: `D:/CableTrayAI/_update_backups/20260606_215835`. Active service PID after restart: `40768`.
+1. The first quick fix was too loose. Static-method reports also need modal output to cover 50 Hz. The real issue was MT generation/retry, not the result gate.
+2. The standard 4120 static calculation keeps modal solve in the `01` model command stream: `MODOPT,LANB,887`, `MXPAND,887,,,0`, then the `02` static command stream runs `ANTYPE,0` / `ACEL`.
+3. `core/validation/result_validity_gate.py` was restored so every required modal result, including static-method jobs, must contain a `modal_cutoff_status=pass` row above 50 Hz.
+4. `core/apdl/intake_standard_family_renderer.py` now inserts a standard modal solve block with `EQSLV,SPAR`, `MXPAND,MT,,,1`, `LUMPM,0`, `PSTRES,0`, second `MODOPT`, and `/OUTPUT,'Mode','oup'`.
+5. If the currently selected `01` source family lacks a modal block, the renderer searches same-name model command files in the standard command library and records their literal `MODOPT` count. For `18185NI-LXSJ4213`, this recovers audited source MT `887`.
+6. `core/pipeline/one_click.py` now uses that audited source count as a high-MT retry when normal smart retries hit the old 240 cap and Mode.oup still does not cover 50 Hz.
+7. Real ANSYS18.2 validation job `jobs/verify_4213_static_modal887_20260606_221633` succeeded with `MT=887`: ANSYS return code `0`, result validation `pass`, first mode above 50 Hz is mode `493` at `50.00458560826 Hz`, mode `497` is `50.25466922999 Hz`, and the last mode `887` is `270.0014312982 Hz`.
+8. `data/calibration/modal_mode_count_cache.json` learned a compact static 4213 recommendation: future similar jobs can start at `MT=497`; if that is still insufficient, the audited source retry remains `887`.
+9. Final deployment package `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` size is `79098955` bytes. It was applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260606_223517`; active service PID `47364`, `/health` ok.

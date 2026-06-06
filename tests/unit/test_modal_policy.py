@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from core.apdl.modal_policy import (
+    audited_source_modal_mode_count_from_job,
     modal_mode_count_from_layer_count,
     modal_mode_count_from_payload,
     modal_policy_audit,
@@ -100,4 +101,78 @@ def test_successful_real_run_cache_right_sizes_next_similar_initial_mt(tmp_path:
     assert modal_mode_count_from_payload(payload, source_text="MT=80") == 70
     audit = modal_policy_audit(payload, source_text="MT=80")
     assert audit["assigned_modal_mode_count"] == 70
+    assert audit["assigned_modal_mode_count_source"] == "learned_similar_intake_cache"
+
+
+def test_audited_source_modal_mode_count_reads_traceability_for_high_retry(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "intake_standard_family_traceability.json").write_text(
+        json.dumps(
+            {
+                "solve_parameterization": {
+                    "modal_mode_policy": {
+                        "source_modal_mode_count": 887,
+                        "source_modal_mode_count_retry_allowed": True,
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert audited_source_modal_mode_count_from_job(job_dir) == 887
+
+
+def test_learned_high_modal_count_overrides_auto_layer_metadata(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    payload = {
+        "support": {
+            "support_type": "S2",
+            "layers_front": 4,
+            "layers_back": 2,
+            "side_count": 2,
+            "support_spacing_m": 2.0,
+            "support_height_m": 2.0,
+            "support_section_id": "140-140-8",
+        },
+        "metadata": {
+            "analysis_method": "static",
+            "modal_mode_count": 80,
+            "modal_mode_count_source": "intake_rule_layer_count_modal_count",
+            "square_section_current_model_spec": "140-140-8",
+            "square_section_outer_mm": 140.0,
+            "square_section_thickness_mm": 8.0,
+        },
+        "tray_layers": [
+            {"tray_width_m": 0.5, "arm_a_length_m": 0.35}
+            for _ in range(6)
+        ],
+    }
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "modal_results.json").write_text(
+        json.dumps(
+            [
+                {
+                    "mode": 493,
+                    "source_mode": 493,
+                    "frequency_hz": 50.0045,
+                    "mt_mode": 887,
+                    "mt_mode_first_above_cutoff_hz": 493,
+                    "mt_mode_last_above_cutoff_hz": 887,
+                    "modal_cutoff_status": "pass",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    learned = record_modal_mode_count_learning(job_dir)
+
+    assert learned["recommended_modal_mode_count"] == 497
+    assert modal_mode_count_from_payload(payload, source_text="MODOPT,LANB,887") == 497
+    audit = modal_policy_audit(payload, source_text="MODOPT,LANB,887")
+    assert audit["assigned_modal_mode_count"] == 497
     assert audit["assigned_modal_mode_count_source"] == "learned_similar_intake_cache"

@@ -12,6 +12,7 @@ from core.ansys.auto_config import ensure_ansys_config
 from core.ansys.runner import run_real_ansys
 from core.apdl.modal_policy import (
     MODAL_RETRY_SEQUENCE,
+    audited_source_modal_mode_count_from_job,
     modal_mode_count_from_job_dir,
     record_modal_mode_count_learning,
     rewrite_modal_mode_count,
@@ -196,6 +197,8 @@ def _last_modal_frequency_hz(job_dir: Path | str) -> float | None:
 
 def _modal_retry_plan(current_count: int | None, job_dir: Path | str | None = None) -> dict[str, Any]:
     current = int(current_count or 0)
+    normal_cap = max(MODAL_RETRY_SEQUENCE)
+    audited_source_count = audited_source_modal_mode_count_from_job(job_dir) if job_dir is not None else None
     if job_dir is not None:
         last_frequency_hz = _last_modal_frequency_hz(job_dir)
         if last_frequency_hz is not None:
@@ -209,7 +212,11 @@ def _modal_retry_plan(current_count: int | None, job_dir: Path | str | None = No
                 }
             if last_frequency_hz > 0:
                 estimated_count = int(math.ceil(current * 50.0 / last_frequency_hz * 1.15))
-                if last_frequency_hz < 8.0 and current >= max(MODAL_RETRY_SEQUENCE):
+                if (
+                    last_frequency_hz < 8.0
+                    and current >= normal_cap
+                    and not (audited_source_count is not None and current < audited_source_count)
+                ):
                     return {
                         "status": "blocked_low_modal_frequency",
                         "current_modal_mode_count": current,
@@ -222,14 +229,28 @@ def _modal_retry_plan(current_count: int | None, job_dir: Path | str | None = No
                             "continuing to enlarge MT would waste time and still not make the result reliable."
                         ),
                     }
-                if estimated_count > max(MODAL_RETRY_SEQUENCE):
-                    if current < max(MODAL_RETRY_SEQUENCE):
+                if estimated_count > normal_cap:
+                    if audited_source_count is not None and current < audited_source_count:
+                        return {
+                            "status": "audited_source_retry",
+                            "current_modal_mode_count": current,
+                            "last_frequency_hz": last_frequency_hz,
+                            "estimated_modal_mode_count": estimated_count,
+                            "audited_source_modal_mode_count": audited_source_count,
+                            "next_modal_mode_count": audited_source_count,
+                            "reason": (
+                                "Estimated MT exceeds the normal smart-retry cap, but the audited standard model "
+                                "command stream contains a higher modal extraction count. Retry once with that "
+                                "source-traceable MT before blocking publication."
+                            ),
+                        }
+                    if current < normal_cap:
                         return {
                             "status": "cap_retry",
                             "current_modal_mode_count": current,
                             "last_frequency_hz": last_frequency_hz,
                             "estimated_modal_mode_count": estimated_count,
-                            "next_modal_mode_count": max(MODAL_RETRY_SEQUENCE),
+                            "next_modal_mode_count": normal_cap,
                             "reason": (
                                 "Estimated MT exceeds the normal cap; run one capped verification retry after "
                                 "cleaning regenerable outputs. If the capped retry still misses 50 Hz, treat it "
@@ -264,6 +285,15 @@ def _modal_retry_plan(current_count: int | None, job_dir: Path | str | None = No
                 "next_modal_mode_count": int(value),
                 "reason": "No usable modal frequency evidence; fall back to the bounded retry sequence.",
             }
+    if audited_source_count is not None and current < audited_source_count:
+        return {
+            "status": "audited_source_sequence_retry",
+            "current_modal_mode_count": current,
+            "last_frequency_hz": None,
+            "audited_source_modal_mode_count": audited_source_count,
+            "next_modal_mode_count": audited_source_count,
+            "reason": "Normal modal retry sequence is exhausted; retry with the audited source modal count.",
+        }
     return {
         "status": "blocked_sequence_exhausted",
         "current_modal_mode_count": current,

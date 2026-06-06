@@ -12,11 +12,18 @@ DEFAULT_MODAL_MODE_COUNT = 40
 MIN_MODAL_MODE_COUNT = 1
 MAX_INITIAL_MODAL_MODE_COUNT = 160
 SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT = 160
+MAX_AUDITED_SOURCE_MODAL_MODE_COUNT = 1200
 MODAL_RETRY_SEQUENCE = (20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 140, 160, 200, 240)
 MODAL_MODE_COUNT_CACHE_VERSION = "modal-mode-count-cache-v1"
 MODAL_MODE_COUNT_CACHE_PATH = Path("data/calibration/modal_mode_count_cache.json")
 MODAL_LEARNING_SIMILARITY_THRESHOLD = 0.78
 MODAL_LEARNING_MODE_MARGIN = 4
+AUTO_MODAL_MODE_COUNT_SOURCES = {
+    "intake_rule_layer_count_modal_count",
+    "inferred_layer_count",
+    "modal_policy",
+    "default_initial_count",
+}
 INITIAL_MODAL_MODE_COUNT_BY_LAYER_COUNT = {
     1: 40,
     2: 40,
@@ -302,8 +309,8 @@ def _write_modal_cache(payload: dict[str, Any], cache_path: Path | str = MODAL_M
 def _next_modal_retry_value(minimum: int) -> int:
     for value in MODAL_RETRY_SEQUENCE:
         if int(value) >= minimum:
-            return coerce_initial_modal_mode_count(value)
-    return MAX_INITIAL_MODAL_MODE_COUNT
+            return coerce_modal_mode_count(value)
+    return coerce_modal_mode_count(minimum)
 
 
 def learned_modal_mode_count_from_payload(
@@ -337,7 +344,10 @@ def learned_modal_mode_count_from_payload(
             "best_similarity": round(best_score, 4) if best_score >= 0 else None,
             "similarity_features": features,
         }
-    recommended = coerce_initial_modal_mode_count(best.get("recommended_modal_mode_count"))
+    recommended = min(
+        coerce_modal_mode_count(best.get("recommended_modal_mode_count")),
+        MAX_AUDITED_SOURCE_MODAL_MODE_COUNT,
+    )
     return {
         "status": "hit",
         "recommended_modal_mode_count": recommended,
@@ -357,16 +367,27 @@ def source_modal_count_is_safe_for_initial_solve(source_count: int | None) -> bo
     return source_count is not None and MIN_MODAL_MODE_COUNT <= source_count <= SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT
 
 
+def source_modal_count_is_allowed_for_retry(source_count: int | None) -> bool:
+    return source_count is not None and MIN_MODAL_MODE_COUNT <= source_count <= MAX_AUDITED_SOURCE_MODAL_MODE_COUNT
+
+
 def modal_mode_count_from_payload(payload: dict[str, Any] | None, source_text: str | None = None) -> int:
     metadata = (payload or {}).get("metadata") or {}
     explicit = _as_positive_int(metadata.get("modal_mode_count"))
+    explicit_source = str(metadata.get("modal_mode_count_source") or "").strip()
+    explicit_is_auto = explicit_source in AUTO_MODAL_MODE_COUNT_SOURCES
     source_count = parse_source_modal_mode_count(source_text)
     inferred_layers = _infer_layer_count_from_payload(payload)
     learned = learned_modal_mode_count_from_payload(payload)
-    if explicit is not None:
+    if explicit is not None and not explicit_is_auto:
         return coerce_initial_modal_mode_count(explicit)
     if learned.get("status") == "hit":
-        return coerce_initial_modal_mode_count(learned.get("recommended_modal_mode_count"))
+        return min(
+            coerce_modal_mode_count(learned.get("recommended_modal_mode_count")),
+            MAX_AUDITED_SOURCE_MODAL_MODE_COUNT,
+        )
+    if explicit is not None:
+        return coerce_initial_modal_mode_count(explicit)
     if source_modal_count_is_safe_for_initial_solve(source_count):
         return coerce_initial_modal_mode_count(source_count)
     if inferred_layers is not None:
@@ -378,6 +399,8 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
     metadata = (payload or {}).get("metadata") or {}
     source_count = parse_source_modal_mode_count(source_text)
     requested_count = _as_positive_int(metadata.get("modal_mode_count"))
+    requested_source = str(metadata.get("modal_mode_count_source") or "").strip()
+    requested_is_auto = requested_source in AUTO_MODAL_MODE_COUNT_SOURCES
     inferred_layers = _infer_layer_count_from_payload(payload)
     learned = learned_modal_mode_count_from_payload(payload)
     assigned = modal_mode_count_from_payload(payload, source_text)
@@ -387,10 +410,12 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
         and source_modal_count_is_safe_for_initial_solve(source_count)
         and assigned == source_count
     )
-    if requested_count is not None and assigned == coerce_initial_modal_mode_count(requested_count):
+    if requested_count is not None and not requested_is_auto and assigned == coerce_initial_modal_mode_count(requested_count):
         assigned_source = "input_metadata"
-    elif requested_count is None and learned.get("status") == "hit" and assigned == coerce_initial_modal_mode_count(learned.get("recommended_modal_mode_count")):
+    elif learned.get("status") == "hit" and assigned == min(coerce_modal_mode_count(learned.get("recommended_modal_mode_count")), MAX_AUDITED_SOURCE_MODAL_MODE_COUNT):
         assigned_source = "learned_similar_intake_cache"
+    elif requested_count is not None and requested_is_auto and assigned == coerce_initial_modal_mode_count(requested_count):
+        assigned_source = "auto_metadata_fallback"
     elif requested_count is None and source_count_used and assigned == source_count:
         assigned_source = "audited_source_safe_count"
     elif requested_count is None and inferred_layers is not None and assigned == modal_mode_count_from_layer_count(inferred_layers):
@@ -401,10 +426,12 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
         "status": "pass",
         "requested_modal_mode_count": requested_count,
         "source_modal_mode_count": source_count,
+        "source_modal_mode_count_retry_allowed": source_modal_count_is_allowed_for_retry(source_count),
         "inferred_layer_count": inferred_layers,
         "learned_modal_mode_count": learned,
         "source_modal_mode_count_used_for_initial_solve": source_count_used,
         "source_modal_mode_count_limit": SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT,
+        "source_modal_mode_count_retry_limit": MAX_AUDITED_SOURCE_MODAL_MODE_COUNT,
         "assigned_modal_mode_count": assigned,
         "assigned_modal_mode_count_source": assigned_source,
         "minimum_modal_mode_count": MIN_MODAL_MODE_COUNT,
@@ -413,14 +440,44 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
         "cutoff_frequency_hz": MODAL_CUTOFF_HZ,
         "policy": (
             "MT is assigned before ANSYS solves. New-intake first solves use explicit intake metadata or "
-            "a similar successful intake cache when available. Audited source MT/literal MODOPT counts are used "
-            "after the learned cache when the source count is within the safe initial range. Layer-count heuristics "
-            "are only a fallback for new rows with no usable learned/source count. Mode.oup is a post-run coverage "
-            "check for frequencies above 50 Hz; if it fails, CableTrayAI retries with the next MT in the bounded "
-            "retry sequence. Successful real runs are recorded so future similar intakes can start closer to the "
+            "a similar successful intake cache when available. Auto-generated layer-count metadata is only a "
+            "fallback and can be superseded by learned real-run evidence. Audited source MT/literal MODOPT counts "
+            "within the safe initial range may be used for first solves; higher audited source counts are retained "
+            "as traceable retry targets when Mode.oup does not cover 50 Hz. Mode.oup is the post-run coverage "
+            "authority, and successful real runs are recorded so future similar intakes can start closer to the "
             "minimum MT that still covers the 50 Hz gate."
         ),
     }
+
+
+def audited_source_modal_mode_count_from_job(job_dir: Path | str) -> int | None:
+    job_dir = Path(job_dir)
+    for file_name in ("intake_standard_family_traceability.json", "modal_mt_policy.json"):
+        path = job_dir / file_name
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        candidates: list[Any] = []
+        solve_parameterization = payload.get("solve_parameterization") if isinstance(payload, dict) else {}
+        if isinstance(solve_parameterization, dict):
+            modal_policy = solve_parameterization.get("modal_mode_policy")
+            if isinstance(modal_policy, dict):
+                candidates.append(modal_policy.get("source_modal_mode_count"))
+        if isinstance(payload, dict):
+            candidates.extend(
+                [
+                    payload.get("source_modal_mode_count"),
+                    payload.get("audited_source_modal_mode_count"),
+                ]
+            )
+        parsed = [_as_positive_int(value) for value in candidates]
+        parsed = [value for value in parsed if source_modal_count_is_allowed_for_retry(value)]
+        if parsed:
+            return max(parsed)
+    return None
 
 
 def record_modal_mode_count_learning(

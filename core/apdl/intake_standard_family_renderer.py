@@ -937,13 +937,24 @@ def _ensure_modal_analysis_block(source_text: str) -> tuple[str, dict[str, Any]]
         return source_text, {"status": "source_contains_modal_analysis"}
     modal_block = "\n".join(
         [
-            "! CableTrayAI inserted modal coverage block: required before seismic/static load cases.",
+            "! CableTrayAI inserted modal coverage block: follows audited static/spectrum modal solve pattern.",
             "/SOL",
+            "LSCLEAR,ALL",
+            "ALLSEL,ALL",
+            "D,YUESHU,ALL,0",
+            "ALLSEL,ALL",
             "ANTYPE,2",
+            "MSAVE,0",
             "MODOPT,LANB,MT",
-            "MXPAND,MT,,,YES",
+            "EQSLV,SPAR",
+            "MXPAND,MT,,,1",
+            "LUMPM,0",
+            "PSTRES,0",
+            "MODOPT,LANB,MT,0,0,,OFF",
+            "/OUTPUT,'Mode','oup',",
             "SOLVE",
             "FINISH",
+            "/OUTPUT,TERM",
             "",
         ]
     )
@@ -1007,6 +1018,26 @@ def _render_solve_from_controlled_template(
     }
 
 
+def _same_name_library_modal_sources(family_source_path: Path) -> list[tuple[Path, str]]:
+    calculation_dir = family_source_path.parent
+    report_root = calculation_dir.parent.parent
+    if not report_root.exists() or report_root == calculation_dir:
+        return []
+    candidates: list[tuple[Path, str]] = []
+    pattern = f"*/{calculation_dir.name}/{family_source_path.name}"
+    for candidate in sorted(report_root.glob(pattern)):
+        if candidate == family_source_path or not candidate.is_file():
+            continue
+        try:
+            text, _ = read_text_with_encoding(candidate)
+        except Exception:
+            continue
+        if parse_source_modal_mode_count(text) is None:
+            continue
+        candidates.append((candidate, text))
+    return candidates
+
+
 def _modal_policy_source_bundle(
     family_source_path: Path,
     family_source_text: str,
@@ -1034,6 +1065,9 @@ def _modal_policy_source_bundle(
             continue
         if parse_source_modal_mode_count(sibling_text) is not None:
             texts.append(f"\n! sibling_modal_policy_source={sibling.as_posix()}\n{sibling_text}")
+    if include_family_literal_modopt and parse_source_modal_mode_count("\n".join(texts)) is None:
+        for candidate, candidate_text in _same_name_library_modal_sources(family_source_path):
+            texts.append(f"\n! library_modal_policy_source={candidate.as_posix()}\n{candidate_text}")
     return "\n".join(texts)
 
 

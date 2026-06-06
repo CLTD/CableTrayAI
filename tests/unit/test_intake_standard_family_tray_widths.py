@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from core.apdl.intake_standard_family_renderer import _render_model_from_family
+from core.apdl.intake_standard_family_renderer import _modal_policy_source_bundle, _render_model_from_family
+from core.apdl.modal_policy import parse_source_modal_mode_count
 from core.apdl.intake_template_context import build_standard_s2_template_context
 
 
@@ -303,3 +304,25 @@ def test_standard_family_marks_missing_required_tray_section_when_source_has_no_
     assert "SECREAD,'500-75-2mm'" not in rendered
     assert audit["tray_section_status"] == "fail"
     assert audit["missing_required_tray_sections"] == ["500-75-2mm"]
+
+
+def test_modal_policy_source_bundle_uses_same_name_library_modal_source(tmp_path) -> None:
+    report_root = tmp_path / "reports"
+    current_dir = report_root / "current" / "calc"
+    reference_dir = report_root / "reference" / "calc"
+    current_dir.mkdir(parents=True)
+    reference_dir.mkdir(parents=True)
+    current_source = current_dir / "01 same.PIP"
+    reference_source = reference_dir / "01 same.PIP"
+    current_source.write_text("FINISH\n/PREP7\n", encoding="utf-8")
+    reference_source.write_text("ANTYPE,2\nMODOPT,LANB,887\nMXPAND,887,,,0\n", encoding="utf-8")
+
+    bundle = _modal_policy_source_bundle(
+        current_source,
+        current_source.read_text(encoding="utf-8"),
+        "ANTYPE,0\n",
+        include_family_literal_modopt=True,
+    )
+
+    assert parse_source_modal_mode_count(bundle) == 887
+    assert "library_modal_policy_source" in bundle

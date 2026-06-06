@@ -2,20 +2,23 @@
 
 ## 2026-06-06 18185NI-LXSJ4213 static modal gate closeout
 
-Resolved in source, local installed evidence, package, and running web service:
+Resolved in source and real ANSYS18.2 evidence after reviewing the user's 4120 static command streams:
 
-1. Root cause: `18185NI-LXSJ4213` is a steel-platform static-method job, but result validation incorrectly reused the response-spectrum 50 Hz modal cutoff gate.
-2. ANSYS itself was successful: `D:/CableTrayAI/jobs/18185NI-LXSJ4213/ansys_run_audit.json` has `status=success`, `returncode=0`.
-3. Fixed policy: static-method jobs still require `Mode.oup` modal rows for report appendix/table traceability, but they no longer require a row above 50 Hz. Response-spectrum jobs remain strictly blocked by the 50 Hz modal coverage gate.
-4. Reassembled installed job evidence now passes: `result_status=usable`, `result_validation.status=pass`, `fail_count=0`; `modal_mt_cutoff` evidence records 232 rows and `last_frequency_hz=21.8866546846`.
-5. Regression tests added: static below-50 Hz modal rows pass, response-spectrum below-50 Hz modal rows fail.
-6. Verification passed: `python -m py_compile core/validation/result_validity_gate.py tests/unit/test_result_validity_square_section.py`; `python -m pytest tests/unit/test_result_validity_square_section.py -q -p no:cacheprovider`; `python -m pytest tests/unit -q -p no:cacheprovider`; hardcode scan over `core/apps/templates`; package gate; installed hash check.
-7. Deployment completed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` size `79091232` bytes, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260606_215835`, service restarted as PID `40768`, `/health` ok.
+1. Correction to the previous note: static-method jobs must still satisfy the 50 Hz modal coverage gate. The correct fix is MT/source-policy repair, not static gate bypass.
+2. The standard 4120 static command set places modal solve in the `01` model command stream with literal `MODOPT,LANB,887` / `MXPAND,887`; the `02` static stream then performs `ANTYPE,0` / `ACEL` load steps.
+3. `core/validation/result_validity_gate.py` now blocks static and response-spectrum jobs alike when required modal rows do not include a row above 50 Hz.
+4. `core/apdl/intake_standard_family_renderer.py` now inserts a standard modal block matching the audited pattern and searches same-name library model files for a source modal count when the selected source family lacks one.
+5. For `18185NI-LXSJ4213`, the renderer recovers audited source MT `887`; `core/pipeline/one_click.py` can retry with that source-traceable MT when normal retries hit the 240 cap.
+6. Real ANSYS18.2 validation job `jobs/verify_4213_static_modal887_20260606_221633` succeeded with `MT=887`: return code `0`, result validation `pass`, first mode above 50 Hz is mode `493` at `50.00458560826 Hz`, mode `497` is `50.25466922999 Hz`, and mode `887` is `270.0014312982 Hz`.
+7. The modal learning cache now records a compact recommendation for future similar static jobs: `recommended_modal_mode_count=497`, with audited-source fallback `887` still available.
+8. Verification passed: `py_compile`, targeted modal/result/renderer/retry tests, full unit tests, real ANSYS18.2 validation, hardcode scan over `core/apps/templates`, and `source_materials` remained unchanged.
+9. Deployment completed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` size `79098955` bytes, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260606_223517`, service restarted as PID `47364`, `/health` ok.
+10. Installed smoke for `18185NI-LXSJ4213` modal policy returns `modal_mode_count_from_payload=497`, `assigned_source=learned_similar_intake_cache`, and `source_modal_mode_count=887`.
 
 Open queue:
 
 1. No blocking item remains for the current `modal_mt_cutoff` web-side failure.
-2. Historical `docs/web_runs/*` records may still show the old failed run message; future/re-run web calculations use the fixed gate.
+2. Historical web-run records may still show the old failed run; reruns use the corrected static MT policy.
 
 ## 2026-06-06 4210 MT/选型优化队列 closeout
 
