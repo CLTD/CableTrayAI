@@ -6,7 +6,7 @@ from collections import Counter
 from pathlib import Path
 from uuid import uuid4
 
-from core.apdl.modal_policy import coerce_modal_mode_count, modal_mode_count_from_layer_count
+from core.apdl.modal_policy import coerce_modal_mode_count, modal_mode_count_from_payload, modal_policy_audit
 from core.intake.intake_excel_reader import read_and_validate_intake, read_tabular_intake_rows
 from core.intake.tray_load_parser import parse_tray_load_description
 from core.audit.job_state import write_job_state
@@ -42,17 +42,35 @@ def _normalise_square_section_ids(values: object) -> list[str]:
     return normalised
 
 
-def _intake_modal_mode_count(payload: dict, tray_mapping: dict | None, base_metadata: dict | None) -> tuple[int, str]:
+def _intake_modal_mode_count(payload: dict, tray_mapping: dict | None, base_payload: dict | None) -> tuple[int, str]:
     explicit = payload.get("modal_mode_count")
     if explicit not in (None, ""):
         return coerce_modal_mode_count(explicit), "intake_modal_mode_count_override"
-    layer_count = len((tray_mapping or {}).get("layers") or [])
-    if layer_count > 0:
-        return modal_mode_count_from_layer_count(layer_count), "intake_rule_layer_count_modal_count"
-    base_count = (base_metadata or {}).get("modal_mode_count")
+    base_payload = base_payload or {}
+    base_metadata = base_payload.get("metadata") or {}
+    base_count = base_metadata.get("modal_mode_count")
     if base_count not in (None, ""):
         return coerce_modal_mode_count(base_count), "base_payload_modal_mode_count"
-    return coerce_modal_mode_count(None), "fallback_default_40_no_tray_layer_mapping"
+    modal_payload = {
+        "project": base_payload.get("project") or {},
+        "support": base_payload.get("support") or {},
+        "metadata": {
+            **base_metadata,
+            "analysis_method": payload.get("analysis_method") or base_metadata.get("analysis_method") or "response_spectrum",
+            "tray_load_mapping": tray_mapping,
+        },
+        "tray_layers": base_payload.get("tray_layers") or [],
+    }
+    assigned = modal_mode_count_from_payload(modal_payload)
+    audit = modal_policy_audit(modal_payload)
+    source = audit.get("assigned_modal_mode_count_source") or "modal_policy"
+    if source == "inferred_layer_count":
+        source = "intake_rule_layer_count_modal_count"
+    elif source == "learned_similar_intake_cache":
+        source = "learned_similar_intake_modal_cache"
+    elif source == "default_initial_count":
+        source = "fallback_default_40_no_tray_layer_mapping"
+    return assigned, str(source)
 
 
 def _row_identity(row: dict) -> str:
@@ -233,7 +251,7 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
                 "source_ref": "intake_tray_load_text",
             }
         base["sections"] = list(existing_sections.values())
-    modal_mode_count, modal_mode_count_source = _intake_modal_mode_count(payload, tray_mapping, base.get("metadata", {}))
+    modal_mode_count, modal_mode_count_source = _intake_modal_mode_count(payload, tray_mapping, base)
     topology_side_count = int(tray_mapping.get("side_count") or 1) if tray_mapping else None
     topology_blocked = bool(topology_side_count and topology_side_count > 2)
     effective_spectrum_confirmed = spectrum_confirmed or analysis_method == "static"
@@ -290,8 +308,8 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         "square_section_source": payload.get("square_section_source") or square_section_status,
         "square_section_selection_rule": (
             "If intake column I is blank, use only square sections allowed by the intake calculation notes when such a list is present. "
-            "Select a section with controlling ratio < 1.0. Prefer the feasible ratio closest to 1.0, but when every feasible allowed section "
-            "is well below the economy target because the tray load is small, choose the minimum feasible allowed section. "
+            "Run candidates in increasing economy order, allow deterministic smart jumps only after a real failed ratio, and stop at the first "
+            "fresh real-ANSYS candidate whose controlling ratio is < 1.0. Later larger sections are not run after a pass because they are less economical. "
             "If no allowed section satisfies ratio < 1.0, fail with 提资允许截面不足."
         ),
         "allowed_square_section_ids": allowed_square_section_ids,
@@ -300,7 +318,7 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         "operator_flow": "upload_intake_select_spectrum_one_click",
         "modal_mode_count": modal_mode_count,
         "modal_mode_count_source": modal_mode_count_source,
-        "modal_mode_policy": "MT is assigned before ANSYS solves. Use the intake tray-layer rule first, then verify Mode.oup exceeds 50 Hz; retry only when the first solve still does not cover the cutoff.",
+        "modal_mode_policy": "MT is assigned before ANSYS solves. Use explicit intake metadata first, then similar successful real-run modal cache, then safe audited source/layer fallback; verify Mode.oup exceeds 50 Hz and retry upward only when coverage is short.",
     }
     return base
 

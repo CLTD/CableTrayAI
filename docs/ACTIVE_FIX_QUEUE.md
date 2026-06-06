@@ -1,5 +1,26 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-06 4210 MT/选型优化队列 closeout
+
+本节为当前最新队列状态，覆盖旧的 4210 / 100x8 追查分支。
+
+Resolved in source, package, local install, and real ANSYS18.2 evidence:
+
+1. MT 阶数策略已智能化。成功 job 会写入 `data/calibration/modal_mode_count_cache.json`；4210 从成功 MT=80 学习出推荐 MT=70，正式验证中 MT=70 仍满足 50 Hz 截断门禁。
+2. 4210 最新正式验证 job：`D:/CableTrayAI/jobs/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210`。`modal_results.json` 记录 `mt_mode=70`，第 66 阶首次超过 50 Hz，第 70 阶频率 `51.14707600861 Hz`，`modal_cutoff_status=pass`。
+3. 方钢自动选型已改为：只在提资允许截面内搜索，按经济顺序试算，允许基于失败真实比值做智能跳过，遇到第一个完整评定满足的真实 ANSYS 候选即停止，不再继续跑更大且不经济的候选。
+4. 4210 最新候选结果：`100-100-6=1.1845095292843475 fail`，`100-100-8=1.0698821329670751 fail`，`120-120-6=1.2389187235994654 fail`，`120-120-10=1.089945134953613 fail`，`140-140-8=0.9052401909300667 pass selected`。`160-160-8` 未运行，因为 `140-140-8` 已是第一个满足截面。
+5. 这次验证明确回答旧问题：在当前正确的 active-M/workbook-envelope 反应谱和 Q355 非钢平台评定下，4210 `100-100-8` 不满足，控制比 `1.0698821329670751 > 1.0`。
+6. 审查命令流已补全。发布目录 `command_streams` 现在包括建模、计算、结果提取、SL-1/SL-2 实际求解反应谱、工作簿格式审查谱、ZPA/残余质量静力修正参数，共 8 个文件。
+7. 当前输出目录 `E:/CODEX/tray_platform/ANSYS Output/18185NI-LXSJ4210/command_streams` 和最新验证输出目录 `E:/CODEX/tray_platform/ANSYS Output/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210/command_streams` 均已刷新为 8 个审查命令流。
+8. 部署包已重建并应用到 `D:/CableTrayAI`，备份 `D:/CableTrayAI/_update_backups/20260606_173008`；服务 PID `33516`，`/health` 返回 ok。安装目录核心文件 hash 与源码一致。
+9. 验证通过：unit tests `71 passed`，目标测试 `23 passed`，py_compile 通过，部署包 gate 通过，硬编码扫描无核心运行时命中。
+
+Open queue:
+
+1. No blocking item remains for the current 4210 MT/section-selection/command-stream/deployment request.
+2. If a future operator run uses a materially different intake/spectrum workbook, re-run the real ANSYS acceptance gate before release.
+
 ## 队列顺序
 
 1. 检查 `core/intake/intake_excel_reader.py`：

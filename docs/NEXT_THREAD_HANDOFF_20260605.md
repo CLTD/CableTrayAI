@@ -1,5 +1,24 @@
 # CableTrayAI 新对话交接 2026-06-05
 
+## 2026-06-06 latest handoff addendum after MT/section-selection optimization
+
+Use this addendum first in a new thread. It supersedes the older "当前未完成目标" section below and earlier 4210 notes where `100-100-8` appeared to pass under older spectrum-generation logic.
+
+1. Local deployment now successfully runs 4210 with real ANSYS18.2 after the active-M/workbook-envelope spectrum fixes.
+2. Modal mode count is now learned/right-sized from successful real runs. The 4210 successful MT=80 run learned `recommended_modal_mode_count=70` and wrote `data/calibration/modal_mode_count_cache.json`.
+3. Fresh installed validation used `MT=70` in `generated_solve.mac`. `modal_results.json` records first mode above 50 Hz at mode 66, last mode 70 frequency `51.14707600861 Hz`, and `modal_cutoff_status=pass`.
+4. Square-section selection now stops at the first fresh real-ANSYS candidate that fully satisfies the deterministic evaluation in intake-allowed economic order. Larger later candidates are not run once a passing candidate is found.
+5. Fresh 4210 validation candidate ratios: `100-100-6=1.1845095292843475 fail`, `100-100-8=1.0698821329670751 fail`, `120-120-6=1.2389187235994654 fail`, `120-120-10=1.089945134953613 fail`, `140-140-8=0.9052401909300667 pass selected`.
+6. No `160-160-8` trial was run after `140-140-8` passed. `square_section_selection.json` records `stop_after_first_feasible=true`.
+7. Review command-stream publishing now includes spectrum and ZPA/static-correction evidence. `command_streams` publishes `generated_model.mac`, `generated_solve.mac`, `generated_post.mac`, `ansys_spectrum.mac`, `ansys_spectrum_sl1.mac`, `ansys_spectrum_sl2.mac`, `ansys_spectrum_workbook_format.mac`, and `ansys_zpa_parameters.mac` when present.
+8. The current review folder `E:/CODEX/tray_platform/ANSYS Output/18185NI-LXSJ4210/command_streams` has been refreshed with those 8 files. The latest verification output is `E:/CODEX/tray_platform/ANSYS Output/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210`.
+9. Deployment package was rebuilt at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size about `75.43 MB`, passed the package gate, and was applied to `D:/CableTrayAI`. Backup is `D:/CableTrayAI/_update_backups/20260606_173008`.
+10. Installed service was restarted from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, PID `33516`; `/health` returns `{"status":"ok"}`. Installed hashes match source for the touched MT policy, intake builder, section workflow, output publisher, one-click pipeline, and modal cache.
+11. Verification passed: full unit tests `71 passed`, targeted tests `23 passed`, py_compile, package gate, hardcode scan over `core apps templates`, installed hash checks, real ANSYS18.2 validation, and command-stream publishing refresh.
+12. Source cleanup removed PyInstaller build/dist/spec temporary directories. `.pytest_cache` and `.pytest_tmp` remain ACL-denied local test caches, are not packaged, and are not calculation evidence.
+
+Current open item: none for the requested MT/section-selection/command-stream/deployment optimization. Any new calculation-rule change must rerun the same real ANSYS acceptance gate before release.
+
 本对话已按用户要求停止实际修复和运行。新对话不要重新猜目标，直接从本文件继续。
 
 ## 当前未完成目标

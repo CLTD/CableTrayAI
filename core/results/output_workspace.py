@@ -23,9 +23,14 @@ REVIEW_RAW_RESULT_FILES = {
     "Mode.oup",
 }
 AUDIT_COMMAND_STREAMS = (
-    ("modeling", "generated_model.mac"),
-    ("calculation", "generated_solve.mac"),
-    ("result_extraction", "generated_post.mac"),
+    ("modeling", "generated_model.mac", True),
+    ("calculation", "generated_solve.mac", True),
+    ("result_extraction", "generated_post.mac", True),
+    ("spectrum_full_audit", "ansys_spectrum.mac", False),
+    ("spectrum_sl1_solve", "ansys_spectrum_sl1.mac", False),
+    ("spectrum_sl2_solve", "ansys_spectrum_sl2.mac", False),
+    ("spectrum_workbook_format_review", "ansys_spectrum_workbook_format.mac", False),
+    ("residual_mass_static_correction", "ansys_zpa_parameters.mac", False),
 )
 
 
@@ -69,24 +74,30 @@ def intake_order_id_from_job(job_dir: Path | str, fallback: str | None = None) -
 def write_command_stream_manifest(job_dir: Path | str) -> dict[str, Any]:
     job_dir = Path(job_dir)
     streams = []
-    for role, filename in AUDIT_COMMAND_STREAMS:
+    for role, filename, required in AUDIT_COMMAND_STREAMS:
         path = job_dir / filename
         streams.append(
             {
                 "role": role,
                 "file": filename,
                 "exists": path.exists(),
-                "audit_policy": "Only these three command streams are published for engineering review.",
+                "required": required,
+                "audit_policy": (
+                    "Model, solve, and post streams are required for every review publish. "
+                    "Response-spectrum jobs also publish the generated spectrum and ZPA/static-correction streams "
+                    "when present because they materially affect the calculation."
+                ),
             }
         )
     manifest = {
-        "status": "pass" if all(item["exists"] for item in streams) else "warning",
+        "status": "pass" if all(item["exists"] for item in streams if item["required"]) else "warning",
         "job_dir": str(job_dir),
         "command_stream_count": len(streams),
+        "published_command_stream_count": sum(1 for item in streams if item["exists"]),
         "streams": streams,
         "notes": [
-            "run_all.mac remains an internal ANSYS batch entrypoint and is intentionally not part of the three-file review set.",
-            "The reviewed streams are modeling, calculation, and result extraction.",
+            "run_all.mac remains an internal ANSYS batch entrypoint and is intentionally not part of the review publish set.",
+            "The reviewed streams include modeling, calculation, result extraction, response-spectrum commands, and residual-mass/static-correction parameters when generated.",
         ],
     }
     (job_dir / "command_stream_manifest.json").write_text(
@@ -213,7 +224,7 @@ def _write_readme(target_dir: Path, order_id: str, command_stream_manifest: dict
         f"CableTrayAI published result: {order_id}",
         "",
         "Folders:",
-        "- command_streams: three APDL command streams for engineering review.",
+        "- command_streams: APDL command streams for engineering review, including spectrum and residual-mass/static-correction files when generated.",
         "- tables: CSV tables for result/report comparison and extracted values.",
         "- figures: only figures required by the current intake/report logic.",
     "- raw_results: canonical LIS/OUP files used by result extraction.",
@@ -256,7 +267,7 @@ def publish_result_outputs(
 
     copied: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
-    for role, filename in AUDIT_COMMAND_STREAMS:
+    for role, filename, _required in AUDIT_COMMAND_STREAMS:
         _copy_file(job_dir / filename, target_dir / "command_streams" / filename, copied, f"command_stream:{role}")
     figure_publications = _copy_manifest_figures(job_dir, target_dir, copied)
     _write_review_tables(job_dir, target_dir, copied)

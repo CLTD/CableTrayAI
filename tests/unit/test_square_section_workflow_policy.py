@@ -166,7 +166,7 @@ def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sect
     captured_names = [candidate.section_name for candidate in captured["candidates"]]
     assert captured_names == ["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"]
     assert "120-120-8" not in captured_names
-    assert captured["stop_after_first_feasible"] is False
+    assert captured["stop_after_first_feasible"] is True
     assert captured["feasible_confirmation_count"] == 1
     assert captured["smart_jumps_enabled"] is True
     assert captured["smart_order"] is False
@@ -215,7 +215,7 @@ def test_allowed_square_sections_ignore_similar_cache_window_and_keep_smaller_ca
     assert result["status"] == "pass"
     captured_names = [candidate.section_name for candidate in captured["candidates"]]
     assert captured_names == ["100-100-6", "100-100-8", "120-120-6"]
-    assert captured["stop_after_first_feasible"] is False
+    assert captured["stop_after_first_feasible"] is True
     assert captured["smart_order"] is False
     assert captured["smart_jumps_enabled"] is True
 

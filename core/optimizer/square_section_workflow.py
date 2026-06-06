@@ -894,7 +894,8 @@ def select_and_apply_square_section(
         # reviewed allowed list with fresh trials.  Within that hard boundary,
         # post-failure modulus jumps may skip only candidates that are still
         # below a failed square-support ratio estimate; they never add
-        # unlisted sections or accept the first passing section.
+        # unlisted sections.  The first passing section is the economical
+        # production stop because later candidates are ordered larger.
         candidates = full_candidates
         preferred_section = None
         preferred_section_source = None
@@ -905,8 +906,9 @@ def select_and_apply_square_section(
                 "For intake calculation-note sections, only listed/reviewed candidates are allowed. "
                 "Every selected or jumped-to candidate is regenerated and checked by the deterministic ratio gate; "
                 "post-failure section-modulus jumps may skip only smaller allowed candidates that remain below the "
-                "estimated requirement from a real failed square-support ratio. Engineering estimates and similar-job "
-                "cache entries cannot skip or add candidates."
+                "estimated requirement from a real failed square-support ratio. The first fresh real-ANSYS candidate "
+                "with controlling ratio < 1.0 stops the search; larger listed sections are not run after a pass. "
+                "Engineering estimates and similar-job cache entries cannot skip or add candidates."
             ),
         }
     elif preferred_section is None:
@@ -917,10 +919,10 @@ def select_and_apply_square_section(
     effective_limit = limit
     if allowed_filter_applied:
         # The intake calculation note is the governing candidate boundary.  A
-        # first passing section is not enough for economy; however, after a
-        # real failed square-support ratio, smart jumps may avoid obviously
-        # under-sized allowed candidates while recording exactly what was
-        # skipped.
+        # first passing section is the economical stop because allowed
+        # candidates are sorted by section modulus/area.  After a real failed
+        # square-support ratio, smart jumps may avoid obviously under-sized
+        # allowed candidates while recording exactly what was skipped.
         effective_limit = None if effective_limit is None else max(int(effective_limit), len(candidates))
     elif effective_limit is None and using_default_runner:
         effective_limit = 4
@@ -934,7 +936,7 @@ def select_and_apply_square_section(
         overwrite_trials=True,
         preferred_section=str(preferred_section) if preferred_section else None,
         preferred_section_source=preferred_section_source,
-        stop_after_first_feasible=not allowed_filter_applied,
+        stop_after_first_feasible=True,
         feasible_confirmation_count=1 if allowed_filter_applied else 2,
         smart_jumps_enabled=True,
         smart_order=not allowed_filter_applied,
@@ -958,7 +960,7 @@ def select_and_apply_square_section(
                 overwrite_trials=True,
                 preferred_section=str(preferred_section),
                 preferred_section_source=preferred_section_source,
-                stop_after_first_feasible=not allowed_filter_applied,
+                stop_after_first_feasible=True,
                 feasible_confirmation_count=1 if allowed_filter_applied else 2,
                 smart_jumps_enabled=True,
                 smart_order=not allowed_filter_applied,
@@ -996,10 +998,10 @@ def select_and_apply_square_section(
     selection["production_policy"] = (
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
-        "ratios; the selected section must have ratio < 1.0 within that intake-allowed list. If every passing candidate has a low ratio, the minimum "
-        "feasible section is selected; otherwise the passing candidate closest to 1.0 is selected. Candidate order may "
-        "not use deterministic engineering estimates, local catalog fallback or historical results to "
-        "skip/add candidates. After a real failed square-support ratio, section-modulus smart jumps may skip only "
+        "ratios; the selected section must have ratio < 1.0 within that intake-allowed list. Candidates are ordered by "
+        "economic section size, so the first fresh real-ANSYS passing candidate stops the search and later larger "
+        "sections are not run. Candidate order may not use deterministic engineering estimates, local catalog fallback "
+        "or historical results to skip/add candidates. After a real failed square-support ratio, section-modulus smart jumps may skip only "
         "under-sized allowed candidates and must record the skipped list. Generated APDL HREC candidates are disabled by default and only allowed when "
         "allow_native_hrec_generated=true is explicitly set for a reviewed engineering run. No nearest-report-value "
         "substitution is allowed."
@@ -1148,7 +1150,7 @@ def upgrade_square_section_after_ratio_fail(
         runner=runner,
         source_root=source_root,
         overwrite_trials=True,
-        stop_after_first_feasible=allowed_square_section_filter.get("status") != "applied",
+        stop_after_first_feasible=True,
         feasible_confirmation_count=1 if allowed_square_section_filter.get("status") == "applied" else 2,
         smart_jumps_enabled=not bool(estimated_required_modulus),
         smart_order=allowed_square_section_filter.get("status") != "applied",
@@ -1172,7 +1174,8 @@ def upgrade_square_section_after_ratio_fail(
         "A provided or provisional square tube section is not accepted when final real-ANSYS deterministic ratios exceed 1.0. "
         "Only intake-allowed/reviewed local SECT candidates are tried by default. Generated job-local APDL HREC candidates are allowed "
         "only when allow_native_hrec_generated=true is set for a reviewed engineering run; selected section must still "
-        "have ratio < 1.0. If all passing candidates are low-utilization, the minimum feasible section is retained."
+        "have ratio < 1.0. Candidates are ordered by economy, so the first passing upgrade is retained and larger "
+        "sections are not run after a pass."
     )
     if (
         selection.get("status") != "pass"

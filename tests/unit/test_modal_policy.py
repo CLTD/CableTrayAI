@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from core.apdl.modal_policy import modal_mode_count_from_layer_count, modal_mode_count_from_payload, modal_policy_audit
+import json
+from pathlib import Path
+
+from core.apdl.modal_policy import (
+    modal_mode_count_from_layer_count,
+    modal_mode_count_from_payload,
+    modal_policy_audit,
+    record_modal_mode_count_learning,
+)
 
 
 def test_six_layer_new_intake_starts_at_bounded_safe_initial_count() -> None:
@@ -31,3 +39,65 @@ def test_explicit_modal_count_still_wins_over_layer_heuristic() -> None:
     audit = modal_policy_audit(payload, source_text="MT=40")
     assert audit["assigned_modal_mode_count"] == 120
     assert audit["assigned_modal_mode_count_source"] == "input_metadata"
+
+
+def test_successful_real_run_cache_right_sizes_next_similar_initial_mt(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    payload = {
+        "support": {
+            "support_type": "S2",
+            "layers_front": 3,
+            "layers_back": 3,
+            "side_count": 2,
+            "support_spacing_m": 2.0,
+            "support_height_m": 1.7,
+            "support_section_id": "140-140-8",
+        },
+        "metadata": {
+            "analysis_method": "response_spectrum",
+            "square_section_current_model_spec": "140-140-8",
+            "square_section_outer_mm": 140.0,
+            "square_section_thickness_mm": 8.0,
+        },
+        "tray_layers": [
+            {"tray_width_m": 0.5, "arm_a_length_m": 0.35}
+            for _ in range(6)
+        ],
+    }
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "modal_results.json").write_text(
+        json.dumps(
+            [
+                {
+                    "mode": 66,
+                    "source_mode": 66,
+                    "frequency_hz": 50.18,
+                    "mt_mode": 80,
+                    "mt_mode_first_above_cutoff_hz": 66,
+                    "mt_mode_last_above_cutoff_hz": 80,
+                    "modal_cutoff_status": "pass",
+                },
+                {
+                    "mode": 80,
+                    "source_mode": 80,
+                    "frequency_hz": 64.2,
+                    "mt_mode": 80,
+                    "mt_mode_first_above_cutoff_hz": 66,
+                    "mt_mode_last_above_cutoff_hz": 80,
+                    "modal_cutoff_status": "pass",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    learned = record_modal_mode_count_learning(job_dir)
+
+    assert learned["status"] == "pass"
+    assert learned["recommended_modal_mode_count"] == 70
+    assert modal_mode_count_from_payload(payload, source_text="MT=80") == 70
+    audit = modal_policy_audit(payload, source_text="MT=80")
+    assert audit["assigned_modal_mode_count"] == 70
+    assert audit["assigned_modal_mode_count_source"] == "learned_similar_intake_cache"

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +13,10 @@ MIN_MODAL_MODE_COUNT = 1
 MAX_INITIAL_MODAL_MODE_COUNT = 160
 SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT = 160
 MODAL_RETRY_SEQUENCE = (20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 140, 160, 200, 240)
+MODAL_MODE_COUNT_CACHE_VERSION = "modal-mode-count-cache-v1"
+MODAL_MODE_COUNT_CACHE_PATH = Path("data/calibration/modal_mode_count_cache.json")
+MODAL_LEARNING_SIMILARITY_THRESHOLD = 0.78
+MODAL_LEARNING_MODE_MARGIN = 4
 INITIAL_MODAL_MODE_COUNT_BY_LAYER_COUNT = {
     1: 40,
     2: 40,
@@ -129,6 +136,223 @@ def _infer_layer_count_from_payload(payload: dict[str, Any] | None) -> int | Non
     return max(parsed) if parsed else None
 
 
+def _as_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _round_float(value: Any, digits: int = 3) -> float | None:
+    parsed = _as_float(value)
+    return round(parsed, digits) if parsed is not None else None
+
+
+def _section_from_payload(payload: dict[str, Any] | None) -> dict[str, float | str | None]:
+    data = payload or {}
+    support = data.get("support") if isinstance(data.get("support"), dict) else {}
+    metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+    outer = _round_float(metadata.get("square_section_outer_mm"), 2)
+    thickness = _round_float(metadata.get("square_section_thickness_mm"), 2)
+    raw = (
+        metadata.get("square_section_selected")
+        or metadata.get("square_section_current_model_spec")
+        or metadata.get("square_section_spec")
+        or support.get("support_section_id")
+        or ""
+    )
+    match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)[-xX*](?:\1)[-xX*](\d+(?:\.\d+)?)\s*", str(raw))
+    if match:
+        outer = outer if outer is not None else round(float(match.group(1)), 2)
+        thickness = thickness if thickness is not None else round(float(match.group(2)), 2)
+    return {"raw": str(raw) if raw else None, "outer_mm": outer, "thickness_mm": thickness}
+
+
+def _tray_width_m_from_layer(layer: dict[str, Any]) -> float | None:
+    width_m = _round_float(layer.get("tray_width_m"), 3)
+    if width_m is not None:
+        return width_m
+    width_mm = _as_float(layer.get("tray_width_mm") or layer.get("width_mm"))
+    return round(width_mm / 1000.0, 3) if width_mm is not None else None
+
+
+def _modal_learning_features(payload: dict[str, Any] | None) -> dict[str, Any]:
+    data = payload or {}
+    support = data.get("support") if isinstance(data.get("support"), dict) else {}
+    metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+    tray_layers = data.get("tray_layers") if isinstance(data.get("tray_layers"), list) else []
+    section = _section_from_payload(data)
+    return {
+        "analysis_method": str(metadata.get("analysis_method") or "response_spectrum").lower(),
+        "support_type": str(support.get("support_type") or "").upper(),
+        "layer_count": _infer_layer_count_from_payload(data),
+        "side_count": _as_positive_int(support.get("side_count") or metadata.get("topology_side_count")),
+        "layers_front": _as_positive_int(support.get("layers_front") or metadata.get("layers_front")),
+        "layers_back": _as_positive_int(support.get("layers_back") or metadata.get("layers_back")),
+        "layers_third": _as_positive_int(support.get("layers_third") or metadata.get("layers_third")) or 0,
+        "support_spacing_m": _round_float(support.get("support_spacing_m"), 3),
+        "support_height_m": _round_float(support.get("support_height_m"), 3),
+        "square_outer_mm": section["outer_mm"],
+        "square_thickness_mm": section["thickness_mm"],
+        "tray_widths_m": [
+            _tray_width_m_from_layer(layer)
+            for layer in tray_layers
+            if isinstance(layer, dict)
+        ],
+        "tray_arm_lengths_m": [
+            _round_float(layer.get("arm_a_length_m"), 3)
+            for layer in tray_layers
+            if isinstance(layer, dict)
+        ],
+    }
+
+
+def _modal_feature_cache_key(features: dict[str, Any]) -> str:
+    payload = json.dumps(features, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def _numeric_similarity(left: Any, right: Any, tolerance: float) -> float:
+    left_value = _as_float(left)
+    right_value = _as_float(right)
+    if left_value is None and right_value is None:
+        return 0.5
+    if left_value is None or right_value is None:
+        return 0.0
+    if tolerance <= 0:
+        return 1.0 if left_value == right_value else 0.0
+    return max(0.0, 1.0 - abs(left_value - right_value) / tolerance)
+
+
+def _exact_similarity(left: Any, right: Any) -> float:
+    if left in (None, "") and right in (None, ""):
+        return 0.5
+    return 1.0 if left == right else 0.0
+
+
+def _sequence_similarity(left: Any, right: Any, tolerance: float) -> float:
+    left_values = [_as_float(value) for value in (left or [])]
+    right_values = [_as_float(value) for value in (right or [])]
+    left_values = [value for value in left_values if value is not None]
+    right_values = [value for value in right_values if value is not None]
+    if not left_values and not right_values:
+        return 0.5
+    if not left_values or not right_values:
+        return 0.0
+    if len(left_values) != len(right_values):
+        count_score = max(0.0, 1.0 - abs(len(left_values) - len(right_values)) / max(len(left_values), len(right_values)))
+    else:
+        count_score = 1.0
+    pair_count = min(len(left_values), len(right_values))
+    if pair_count == 0:
+        return 0.0
+    pair_scores = [
+        _numeric_similarity(left_values[index], right_values[index], tolerance)
+        for index in range(pair_count)
+    ]
+    return 0.35 * count_score + 0.65 * (sum(pair_scores) / len(pair_scores))
+
+
+def _modal_feature_similarity(current: dict[str, Any], learned: dict[str, Any]) -> float:
+    weighted_scores = [
+        (0.10, _exact_similarity(current.get("analysis_method"), learned.get("analysis_method"))),
+        (0.12, _exact_similarity(current.get("support_type"), learned.get("support_type"))),
+        (0.16, _numeric_similarity(current.get("layer_count"), learned.get("layer_count"), 1.0)),
+        (0.08, _numeric_similarity(current.get("side_count"), learned.get("side_count"), 1.0)),
+        (0.07, _numeric_similarity(current.get("layers_front"), learned.get("layers_front"), 1.0)),
+        (0.07, _numeric_similarity(current.get("layers_back"), learned.get("layers_back"), 1.0)),
+        (0.08, _numeric_similarity(current.get("support_spacing_m"), learned.get("support_spacing_m"), 0.75)),
+        (0.08, _numeric_similarity(current.get("support_height_m"), learned.get("support_height_m"), 0.75)),
+        (0.08, _numeric_similarity(current.get("square_outer_mm"), learned.get("square_outer_mm"), 40.0)),
+        (0.04, _numeric_similarity(current.get("square_thickness_mm"), learned.get("square_thickness_mm"), 4.0)),
+        (0.15, _sequence_similarity(current.get("tray_widths_m"), learned.get("tray_widths_m"), 0.25)),
+        (0.07, _sequence_similarity(current.get("tray_arm_lengths_m"), learned.get("tray_arm_lengths_m"), 0.25)),
+    ]
+    weight_sum = sum(weight for weight, _ in weighted_scores)
+    return sum(weight * score for weight, score in weighted_scores) / weight_sum
+
+
+def _read_modal_cache(cache_path: Path | str = MODAL_MODE_COUNT_CACHE_PATH) -> dict[str, Any]:
+    path = Path(cache_path)
+    if not path.exists():
+        return {"cache_version": MODAL_MODE_COUNT_CACHE_VERSION, "entries": []}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"cache_version": MODAL_MODE_COUNT_CACHE_VERSION, "entries": []}
+    if not isinstance(payload, dict):
+        return {"cache_version": MODAL_MODE_COUNT_CACHE_VERSION, "entries": []}
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        payload["entries"] = []
+    payload.setdefault("cache_version", MODAL_MODE_COUNT_CACHE_VERSION)
+    return payload
+
+
+def _write_modal_cache(payload: dict[str, Any], cache_path: Path | str = MODAL_MODE_COUNT_CACHE_PATH) -> None:
+    path = Path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload["cache_version"] = MODAL_MODE_COUNT_CACHE_VERSION
+    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _next_modal_retry_value(minimum: int) -> int:
+    for value in MODAL_RETRY_SEQUENCE:
+        if int(value) >= minimum:
+            return coerce_initial_modal_mode_count(value)
+    return MAX_INITIAL_MODAL_MODE_COUNT
+
+
+def learned_modal_mode_count_from_payload(
+    payload: dict[str, Any] | None,
+    *,
+    cache_path: Path | str = MODAL_MODE_COUNT_CACHE_PATH,
+    threshold: float = MODAL_LEARNING_SIMILARITY_THRESHOLD,
+) -> dict[str, Any]:
+    features = _modal_learning_features(payload)
+    cache = _read_modal_cache(cache_path)
+    best: dict[str, Any] | None = None
+    best_score = -1.0
+    for entry in cache.get("entries") or []:
+        if not isinstance(entry, dict) or entry.get("status") != "pass":
+            continue
+        count = _as_positive_int(entry.get("recommended_modal_mode_count"))
+        if count is None:
+            continue
+        entry_features = entry.get("similarity_features")
+        if not isinstance(entry_features, dict):
+            continue
+        score = _modal_feature_similarity(features, entry_features)
+        if score > best_score:
+            best_score = score
+            best = entry
+    if best is None or best_score < threshold:
+        return {
+            "status": "miss",
+            "reason": "no_similar_successful_modal_cache_entry",
+            "similarity_threshold": threshold,
+            "best_similarity": round(best_score, 4) if best_score >= 0 else None,
+            "similarity_features": features,
+        }
+    recommended = coerce_initial_modal_mode_count(best.get("recommended_modal_mode_count"))
+    return {
+        "status": "hit",
+        "recommended_modal_mode_count": recommended,
+        "similarity": {
+            "score": round(best_score, 4),
+            "threshold": threshold,
+        },
+        "cache_key": best.get("cache_key"),
+        "source_job_dir": best.get("source_job_dir"),
+        "observed_modal_mode_count": best.get("observed_modal_mode_count"),
+        "first_above_cutoff_mode": best.get("first_above_cutoff_mode"),
+        "similarity_features": features,
+    }
+
+
 def source_modal_count_is_safe_for_initial_solve(source_count: int | None) -> bool:
     return source_count is not None and MIN_MODAL_MODE_COUNT <= source_count <= SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT
 
@@ -138,8 +362,11 @@ def modal_mode_count_from_payload(payload: dict[str, Any] | None, source_text: s
     explicit = _as_positive_int(metadata.get("modal_mode_count"))
     source_count = parse_source_modal_mode_count(source_text)
     inferred_layers = _infer_layer_count_from_payload(payload)
+    learned = learned_modal_mode_count_from_payload(payload)
     if explicit is not None:
         return coerce_initial_modal_mode_count(explicit)
+    if learned.get("status") == "hit":
+        return coerce_initial_modal_mode_count(learned.get("recommended_modal_mode_count"))
     if source_modal_count_is_safe_for_initial_solve(source_count):
         return coerce_initial_modal_mode_count(source_count)
     if inferred_layers is not None:
@@ -152,14 +379,18 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
     source_count = parse_source_modal_mode_count(source_text)
     requested_count = _as_positive_int(metadata.get("modal_mode_count"))
     inferred_layers = _infer_layer_count_from_payload(payload)
+    learned = learned_modal_mode_count_from_payload(payload)
     assigned = modal_mode_count_from_payload(payload, source_text)
     source_count_used = (
         requested_count is None
+        and learned.get("status") != "hit"
         and source_modal_count_is_safe_for_initial_solve(source_count)
         and assigned == source_count
     )
     if requested_count is not None and assigned == coerce_initial_modal_mode_count(requested_count):
         assigned_source = "input_metadata"
+    elif requested_count is None and learned.get("status") == "hit" and assigned == coerce_initial_modal_mode_count(learned.get("recommended_modal_mode_count")):
+        assigned_source = "learned_similar_intake_cache"
     elif requested_count is None and source_count_used and assigned == source_count:
         assigned_source = "audited_source_safe_count"
     elif requested_count is None and inferred_layers is not None and assigned == modal_mode_count_from_layer_count(inferred_layers):
@@ -171,6 +402,7 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
         "requested_modal_mode_count": requested_count,
         "source_modal_mode_count": source_count,
         "inferred_layer_count": inferred_layers,
+        "learned_modal_mode_count": learned,
         "source_modal_mode_count_used_for_initial_solve": source_count_used,
         "source_modal_mode_count_limit": SAFE_SOURCE_MODAL_MODE_COUNT_LIMIT,
         "assigned_modal_mode_count": assigned,
@@ -181,12 +413,114 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
         "cutoff_frequency_hz": MODAL_CUTOFF_HZ,
         "policy": (
             "MT is assigned before ANSYS solves. New-intake first solves use explicit intake metadata or "
-            "audited source MT/literal MODOPT counts when the source count is within the safe initial range. "
-            "Layer-count heuristics are only a fallback for new rows with no usable source count. Mode.oup is a "
-            "post-run coverage check for frequencies above 50 Hz; if it fails, CableTrayAI retries with the next "
-            "MT in the bounded retry sequence instead of starting every job with an over-conservative mode count."
+            "a similar successful intake cache when available. Audited source MT/literal MODOPT counts are used "
+            "after the learned cache when the source count is within the safe initial range. Layer-count heuristics "
+            "are only a fallback for new rows with no usable learned/source count. Mode.oup is a post-run coverage "
+            "check for frequencies above 50 Hz; if it fails, CableTrayAI retries with the next MT in the bounded "
+            "retry sequence. Successful real runs are recorded so future similar intakes can start closer to the "
+            "minimum MT that still covers the 50 Hz gate."
         ),
     }
+
+
+def record_modal_mode_count_learning(
+    job_dir: Path | str,
+    *,
+    cache_path: Path | str = MODAL_MODE_COUNT_CACHE_PATH,
+) -> dict[str, Any]:
+    job_dir = Path(job_dir)
+    input_path = job_dir / "input.json"
+    modal_path = job_dir / "modal_results.json"
+    if not input_path.exists() or not modal_path.exists():
+        payload = {
+            "status": "skipped",
+            "reason": "missing_input_or_modal_results",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    try:
+        input_payload = json.loads(input_path.read_text(encoding="utf-8"))
+        rows = json.loads(modal_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        payload = {
+            "status": "skipped",
+            "reason": "unreadable_input_or_modal_results",
+            "error": str(exc),
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    if not isinstance(rows, list) or not rows:
+        payload = {
+            "status": "skipped",
+            "reason": "empty_modal_results",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    pass_rows = [row for row in rows if isinstance(row, dict) and row.get("modal_cutoff_status") == "pass"]
+    if not pass_rows:
+        payload = {
+            "status": "skipped",
+            "reason": "modal_cutoff_not_pass",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    observed_counts = [_as_positive_int(row.get("mt_mode")) for row in pass_rows]
+    first_above_values = [_as_positive_int(row.get("mt_mode_first_above_cutoff_hz")) for row in pass_rows]
+    last_above_values = [_as_positive_int(row.get("mt_mode_last_above_cutoff_hz")) for row in pass_rows]
+    frequency_rows = [
+        row for row in rows
+        if isinstance(row, dict) and _as_float(row.get("frequency_hz")) is not None
+    ]
+    observed_count = max(value for value in observed_counts if value is not None) if any(observed_counts) else modal_mode_count_from_job_dir(job_dir)
+    first_above = min(value for value in first_above_values if value is not None) if any(first_above_values) else None
+    if first_above is None:
+        above_rows = [
+            row for row in frequency_rows
+            if (_as_float(row.get("frequency_hz")) or 0.0) > MODAL_CUTOFF_HZ
+        ]
+        source_modes = [_as_positive_int(row.get("source_mode") or row.get("mode")) for row in above_rows]
+        first_above = min(value for value in source_modes if value is not None) if any(source_modes) else None
+    if first_above is None:
+        payload = {
+            "status": "skipped",
+            "reason": "no_mode_above_cutoff_found",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    recommended = _next_modal_retry_value(first_above + MODAL_LEARNING_MODE_MARGIN)
+    features = _modal_learning_features(input_payload if isinstance(input_payload, dict) else {})
+    cache_key = _modal_feature_cache_key(features)
+    entry = {
+        "cache_key": cache_key,
+        "status": "pass",
+        "source_job_dir": str(job_dir),
+        "learned_at": datetime.now(timezone.utc).isoformat(),
+        "cutoff_frequency_hz": MODAL_CUTOFF_HZ,
+        "observed_modal_mode_count": observed_count,
+        "first_above_cutoff_mode": first_above,
+        "last_above_cutoff_mode": max(value for value in last_above_values if value is not None) if any(last_above_values) else None,
+        "last_frequency_hz": _as_float(frequency_rows[-1].get("frequency_hz")) if frequency_rows else None,
+        "recommended_modal_mode_count": recommended,
+        "modal_learning_mode_margin": MODAL_LEARNING_MODE_MARGIN,
+        "similarity_features": features,
+        "policy": (
+            "Recommended MT is the next bounded retry value at least four modes above the first source mode "
+            "that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries "
+            "upward if this learned initial MT is insufficient."
+        ),
+    }
+    cache = _read_modal_cache(cache_path)
+    entries = [item for item in cache.get("entries") or [] if isinstance(item, dict) and item.get("cache_key") != cache_key]
+    entries.append(entry)
+    cache["entries"] = entries[-200:]
+    _write_modal_cache(cache, cache_path)
+    (job_dir / "modal_mode_learning.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
+    return entry
 
 
 def rewrite_modal_mode_count(text: str, count: int) -> str:

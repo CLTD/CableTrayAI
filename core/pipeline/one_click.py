@@ -10,7 +10,12 @@ from typing import Any, Callable
 from core.ansys.artifact_cleanup import cleanup_heavy_solver_artifacts
 from core.ansys.auto_config import ensure_ansys_config
 from core.ansys.runner import run_real_ansys
-from core.apdl.modal_policy import MODAL_RETRY_SEQUENCE, modal_mode_count_from_job_dir, rewrite_modal_mode_count
+from core.apdl.modal_policy import (
+    MODAL_RETRY_SEQUENCE,
+    modal_mode_count_from_job_dir,
+    record_modal_mode_count_learning,
+    rewrite_modal_mode_count,
+)
 from core.apdl.llm_orchestrated_renderer import render_llm_orchestrated_command_package
 from core.apdl.intake_standard_family_renderer import find_adjacent_solve_command, select_standard_model_family
 from core.audit.job_state import fail_job_state, update_job_state
@@ -993,6 +998,9 @@ def run_operator_one_click(
                             )
                         raise RuntimeError("Square section upgrade loop ended but final square-support ratio is still above 1.0.")
                     _ensure_publishable_result(job_dir)
+                    modal_learning = record_modal_mode_count_learning(job_dir)
+                    row_result["modal_learning_status"] = modal_learning.get("status")
+                    row_result["modal_learning_recommended_mt"] = modal_learning.get("recommended_modal_mode_count")
                     register_exact_cached_result(job_dir, jobs_dir)
                     update_job_state(job_dir, "evaluated", "real ANSYS outputs parsed and evaluated")
             else:

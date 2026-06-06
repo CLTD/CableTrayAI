@@ -1,16 +1,13 @@
 {
     "schema":  "cabletrayai_codex_recovery_state_v1",
-    "updated_at":  "2026-06-06T15:50:00+08:00",
+    "updated_at":  "2026-06-06T17:51:38+08:00",
     "purpose":  "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
     "project_root":  "E:/CODEX/tray_platform/CableTrayAI",
     "current_objective":  [
-                              "Fix production calculation flow before release.",
-                              "Intake Excel must drive APDL geometry and loads. Do not use stale job, upload, output, or historical validation data.",
-                              "Tray section must come from intake. A 500 mm tray must preserve the 500-75-2mm SECREAD section. 50-42 is an arm/cantilever section, not a tray section.",
-                              "Square tube candidates must come from the intake workbook calculation note. Unlisted sections must not be tried.",
-                              "Square section selection must use the same deterministic final evaluation ratio as chapter 6 output. Choose ratio \u003c 1 and closest to 1, except if the minimum feasible section is already low-utilization.",
-                              "If no intake-allowed section satisfies ratio \u003c 1, fail clearly as insufficient allowed sections. Do not expand to unlisted sections or hard-fit historical reports.",
-                              "Real ANSYS path validation and packaging must be repeated after fixes."
+                              "Current 4210 optimization request is complete: MT right-sizing/learning, first-feasible square-section stop, review command-stream publishing, real ANSYS validation, and local deployment refresh.",
+                              "Keep deterministic calculation authority: intake Excel, spectrum workbook ANSYS Format/workbook-envelope output, real ANSYS LIS/OUP, and Python RCC-M evaluation remain the sources of truth.",
+                              "Do not modify source_materials. Do not hardcode project numbers, factory names, elevations, or spectrum filenames in core/apps/templates.",
+                              "Any new parsing, calculation, evaluation, or packaging change must rerun unit tests, hardcode scan, package gate, and real ANSYS acceptance before release."
                           ],
     "must_read_next":  [
                            "docs/CURRENT_WORK_STATE.md",
@@ -131,11 +128,19 @@
                            "2026-06-06 prevention gate: tests/unit/test_spectrum_elevation_resolution.py simulates the expat failure; scripts/deployment_package_gate.py runs a no-expat spectrum smoke on the copied package; package_duxyb_intranet_release.ps1 blocks zip creation if that gate fails; build_portable_runtime.ps1 verifies pyexpat.pyd, _elementtree.pyd and libexpat.dll.",
                            "2026-06-06 verification after expat hotfix: full pytest passed; hardcode scan over core apps templates for 1818, 7.5m and standalone NB had no hits; real uploaded installed spectrum workbook passed the no-expat smoke with M-column comparison pass.",
                            "2026-06-06 deployment after expat hotfix: rebuilt C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip size 79071848 bytes, package gate pass, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_153433, restarted service PID 24108, /health ok and root no-cache headers ok.",
-                           "2026-06-06 real ANSYS installed smoke after expat hotfix: fixed-section 4210 140-140-8 reached spectrum_status pass and ansys_run_status success under ANSYS18.2, then result validation blocked on modal_mt_cutoff after bounded MT retry. This is separate from the expat package failure and only a follow-up if normal operator runs hit it."
+                           "2026-06-06 real ANSYS installed smoke after expat hotfix: fixed-section 4210 140-140-8 reached spectrum_status pass and ansys_run_status success under ANSYS18.2, then result validation blocked on modal_mt_cutoff after bounded MT retry. This is separate from the expat package failure and only a follow-up if normal operator runs hit it.",
+                           "2026-06-06 4210 MT optimization complete: successful real-run cache learned recommended_modal_mode_count=70 from a previous MT=80 run; data/calibration/modal_mode_count_cache.json records the learned 4210 feature signature and recommendation.",
+                           "2026-06-06 installed real ANSYS18.2 validation for 4210 completed at D:/CableTrayAI/jobs/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210. generated_solve.mac used MT=70; modal_results.json records first_above_cutoff_mode=66, last_above_cutoff_mode=70, last_frequency_hz=51.14707600861, modal_cutoff_status=pass.",
+                           "2026-06-06 square-section selection policy now stops at the first fresh real-ANSYS candidate that fully satisfies deterministic evaluation in intake-allowed economic order; larger later sections are not run after a passing section is found.",
+                           "2026-06-06 latest 4210 candidate ratios: 100-100-6=1.1845095292843475 fail, 100-100-8=1.0698821329670751 fail, 120-120-6=1.2389187235994654 fail, 120-120-10=1.089945134953613 fail, 140-140-8=0.9052401909300667 pass selected. 160-160-8 was not run because 140-140-8 was the first feasible section.",
+                           "2026-06-06 command-stream publishing now includes spectrum and ZPA/static-correction review files when present: ansys_spectrum.mac, ansys_spectrum_sl1.mac, ansys_spectrum_sl2.mac, ansys_spectrum_workbook_format.mac, ansys_zpa_parameters.mac, plus generated_model/solve/post.",
+                           "2026-06-06 refreshed E:/CODEX/tray_platform/ANSYS Output/18185NI-LXSJ4210/command_streams and E:/CODEX/tray_platform/ANSYS Output/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210/command_streams; both contain the 8 review command-stream files.",
+                           "2026-06-06 deployment package rebuilt at C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip, size about 75.43 MB, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_173008, service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 33516, /health returned ok.",
+                           "2026-06-06 verification for MT/section/command-stream optimization passed: py_compile on touched modules, targeted pytest 23 passed, full unit pytest 71 passed, hardcode scan had no core/apps/templates runtime hits, package gate passed, installed hashes matched source, and real ANSYS18.2 validation passed."
                        ],
     "open_tasks":  [
-                       "Optional follow-up: investigate modal_mt_cutoff if it appears in normal operator runs after the expat hotfix. The fixed-section installed smoke reached ANSYS success but did not publish because of this separate modal gate.",
-                       "Optional follow-up: rerun full 4210 section auto-selection with the calibrated workbook-envelope spectrum to confirm final selected section remains 140-140-8 while 100-100-8 is rejected."
+                       "No blocking item remains for the 2026-06-06 4210 MT/section-selection/command-stream/deployment optimization request.",
+                       "If a future change touches parsing, spectrum selection/generation, APDL solve/post command streams, RCC-M evaluation, or deployment packaging, rerun the same real ANSYS acceptance and package gate before release."
                    ],
     "do_not_do":  [
                       "Do not modify source_materials.",

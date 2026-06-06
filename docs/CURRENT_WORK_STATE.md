@@ -85,6 +85,22 @@
 
 如果 Codex 上下文被压缩，先读取本文件，再继续执行 `docs/ACTIVE_FIX_QUEUE.md` 中的队列，不要重新猜测目标。
 
+## 2026-06-06 4210 MT/选型智能化与审查命令流 closeout
+
+本节覆盖旧的 4210 / 100x8 结论。当前可发布结论以本节为准。
+
+1. 本地部署版已完成 4210 全流程真实 ANSYS18.2 验证。验证 job 为 `D:/CableTrayAI/jobs/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210`，发布输出为 `E:/CODEX/tray_platform/ANSYS Output/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210`。
+2. MT 不再只按固定保守阶数。`core/apdl/modal_policy.py` 新增成功 job 的模态阶数学习缓存；4210 已由成功 MT=80 记录学习出推荐 MT=70。正式验证中 `generated_solve.mac` 使用 `MT=70`，`modal_results.json` 记录第 66 阶首次超过 50 Hz，第 70 阶频率 `51.14707600861 Hz`，`modal_cutoff_status=pass`。
+3. 方钢截面选型改为“提资允许列表内、经济顺序、失败后可智能跳过、首次真实 ANSYS 完整评定满足即停止”。4210 本次验证候选结果为：`100-100-6=1.1845095292843475 fail`，`100-100-8=1.0698821329670751 fail`，`120-120-6=1.2389187235994654 fail`，`120-120-10=1.089945134953613 fail`，`140-140-8=0.9052401909300667 pass selected`。
+4. 验证中没有继续运行 `160-160-8`，因为 `140-140-8` 已是第一个完整评定满足的候选截面；`square_section_selection.json` 记录 `stop_after_first_feasible=true`。
+5. 发布审查命令流已扩展。`command_streams` 现在除 `generated_model.mac`、`generated_solve.mac`、`generated_post.mac` 外，还发布 `ansys_spectrum.mac`、`ansys_spectrum_sl1.mac`、`ansys_spectrum_sl2.mac`、`ansys_spectrum_workbook_format.mac`、`ansys_zpa_parameters.mac`，便于人工审查反应谱和残余质量/静力修正尾值。
+6. 已刷新当前 4210 输出目录 `E:/CODEX/tray_platform/ANSYS Output/18185NI-LXSJ4210/command_streams`，其中 8 个命令流文件均已存在。`generated_solve.mac` 通过 `/INPUT` 引入 SL-1、SL-2 谱宏和 `ansys_zpa_parameters.mac`。
+7. 部署包已重建并应用：`C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`，大小约 `75.43 MB`；安装备份为 `D:/CableTrayAI/_update_backups/20260606_173008`。服务已从 `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe` 重启，PID `33516`，`http://127.0.0.1:8000/health` 返回 `{"status":"ok"}`。
+8. 验证通过：`python -m pytest tests/unit -q -p no:cacheprovider` 为 `71 passed`；目标测试集 `23 passed`；py_compile 通过；硬编码扫描在 `core/apps/templates` 无项目号、厂房/标高等核心运行时写死命中；部署包 gate 通过 no-expat 反应谱 smoke。
+9. 代码树清理：已移除源目录 PyInstaller build/dist/spec 临时目录；`.pytest_cache` 与 `.pytest_tmp` 因 Windows ACL 拒绝删除，仍是本地测试缓存，不进入部署包，也不是计算状态。
+
+当前未完成：无阻断项。后续若继续修改解析、计算、评定或打包逻辑，必须重新执行同等级真实 ANSYS 和部署验证。
+
 ## 2026-06-05 stale run restore fix
 
 User saw the old `18185NI-LXSJ4210: Unable to allocate output buffer` message immediately after opening the platform. This was not a fresh ANSYS run. It was stale persisted run state from `docs/web_runs`, `jobs`, and browser localStorage being restored as the current calculation.
