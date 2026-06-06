@@ -1,0 +1,38 @@
+﻿[ansys]
+# 按单位电脑实际 ANSYS 版本修改
+executable = "D:/ANSYS Inc/v182/ansys/bin/winx64/ANSYS182.exe"
+default_workdir = "jobs"
+timeout_minutes = 120
+license_wait = true
+product = "ansys"
+# Deployment-safe default: compute ANSYS -np from local logical processors.
+# Example: 0.5 uses 50% of logical processors on whichever machine runs this.
+# Optional explicit override: set nproc = 4 when a license or workstation requires it.
+# Optional safety override: set high_modal_nproc_cap = 1 only when a workstation
+# has a proven MAPDL parallel scratch/license problem. By default high-modal
+# response-spectrum jobs still use nproc_percent and are not forced to one core.
+nproc_percent = 0.35
+# high_modal_nproc_cap = 1
+# If ANSYS starts but writes no OUT/ERR/LIS/RST/DB bytes for this long, treat it
+# as a startup stall, stop it, and let the operator flow retry with safer cores.
+startup_no_output_timeout_seconds = 180
+# If ANSYS writes a small amount of output and then stops updating files, treat
+# it as a runtime stall instead of letting an operator wait for the full timeout.
+output_stall_timeout_seconds = 600
+retry_on_startup_no_output = true
+startup_retry_nproc = [4, 2, 1]
+memory = "8192"
+extra_args = []
+
+[runner]
+# 可选：mock / dry_run / real
+mode = "dry_run"
+
+[output_import]
+default_source_dir = "outputs"
+
+[operator]
+default_output_root = "outputs"
+one_click_real_run = true
+static_method_keyword = "钢平台"
+

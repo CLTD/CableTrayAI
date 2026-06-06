@@ -1,0 +1,20 @@
+[operator]
+dashboard_url = "http://127.0.0.1:8000/dashboard"
+default_output_root = "outputs"
+one_click_real_run = true
+
+[intake]
+upload_dir = "uploads/intake"
+report_number_fields = ["报告号", "计算批次", "力学计算结果", "提资单号"]
+static_method_keyword = "钢平台"
+default_non_static_method = "response_spectrum"
+
+[spectrum]
+upload_dir = "uploads/spectrum"
+required_for_response_spectrum = true
+required_for_static = false
+
+[ansys]
+auto_discover = true
+prefer_mechanical_apdl = true
+never_use_mock_for_operator_one_click = true

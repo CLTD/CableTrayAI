@@ -1,0 +1,3918 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>电缆桥架力学分析一体化平台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef2f5;
+        --panel: #ffffff;
+        --soft: #f7f9fb;
+        --ink: #15202b;
+        --muted: #536675;
+        --line: #d6e0e8;
+        --line-strong: #b8c6d2;
+        --green: #0f7660;
+        --green-soft: #e7f5ef;
+        --blue: #1f5f99;
+        --blue-soft: #eaf3ff;
+        --amber: #986300;
+        --amber-soft: #fff7df;
+        --red: #b42318;
+        --red-soft: #fff1ef;
+        --shadow: 0 8px 20px rgba(21, 32, 43, 0.06);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        min-height: 36px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        border-color: #8094a8;
+        background: #fbfdff;
+      }
+
+      button.primary {
+        border-color: #0a6b55;
+        background: #0f7660;
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+      }
+
+      button.primary:hover:not(:disabled),
+      button.primary:focus-visible,
+      button.primary:active {
+        border-color: #075f4a;
+        background: #0f7660;
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+        outline: 2px solid #b7d3ee;
+        outline-offset: 1px;
+      }
+
+      button.primary:disabled {
+        border-color: #9fb2c4;
+        background: #eef3f7;
+        color: #17212b;
+        -webkit-text-fill-color: #17212b;
+        opacity: 1;
+      }
+
+      button:disabled,
+      input:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      button.primary:disabled {
+        opacity: 1;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        padding: 6px 9px;
+        background: #fff;
+        color: var(--ink);
+        -webkit-text-fill-color: var(--ink);
+      }
+
+      select:focus,
+      select:active,
+      input:focus,
+      textarea:focus {
+        background: #fff;
+        color: var(--ink);
+        -webkit-text-fill-color: var(--ink);
+        outline: 2px solid #b7d3ee;
+        outline-offset: 1px;
+      }
+
+      option {
+        color: var(--ink);
+        background: #fff;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 76px;
+      }
+
+      label {
+        display: block;
+        margin: 10px 0 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 12px rgba(21, 32, 43, 0.05);
+      }
+
+      .topbar {
+        max-width: 1780px;
+        min-height: 66px;
+        margin: 0 auto;
+        padding: 10px 18px;
+        display: grid;
+        grid-template-columns: minmax(360px, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .command-bar {
+        max-width: 1780px;
+        margin: 0 auto;
+        padding: 10px 18px 14px;
+        display: grid;
+        grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .module-strip {
+        max-width: 1780px;
+        margin: 0 auto;
+        padding: 0 18px 12px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        gap: 10px;
+      }
+
+      .module-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px 12px;
+        min-height: 82px;
+        display: grid;
+        gap: 6px;
+        align-content: start;
+        text-align: left;
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .module-card.active {
+        border-color: #84cbb8;
+        background: var(--green-soft);
+      }
+
+      .module-card strong {
+        font-size: 14px;
+      }
+
+      .module-card span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .module-model {
+        color: var(--green) !important;
+        font-weight: 700;
+      }
+
+      .module-status-line {
+        max-width: 1780px;
+        margin: -4px auto 12px;
+        padding: 0 18px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .module-status-line strong {
+        color: var(--ink);
+      }
+
+      .module-status-line .module-model-pill {
+        color: var(--green);
+        border: 1px solid #9ed9c8;
+        background: var(--green-soft);
+        border-radius: 999px;
+        padding: 3px 10px;
+      }
+
+      .module-admin-summary {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 10px;
+        background: var(--soft);
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .module-workspace {
+        grid-column: 1 / -1;
+      }
+
+      .module-workspace-grid {
+        display: grid;
+        grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.25fr);
+        gap: 12px;
+      }
+
+      .module-output {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        min-height: 260px;
+        max-height: 520px;
+        overflow: auto;
+        padding: 12px;
+        background: #fff;
+        white-space: pre-wrap;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .module-tool-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+
+      main {
+        max-width: 1780px;
+        margin: 0 auto;
+        padding: 18px 18px 32px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        align-items: start;
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      aside.stack {
+        grid-template-columns: minmax(520px, 1fr) minmax(360px, 0.42fr);
+        align-items: stretch;
+      }
+
+      aside.stack .model-audit-panel {
+        grid-column: 1 / -1;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .panel-head {
+        min-height: 44px;
+        padding: 11px 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--soft);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .panel-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .panel-body {
+        padding: 14px;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .mono {
+        font-family: Consolas, "Cascadia Mono", monospace;
+      }
+
+      .pill {
+        display: inline-flex;
+        min-height: 24px;
+        padding: 2px 8px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: #fff;
+        align-items: center;
+        white-space: nowrap;
+        font-size: 12px;
+      }
+
+      .pill.ok {
+        color: var(--green);
+        border-color: #a9d7c4;
+        background: var(--green-soft);
+      }
+
+      .pill.warn {
+        color: var(--amber);
+        border-color: #e5cc84;
+        background: var(--amber-soft);
+      }
+
+      .pill.bad {
+        color: var(--red);
+        border-color: #efb2aa;
+        background: var(--red-soft);
+      }
+
+      .pill.blue {
+        color: var(--blue);
+        border-color: #b7d3ee;
+        background: var(--blue-soft);
+      }
+
+      .file-slot {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 9px;
+        background: #fff;
+      }
+
+      .file-slot + .file-slot {
+        margin-top: 9px;
+      }
+
+      .compact-files {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .file-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 7px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .hint {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+        word-break: break-all;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 11px;
+      }
+
+      .actions .wide {
+        grid-column: 1 / -1;
+      }
+
+      .inline-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+
+      .list-controls {
+        display: grid;
+        grid-template-columns: minmax(360px, 1.15fr) minmax(180px, auto) minmax(260px, 0.72fr) minmax(210px, 0.55fr) minmax(210px, 0.55fr) minmax(160px, auto);
+        gap: 10px;
+        align-items: end;
+      }
+
+      .list-controls .inline-actions {
+        margin-top: 0;
+        flex-wrap: nowrap;
+      }
+
+      .list-controls button {
+        min-width: 58px;
+        padding: 0 10px;
+        white-space: nowrap;
+      }
+
+      .identity-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .hidden-field {
+        display: none;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .spectrum-candidates {
+        margin-top: 9px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .candidate-box {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px;
+        background: #fbfdff;
+      }
+
+      .candidate-title {
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .candidate-list {
+        max-height: 156px;
+        overflow: auto;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+      }
+
+      .candidate-chip {
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 0 8px;
+        border: 1px solid #c6d3de;
+        background: #fff;
+        font-size: 12px;
+      }
+
+      .candidate-chip.active {
+        border-color: #0f7660;
+        background: var(--green-soft);
+        color: var(--green);
+        font-weight: 700;
+      }
+
+      .workbench {
+        display: grid;
+        grid-template-columns: minmax(680px, 1.22fr) minmax(460px, 0.78fr);
+        gap: 14px;
+      }
+
+      .model-wrap {
+        min-height: 660px;
+        display: grid;
+        grid-template-rows: auto minmax(520px, 1fr) auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f8fbfd;
+      }
+
+      .model-toolbar {
+        min-height: 38px;
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        flex-wrap: wrap;
+        background: #fff;
+      }
+
+      #modelCanvas {
+        display: block;
+        width: 100%;
+        min-height: 520px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,247,250,.9)),
+          repeating-linear-gradient(135deg, rgba(182,198,211,.18) 0, rgba(182,198,211,.18) 1px, transparent 1px, transparent 28px);
+        cursor: grab;
+      }
+
+      #modelCanvas:active {
+        cursor: grabbing;
+      }
+
+      .model-caption {
+        border-top: 1px solid var(--line);
+        padding: 8px 10px;
+        color: var(--muted);
+        font-size: 12px;
+        background: #fff;
+      }
+
+      .model-caption b {
+        color: var(--ink);
+      }
+
+      .command-panel {
+        min-height: 660px;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .tab {
+        min-height: 30px;
+        padding: 0 10px;
+      }
+
+      .tab.active {
+        border-color: #0d6b51;
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px;
+        max-height: 538px;
+        overflow: auto;
+        white-space: pre-wrap;
+        background: #0b1220;
+        color: #dbeafe;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .summary-grid {
+        display: block;
+      }
+
+      .task-line {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        padding: 8px;
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .task-chip {
+        min-height: 32px;
+        border: 1px solid #d7e0e8;
+        border-radius: 6px;
+        padding: 5px 8px;
+        background: #fbfdff;
+        display: inline-flex;
+        gap: 6px;
+        align-items: baseline;
+        max-width: 100%;
+      }
+
+      .task-chip strong {
+        display: block;
+        font-size: 13px;
+        line-height: 1.15;
+        word-break: break-word;
+      }
+
+      .task-chip span {
+        color: var(--muted);
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      .task-chip.wide {
+        flex: 1 1 420px;
+      }
+
+      .tray-audit {
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fbfdff;
+        overflow: hidden;
+      }
+
+      .tray-audit-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .tray-audit-title {
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .tray-audit-body {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.85fr) minmax(520px, 1.6fr);
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .tray-source {
+        border: 1px solid #d7e0e8;
+        border-radius: 6px;
+        background: #fff;
+        padding: 8px;
+        min-height: 92px;
+      }
+
+      .tray-source .label {
+        color: var(--muted);
+        font-size: 11px;
+        margin-bottom: 6px;
+      }
+
+      .tray-source .value {
+        font-size: 13px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+
+      .tray-layer-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #fff;
+        border: 1px solid #d7e0e8;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .tray-layer-table th,
+      .tray-layer-table td {
+        padding: 7px 8px;
+        border-bottom: 1px solid #e6edf3;
+        text-align: left;
+        vertical-align: top;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .tray-layer-table th {
+        color: var(--muted);
+        background: #f6f9fc;
+        font-weight: 700;
+      }
+
+      .tray-layer-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .tray-empty {
+        border: 1px dashed #c7d3df;
+        border-radius: 6px;
+        padding: 12px;
+        color: var(--muted);
+        background: #fff;
+        font-size: 12px;
+      }
+
+      .result-launch {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .result-launch .status-text {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .result-launch .status-text.bad {
+        color: var(--red);
+        font-weight: 700;
+      }
+
+      .progress-box {
+        display: grid;
+        gap: 9px;
+      }
+
+      .progress-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        font-weight: 700;
+      }
+
+      .progress-track {
+        height: 12px;
+        border: 1px solid #c7d3df;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #eef3f7;
+      }
+
+      #progressFill {
+        width: 0%;
+        height: 100%;
+        border-radius: 999px;
+        background: #0f7660;
+        transition: width .25s ease;
+      }
+
+      .run-output-snapshot {
+        border: 1px solid #d4e1ed;
+        border-radius: 7px;
+        background: #f8fbfd;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+        padding: 8px 10px;
+        white-space: pre-wrap;
+      }
+
+      .section-reason-panel {
+        border: 1px solid #b9dfd4;
+        border-radius: 7px;
+        background: #f3fbf8;
+        color: #12372d;
+        font-size: 12px;
+        line-height: 1.55;
+        padding: 9px 10px;
+      }
+
+      .section-reason-panel strong {
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .section-reason-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .section-reason-grid div {
+        border: 1px solid #d6e7e1;
+        border-radius: 6px;
+        background: #fff;
+        padding: 7px 8px;
+        min-height: 44px;
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(360px, 0.8fr);
+        gap: 12px;
+      }
+
+      .table-wrap {
+        max-height: 460px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      table input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        min-height: 0;
+        padding: 0;
+        margin: 0;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e7edf3;
+        padding: 7px 9px;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #fbfcfd;
+        color: #344054;
+      }
+
+      tr.selectable {
+        cursor: pointer;
+      }
+
+      tr.selectable:hover,
+      tr.selectable.selected {
+        background: #e9f6f1;
+      }
+
+      .memo-list {
+        display: grid;
+        gap: 8px;
+        max-height: 250px;
+        overflow: auto;
+      }
+
+      .memo-item {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px;
+        background: #fff;
+        font-size: 12px;
+      }
+
+      .ai-checks {
+        display: grid;
+        gap: 8px;
+      }
+
+      .ai-check {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px;
+        background: #fff;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .model-audit-output {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--text);
+        min-height: 136px;
+        max-height: 320px;
+        overflow: auto;
+        padding: 10px;
+        white-space: pre-wrap;
+        font-family: Consolas, "Microsoft YaHei", monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .floating-qa-button {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 70;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 128px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid #9dc8b9;
+        background: #fff;
+        color: var(--green);
+        box-shadow: var(--shadow);
+        font-weight: 700;
+      }
+
+      .floating-qa-button.bad {
+        border-color: #f2aaa5;
+        color: #b42318;
+      }
+
+      .floating-qa-button.warn {
+        border-color: #f6c36b;
+        color: #8a5a00;
+      }
+
+      .qa-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .qa-count {
+        min-width: 22px;
+        border-radius: 999px;
+        padding: 2px 7px;
+        background: #eef7f3;
+        color: inherit;
+        text-align: center;
+        font-size: 11px;
+      }
+
+      .floating-qa-panel {
+        position: fixed;
+        right: 18px;
+        bottom: 66px;
+        z-index: 69;
+        width: min(520px, calc(100vw - 36px));
+        max-height: min(520px, calc(100vh - 96px));
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+
+      .floating-qa-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .floating-qa-body {
+        display: grid;
+        gap: 10px;
+        padding: 12px 14px;
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .qa-summary {
+        border: 1px solid #b8dfd2;
+        border-radius: 8px;
+        padding: 10px;
+        background: #f1fbf7;
+        color: #063f31;
+      }
+
+      .qa-findings {
+        display: grid;
+        gap: 6px;
+      }
+
+      .qa-finding {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px;
+        background: #fbfdff;
+      }
+
+      .qa-log {
+        max-height: 150px;
+        overflow: auto;
+        border-radius: 7px;
+        padding: 8px;
+        background: #07111f;
+        color: #d9e6f2;
+        white-space: pre-wrap;
+        font-family: Consolas, "Microsoft YaHei", monospace;
+        font-size: 11px;
+      }
+
+      #aiQuestion {
+        min-height: 104px;
+      }
+
+      .reserved {
+        border: 1px dashed #c7d3df;
+        border-radius: 7px;
+        padding: 10px;
+        background: #fbfdff;
+      }
+
+      .toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 60;
+        display: none;
+        max-width: 560px;
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: #101828;
+        color: #fff;
+        box-shadow: var(--shadow);
+        font-size: 12px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 1220px) {
+        .command-bar,
+        main,
+        aside.stack,
+        .workbench,
+        .result-grid,
+        .list-controls,
+        .module-workspace-grid,
+        .tray-audit-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .topbar {
+          grid-template-columns: 1fr;
+        }
+
+        .top-actions {
+          justify-content: flex-start;
+        }
+
+        .identity-grid,
+        .summary-grid,
+        .compact-files,
+        .actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>电缆桥架力学分析一体化平台</h1>
+          <div class="subtitle">提资解析、反应谱选择、三份命令流、ANSYS 计算、结果提取、模板报告和后台质控集中到一个工程工作台。</div>
+        </div>
+        <div class="top-actions">
+          <span id="authUserPill" class="pill">未登录</span>
+          <span id="appStatus" class="pill blue cable-only">等待选择提资</span>
+          <button id="refreshJobBtn" class="cable-only">刷新当前任务</button>
+          <button id="aiToolsBtn" aria-label="单位模型质控">模型质控设置</button>
+          <button id="guideBtn">操作说明</button>
+        </div>
+      </div>
+      <div class="module-status-line">
+        <strong>当前流程：电缆桥架智能计算</strong>
+        <span id="activeModuleModel" class="module-model-pill">单位模型：读取中</span>
+        <span>后台自动巡检运行状态、UNKNOWN 节点、全零载荷、缺图和报告注入风险；正式结论仍以 ANSYS、Excel 和确定性公式为准。</span>
+        <span class="visually-hidden">单位模型只做实时质控。</span>
+      </div>
+
+      <div class="command-bar cable-only">
+        <div>
+          <label for="preferredAnsys" style="margin-top:0">ANSYS Mechanical APDL</label>
+          <input id="preferredAnsys" placeholder="打开页面自动查找本机 ANSYS" />
+        </div>
+        <div>
+          <label for="outputRoot" style="margin-top:0">结果输出文件夹</label>
+          <input id="outputRoot" value="outputs" />
+        </div>
+        <div class="top-actions" style="justify-content:flex-start">
+          <button id="discoverAnsys">重新查找</button>
+          <button id="chooseOutputFolder">选择本机输出目录</button>
+          <button id="applyOutputPath">应用文本路径</button>
+          <button id="useDefaultOutput">默认目录</button>
+          <button id="runOneClick" class="primary">计算选中项</button>
+          <input id="outputFolderPicker" type="file" webkitdirectory directory multiple hidden />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <aside class="stack cable-only">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">新提资入口</div>
+            <span class="pill blue">自动解析</span>
+          </div>
+          <div class="panel-body">
+            <div class="compact-files">
+              <div class="file-slot">
+                <div class="file-title">
+                  <span>提资 Excel</span>
+                  <span class="pill">必选</span>
+                </div>
+                <input id="intakeFile" type="file" accept=".xlsx,.xlsm,.xls,.csv,.json" />
+                <div id="intakeHint" class="hint">选择后自动上传并解析。初版提资可没有报告号。</div>
+              </div>
+
+              <div class="file-slot">
+                <div class="file-title">
+                  <span>反应谱文件</span>
+                  <span class="pill">按项目</span>
+                </div>
+                <input id="spectrumFile" type="file" accept=".xlsx,.xlsm,.xls,.csv,.json,.mac" />
+                <div id="spectrumHint" class="hint">不同项目选择对应谱文件；钢平台任务走静力法。</div>
+              </div>
+            </div>
+
+            <label style="display:flex; gap:8px; align-items:center; margin-top:10px">
+              <input id="executeReal" type="checkbox" checked style="width:auto; min-height:auto" />
+              <span>通过 preflight 后真实调用 ANSYS</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">结果文件注入模板</div>
+            <span class="pill ok">已接入</span>
+          </div>
+          <div class="panel-body">
+            <div class="reserved">
+              <div class="actions">
+                <button id="buildTemplateReport" class="wide">生成模板报告</button>
+                <button id="downloadTemplateReport" class="wide">打开模板报告</button>
+              </div>
+              <p class="muted">按钢平台/非钢平台自动选择模板，只替换谱表、结果表和 ANSYS 图片；原模板正文和格式不改。</p>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+
+      <section class="stack cable-only">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">提资任务列表</div>
+            <span id="parseStatus" class="pill">未解析</span>
+          </div>
+          <div class="panel-body">
+            <div class="list-controls">
+              <div>
+                <label for="rowSelect" style="margin-top:0">当前查看行</label>
+                <select id="rowSelect"><option value="">等待提资解析</option></select>
+              </div>
+              <div class="inline-actions" style="align-self:end">
+                <button id="selectAllRows">全选</button>
+                <button id="clearSelectedRows">清空</button>
+                <span id="selectedRowCount" class="pill">0 个待计算</span>
+              </div>
+              <div>
+                <label for="primaryIdentity" style="margin-top:0">综合编号</label>
+                <input id="primaryIdentity" placeholder="有报告号显示报告号，否则显示提资单号" />
+                <input id="intakeOrder" class="hidden-field" />
+                <input id="reportNumber" class="hidden-field" />
+              </div>
+              <div>
+                <label for="buildingOverride" style="margin-top:0">厂房/谱表</label>
+                <select id="buildingOverride"><option value="">等待反应谱/提资解析</option></select>
+              </div>
+              <div>
+                <label for="elevationOverride" style="margin-top:0">标高</label>
+                <select id="elevationOverride"><option value="">等待反应谱/提资解析</option></select>
+              </div>
+              <div class="inline-actions" style="align-self:end">
+                <button id="applyIdentity">应用</button>
+                <button id="reconcileReport">更新报告号</button>
+              </div>
+            </div>
+            <div id="parsedRows" style="margin-top:10px">
+              <div class="muted">选择提资文件后自动显示解析结果。</div>
+            </div>
+            <div id="taskSummary" class="summary-grid" style="margin-top:10px"></div>
+            <div id="trayLoadAudit" class="tray-audit" style="display:none"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">计算进度</div>
+            <span id="jobBadge" class="pill">未运行</span>
+          </div>
+          <div class="panel-body">
+            <div class="progress-box">
+              <div class="progress-top">
+                <span id="progressStage">等待选择提资并开始计算</span>
+                <span id="progressPercent" class="pill">0%</span>
+              </div>
+              <div class="progress-track"><div id="progressFill"></div></div>
+              <div id="progressMessage" class="muted">计算启动后会显示：创建任务、写谱宏、生成命令流、运行 ANSYS、解析结果、发布输出。</div>
+              <div id="progressOutput" class="run-output-snapshot">等待 ANSYS 输出文件增长。</div>
+              <div id="productionFullRun" class="muted">全量生产验证：未启动。</div>
+              <div id="sectionReasonPanel" class="section-reason-panel hidden"></div>
+              <div class="inline-actions">
+                <button id="stopRunBtn">停止当前计算</button>
+                <button id="refreshRunBtn">刷新进度</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">ANSYS 模型与命令流核查</div>
+            <span class="pill blue">命令流预览 + 三份命令流</span>
+          </div>
+          <div class="panel-body workbench">
+            <div class="model-wrap">
+              <div class="model-toolbar">
+                <button id="viewIso">等轴</button>
+                <button id="viewFront">正视</button>
+                <button id="viewTop">俯视</button>
+                <button id="toggleSections" class="active">截面符号</button>
+                <button id="toggleOpenArrows" class="active">开口箭头</button>
+                <button id="toggleNodeLabels">节点号</button>
+                <button id="clearHighlight">清除高亮</button>
+                <span id="modelSource" class="pill">等待命令流</span>
+                <span id="modelStats" class="pill blue">0 点 / 0 线</span>
+              </div>
+              <canvas id="modelCanvas"></canvas>
+              <div id="modelCaption" class="model-caption">三维预览由网页解释 `generated_model.mac` 中的 APDL 参数、循环和 K/L 命令生成；真实模态图和应力云图仍以 ANSYS 输出图片为准。</div>
+            </div>
+
+            <div class="command-panel">
+              <div class="panel-head" style="border-radius:0; box-shadow:none">
+                <div class="tabs">
+                  <button class="tab active" data-command="modeling">建模命令</button>
+                  <button class="tab" data-command="calculation">计算命令</button>
+                  <button class="tab" data-command="result_extraction">提取命令</button>
+                </div>
+              </div>
+              <pre id="commandText">等待生成命令流。这里后续显示 generated_model.mac / generated_solve.mac / generated_post.mac，可滚动审查。</pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">结果核查</div>
+            <span class="pill blue">单独页面</span>
+          </div>
+          <div class="panel-body result-launch">
+            <div id="runOutcome" class="status-text">计算完成后在单独页面查看第六章评定表、载荷提取表、附录图片、错误备忘和输出文件。主页只保留建模与计算入口，避免拥挤。</div>
+            <div class="top-actions">
+              <button id="openReviewPage" class="primary">打开结果核查页</button>
+              <button id="openOutputFolderBtn">结果输出目录</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <button id="floatingQaButton" class="floating-qa-button" type="button" aria-expanded="false" aria-controls="floatingQaPanel">
+      <span class="qa-dot" aria-hidden="true"></span>
+      <span id="floatingQaStatus">AI巡检</span>
+      <span id="floatingQaCount" class="qa-count">0</span>
+    </button>
+    <section id="floatingQaPanel" class="floating-qa-panel" hidden>
+      <div class="floating-qa-head">
+        <div>
+          <strong>后台实时质控</strong>
+          <div id="floatingQaMeta" class="muted">自动读取计算状态、结果门禁和模型建议。</div>
+        </div>
+        <div class="top-actions">
+          <button id="refreshAiMonitor" type="button">刷新</button>
+          <button id="closeFloatingQa" type="button">关闭</button>
+        </div>
+      </div>
+      <div class="floating-qa-body">
+        <div id="floatingQaSummary" class="qa-summary">等待巡检。</div>
+        <div id="floatingQaFindings" class="qa-findings"></div>
+        <div id="floatingQaLog" class="qa-log">AI 只做状态解释、错误归因和安全修复建议；正式结论仍以 ANSYS、Excel、确定性公式和 source_ref 为准。</div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+      const pageParams = new URLSearchParams(location.search);
+      const compact = (value) => {
+        if (value === null || value === undefined || value === "") return "-";
+        if (typeof value === "object") return compact(value.value ?? value.normalized_value ?? JSON.stringify(value));
+        if (Number.isFinite(Number(value))) return String(Number(value).toFixed(6)).replace(/\.?0+$/, "");
+        return String(value);
+      };
+
+      const ACTIVE_RUN_STORAGE_KEY = "CableTrayAI.activeRunId";
+      const LATEST_RUN_STORAGE_KEY = "CableTrayAI.latestRunId";
+      const INTAKE_SESSION_STORAGE_KEY = "CableTrayAI.intakeSession.v1";
+      const UI_PREFS_STORAGE_KEY = "CableTrayAI.uiPrefs.v1";
+
+      const state = {
+        uploaded: {},
+        uploadedMeta: {},
+        rows: [],
+        selectedRows: new Set(),
+        selectedRow: null,
+        selectedRowIndex: -1,
+        activeJobId: "",
+        activeRunId: "",
+        intakeSessionRestored: false,
+        runPollTimer: null,
+        review: null,
+        spectrumPreview: null,
+        commandRole: "modeling",
+        resultView: "formula",
+        memos: JSON.parse(localStorage.getItem("cabletray_review_memos") || "[]"),
+        model: null,
+        highlight: new Set(),
+        yaw: -0.55,
+        pitch: 0.34,
+        showSections: true,
+        showOpenArrows: true,
+        showNodeLabels: false,
+        dragging: false,
+        lastX: 0,
+        lastY: 0,
+      };
+
+      function rememberRunId(runId, { active = true } = {}) {
+        if (!runId) return;
+        localStorage.setItem(LATEST_RUN_STORAGE_KEY, runId);
+        if (active) localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, runId);
+      }
+
+      function clearActiveRunId(runId) {
+        if (!runId || localStorage.getItem(ACTIVE_RUN_STORAGE_KEY) === runId) {
+          localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+        }
+      }
+
+      function saveIntakeSession() {
+        try {
+          const prefs = {
+            outputRoot: $("outputRoot")?.value || "",
+            preferredAnsys: $("preferredAnsys")?.value || "",
+          };
+          localStorage.setItem(UI_PREFS_STORAGE_KEY, JSON.stringify(prefs));
+          const snapshot = {
+            version: 2,
+            savedAt: Date.now(),
+            uploaded: state.uploaded || {},
+            uploadedMeta: state.uploadedMeta || {},
+            rows: state.rows || [],
+            selectedRows: Array.from(state.selectedRows || []),
+            selectedRowIndex: activeRowIndex(),
+            activeJobId: state.activeJobId || "",
+            spectrumPreview: state.spectrumPreview || null,
+            identity: {
+              primaryIdentity: $("primaryIdentity")?.value || "",
+              intakeOrder: $("intakeOrder")?.value || "",
+              reportNumber: $("reportNumber")?.value || "",
+              building: $("buildingOverride")?.value || "",
+              elevation: $("elevationOverride")?.value || "",
+            },
+            hints: {
+              intake: $("intakeHint")?.textContent || "",
+              spectrum: $("spectrumHint")?.textContent || "",
+            },
+          };
+          if (snapshot.rows.length || snapshot.uploaded.intakeFile || snapshot.uploaded.spectrumFile) {
+            sessionStorage.setItem(INTAKE_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+          } else {
+            sessionStorage.removeItem(INTAKE_SESSION_STORAGE_KEY);
+          }
+          localStorage.removeItem(INTAKE_SESSION_STORAGE_KEY);
+        } catch {
+          // Local storage can be disabled by browser policy; calculation must still work.
+        }
+      }
+
+      function restoreIntakeSession() {
+        let prefs = null;
+        try {
+          prefs = JSON.parse(localStorage.getItem(UI_PREFS_STORAGE_KEY) || "null");
+          localStorage.removeItem(INTAKE_SESSION_STORAGE_KEY);
+        } catch {
+          prefs = null;
+        }
+        if (prefs && typeof prefs === "object") {
+          if (prefs.outputRoot && $("outputRoot")) $("outputRoot").value = prefs.outputRoot;
+          if (prefs.preferredAnsys && $("preferredAnsys")) $("preferredAnsys").value = prefs.preferredAnsys;
+        }
+        let snapshot = null;
+        try {
+          snapshot = JSON.parse(sessionStorage.getItem(INTAKE_SESSION_STORAGE_KEY) || "null");
+        } catch {
+          snapshot = null;
+        }
+        const freshEnough = snapshot?.savedAt && (Date.now() - Number(snapshot.savedAt)) < 12 * 60 * 60 * 1000;
+        if (snapshot && freshEnough && Array.isArray(snapshot.rows) && snapshot.rows.length) {
+          state.uploaded = snapshot.uploaded || {};
+          state.uploadedMeta = snapshot.uploadedMeta || {};
+          state.rows = snapshot.rows;
+          const selected = Array.isArray(snapshot.selectedRows) ? snapshot.selectedRows : [];
+          state.selectedRows = new Set(selected.filter((value) => Number.isInteger(Number(value))).map((value) => Number(value)));
+          const restoredIndex = Number.isInteger(Number(snapshot.selectedRowIndex)) ? Number(snapshot.selectedRowIndex) : 0;
+          state.selectedRowIndex = restoredIndex >= 0 && restoredIndex < state.rows.length ? restoredIndex : 0;
+          state.selectedRow = state.rows[state.selectedRowIndex] || null;
+          if (!state.selectedRows.size && state.selectedRow) state.selectedRows = new Set([state.selectedRowIndex]);
+          state.activeJobId = "";
+          state.spectrumPreview = snapshot.spectrumPreview || null;
+          const identity = snapshot.identity || {};
+          if ($("primaryIdentity")) $("primaryIdentity").value = identity.primaryIdentity || primaryIdentity(state.selectedRow, state.selectedRowIndex);
+          if ($("intakeOrder")) $("intakeOrder").value = identity.intakeOrder || state.selectedRow?.intake_order_id || state.selectedRow?.provisional_intake_id || "";
+          if ($("reportNumber")) $("reportNumber").value = identity.reportNumber || state.selectedRow?.report_number || state.selectedRow?.calculation_batch || "";
+          if ($("buildingOverride")) $("buildingOverride").value = identity.building || state.selectedRow?.building || "";
+          if ($("elevationOverride")) $("elevationOverride").value = identity.elevation || (state.selectedRow?.elevation !== undefined && state.selectedRow?.elevation !== null ? compact(state.selectedRow.elevation) : "");
+          if ($("intakeHint") && snapshot.hints?.intake) $("intakeHint").textContent = snapshot.hints.intake;
+          if ($("spectrumHint") && snapshot.hints?.spectrum) $("spectrumHint").textContent = snapshot.hints.spectrum;
+          state.intakeSessionRestored = true;
+          return true;
+        }
+        state.uploaded = {};
+        state.uploadedMeta = {};
+        state.rows = [];
+        state.selectedRows = new Set();
+        state.selectedRowIndex = -1;
+        state.selectedRow = null;
+        state.spectrumPreview = null;
+        state.intakeSessionRestored = false;
+        if ($("intakeHint")) $("intakeHint").textContent = "选择后自动上传并解析。初版提资可没有报告号。";
+        if ($("spectrumHint")) $("spectrumHint").textContent = "不同项目选择对应谱文件；钢平台任务走静力法。";
+        setStatus("等待提资解析", "blue");
+        return false;
+      }
+
+      const defaultCommands = {
+        modeling: "等待生成 generated_model.mac。\\n\\n该文件应只负责建模：关键点、线、截面、材料、约束、耦合等。",
+        calculation: "等待生成 generated_solve.mac。\\n\\n该文件应只负责求解：静力法或反应谱法、工况、组合、求解控制等。",
+        result_extraction: "等待生成 generated_post.mac。\\n\\n该文件应只负责结果提取：LIS、OUP、BMP/PNG 云图、节点/集合输出等。",
+      };
+
+      function toast(message) {
+        const el = $("toast");
+        el.textContent = typeof message === "string" ? message : JSON.stringify(message, null, 2);
+        el.style.display = "block";
+        window.clearTimeout(toast.timer);
+        toast.timer = window.setTimeout(() => { el.style.display = "none"; }, 9000);
+      }
+
+      function setStatus(text, cls = "blue") {
+        $("appStatus").textContent = text;
+        $("appStatus").className = `pill ${cls}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;",
+        }[ch]));
+      }
+
+      async function loadAuthSession() {
+        try {
+          const response = await fetch("/auth/session");
+          const payload = await response.json();
+          const pill = $("authUserPill");
+          if (pill) {
+            pill.textContent = payload.authenticated && payload.user ? `账号：${payload.user}` : "未登录";
+            pill.className = payload.authenticated ? "pill green" : "pill";
+          }
+        } catch (error) {
+          const pill = $("authUserPill");
+          if (pill) pill.textContent = "登录状态未知";
+        }
+      }
+
+      async function logout() {
+        await fetch("/auth/logout", { method: "POST" });
+        window.location.href = "/login";
+      }
+
+      async function fileToBase64(file) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+      }
+
+      function fileSignature(file) {
+        if (!file) return "";
+        return [file.name, file.size, file.lastModified || 0].join("|");
+      }
+
+      async function uploadedPathExists(path) {
+        if (!path) return false;
+        try {
+          const payload = await requestJson("/files/exists", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paths: [path] }),
+          });
+          return Boolean(payload.files && payload.files[path]);
+        } catch {
+          return false;
+        }
+      }
+
+      function clearStaleIntakeSession(message) {
+        sessionStorage.removeItem(INTAKE_SESSION_STORAGE_KEY);
+        localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+        localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+        state.uploaded = {};
+        state.uploadedMeta = {};
+        state.rows = [];
+        state.selectedRows = new Set();
+        state.selectedRow = null;
+        state.selectedRowIndex = -1;
+        state.activeJobId = "";
+        state.activeRunId = "";
+        state.intakeSessionRestored = false;
+        state.spectrumPreview = null;
+        state.review = null;
+        state.model = null;
+        state.highlight = new Set();
+        state.progressRunKey = "";
+        state.progressValue = 0;
+        if ($("intakeFile")) $("intakeFile").value = "";
+        if ($("spectrumFile")) $("spectrumFile").value = "";
+        if ($("intakeHint")) $("intakeHint").textContent = "选择后自动上传并解析。初版提资可没有报告号。";
+        if ($("spectrumHint")) $("spectrumHint").textContent = "不同项目选择对应谱文件；钢平台任务走静力法。";
+        if ($("jobBadge")) {
+          $("jobBadge").textContent = "未选择任务";
+          $("jobBadge").className = "pill";
+        }
+        if ($("progressFill")) $("progressFill").style.width = "0%";
+        if ($("progressPercent")) $("progressPercent").textContent = "0%";
+        if ($("progressStage")) $("progressStage").textContent = "未运行";
+        if ($("progressMessage")) $("progressMessage").textContent = "等待选择提资并开始计算";
+        renderParsedRows();
+        renderTaskSummary();
+        renderAiChecks();
+        renderCommands();
+        drawModel();
+        setStatus(message || "已清除失效的提资恢复状态，请重新选择文件", "warn");
+      }
+
+      async function validateRestoredUploads() {
+        const uploaded = state.uploaded || {};
+        const requiredIds = ["intakeFile", "spectrumFile"];
+        const missingRequired = requiredIds.filter((inputId) => !uploaded[inputId]);
+        if (missingRequired.length) {
+          clearStaleIntakeSession("已清除失效的提资/反应谱恢复记录：缺少已上传文件，请重新选择提资和反应谱。");
+          return false;
+        }
+        const entries = Object.entries(state.uploaded || {}).filter(([, path]) => path);
+        const missing = [];
+        for (const [inputId, path] of entries) {
+          const ok = await uploadedPathExists(path);
+          if (!ok) {
+            missing.push({ inputId, path });
+          }
+        }
+        if (missing.length) {
+          const paths = missing.map((item) => item.path).join("；");
+          clearStaleIntakeSession(`已清除失效的提资/反应谱恢复记录：${paths}`);
+          return false;
+        }
+        return true;
+      }
+
+      async function uploadFile(inputId, kind) {
+        const input = $(inputId);
+        const file = input.files?.[0];
+        if (!file) {
+          const restoredPath = state.uploaded[inputId] || "";
+          if (!restoredPath) return "";
+          if (await uploadedPathExists(restoredPath)) return restoredPath;
+          delete state.uploaded[inputId];
+          delete state.uploadedMeta[inputId];
+          saveIntakeSession();
+          return "";
+        }
+        const signature = fileSignature(file);
+        if (state.uploaded[inputId] && state.uploadedMeta[inputId] === signature) {
+          return state.uploaded[inputId];
+        }
+        let content_base64 = "";
+        try {
+          content_base64 = await fileToBase64(file);
+        } catch (error) {
+          if (state.uploaded[inputId]) return state.uploaded[inputId];
+          throw new Error(`文件读取失败，请重新选择文件后再试：${error.message || error}`);
+        }
+        const payload = await requestJson("/files/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, kind, content_base64 }),
+        });
+        state.uploaded[inputId] = payload.path;
+        state.uploadedMeta[inputId] = signature;
+        saveIntakeSession();
+        return payload.path;
+      }
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let payload = null;
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch {
+            payload = { detail: text };
+          }
+        } else {
+          payload = {};
+        }
+        if (!response.ok) {
+          const detail = payload.detail || payload.message || `${response.status} ${response.statusText}`;
+          throw new Error(`${detail}（接口：${url}）`);
+        }
+        return payload;
+      }
+
+      async function loadOperatorLocalConfig() {
+        const payload = await requestJson("/operator/local-config", { cache: "no-store" });
+        if (!state.intakeSessionRestored && payload.output_root) $("outputRoot").value = payload.output_root;
+        if (!state.intakeSessionRestored && payload.ansys_executable) $("preferredAnsys").value = payload.ansys_executable;
+        renderTaskSummary();
+      }
+
+      function bestLabel(row, index) {
+        const id = primaryIdentity(row, index);
+        const method = row?.analysis_method === "static" ? "静力法" : "反应谱法";
+        const location = [row?.building, row?.elevation !== undefined ? `${row.elevation}m` : ""].filter(Boolean).join(" ");
+        return [id, method, location].filter(Boolean).join(" / ");
+      }
+
+      function activeRowIndex() {
+        if (Number.isInteger(state.selectedRowIndex) && state.selectedRowIndex >= 0 && state.selectedRowIndex < state.rows.length) {
+          return state.selectedRowIndex;
+        }
+        const objectIndex = state.rows.indexOf(state.selectedRow);
+        return objectIndex >= 0 ? objectIndex : (state.rows.length ? 0 : -1);
+      }
+
+      function shortRowId(row, index) {
+        return primaryIdentity(row, index);
+      }
+
+      function primaryIdentity(row, index) {
+        return row?.report_number || row?.calculation_batch || row?.intake_order_id || row?.provisional_intake_id || `第 ${index + 1} 行`;
+      }
+
+      function rowIdentityValues(row, index) {
+        return [
+          row?.report_number,
+          row?.calculation_batch,
+          row?.intake_order_id,
+          row?.provisional_intake_id,
+          index >= 0 ? primaryIdentity(row, index) : "",
+        ].map((value) => String(value || "").trim()).filter(Boolean);
+      }
+
+      function jobBelongsToCurrentRows(jobId) {
+        const target = String(jobId || "").trim();
+        if (!target || !state.rows.length) return false;
+        return state.rows.some((row, index) => rowIdentityValues(row, index).includes(target));
+      }
+
+      function restoredRunMatchesCurrentRows(payload) {
+        const jobId = payload?.active_job_id || payload?.job_id || collectJobId(payload?.result || payload);
+        return jobBelongsToCurrentRows(jobId);
+      }
+
+      function displaySquareSection(row) {
+        return row?.square_section_spec || "经验拟选，计算后优化";
+      }
+
+      function displayElevation(row) {
+        if (!row) return "";
+        const raw = row.elevation_raw;
+        const parsed = row.elevation;
+        if (raw !== undefined && raw !== null && String(raw).trim() && String(raw).trim() !== String(parsed ?? "")) {
+          return `${raw}（当前 ${compact(parsed)}m）`;
+        }
+        return parsed !== undefined && parsed !== null ? `${compact(parsed)}m` : "";
+      }
+
+      function traySourceText(row) {
+        return String(row?.description || row?.tray_load_description || "").replace(/\s+/g, " ").trim();
+      }
+
+      function trayLayerList(row) {
+        return Array.isArray(row?.tray_equivalent_densities) ? row.tray_equivalent_densities : [];
+      }
+
+      function traySideLabel(side) {
+        const text = String(side || "").toLowerCase();
+        if (text === "front") return "前侧";
+        if (text === "back") return "后侧";
+        return side || "-";
+      }
+
+      function trayCableTypeLabel(type) {
+        const text = String(type || "");
+        if (text === "medium_low_voltage") return "中低压";
+        if (text === "control_measurement") return "控制/测量";
+        if (text === "all") return "通用";
+        return text || "-";
+      }
+
+      function trayParseStatus(row) {
+        if (row?.tray_parse_warning) return ["warn", `解析警告：${row.tray_parse_warning}`];
+        if (trayLayerList(row).length) return ["ok", "已换算为计算载荷"];
+        if (traySourceText(row)) return ["warn", "有托盘载荷原文，尚未解析出逐层载荷"];
+        return ["warn", "提资中未识别到托盘载荷原文"];
+      }
+
+      function trayLoadBrief(row, limit = 3) {
+        const layers = trayLayerList(row);
+        if (!layers.length) {
+          return row?.tray_parse_warning ? `解析警告：${row.tray_parse_warning}` : (traySourceText(row) || "待解析");
+        }
+        const parts = layers.map((layer) => {
+          const side = traySideLabel(layer.side);
+          const index = layer.layer_index ? `${layer.layer_index}层` : "层";
+          const width = layer.tray_width_mm ? `${layer.tray_width_mm}mm` : "-";
+          return `${side}${index} ${width} ${compact(layer.load_kg_per_m)}kg/m`;
+        });
+        const unique = [...new Set(parts)];
+        return `${unique.slice(0, limit).join("；")}${unique.length > limit ? `；另 ${unique.length - limit} 项` : ""}`;
+      }
+
+      function trayDensityBrief(row, limit = 3) {
+        const layers = trayLayerList(row);
+        if (!layers.length) return row?.tray_parse_warning ? `解析警告：${row.tray_parse_warning}` : "待解析";
+        const unique = [...new Set(layers.map((layer) => `${layer.tray_width_mm || "-"}mm / ${compact(layer.load_kg_per_m)}kg/m / ρ ${compact(layer.tray_density_kg_m3)}kg/m³`))];
+        return `${unique.slice(0, limit).join("；")}${unique.length > limit ? `；另 ${unique.length - limit} 项` : ""}`;
+      }
+
+      function renderTrayLoadAudit(row = state.selectedRow || {}) {
+        const target = $("trayLoadAudit");
+        if (!target) return;
+        const source = traySourceText(row);
+        const layers = trayLayerList(row);
+        if (!source && !layers.length && !row?.tray_parse_warning) {
+          target.style.display = "none";
+          target.innerHTML = "";
+          return;
+        }
+        const [statusClass, statusText] = trayParseStatus(row);
+        const table = layers.length ? `
+          <table class="tray-layer-table">
+            <thead>
+              <tr>
+                <th>侧别/层</th>
+                <th>托盘宽度</th>
+                <th>电缆类型</th>
+                <th>线载荷</th>
+                <th>等效密度</th>
+                <th>截面来源</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${layers.map((layer) => `
+                <tr>
+                  <td>${esc(traySideLabel(layer.side))}${layer.layer_index ? ` ${esc(layer.layer_index)}层` : ""}</td>
+                  <td>${esc(layer.tray_width_mm || "-")} mm</td>
+                  <td>${esc(trayCableTypeLabel(layer.cable_type))}</td>
+                  <td>${esc(compact(layer.load_kg_per_m))} kg/m</td>
+                  <td>${esc(compact(layer.tray_density_kg_m3))} kg/m³</td>
+                  <td>${esc(layer.tray_section_file || "-")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        ` : `<div class="tray-empty">${esc(row?.tray_parse_warning || "尚未解析出逐层托盘载荷。请检查提资中托盘宽度、层数和电缆类型描述。")}</div>`;
+        target.style.display = "block";
+        target.innerHTML = `
+          <div class="tray-audit-head">
+            <div class="tray-audit-title">托盘载荷核查</div>
+            <span class="pill ${statusClass === "ok" ? "ok" : "warn"}">${esc(statusText)}</span>
+          </div>
+          <div class="tray-audit-body">
+            <div class="tray-source">
+              <div class="label">提资原文 source_ref: intake.description</div>
+              <div class="value">${esc(source || "未识别到托盘载荷原文")}</div>
+            </div>
+            <div>${table}</div>
+          </div>
+        `;
+      }
+
+      function uniqueValues(values) {
+        return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))];
+      }
+
+      function projectCodeFromText(value) {
+        const match = String(value ?? "").match(/(?:^|[^\d])(\d{4})(?=\D|$)/);
+        return match ? match[1] : "";
+      }
+
+      function projectCodeFromRow(row) {
+        return String(row?.project_code || row?.projectCode || row?.project?.project_code || "").trim()
+          || projectCodeFromText([
+            row?.report_number,
+            row?.calculation_batch,
+            row?.intake_order_id,
+            row?.provisional_intake_id,
+          ].filter(Boolean).join(" "));
+      }
+
+      function activeProjectCode() {
+        const active = activeRowIndex();
+        const row = active >= 0 ? state.rows[active] : state.selectedRow;
+        const fromActive = projectCodeFromRow(row || {});
+        if (fromActive) return fromActive;
+        const firstKnown = state.rows.map(projectCodeFromRow).find(Boolean);
+        return firstKnown || projectCodeFromText(state.spectrumPreview?.workbook || "");
+      }
+
+      function spectrumSheetProjectCode(sheet) {
+        return String(sheet?.project_code_guess || sheet?.project_code || "").trim()
+          || projectCodeFromText(sheet?.sheet || "");
+      }
+
+      function spectrumBuildingName(sheet) {
+        const raw = String(sheet?.building_guess || sheet?.sheet || "").trim();
+        const project = spectrumSheetProjectCode(sheet);
+        return project && raw.endsWith(`_${project}`) ? raw.slice(0, -(project.length + 1)) : raw;
+      }
+
+      function spectrumSheetsForActiveProject() {
+        const sheets = state.spectrumPreview?.sheets || [];
+        const project = activeProjectCode();
+        if (!project || !sheets.length) return sheets;
+        const matching = sheets.filter((sheet) => spectrumSheetProjectCode(sheet) === project);
+        if (matching.length) return matching;
+        const hasProjectTaggedSheets = sheets.some((sheet) => spectrumSheetProjectCode(sheet));
+        const untagged = sheets.filter((sheet) => !spectrumSheetProjectCode(sheet));
+        return hasProjectTaggedSheets && untagged.length ? untagged : sheets;
+      }
+
+      function rowsForActiveProject() {
+        const project = activeProjectCode();
+        return project ? state.rows.filter((row) => projectCodeFromRow(row) === project) : state.rows;
+      }
+
+      function spectrumElevationsForBuilding(building) {
+        const target = String(building || "").trim().toLowerCase();
+        const sheets = spectrumSheetsForActiveProject();
+        const matched = sheets.filter((sheet) => {
+          const guess = spectrumBuildingName(sheet).toLowerCase();
+          return target && (guess === target || guess.startsWith(target) || target.startsWith(guess));
+        });
+        const source = matched.length ? matched : sheets;
+        return uniqueValues(source.flatMap((sheet) => sheet.elevations || []));
+      }
+
+      function allSpectrumBuildings() {
+        const rows = rowsForActiveProject();
+        return uniqueValues([
+          ...spectrumSheetsForActiveProject().map(spectrumBuildingName),
+          ...rows.map((row) => row.building),
+        ]);
+      }
+
+      function allSpectrumElevations() {
+        const rows = rowsForActiveProject();
+        return uniqueValues([
+          ...spectrumSheetsForActiveProject().flatMap((sheet) => sheet.elevations || []),
+          ...rows.flatMap((row) => row.elevation_candidates || []),
+          ...rows.map((row) => row.elevation),
+        ]).sort((left, right) => Number(left) - Number(right));
+      }
+
+      function normaliseCandidate(value) {
+        return String(value ?? "").trim().toLowerCase();
+      }
+
+      function numericCandidate(value) {
+        const match = String(value ?? "").match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+        return match ? Number(match[0]) : NaN;
+      }
+
+      function selectFirstRowByCandidate(kind, value) {
+        if (!state.rows.length) return false;
+        const targetText = normaliseCandidate(value);
+        const targetNumber = numericCandidate(value);
+        const project = activeProjectCode();
+        const index = state.rows.findIndex((row) => {
+          if (project && projectCodeFromRow(row) !== project) return false;
+          if (kind === "building") {
+            return [row.building, row.area].some((candidate) => normaliseCandidate(candidate) === targetText);
+          }
+          const rowNumber = Number(row.elevation);
+          const raw = normaliseCandidate(row.elevation_raw);
+          return (
+            (Number.isFinite(targetNumber) && Number.isFinite(rowNumber) && Math.abs(rowNumber - targetNumber) < 1e-6)
+            || (!!targetText && raw.includes(targetText))
+          );
+        });
+        if (index < 0) return false;
+        selectParsedRow(index, { syncSelection: true, forceIdentity: true });
+        return true;
+      }
+
+      function elevationOptionLabel(value) {
+        const text = String(value ?? "").trim();
+        if (!text) return "";
+        return /m$/i.test(text) ? text : `${text}m`;
+      }
+
+      function setSelectOptions(selectId, values, currentValue, options = {}) {
+        const select = $(selectId);
+        const current = String(currentValue ?? "").trim();
+        const unique = uniqueValues([current, ...values]);
+        const placeholder = options.placeholder || "请选择";
+        const suffix = options.elevation ? "m" : "";
+        select.innerHTML = `<option value="">${esc(placeholder)}</option>` + unique.map((value) => {
+          const label = options.elevation ? elevationOptionLabel(value) : String(value);
+          return `<option value="${esc(value)}">${esc(label)}</option>`;
+        }).join("");
+        select.value = current && unique.includes(current) ? current : "";
+        select.title = state.spectrumPreview
+          ? `反应谱候选 ${Math.max(0, unique.length - (current ? 1 : 0))} 项`
+          : `提资候选 ${unique.length} 项`;
+      }
+
+      function renderSpectrumCandidateLists(row = state.selectedRow || {}) {
+        const currentBuilding = String($("buildingOverride").value || row?.building || "").trim();
+        const currentElevation = String($("elevationOverride").value || row?.elevation || "").trim();
+        const buildingValues = allSpectrumBuildings();
+        const elevationValues = currentBuilding ? spectrumElevationsForBuilding(currentBuilding) : allSpectrumElevations();
+        setSelectOptions("buildingOverride", buildingValues, currentBuilding, { placeholder: "选择厂房/谱表" });
+        setSelectOptions("elevationOverride", elevationValues, currentElevation, { placeholder: "选择标高", elevation: true });
+      }
+
+      function renderSelectedRowCount() {
+        const count = state.selectedRows.size;
+        if (!count) {
+          $("selectedRowCount").textContent = "0 个待计算";
+          return;
+        }
+        if (count === 1) {
+          const index = [...state.selectedRows][0];
+          $("selectedRowCount").textContent = `1 个待计算：${shortRowId(state.rows[index], index)}`;
+          return;
+        }
+        const active = activeRowIndex();
+        const current = active >= 0 ? `；当前查看 ${shortRowId(state.rows[active], active)}` : "";
+        $("selectedRowCount").textContent = `${count} 个待计算${current}`;
+      }
+
+      function renderParsedRows() {
+        const rows = state.rows;
+        $("parseStatus").textContent = rows.length ? `${rows.length} 条` : "未解析";
+        $("parseStatus").className = `pill ${rows.length ? "ok" : ""}`;
+        $("rowSelect").innerHTML = rows.length
+          ? rows.map((row, index) => `<option value="${index}">${esc(bestLabel(row, index))}</option>`).join("")
+          : `<option value="">等待提资解析</option>`;
+        if (rows.length && (state.selectedRowIndex < 0 || state.selectedRowIndex >= rows.length)) {
+          state.selectedRowIndex = 0;
+          state.selectedRow = rows[0];
+          state.selectedRows.add(0);
+          autoFillIdentity(rows[0]);
+        }
+        const currentIndex = activeRowIndex();
+        if (currentIndex >= 0) {
+          state.selectedRowIndex = currentIndex;
+          state.selectedRow = rows[currentIndex];
+          $("rowSelect").value = String(currentIndex);
+        }
+        renderSelectedRowCount();
+        if (!rows.length) {
+          $("parsedRows").innerHTML = `<div class="muted">选择提资文件后自动显示解析结果。</div>`;
+          return;
+        }
+        const columns = [
+          ["__identity", "综合编号"],
+          ["analysis_method", "方法"],
+          ["building", "厂房"],
+          ["__elevation", "标高"],
+          ["__square", "方钢截面"],
+          ["__tray", "托盘载荷"],
+        ];
+        $("parsedRows").innerHTML = `
+          <div class="table-wrap" style="max-height: 520px; border-radius:7px">
+            <table>
+              <thead><tr><th>计算</th><th>详情</th>${columns.map(([, label]) => `<th>${esc(label)}</th>`).join("")}</tr></thead>
+              <tbody>${rows.map((row, index) => `
+                <tr class="selectable ${index === currentIndex ? "selected" : ""}" data-row="${index}">
+                  <td><input type="checkbox" data-row-check="${index}" ${state.selectedRows.has(index) ? "checked" : ""} /></td>
+                  <td><button data-row-detail="${index}" style="min-height:26px">查看</button></td>
+                  ${columns.map(([key]) => `<td>${esc(key === "__identity" ? primaryIdentity(row, index) : key === "__elevation" ? displayElevation(row) : key === "__square" ? displaySquareSection(row) : key === "__tray" ? trayLoadBrief(row, 2) : key === "analysis_method" ? (row[key] === "static" ? "静力法" : "反应谱法") : (row[key] ?? ""))}</td>`).join("")}
+                </tr>`).join("")}</tbody>
+            </table>
+          </div>
+        `;
+        document.querySelectorAll("[data-row]").forEach((tr) => {
+          tr.addEventListener("click", () => selectParsedRow(Number(tr.dataset.row), { syncSelection: true }));
+        });
+        document.querySelectorAll("[data-row-detail]").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectParsedRow(Number(button.dataset.rowDetail), { syncSelection: true });
+          });
+        });
+        document.querySelectorAll("[data-row-check]").forEach((checkbox) => {
+          checkbox.addEventListener("click", (event) => event.stopPropagation());
+          checkbox.addEventListener("change", () => {
+            const index = Number(checkbox.dataset.rowCheck);
+            if (checkbox.checked) {
+              state.selectedRows.add(index);
+              setActiveParsedRow(index, { forceIdentity: true });
+            } else {
+              state.selectedRows.delete(index);
+              if (activeRowIndex() === index && state.selectedRows.size) {
+                setActiveParsedRow([...state.selectedRows][0], { forceIdentity: true });
+              } else {
+                renderParsedRows();
+              }
+            }
+            renderAiChecks();
+            saveIntakeSession();
+          });
+        });
+      }
+
+      function autoFillIdentity(row, options = {}) {
+        if (options.force || !$("primaryIdentity").value) $("primaryIdentity").value = primaryIdentity(row, activeRowIndex());
+        $("intakeOrder").value = row?.intake_order_id || row?.provisional_intake_id || "";
+        $("reportNumber").value = row?.report_number || row?.calculation_batch || "";
+        if (options.force || !$("buildingOverride").value) $("buildingOverride").value = row?.building || "";
+        if (options.force || !$("elevationOverride").value) $("elevationOverride").value = row?.elevation !== undefined && row?.elevation !== null ? compact(row.elevation) : "";
+        renderLocationOptions(row);
+        renderTaskSummary();
+      }
+
+      function renderLocationOptions(row) {
+        renderSpectrumCandidateLists(row);
+      }
+
+      function applyCurrentRowOverrides() {
+        const index = activeRowIndex();
+        if (index < 0 || !state.rows[index]) return;
+        const row = state.rows[index];
+        const identity = $("primaryIdentity").value.trim();
+        const wasFormal = Boolean(row.report_number || row.calculation_batch || row.intake_identity_status === "formal_report_number_provided");
+        const building = $("buildingOverride").value.trim();
+        const elevationText = $("elevationOverride").value.trim();
+        if (identity) {
+          if (wasFormal) {
+            row.report_number = identity;
+            row.calculation_batch = identity;
+          } else {
+            row.intake_order_id = identity;
+          }
+        }
+        $("intakeOrder").value = row.intake_order_id || row.provisional_intake_id || "";
+        $("reportNumber").value = row.report_number || row.calculation_batch || "";
+        if (building) {
+          row.building = building;
+          row.area = building;
+        }
+        if (elevationText) {
+          const parsed = Number(String(elevationText).match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/)?.[0]);
+          if (Number.isFinite(parsed)) {
+            row.elevation = parsed;
+            row.elevation_raw = elevationText;
+          }
+        }
+        state.selectedRow = row;
+        renderLocationOptions(row);
+        renderTaskSummary();
+      }
+
+      function commitCurrentRowOverrides(options = {}) {
+        applyCurrentRowOverrides();
+        if (options.renderTable) {
+          renderParsedRows();
+        }
+        renderAiChecks();
+        saveIntakeSession();
+      }
+
+      function setActiveParsedRow(index, options = {}) {
+        state.selectedRow = state.rows[index] || null;
+        state.selectedRowIndex = state.selectedRow ? index : -1;
+        if (state.selectedRow) autoFillIdentity(state.selectedRow, { force: options.forceIdentity !== false });
+      }
+
+      function selectParsedRow(index, options = {}) {
+        setActiveParsedRow(index, { forceIdentity: options.forceIdentity !== false });
+        if (options.syncSelection) {
+          state.selectedRows = Number.isInteger(index) && state.rows[index] ? new Set([index]) : new Set();
+        }
+        $("rowSelect").value = String(index);
+        renderParsedRows();
+        renderAiChecks();
+        saveIntakeSession();
+      }
+
+      async function previewIntakeFromFile() {
+        const path = await uploadFile("intakeFile", "intake");
+        if (!path) return;
+        $("intakeHint").textContent = `已上传：${path}`;
+        setStatus("正在解析提资", "warn");
+        const payload = await requestJson("/intake/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ intake_path: path }),
+        });
+        state.rows = payload.rows || [];
+        state.selectedRows = new Set(state.rows.length ? [0] : []);
+        state.selectedRowIndex = state.rows.length ? 0 : -1;
+        state.selectedRow = state.rows[0] || null;
+        if (state.selectedRow) autoFillIdentity(state.selectedRow, { force: true });
+        renderParsedRows();
+        renderTaskSummary();
+        renderAiChecks();
+        setStatus(state.rows.length ? "提资已解析" : "未识别有效行", state.rows.length ? "ok" : "warn");
+        saveIntakeSession();
+      }
+
+      async function previewSpectrumFromFile() {
+        const path = await uploadFile("spectrumFile", "spectrum");
+        const file = $("spectrumFile").files?.[0];
+        if (!path) {
+          $("spectrumHint").textContent = file ? `已选择：${file.name}` : "不同项目选择对应谱文件；钢平台任务走静力法。";
+          return;
+        }
+        const payload = await requestJson("/spectrum/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ spectrum_file: path }),
+        });
+        state.spectrumPreview = payload;
+        const buildings = allSpectrumBuildings();
+        const firstSheet = payload.sheets?.[0];
+        const elevations = allSpectrumElevations();
+        $("spectrumHint").textContent = payload.status === "pass" || payload.status === "preview_only"
+          ? `${payload.status === "pass" ? "已解析" : "已预览"}：${buildings.slice(0, 5).join("、") || firstSheet?.sheet || file?.name}；标高 ${elevations.slice(0, 8).join("、")}${elevations.length > 8 ? "..." : ""}`
+          : `已选择：${file?.name || path}，但未识别分段反应谱表。`;
+        renderLocationOptions(state.selectedRow || {});
+        renderTaskSummary();
+        saveIntakeSession();
+      }
+
+      function renderTaskSummary() {
+        if (!$("taskSummary")) return;
+        const row = state.selectedRow || {};
+        const taskId = $("primaryIdentity").value || primaryIdentity(row, activeRowIndex()) || "待定批次";
+        const methodHint = row.analysis_method === "static" ? "静力法" : "反应谱法";
+        const location = [row.building, row.area].filter(Boolean).join(" / ");
+        const materialPolicy = row.material_policy?.policy || "默认结构材料 Q355；钢平台仅方钢立柱/方钢构件按 Q235 保守评定。";
+        const cards = [
+          ["编号", taskId],
+          ["厂房", location || "待解析"],
+          ["标高", displayElevation(row) || "待解析"],
+          ["方法", methodHint],
+          ["支架", row.support_type || "待解析"],
+          ["方钢", displaySquareSection(row)],
+          ["托盘载荷", trayLoadBrief(row), "wide"],
+          ["等效密度", trayDensityBrief(row), "wide"],
+          ["材料", materialPolicy, "wide"],
+          ["输出", $("outputRoot").value || "-", "wide"],
+        ];
+        const visibleCards = cards.filter((_, index) => ![4, 8].includes(index));
+        $("taskSummary").innerHTML = `<div class="task-line">${visibleCards.map(([label, value, cls]) => `<div class="task-chip ${cls || ""}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("")}</div>`;
+        renderTrayLoadAudit(row);
+      }
+
+      function renderAiChecks() {
+        if (!$("aiChecks")) return;
+        const row = state.selectedRow || {};
+        const selectedCount = state.selectedRows.size;
+        const checks = [];
+        checks.push({
+          level: row.analysis_method ? "ok" : "warn",
+          title: "方法识别",
+          text: row.analysis_method === "static"
+            ? "识别为钢平台/静力法任务；仍需保留谱文件用于等效静力系数审查。"
+            : "识别为非钢平台/反应谱法任务；必须确认谱文件项目、厂房、区域、标高和方向。"
+        });
+        checks.push({
+          level: row.square_section_spec ? "ok" : "warn",
+          title: "方钢截面",
+          text: row.square_section_spec
+            ? `提资给定方钢截面：${row.square_section_spec}。`
+            : "列 I 为空，计算流程应先遍历候选 SECT 并选择 ratio < 1 且最接近 1 的截面。"
+        });
+        checks.push({
+          level: selectedCount ? "ok" : "warn",
+          title: "计算范围",
+          text: selectedCount ? `当前选择 ${selectedCount} 条提资进行计算。` : "尚未勾选计算行；不会默认把全部提资送去计算。"
+        });
+        checks.push({
+          level: "blue",
+          title: "AI 辅助边界",
+          text: "AI 只做缺项提示、规则解释、冲突归因和错误备忘整理；公式、命令流和结论仍由标准命令流、ANSYS、规范公式和 Excel 权威评定决定。"
+        });
+        $("aiChecks").innerHTML = checks.map((item) => `
+          <div class="ai-check">
+            <span class="pill ${item.level}">${esc(item.title)}</span>
+            <div style="margin-top:6px">${esc(item.text)}</div>
+          </div>
+        `).join("");
+      }
+
+      async function discoverAnsys(options = {}) {
+        if (!options.silent) setStatus("正在查找 ANSYS", "warn");
+        const payload = await requestJson("/ansys/auto-discover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            preferred_executable: $("preferredAnsys").value || null,
+            output_dir: $("outputRoot").value,
+            real_mode: false,
+          }),
+        });
+        if (payload.executable) $("preferredAnsys").value = payload.executable;
+        setStatus(payload.executable ? "ANSYS 已自动就绪" : "ANSYS 待选择", payload.executable ? "ok" : "warn");
+        if (!options.silent) toast(payload);
+        return payload;
+      }
+
+      function collectJobId(payload) {
+        if (!payload || typeof payload !== "object") return "";
+        if (payload.job_id) return payload.job_id;
+        if (Array.isArray(payload.jobs) && payload.jobs[0]?.job_id) return payload.jobs[0].job_id;
+        if (Array.isArray(payload.results) && payload.results[0]?.job_id) return payload.results[0].job_id;
+        for (const value of Object.values(payload)) {
+          const found = collectJobId(value);
+          if (found) return found;
+        }
+        return "";
+      }
+
+      function currentSelectedJobId() {
+        if (state.selectedRows && state.selectedRows.size === 1) {
+          const index = [...state.selectedRows][0];
+          const row = state.rows[index] || {};
+          return row.report_number || row.intake_order_id || row.calculation_batch || row.provisional_intake_id || "";
+        }
+        return ($("reportNumber")?.value || $("intakeOrder")?.value || $("primaryIdentity")?.value || state.activeJobId || "").trim();
+      }
+
+      function jobMatchesIdentity(job, identity) {
+        if (!job || !identity) return false;
+        return [job.job_id, job.report_number, job.intake_order_id, job.calculation_batch, job.provisional_intake_id]
+          .filter(Boolean)
+          .some((value) => String(value) === String(identity));
+      }
+
+      function summarizeRunResult(result) {
+        const jobs = Array.isArray(result?.jobs) ? result.jobs : (Array.isArray(result?.results) ? result.results : []);
+        const failedJobs = jobs.filter((job) => job && job.status === "fail");
+        const passedJobs = jobs.filter((job) => job && job.status !== "fail");
+        const currentId = currentSelectedJobId();
+        const currentJob = jobs.find((job) => jobMatchesIdentity(job, currentId));
+        if (currentJob) {
+          if (currentJob.status === "fail") {
+            return {
+              text: currentJob.failure_reason || `${currentJob.job_id || currentId} 计算失败；请打开结果核查页查看细节。`,
+              bad: true,
+            };
+          }
+          const otherFailed = failedJobs.filter((job) => !jobMatchesIdentity(job, currentId));
+          return {
+            text: otherFailed.length
+              ? `当前 ${currentJob.job_id || currentId} 已完成；同批另有 ${otherFailed.length} 个任务失败，请切换对应行查看。`
+              : "计算完成，可打开结果核查页查看第六章评定表、载荷表、附录图片和输出文件。",
+            bad: false,
+          };
+        }
+        if (failedJobs.length) {
+          const examples = failedJobs.slice(0, 3).map((job) => `${job.job_id || "未知任务"}：${job.failure_reason || "失败"}`).join("；");
+          return {
+            text: `计算流程结束；${passedJobs.length} 个通过，${failedJobs.length} 个失败。${examples}`,
+            bad: true,
+          };
+        }
+        return {
+          text: "计算完成，可打开结果核查页查看第六章评定表、载荷表、附录图片和输出文件。",
+          bad: false,
+        };
+      }
+
+      async function runOneClick() {
+        commitCurrentRowOverrides({ renderTable: false });
+        const intakePath = await uploadFile("intakeFile", "intake");
+        const spectrumPath = await uploadFile("spectrumFile", "spectrum");
+        saveIntakeSession();
+        if (!intakePath) {
+          toast("请先选择提资文件。");
+          return;
+        }
+        if (!state.selectedRows.size) {
+          toast("请先勾选一个或多个提资行。");
+          return;
+        }
+        const selected_row_numbers = [...state.selectedRows]
+          .map((index) => state.rows[index]?.intake_row_number)
+          .filter((value) => value !== undefined && value !== null);
+        const row_overrides = [...state.selectedRows].map((index) => {
+          const row = state.rows[index] || {};
+          return {
+            intake_row_number: row.intake_row_number,
+            intake_order_id: row.intake_order_id,
+            report_number: row.report_number,
+            calculation_batch: row.calculation_batch,
+            provisional_intake_id: row.provisional_intake_id,
+            building: row.building,
+            area: row.area || row.building,
+            elevation: row.elevation,
+            elevation_raw: row.elevation_raw,
+          };
+        });
+        setStatus("后台计算已提交", "warn");
+        $("runOneClick").disabled = true;
+        $("runOneClick").textContent = "计算运行中";
+        const payload = await requestJson("/runs/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            intake_path: intakePath,
+            spectrum_file: spectrumPath || null,
+            output_root: $("outputRoot").value,
+            preferred_ansys_executable: $("preferredAnsys").value || null,
+            execute_real: $("executeReal").checked,
+            confirm_user: "dashboard",
+            intake_order_id: $("reportNumber").value || $("intakeOrder").value || $("primaryIdentity").value || null,
+            selected_row_numbers,
+            row_overrides,
+          }),
+        });
+        state.activeRunId = payload.run_id;
+        rememberRunId(payload.run_id, { active: true });
+        renderRunStatus(payload);
+        pollRunStatus();
+      }
+
+      function formatBytes(bytes) {
+        const value = Number(bytes || 0);
+        if (!Number.isFinite(value) || value <= 0) return "0 MB";
+        if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+        return `${(value / 1024 / 1024).toFixed(2)} MB`;
+      }
+
+      function formatDuration(seconds) {
+        const value = Number(seconds || 0);
+        if (!Number.isFinite(value) || value <= 0) return "0.0 分钟";
+        return `${(value / 60).toFixed(1)} 分钟`;
+      }
+
+      function renderOutputSnapshot(snapshot) {
+        const target = $("progressOutput");
+        if (!target) return;
+        if (!snapshot) {
+          target.textContent = "等待 ANSYS 输出文件增长。";
+          return;
+        }
+        const working = snapshot.working_job_dir || {};
+        const published = snapshot.published_job_dir || {};
+        const live = snapshot.ansys_live_status || {};
+        const latest = Array.isArray(working.latest_files) ? working.latest_files.slice(0, 4) : [];
+        const latestText = latest.length
+          ? latest.map((item) => `${item.name} ${formatBytes(item.size_bytes)}`).join("；")
+          : "暂无 OUT/ERR/LIS/RST/BMP 文件更新";
+        const liveLine = live.ansys_pid
+          ? `当前 ANSYS 子进程：PID ${live.ansys_pid}，核数 ${live.nproc || "?"}，子进程输出 ${formatBytes(snapshot.current_ansys_output_bytes || live.total_output_bytes)}，${Number(live.no_output_seconds || 0) >= 300 ? `${(Number(live.no_output_seconds) / 60).toFixed(1)} 分钟无新增输出` : "正在监控输出"}`
+          : "";
+        target.textContent = [
+          `任务累计：${formatDuration(snapshot.run_elapsed_seconds)}；工作目录累计输出 ${formatBytes(snapshot.working_output_bytes || working.size_bytes)} / ${working.file_count || 0} 个文件`,
+          liveLine,
+          `工作目录：${working.exists ? `${formatBytes(working.size_bytes)} / ${working.file_count || 0} 个文件` : "尚未生成"}`,
+          `结果目录：${published.exists ? `${formatBytes(published.size_bytes)} / ${published.file_count || 0} 个文件` : "等待发布"}`,
+          `最新文件：${latestText}`,
+          snapshot.operator_note || snapshot.publish_policy || "",
+        ].filter(Boolean).join("\n");
+      }
+
+      function runStageProgressCap(stage) {
+        const caps = {
+          creating_jobs: 8,
+          ansys_config: 12,
+          job_started: 15,
+          startup_cleanup: 18,
+          confirm_spectrum: 24,
+          write_spectrum: 30,
+          render_commands: 38,
+          select_square_section: 55,
+          running_ansys: 82,
+          ansys_startup_retry: 82,
+          ansys_resource_retry: 82,
+          rerunning_ansys_after_modal_retry: 84,
+          rerunning_ansys_after_section_reselection: 84,
+          rerunning_ansys_after_section_upgrade: 84,
+          exporting_connection_nodes: 86,
+          exporting_figures: 88,
+          ansys_post_exports_done: 90,
+          parsing_results: 92,
+          reuse_exact_result: 92,
+          upgrade_square_section: 94,
+          dry_run: 90,
+          publish_outputs: 96,
+          job_finished: 99,
+        };
+        return caps[stage] || 95;
+      }
+
+      function renderRunStatus(payload) {
+        if (payload && payload.stale) {
+          clearActiveRunId(payload.run_id || state.activeRunId || "");
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          state.activeRunId = "";
+          return;
+        }
+        const runKey = payload.run_id || state.activeRunId || payload.active_job_id || "current";
+        if (payload.run_id) {
+          rememberRunId(payload.run_id, { active: !["pass", "dry_run", "fail", "cancelled"].includes(payload.status) });
+        }
+        if (state.progressRunKey !== runKey) {
+          state.progressRunKey = runKey;
+          state.progressValue = 0;
+        }
+        const terminal = ["pass", "dry_run", "fail", "cancelled"].includes(payload.status) || ["completed", "failed", "cancelled"].includes(payload.stage);
+        const activeCap = runStageProgressCap(payload.stage);
+        let incomingProgress = Math.max(0, Math.min(100, Number(payload.progress || 0)));
+        if (!terminal) incomingProgress = Math.min(incomingProgress, activeCap);
+        let progress = Math.max(Number(state.progressValue || 0), incomingProgress);
+        if (!terminal) progress = Math.min(progress, activeCap);
+        state.progressValue = progress;
+        $("progressFill").style.width = `${progress}%`;
+        $("progressPercent").textContent = `${progress}%`;
+        $("progressStage").textContent = payload.stage || payload.status || "运行中";
+        $("progressMessage").textContent = payload.message || "后台计算运行中。";
+        renderOutputSnapshot(payload.output_snapshot);
+        const done = ["pass", "dry_run", "fail", "cancelled"].includes(payload.status);
+        $("jobBadge").textContent = payload.active_job_id || payload.run_id || payload.status || "运行中";
+        $("jobBadge").className = `pill ${payload.status === "fail" ? "bad" : done ? "ok" : "warn"}`;
+        if (payload.active_job_id) {
+          state.activeJobId = payload.active_job_id;
+          loadSquareSectionReason().catch(() => {});
+        }
+        if (payload.result) {
+          state.activeJobId = payload.active_job_id || currentSelectedJobId() || collectJobId(payload.result) || state.activeJobId;
+          const runSummary = summarizeRunResult(payload.result);
+          if ($("runOutcome")) {
+            $("runOutcome").textContent = runSummary.text;
+            $("runOutcome").className = `status-text ${runSummary.bad ? "bad" : ""}`;
+          }
+        }
+        if (done) {
+          clearActiveRunId(payload.run_id || state.activeRunId);
+          $("runOneClick").disabled = false;
+          $("runOneClick").textContent = "计算选中项";
+          setStatus(payload.status === "fail" ? "计算失败" : payload.status === "cancelled" ? "计算已停止" : "计算完成", payload.status === "fail" ? "bad" : payload.status === "cancelled" ? "warn" : "ok");
+          if (state.runPollTimer) {
+            clearTimeout(state.runPollTimer);
+            state.runPollTimer = null;
+          }
+          if (state.activeJobId) {
+            loadEngineeringReview().catch(() => {});
+            loadSquareSectionReason().catch(() => {});
+          }
+        }
+      }
+
+      async function restoreRunStatus() {
+        const storedActive = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY) || "";
+        if (!storedActive) {
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          return;
+        }
+        let payload = null;
+        if (storedActive) {
+          try {
+            payload = await requestJson(`/runs/${encodeURIComponent(storedActive)}`, { cache: "no-store" });
+          } catch (error) {
+            clearActiveRunId(storedActive);
+          }
+        }
+        if (!payload) {
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          return;
+        }
+        if (payload.stale || payload.status === "not_started") {
+          clearActiveRunId(storedActive);
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          state.activeRunId = "";
+          return;
+        }
+        if (!restoredRunMatchesCurrentRows(payload)) {
+          clearActiveRunId(storedActive);
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          state.activeRunId = "";
+          return;
+        }
+        state.activeRunId = payload.run_id || "";
+        renderRunStatus(payload);
+        if (!["pass", "dry_run", "fail", "cancelled"].includes(payload.status)) {
+          pollRunStatus().catch((error) => toast(error.message));
+        }
+      }
+
+      async function pollRunStatus() {
+        if (!state.activeRunId) return;
+        const payload = await requestJson(`/runs/${encodeURIComponent(state.activeRunId)}`, { cache: "no-store" });
+        if (payload && (payload.stale || payload.status === "not_started")) {
+          clearActiveRunId(state.activeRunId);
+          localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
+          state.activeRunId = "";
+          return;
+        }
+        renderRunStatus(payload);
+        if (!["pass", "dry_run", "fail", "cancelled"].includes(payload.status)) {
+          state.runPollTimer = window.setTimeout(() => pollRunStatus().catch((error) => toast(error.message)), 2500);
+        }
+      }
+
+      async function pollProductionFullRunStatus() {
+        if (!$("productionFullRun")) return;
+        try {
+          const payload = await requestJson("/production/full-run-status", { cache: "no-store" });
+          const status = payload.status || {};
+          const summary = payload.result_summary || {};
+          const current = payload.current_counts || {};
+          const label = status.status === "not_started"
+            ? "全量生产验证：未启动。"
+            : `全量生产验证：${status.status || "-"} / ${status.stage || "-"} / ${status.job_id || "-"} / ${status.message || ""}`;
+          const total = summary.job_count || status.parsed_row_count || current.job_dir_count;
+          const completed = summary.job_count
+            ? Number(summary.passed_count || 0) + Number(summary.failed_count || 0)
+            : current.result_count;
+          const failed = summary.failed_count ?? current.failed_state_count;
+          const counts = total
+            ? `；已出结果 ${completed || 0}/${total}，失败 ${failed || 0}`
+            : "";
+          $("productionFullRun").textContent = label + counts;
+        } catch (error) {
+          $("productionFullRun").textContent = `全量生产验证：状态读取失败，${error.message}`;
+        } finally {
+          window.clearTimeout(pollProductionFullRunStatus.timer);
+          pollProductionFullRunStatus.timer = window.setTimeout(pollProductionFullRunStatus, 5000);
+        }
+      }
+
+      function renderSquareSectionReason(payload) {
+        const panel = $("sectionReasonPanel");
+        if (!panel) return;
+        if (!payload || !payload.exists) {
+          panel.classList.add("hidden");
+          panel.innerHTML = "";
+          return;
+        }
+        const selection = payload.selection || {};
+        const summary = payload.trial_summary || {};
+        const selected = selection.selected || summary.selected || {};
+        const orderAudit = selection.candidate_order_audit || {};
+        const similar = selection.similar_cache_order_hint || summary.similar_cache_order_hint || {};
+        const earlyStop = selection.early_stop || summary.early_stop || {};
+        const candidates = Array.isArray(summary.candidate_results)
+          ? summary.candidate_results
+          : Array.isArray(selection.candidate_results) ? selection.candidate_results : [];
+        const selectedSectionName = String(selected.section_name || "");
+        const statusText = (value) => {
+          if (value === "pass") return "通过";
+          if (value === "fail") return "不满足";
+          return value || "-";
+        };
+        const first = candidates.slice(0, 8).map((item) => {
+          const name = String(item.section_name || "-");
+          const isSelected = selectedSectionName && name === selectedSectionName;
+          const numericStatus = item.status || "-";
+          const gateStatus = item.effective_validation_status || item.trial_validation_status || "-";
+          const acceptance = isSelected
+            ? "最终采纳"
+            : numericStatus === "pass"
+              ? "候选数值通过，未采纳"
+              : "候选不满足";
+          const dominant = item.dominant_check_id ? `；控制项 ${item.dominant_check_id}` : "";
+          return `${escapeHtml(name)}: 比值 ${escapeHtml(item.controlling_ratio ?? "-")}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(dominant)}`;
+        }).join("<br>");
+        panel.classList.remove("hidden");
+        panel.innerHTML = `
+          <div><strong>方钢截面选型解释</strong>${escapeHtml(selection.status || summary.status || "-")}；
+            选中：${escapeHtml(selected.section_name || "-")}；
+            试算：${escapeHtml(String(selection.evaluated_candidate_count || candidates.length || 0))} 个。
+          </div>
+          <div class="section-reason-grid">
+            <div><strong>候选顺序</strong><br>${escapeHtml(orderAudit.status || "未记录")}<br>${escapeHtml(orderAudit.policy || "按标准截面和工程门禁排序。")}</div>
+            <div><strong>相似提资</strong><br>${escapeHtml(similar.status || "未命中")}<br>${escapeHtml(similar.selected_section_hint ? `只用于排序参考：${similar.selected_section_hint}` : "不复用历史结论。")}</div>
+            <div><strong>诊断门禁</strong><br>${escapeHtml(earlyStop.status || "正常")}<br>${escapeHtml(earlyStop.reason || "若 JCZH/LS/HF/MAX/TMAX/Mode 或输出增长异常，将先修源问题，不继续放大方钢。")}</div>
+          </div>
+          ${first ? `<div style="margin-top:8px"><strong>本次候选摘要</strong><br>${first}</div>` : ""}
+        `;
+      }
+
+      async function loadSquareSectionReason() {
+        if (!state.activeJobId || !$("sectionReasonPanel")) return;
+        try {
+          const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/square-section-selection`, { cache: "no-store" });
+          renderSquareSectionReason(payload);
+        } catch (error) {
+          renderSquareSectionReason(null);
+        }
+      }
+
+      async function stopCurrentRun() {
+        if (!state.activeRunId) {
+          toast("当前没有网页后台计算。");
+          return;
+        }
+        const payload = await requestJson(`/runs/${encodeURIComponent(state.activeRunId)}/cancel`, { method: "POST" });
+        renderRunStatus(payload);
+        toast("已请求停止当前计算。ANSYS 批处理进程已终止，许可证服务未停止。");
+      }
+
+      async function reconcileReportNumbers() {
+        const intakePath = state.uploaded.intakeFile || await uploadFile("intakeFile", "intake");
+        if (!intakePath) {
+          toast("请先上传含报告号的提资文件。");
+          return;
+        }
+        const payload = await requestJson("/intake/reconcile-report-numbers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            intake_path: intakePath,
+            output_root: $("outputRoot").value,
+            dry_run: false,
+            overwrite: true,
+          }),
+        });
+        await previewIntakeFromFile();
+        toast(payload);
+      }
+
+      async function chooseOutputFolder() {
+        try {
+          const payload = await requestJson("/folders/select-output", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ initial: $("outputRoot").value }),
+          });
+          if (payload.status === "pass" && payload.path) {
+            $("outputRoot").value = payload.path;
+            renderTaskSummary();
+            saveIntakeSession();
+            toast(`已选择本机输出目录：${payload.path}`);
+            return;
+          }
+          toast("已取消本机输出目录选择。");
+        } catch (error) {
+          toast(`本机目录选择失败，请直接在输出目录框填写路径。\n${error.message}`);
+        }
+      }
+
+      async function applyOutputPath() {
+        const path = $("outputRoot").value.trim();
+        if (!path) {
+          toast("请先填写结果输出文件夹路径。");
+          return;
+        }
+        const payload = await requestJson("/folders/apply-output", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path }),
+        });
+        $("outputRoot").value = payload.path;
+        renderTaskSummary();
+        saveIntakeSession();
+        const suffix = payload.exists ? "" : "\n提示：该目录当前不存在，计算时将尝试创建；请确认当前电脑有权限访问。";
+        toast(`已应用本机输出目录：${payload.path}${suffix}`);
+      }
+
+      function useDefaultOutput() {
+        $("outputRoot").value = "outputs";
+        renderTaskSummary();
+        saveIntakeSession();
+      }
+
+      async function loadEngineeringReview() {
+        if (!state.activeJobId) return;
+        const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/engineering-review`, { cache: "no-store" });
+        state.review = payload;
+        loadSquareSectionReason().catch(() => {});
+        state.memos = payload.review_memo?.items?.length ? payload.review_memo.items : state.memos;
+        parseModelFromCommands();
+        renderCommands();
+        renderFormulaRows();
+        renderLoadRows();
+        renderMemos();
+        drawModel();
+      }
+
+      function commandText(role) {
+        const stream = state.review?.command_streams?.find((item) => item.role === role);
+        return stream?.text || defaultCommands[role] || "";
+      }
+
+      function renderCommands() {
+        document.querySelectorAll("[data-command]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.command === state.commandRole);
+        });
+        $("commandText").textContent = commandText(state.commandRole);
+      }
+
+      function stripApdlComment(line) {
+        return String(line || "").split("!")[0].trim();
+      }
+
+      function expandApdlPercents(text, vars) {
+        return String(text || "").replace(/%([A-Za-z_][A-Za-z0-9_]*)%/g, (_, name) => {
+          const value = vars.get(name.toUpperCase());
+          return Number.isFinite(value) ? String(Math.trunc(value)) : "";
+        });
+      }
+
+      function evalApdlExpression(expression, vars) {
+        let expr = expandApdlPercents(expression, vars).trim();
+        if (!expr) return NaN;
+        expr = expr.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name) => {
+          const upper = name.toUpperCase();
+          if (!vars.has(upper)) return "0";
+          return String(vars.get(upper));
+        });
+        if (!/^[0-9+\-*/(). Ee]+$/.test(expr)) return NaN;
+        try {
+          const value = Function(`"use strict"; return (${expr});`)();
+          return Number.isFinite(Number(value)) ? Number(value) : NaN;
+        } catch {
+          return NaN;
+        }
+      }
+
+      function splitApdlArgs(line) {
+        return stripApdlComment(line).split(",").map((part) => part.trim());
+      }
+
+      function findMatchingDo(lines, start, end) {
+        let depth = 0;
+        for (let i = start; i < end; i += 1) {
+          const line = stripApdlComment(lines[i]).toUpperCase();
+          if (line.startsWith("*DO,")) depth += 1;
+          if (line.startsWith("*ENDDO")) {
+            depth -= 1;
+            if (depth === 0) return i;
+          }
+        }
+        return -1;
+      }
+
+      function collectApdlIfBranches(lines, start, end) {
+        let depth = 0;
+        const branches = [];
+        let branchStart = start + 1;
+        let branchCondition = stripApdlComment(lines[start]);
+        for (let i = start; i < end; i += 1) {
+          const line = stripApdlComment(lines[i]).toUpperCase();
+          if (line.startsWith("*IF,")) depth += 1;
+          else if (line.startsWith("*ENDIF")) {
+            depth -= 1;
+            if (depth === 0) {
+              branches.push({ condition: branchCondition, start: branchStart, end: i });
+              return { branches, endIndex: i };
+            }
+          } else if (depth === 1 && line.startsWith("*ELSEIF,")) {
+            branches.push({ condition: branchCondition, start: branchStart, end: i });
+            branchCondition = stripApdlComment(lines[i]);
+            branchStart = i + 1;
+          } else if (depth === 1 && line.startsWith("*ELSE")) {
+            branches.push({ condition: branchCondition, start: branchStart, end: i });
+            branchCondition = null;
+            branchStart = i + 1;
+          }
+        }
+        return { branches, endIndex: -1 };
+      }
+
+      function evalApdlIf(line, vars) {
+        const parts = splitApdlArgs(line);
+        const left = evalApdlExpression(parts[1] || "0", vars);
+        const op = String(parts[2] || "").toUpperCase();
+        const right = evalApdlExpression(parts[3] || "0", vars);
+        if (!Number.isFinite(left) || !Number.isFinite(right)) return false;
+        if (op === "EQ") return left === right;
+        if (op === "NE") return left !== right;
+        if (op === "LT") return left < right;
+        if (op === "LE") return left <= right;
+        if (op === "GT") return left > right;
+        if (op === "GE") return left >= right;
+        return false;
+      }
+
+      function assignApdlVariable(line, vars) {
+        const match = expandApdlPercents(line, vars).match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+        if (!match) return false;
+        const value = evalApdlExpression(match[2], vars);
+        if (!Number.isFinite(value)) return false;
+        vars.set(match[1].toUpperCase(), value);
+        return true;
+      }
+
+      function parseApdlGeometryCommand(line, vars, geometry) {
+        const clean = expandApdlPercents(stripApdlComment(line), vars);
+        if (!clean) return;
+        const parts = clean.split(",").map((part) => part.trim());
+        const command = String(parts[0] || "").toUpperCase();
+        if (command === "K" || command === "N") {
+          const id = evalApdlExpression(parts[1], vars);
+          const x = evalApdlExpression(parts[2] || "0", vars);
+          const y = evalApdlExpression(parts[3] || "0", vars);
+          const z = evalApdlExpression(parts[4] || "0", vars);
+          if ([id, x, y, z].every(Number.isFinite)) {
+            geometry.nodes.set(String(Math.trunc(id)), { id: String(Math.trunc(id)), x, y, z });
+          }
+        } else if (command === "L" || command === "E") {
+          const a = evalApdlExpression(parts[1], vars);
+          const b = evalApdlExpression(parts[2], vars);
+          if (Number.isFinite(a) && Number.isFinite(b)) {
+            geometry.elements.push({ a: String(Math.trunc(a)), b: String(Math.trunc(b)) });
+          }
+        }
+      }
+
+      function runApdlGeometrySubset(lines, start, end, vars, geometry) {
+        let index = start;
+        while (index < end) {
+          const clean = stripApdlComment(lines[index]);
+          const upper = clean.toUpperCase();
+          if (!clean) {
+            index += 1;
+            continue;
+          }
+          if (upper.startsWith("*DO,")) {
+            const doEnd = findMatchingDo(lines, index, end);
+            if (doEnd < 0) {
+              index += 1;
+              continue;
+            }
+            const parts = splitApdlArgs(clean);
+            const name = String(parts[1] || "").toUpperCase();
+            const first = evalApdlExpression(parts[2] || "1", vars);
+            const last = evalApdlExpression(parts[3] || "1", vars);
+            const stepValue = evalApdlExpression(parts[4] || "1", vars);
+            const step = Number.isFinite(stepValue) && stepValue !== 0 ? stepValue : 1;
+            if (name && Number.isFinite(first) && Number.isFinite(last)) {
+              const guard = 10000;
+              let count = 0;
+              for (let value = first; step > 0 ? value <= last + 1e-9 : value >= last - 1e-9; value += step) {
+                vars.set(name, value);
+                runApdlGeometrySubset(lines, index + 1, doEnd, vars, geometry);
+                count += 1;
+                if (count > guard) break;
+              }
+            }
+            index = doEnd + 1;
+            continue;
+          }
+          if (upper.startsWith("*IF,")) {
+            const match = collectApdlIfBranches(lines, index, end);
+            if (match.endIndex < 0) {
+              index += 1;
+              continue;
+            }
+            const branch = match.branches.find((item) => item.condition === null || evalApdlIf(item.condition, vars));
+            if (branch) {
+              runApdlGeometrySubset(lines, branch.start, branch.end, vars, geometry);
+            }
+            index = match.endIndex + 1;
+            continue;
+          }
+          if (!assignApdlVariable(clean, vars)) {
+            parseApdlGeometryCommand(clean, vars, geometry);
+          }
+          index += 1;
+        }
+      }
+
+      function parseModelFromCommands() {
+        const text = commandText("modeling");
+        const geometry = { nodes: new Map(), elements: [] };
+        const vars = new Map();
+        const lines = text.split(/\r?\n/);
+        runApdlGeometrySubset(lines, 0, lines.length, vars, geometry);
+        const validElements = geometry.elements
+          .filter((element) => geometry.nodes.has(element.a) && geometry.nodes.has(element.b))
+          .map((element) => ({ ...element, kind: classifyElement(element, geometry.nodes) }));
+        if (geometry.nodes.size && validElements.length) {
+          state.model = {
+            nodes: [...geometry.nodes.values()],
+            elements: validElements,
+            source: `generated_model.mac APDL解释预览，${geometry.nodes.size} 点 / ${validElements.length} 线`,
+          };
+          $("modelSource").textContent = "来自建模命令";
+          $("modelSource").className = "pill ok";
+          renderModelStats(state.model);
+          return;
+        }
+        state.model = null;
+        $("modelSource").textContent = "等待命令流";
+        $("modelSource").className = "pill warn";
+        renderModelStats(null);
+      }
+
+      function classifyElement(element, nodes) {
+        const a = nodes.get(element.a);
+        const b = nodes.get(element.b);
+        if (!a || !b) return "other";
+        const dx = Math.abs(Number(b.x) - Number(a.x));
+        const dy = Math.abs(Number(b.y) - Number(a.y));
+        const dz = Math.abs(Number(b.z) - Number(a.z));
+        const max = Math.max(dx, dy, dz, 1e-9);
+        const midX = (Number(a.x) + Number(b.x)) / 2;
+        const idA = Number(element.a);
+        const idB = Number(element.b);
+        const idBand = Math.max(idA, idB);
+        if (dz / max > 0.72 && Math.abs(midX) < 0.2) return "square_support";
+        if (dx / max > 0.68) return "cantilever_arm";
+        if (dy / max > 0.68 && midX > 0.1) return "tray_rail";
+        if (dz / max > 0.55) return "vertical_connector";
+        if (idBand >= 500 && idBand < 2000 && dy > 0.01) return "tray_rail";
+        return "connector";
+      }
+
+      function elementStyle(kind) {
+        const styles = {
+          square_support: { color: "#0b6b57", edge: "#074637", width: 8, label: "方钢立柱", glyph: "square" },
+          cantilever_arm: { color: "#1e63a8", edge: "#123e6e", width: 7, label: "托臂槽钢", glyph: "channel" },
+          tray_rail: { color: "#b86b10", edge: "#7a4108", width: 5, label: "托盘/纵向件", glyph: "open_up" },
+          vertical_connector: { color: "#64748b", edge: "#334155", width: 4, label: "竖向连接", glyph: "connector" },
+          connector: { color: "#64748b", edge: "#334155", width: 4, label: "连接/短撑", glyph: "connector" },
+          other: { color: "#64748b", edge: "#334155", width: 4, label: "其它线单元", glyph: "connector" },
+        };
+        return styles[kind] || styles.other;
+      }
+
+      function modelKindCounts(model) {
+        const counts = {};
+        (model?.elements || []).forEach((element) => {
+          counts[element.kind] = (counts[element.kind] || 0) + 1;
+        });
+        return counts;
+      }
+
+      function renderModelStats(model) {
+        const stats = $("modelStats");
+        if (!stats) return;
+        if (!model) {
+          stats.textContent = "0 点 / 0 线";
+          return;
+        }
+        const counts = modelKindCounts(model);
+        stats.textContent = `${model.nodes.length} 点 / ${model.elements.length} 线 · 方钢 ${counts.square_support || 0} · 托臂 ${counts.cantilever_arm || 0} · 托盘 ${counts.tray_rail || 0}`;
+      }
+
+      function project(point, width, height) {
+        const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+        const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+        const x1 = point.x * cy - point.y * sy;
+        const y1 = point.x * sy + point.y * cy;
+        const z1 = point.z;
+        const y2 = y1 * cp - z1 * sp;
+        const z2 = y1 * sp + z1 * cp;
+        const scale = Math.max(58, Math.min(102, width / 9.2, height / 5.4));
+        return { x: width / 2 + x1 * scale, y: height * 0.6 - z2 * scale + y2 * 12, depth: y2 };
+      }
+
+      function normalizedNodes(nodes) {
+        if (!nodes?.length) return [];
+        const xs = nodes.map((node) => Number(node.x) || 0);
+        const ys = nodes.map((node) => Number(node.y) || 0);
+        const zs = nodes.map((node) => Number(node.z) || 0);
+        const mid = (values) => (Math.min(...values) + Math.max(...values)) / 2;
+        const span = Math.max(
+          Math.max(...xs) - Math.min(...xs),
+          Math.max(...ys) - Math.min(...ys),
+          Math.max(...zs) - Math.min(...zs),
+          1
+        );
+        const scale = 5.2 / span;
+        const cx = mid(xs), cy = mid(ys), cz = mid(zs);
+        return nodes.map((node) => ({
+          ...node,
+          x: ((Number(node.x) || 0) - cx) * scale,
+          y: ((Number(node.y) || 0) - cy) * scale,
+          z: ((Number(node.z) || 0) - cz) * scale,
+        }));
+      }
+
+      function drawEmptyModel(ctx, width, height, message) {
+        const projectPreview = (point) => project(point, width, height);
+        const drawPreviewLine = (a, b, color, lineWidth = 1.2) => {
+          const pa = projectPreview(a);
+          const pb = projectPreview(b);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = lineWidth;
+          ctx.beginPath();
+          ctx.moveTo(pa.x, pa.y);
+          ctx.lineTo(pb.x, pb.y);
+          ctx.stroke();
+        };
+        ctx.strokeStyle = "#d0d9e2";
+        ctx.lineWidth = 1;
+        for (let i = -4; i <= 4; i += 1) {
+          drawPreviewLine({ x: -3.2, y: i * 0.45, z: -1.2 }, { x: 3.2, y: i * 0.45, z: -1.2 }, "#dbe4ec");
+          drawPreviewLine({ x: i * 0.8, y: -1.8, z: -1.2 }, { x: i * 0.8, y: 1.8, z: -1.2 }, "#dbe4ec");
+        }
+        drawPreviewLine({ x: -3.2, y: 0, z: -1.2 }, { x: 3.2, y: 0, z: -1.2 }, "#1f5f99", 2);
+        drawPreviewLine({ x: 0, y: -1.8, z: -1.2 }, { x: 0, y: 1.8, z: -1.2 }, "#0f7660", 2);
+        drawPreviewLine({ x: -3.0, y: -1.55, z: -1.2 }, { x: -3.0, y: -1.55, z: 1.8 }, "#b42318", 2);
+        const ghost = [
+          [{ x: -2.4, y: -1.3, z: -1.2 }, { x: -2.4, y: -1.3, z: 1.5 }],
+          [{ x: -2.4, y: -1.3, z: 0.15 }, { x: 1.8, y: -1.3, z: 0.15 }],
+          [{ x: -2.4, y: 0, z: 0.15 }, { x: 1.8, y: 0, z: 0.15 }],
+          [{ x: -2.4, y: 1.3, z: 0.15 }, { x: 1.8, y: 1.3, z: 0.15 }],
+          [{ x: 1.1, y: -1.6, z: 0.32 }, { x: 1.1, y: 1.6, z: 0.32 }],
+          [{ x: 1.55, y: -1.6, z: 0.32 }, { x: 1.55, y: 1.6, z: 0.32 }],
+        ];
+        ghost.forEach(([a, b]) => drawPreviewLine(a, b, "#9ab9d6", 2));
+        [["X", { x: 3.35, y: 0, z: -1.2 }], ["Y", { x: 0, y: 1.95, z: -1.2 }], ["Z", { x: -3.0, y: -1.55, z: 1.95 }]].forEach(([label, point]) => {
+          const p = projectPreview(point);
+          ctx.fillStyle = "#17212b";
+          ctx.font = "700 12px Segoe UI";
+          ctx.fillText(label, p.x + 4, p.y - 4);
+        });
+        ctx.fillStyle = "#17212b";
+        ctx.font = "700 15px Segoe UI";
+        ctx.fillText("三维命令流预览", 18, 30);
+        ctx.fillStyle = "#5c6b78";
+        ctx.font = "12px Segoe UI";
+        const lines = [
+          message || "等待 generated_model.mac；生成后会解释 APDL 参数、循环和 K/L 命令绘制真实线框。",
+          "这不是 ANSYS 实时图形窗口；真实云图和模态图以 ANSYS 输出图片为准。",
+        ];
+        lines.forEach((line, index) => ctx.fillText(line, 18, 55 + index * 20));
+      }
+
+      function drawArrow(ctx, from, to, color) {
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(to.x, to.y);
+        ctx.lineTo(to.x - 6 * Math.cos(angle - 0.55), to.y - 6 * Math.sin(angle - 0.55));
+        ctx.lineTo(to.x - 6 * Math.cos(angle + 0.55), to.y - 6 * Math.sin(angle + 0.55));
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function hexToRgb(hex) {
+        const clean = String(hex || "#64748b").replace("#", "");
+        const value = parseInt(clean.length === 3 ? clean.split("").map((ch) => ch + ch).join("") : clean, 16);
+        return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+      }
+
+      function rgba(hex, alpha) {
+        const { r, g, b } = hexToRgb(hex);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      function drawMemberBody(ctx, element, projected, style, highlighted) {
+        const pa = projected[element.a];
+        const pb = projected[element.b];
+        if (!pa || !pb) return;
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const nx = -dy / length;
+        const ny = dx / length;
+        const width = highlighted ? style.width + 7 : style.width + 4;
+        const shade = Math.max(0.62, Math.min(1, 0.82 + ((pa.depth + pb.depth) / 2) * 0.04));
+        const faceColor = highlighted ? "rgba(239, 68, 68, .28)" : rgba(style.color, 0.24 * shade);
+        const edgeColor = highlighted ? "#991b1b" : style.edge;
+        const coreColor = highlighted ? "#ef4444" : style.color;
+        const sideOffset = Math.max(2.5, width * 0.36);
+
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "rgba(15, 23, 42, .14)";
+        ctx.lineWidth = width + 5;
+        ctx.beginPath();
+        ctx.moveTo(pa.x + 3, pa.y + 6);
+        ctx.lineTo(pb.x + 3, pb.y + 6);
+        ctx.stroke();
+
+        ctx.fillStyle = faceColor;
+        ctx.strokeStyle = edgeColor;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(pa.x + nx * sideOffset, pa.y + ny * sideOffset);
+        ctx.lineTo(pb.x + nx * sideOffset, pb.y + ny * sideOffset);
+        ctx.lineTo(pb.x - nx * sideOffset * 0.75, pb.y - ny * sideOffset * 0.75);
+        ctx.lineTo(pa.x - nx * sideOffset * 0.75, pa.y - ny * sideOffset * 0.75);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = edgeColor;
+        ctx.lineWidth = width + 2;
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = coreColor;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+
+        ctx.fillStyle = highlighted ? "#fecaca" : rgba(style.color, 0.82);
+        [pa, pb].forEach((p) => {
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, Math.max(3.2, width * 0.52), Math.max(2.2, width * 0.34), Math.atan2(dy, dx), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = edgeColor;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      function drawSectionGlyph(ctx, element, nodes, projected, style, index) {
+        const a = nodes[element.a];
+        const b = nodes[element.b];
+        if (!a || !b) return;
+        const pa = projected[element.a];
+        const pb = projected[element.b];
+        const mid = { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 };
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const ux = dx / length;
+        const uy = dy / length;
+        const nx = -uy;
+        const ny = ux;
+        if (style.glyph === "square") {
+          ctx.save();
+          ctx.translate(mid.x, mid.y);
+          ctx.rotate(Math.atan2(dy, dx));
+          ctx.strokeStyle = style.edge;
+          ctx.fillStyle = "rgba(15, 118, 96, 0.18)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-9, -9, 18, 18);
+          ctx.strokeRect(-5, -5, 10, 10);
+          ctx.fillRect(-8, -8, 16, 16);
+          ctx.restore();
+          return;
+        }
+        if (style.glyph === "channel" || style.glyph === "open_up") {
+          ctx.save();
+          ctx.translate(mid.x, mid.y);
+          ctx.rotate(Math.atan2(dy, dx));
+          ctx.strokeStyle = style.edge;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(-10, -7);
+          ctx.lineTo(-10, 7);
+          ctx.lineTo(10, 7);
+          ctx.lineTo(10, -7);
+          ctx.stroke();
+          ctx.restore();
+          if (state.showOpenArrows && (index % 3 === 0 || style.glyph === "open_up")) {
+            const sourceMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 };
+            const canvas = $("modelCanvas");
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            const openTo = project({ ...sourceMid, z: sourceMid.z + 0.3 }, width, height);
+            drawArrow(ctx, { x: mid.x + nx * 12, y: mid.y + ny * 12 }, openTo, style.edge);
+            ctx.fillStyle = style.edge;
+            ctx.font = "700 10px Segoe UI";
+            ctx.fillText("开口", openTo.x + 4, openTo.y - 3);
+          }
+        }
+      }
+
+      function drawModelLegend(ctx, width) {
+        const counts = modelKindCounts(state.model);
+        const items = [
+          ["square_support", `方钢立柱/矩形管 ${counts.square_support || 0}`],
+          ["cantilever_arm", `托臂槽钢 ${counts.cantilever_arm || 0}`],
+          ["tray_rail", `托盘纵向件 ${counts.tray_rail || 0}`],
+          ["connector", `连接/短撑 ${(counts.connector || 0) + (counts.vertical_connector || 0)}`],
+        ];
+        let x = 18;
+        const y = 74;
+        items.forEach(([kind, label]) => {
+          const style = elementStyle(kind);
+          ctx.fillStyle = "rgba(255, 255, 255, .82)";
+          ctx.strokeStyle = "rgba(148, 163, 184, .5)";
+          const boxWidth = Math.max(142, ctx.measureText(label).width + 52);
+          ctx.beginPath();
+          ctx.roundRect(x - 7, y - 16, boxWidth, 28, 8);
+          ctx.fill();
+          ctx.stroke();
+          ctx.strokeStyle = style.color;
+          ctx.lineWidth = Math.max(4, style.width - 1);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 28, y);
+          ctx.stroke();
+          ctx.fillStyle = "#17212b";
+          ctx.font = "12px Segoe UI";
+          ctx.fillText(label, x + 35, y + 4);
+          x += boxWidth + 10;
+          if (x > width - 180) x = 18;
+        });
+      }
+
+      function drawModelHud(ctx, width, height, model) {
+        const counts = modelKindCounts(model);
+        const lines = [
+          ["节点", model.nodes.length],
+          ["线单元", model.elements.length],
+          ["方钢", counts.square_support || 0],
+          ["托臂", counts.cantilever_arm || 0],
+          ["托盘", counts.tray_rail || 0],
+        ];
+        const x = width - 180;
+        const y = 20;
+        ctx.fillStyle = "rgba(255,255,255,.86)";
+        ctx.strokeStyle = "rgba(148,163,184,.55)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x, y, 160, 132, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#17212b";
+        ctx.font = "700 13px Segoe UI";
+        ctx.fillText("模型审核摘要", x + 12, y + 24);
+        ctx.font = "12px Segoe UI";
+        lines.forEach(([label, value], index) => {
+          ctx.fillStyle = "#5c6b78";
+          ctx.fillText(label, x + 12, y + 49 + index * 17);
+          ctx.fillStyle = "#17212b";
+          ctx.textAlign = "right";
+          ctx.fillText(String(value), x + 145, y + 49 + index * 17);
+          ctx.textAlign = "left";
+        });
+      }
+
+      function drawAxes(ctx, width, height) {
+        const origin = { x: 56, y: height - 66 };
+        const axes = [
+          ["X", "#1f5f99", { x: 46, y: 0 }],
+          ["Y", "#0f7660", { x: 25, y: -26 }],
+          ["Z", "#b42318", { x: 0, y: -48 }],
+        ];
+        axes.forEach(([label, color, delta]) => {
+          const end = { x: origin.x + delta.x, y: origin.y + delta.y };
+          drawArrow(ctx, origin, end, color);
+          ctx.fillStyle = color;
+          ctx.font = "700 12px Segoe UI";
+          ctx.fillText(label, end.x + 5, end.y - 2);
+        });
+      }
+
+      function drawModel() {
+        const canvas = $("modelCanvas");
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.max(600, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(360, Math.floor(rect.height * dpr));
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.clearRect(0, 0, w, h);
+        const bg = ctx.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, "#fbfdff");
+        bg.addColorStop(1, "#edf4fa");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+        const model = state.model;
+        if (!model || !model.nodes?.length || !model.elements?.length) {
+          drawEmptyModel(ctx, w, h, "生成命令流后，将只按 generated_model.mac 的 K/L 命令绘制预览。");
+          return;
+        }
+        const drawNodes = normalizedNodes(model.nodes);
+        const drawModelData = { ...model, nodes: drawNodes };
+        const byId = Object.fromEntries(drawModelData.nodes.map((node) => [node.id, node]));
+        const projected = Object.fromEntries(drawModelData.nodes.map((node) => [node.id, project(node, w, h)]));
+        ctx.save();
+        ctx.globalAlpha = 0.86;
+        ctx.strokeStyle = "#d5e0e9";
+        ctx.lineWidth = 1;
+        for (let x = -40; x < w + 80; x += 48) {
+          ctx.beginPath(); ctx.moveTo(x, h - 42); ctx.lineTo(x + 32, h - 82); ctx.stroke();
+        }
+        ctx.restore();
+        drawModelData.elements
+          .slice()
+          .sort((left, right) => {
+            const leftDepth = ((projected[left.a]?.depth || 0) + (projected[left.b]?.depth || 0)) / 2;
+            const rightDepth = ((projected[right.a]?.depth || 0) + (projected[right.b]?.depth || 0)) / 2;
+            return leftDepth - rightDepth;
+          })
+          .forEach((element, index) => {
+          const { a, b } = element;
+          if (!byId[a] || !byId[b]) return;
+          const pa = projected[a], pb = projected[b];
+          const hi = state.highlight.has(a) || state.highlight.has(b);
+          const style = elementStyle(element.kind);
+          drawMemberBody(ctx, element, projected, style, hi);
+          if (state.showSections && (index % 2 === 0 || hi || element.kind === "square_support")) {
+            drawSectionGlyph(ctx, element, byId, projected, style, index);
+          }
+        });
+        const labelIds = new Set(drawModelData.nodes.slice(0, 4).map((node) => node.id));
+        drawModelData.nodes
+          .slice()
+          .sort((a, b) => projected[a.id].depth - projected[b.id].depth)
+          .forEach((node) => {
+            const p = projected[node.id];
+            const hi = state.highlight.has(node.id);
+            ctx.fillStyle = hi ? "#b42318" : "rgba(15, 118, 96, .85)";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, hi ? 7 : 3.8, 0, Math.PI * 2);
+            ctx.fill();
+            if (hi || state.showNodeLabels || labelIds.has(node.id)) {
+              ctx.fillStyle = "#17212b";
+              ctx.font = "12px Segoe UI";
+              ctx.fillText(node.id, p.x + 7, p.y - 6);
+            }
+          });
+        ctx.fillStyle = "#17212b";
+        ctx.font = "700 14px Segoe UI";
+        ctx.fillText("generated_model.mac 三维构件预览", 18, 24);
+        ctx.fillStyle = "#5c6b78";
+        ctx.font = "12px Segoe UI";
+        ctx.fillText(`来源：${model.source}；颜色/截面符号用于审核构件类别，拖拽旋转，点击载荷表高亮节点`, 18, 45);
+        drawModelLegend(ctx, w);
+        drawModelHud(ctx, w, h, model);
+        drawAxes(ctx, w, h);
+      }
+
+      function renderFormulaRows() {
+        if (!$("formulaRows")) return;
+        const rows = (state.review?.formulas || []).slice(0, 200);
+        $("formulaRows").innerHTML = rows.length ? rows.map((row) => `
+          <tr>
+            <td><b>${esc(row.category || row.check_id || "-")}</b><div class="muted">${esc(row.check_id || "")}</div></td>
+            <td>${esc(compact(row.calculation_value))} ${esc(row.unit || "")}</td>
+            <td>${esc(compact(row.allowable_value))} ${esc(row.unit || "")}</td>
+            <td>${esc(compact(row.ratio))}</td>
+            <td>${esc(row.source_ref || "-")}<div class="muted">${esc(row.formula_status || "")}</div></td>
+          </tr>
+        `).join("") : `<tr><td colspan="5" class="muted">等待结果评定。评定完成后这里显示公式来源、计算值、许用值和比值。</td></tr>`;
+      }
+
+      function renderLoadRows() {
+        if (!$("loadRows")) return;
+        const rows = (state.review?.load_extractions || []).slice(0, 300);
+        const nodeDisplay = (row) => row.node_display || row.node || (Array.isArray(row.source_keypoints) && row.source_keypoints.length ? row.source_keypoints.join(", ") : "UNKNOWN");
+        const highlightNodes = (row) => {
+          const values = [];
+          if (row?.node && row.node !== "UNKNOWN") values.push(row.node);
+          if (Array.isArray(row?.source_keypoints)) values.push(...row.source_keypoints);
+          if (Array.isArray(row?.highlight_nodes)) values.push(...row.highlight_nodes);
+          return values.map((item) => String(item)).filter(Boolean);
+        };
+        $("loadRows").innerHTML = rows.length ? rows.map((row, index) => `
+          <tr class="selectable" data-load="${index}">
+            <td>${esc(row.scope || "-")}</td>
+            <td>${esc(row.load_case || "-")}</td>
+            <td class="mono">${esc(nodeDisplay(row))}</td>
+            <td>${esc(compact(row.fx))} / ${esc(compact(row.fy))} / ${esc(compact(row.fz))}</td>
+            <td>${esc(compact(row.my))} / ${esc(compact(row.mz))}</td>
+            <td>${esc(row.source_file || "-")}<div class="muted">${esc(row.source_ref || "")}</div></td>
+          </tr>
+        `).join("") : `<tr><td colspan="6" class="muted">等待 LIS/PIP 结果提取。提取完成后这里显示节点/关键点号、工况和来源文件。</td></tr>`;
+        document.querySelectorAll("[data-load]").forEach((tr) => {
+          tr.addEventListener("click", () => {
+            document.querySelectorAll("[data-load]").forEach((row) => row.classList.remove("selected"));
+            tr.classList.add("selected");
+            const row = rows[Number(tr.dataset.load)];
+            state.highlight.clear();
+            highlightNodes(row).forEach((node) => state.highlight.add(node));
+            drawModel();
+          });
+        });
+      }
+
+      function renderMemos() {
+        localStorage.setItem("cabletray_review_memos", JSON.stringify(state.memos));
+        if (!$("memoList")) return;
+        $("memoList").innerHTML = state.memos.length ? state.memos.map((item, index) => `
+          <div class="memo-item">
+            <b>${esc(item.type)}</b>
+            <button data-del-memo="${index}" style="float:right; min-height:24px">删除</button>
+            <div class="muted">${esc(item.time)} ${state.activeJobId ? " / " + esc(state.activeJobId) : ""}</div>
+            <div>${esc(item.text)}</div>
+          </div>
+        `).join("") : `<div class="muted">暂无备忘。人工核查发现命令、节点、公式、图片问题时记录在这里。</div>`;
+        document.querySelectorAll("[data-del-memo]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.memos.splice(Number(button.dataset.delMemo), 1);
+            renderMemos();
+          });
+        });
+      }
+
+      async function saveMemo() {
+        renderMemos();
+        if (!state.activeJobId) {
+          toast("当前还没有 job，备忘已保存在浏览器本地。");
+          return;
+        }
+        const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/review-memo`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: state.memos }),
+        });
+        toast(payload);
+      }
+
+      function setResultView(view) {
+        if (!$("formulaView") || !$("loadsView") || !$("memoView")) return;
+        state.resultView = view;
+        document.querySelectorAll("[data-result]").forEach((button) => button.classList.toggle("active", button.dataset.result === view));
+        $("formulaView").hidden = view !== "formula";
+        $("loadsView").hidden = view !== "loads";
+        $("memoView").hidden = view !== "memo";
+      }
+
+      function openReviewPage() {
+        if (!state.activeJobId) {
+          toast("当前还没有可查看的 job。先选择提资行并计算，或刷新当前任务。");
+          return;
+        }
+        const url = `/review?job_id=${encodeURIComponent(state.activeJobId)}`;
+        const opened = window.open(url, "_blank", "noopener");
+        if (!opened) {
+          window.location.href = url;
+        }
+      }
+
+      function hasFigureByStem(stems) {
+        const wanted = new Set(stems.map((stem) => stem.toUpperCase()));
+        return (state.review?.figures || []).some((fig) => {
+          const text = [fig.source_file, fig.target_file, fig.figure_id, fig.caption]
+            .filter(Boolean)
+            .join(" ")
+            .toUpperCase();
+          return [...wanted].some((stem) => text.includes(stem));
+        });
+      }
+
+      async function ensureTemplateReportFigures() {
+        if (!state.review && state.activeJobId) {
+          await refreshEngineeringReview();
+        }
+        const hasWholeModel = hasFigureByStem(["SHITI"]);
+        const hasCantileverModel = hasFigureByStem(["TBMODEL", "TUOBI_MODEL", "TUOBI_MO"]);
+        if (hasWholeModel && hasCantileverModel) return;
+
+        toast("正在补导出图5.1/图5.2所需 ANSYS 图片...");
+        await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/export-figures`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ timeout_minutes: 30 }),
+        });
+        await refreshEngineeringReview();
+        if (!hasFigureByStem(["SHITI"]) || !hasFigureByStem(["TBMODEL", "TUOBI_MODEL", "TUOBI_MO"])) {
+          throw new Error("模板报告缺少图5.1 SHITI 或图5.2 TBMODEL；已禁止复用同一张模型图。请先检查 ANSYS 图导出。");
+        }
+      }
+
+      async function buildTemplateReport() {
+        if (!state.activeJobId) {
+          toast("当前还没有可生成报告的 job。");
+          return;
+        }
+        const button = $("buildTemplateReport");
+        const oldText = button?.textContent;
+        if (button) {
+          button.disabled = true;
+          button.textContent = "检查并导出图片...";
+        }
+        try {
+          await ensureTemplateReportFigures();
+          if (button) button.textContent = "注入模板...";
+          const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          toast(`模板报告已生成：${payload.report_file || "report.docx"}`);
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = oldText || "生成模板报告";
+          }
+        }
+      }
+
+      function downloadTemplateReport() {
+        if (!state.activeJobId) {
+          toast("当前还没有模板报告。");
+          return;
+        }
+        window.open(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, "_blank");
+      }
+
+      function renderAiMonitorPayload(payload) {
+        const context = payload.context || {};
+        const audit = payload.audit || {};
+        const intervention = payload.intervention || {};
+        const provider = audit.provider === "openai_compatible"
+          ? (audit.model || "单位模型")
+          : audit.provider === "rule_based_after_model_error"
+            ? "模型未返回，规则接管"
+            : "固定规则";
+        const activeRuns = (context.active_runs || []).length;
+        const failedJobs = Number(intervention.failed_job_count ?? (context.failed_jobs || []).length ?? 0);
+        const recentQuality = context.recent_job_quality || {};
+        const warningCount = Number(intervention.warning_count ?? recentQuality.warning_count ?? 0);
+        const triggerCount = Number(intervention.trigger_count ?? 0);
+        const issueCount = failedJobs + warningCount + triggerCount;
+        const severityClass = issueCount > 0 ? "bad" : activeRuns ? "warn" : "ok";
+        const statusLabel = issueCount > 0 ? "需处理" : activeRuns ? "巡检中" : "正常";
+        if ($("activeModuleModel")) {
+          $("activeModuleModel").textContent = `AI质控：${provider} / ${context.status || "idle"}`;
+        }
+        if ($("floatingQaButton")) {
+          $("floatingQaButton").className = `floating-qa-button ${severityClass === "ok" ? "" : severityClass}`.trim();
+          $("floatingQaButton").setAttribute("aria-label", `后台实时质控：${statusLabel}`);
+        }
+        if ($("floatingQaStatus")) $("floatingQaStatus").textContent = statusLabel;
+        if ($("floatingQaCount")) $("floatingQaCount").textContent = String(issueCount);
+        if ($("floatingQaMeta")) $("floatingQaMeta").textContent = `来源：${provider}；状态：${context.status || "idle"}；活动任务：${activeRuns}`;
+        if ($("floatingQaSummary")) {
+          $("floatingQaSummary").textContent = intervention.summary || `当前 ${activeRuns ? "有计算运行" : "无活动计算"}；${issueCount ? "存在需要处理的巡检项" : "未发现阻断项"}。`;
+        }
+        if ($("floatingQaFindings")) {
+          const findings = (audit.findings || []).slice(0, 5);
+          $("floatingQaFindings").innerHTML = findings.length
+            ? findings.map((item) => `<div class="qa-finding"><b>[${esc(item.severity || "建议")}] ${esc(item.issue || "")}</b><br>${esc(item.suggested_fix || "等待进一步检查。")}</div>`).join("")
+            : `<div class="qa-finding">未发现新的阻断项。后台会继续检查 ANSYS 日志、UNKNOWN 节点、全零载荷、缺图和报告注入风险。</div>`;
+        }
+        if ($("floatingQaLog")) {
+          const safeActions = (intervention.safe_actions || []).map((item) => `- ${item}`).join("\n");
+          const blocked = (intervention.blocked_actions || []).map((item) => `- ${item}`).join("\n");
+          $("floatingQaLog").textContent = [
+            audit.answer || "模型未返回详细解释，已由固定工程规则接管。",
+            audit.model_error ? `模型错误：${audit.model_error}` : "",
+            safeActions ? `\n可自动处理范围：\n${safeActions}` : "",
+            blocked ? `\n禁止自动改动：\n${blocked}` : "",
+            `\n上下文摘要：\n${JSON.stringify(intervention.compact_context || context, null, 2)}`,
+          ].filter(Boolean).join("\n\n");
+        }
+      }
+
+      async function refreshAiMonitor(options = {}) {
+        if (!$("floatingQaButton") && !$("activeModuleModel")) return;
+        if (!options.silent) {
+          if ($("floatingQaStatus")) $("floatingQaStatus").textContent = "巡检中";
+          if ($("floatingQaButton")) $("floatingQaButton").className = "floating-qa-button warn";
+        }
+        try {
+          const payload = await requestJson("/ai/run-monitor", { cache: "no-store" });
+          renderAiMonitorPayload(payload);
+        } catch (error) {
+          if ($("floatingQaStatus")) $("floatingQaStatus").textContent = "巡检失败";
+          if ($("floatingQaButton")) $("floatingQaButton").className = "floating-qa-button bad";
+          if ($("floatingQaLog")) $("floatingQaLog").textContent = `后台巡检读取失败：${error.message}`;
+          if ($("activeModuleModel")) $("activeModuleModel").textContent = "AI质控：固定规则巡检";
+        }
+      }
+
+      function startAiAutoMonitor() {
+        refreshAiMonitor({ silent: true });
+        window.clearInterval(startAiAutoMonitor.timer);
+        startAiAutoMonitor.timer = window.setInterval(() => refreshAiMonitor({ silent: true }), 15000);
+      }
+
+      async function submitFeedback() {
+        const bug = $("feedbackBugReason").value.trim();
+        const fix = $("feedbackSuggestedFix").value.trim();
+        if (!bug && !fix) {
+          toast("请填写问题原因或修改意见。");
+          return;
+        }
+        const row = state.selectedRow || {};
+        const payload = await requestJson("/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            job_id: state.activeJobId || "",
+            report_number: $("primaryIdentity")?.value || primaryIdentity(row, activeRowIndex()),
+            page: location.pathname,
+            severity: $("feedbackSeverity").value,
+            bug_reason: bug,
+            suggested_fix: fix,
+          }),
+        });
+        $("feedbackBugReason").value = "";
+        $("feedbackSuggestedFix").value = "";
+        toast(`反馈已集中保存：${payload.item?.feedback_id || "ok"}`);
+      }
+
+      async function loadAiConfig() {
+        const payload = await requestJson("/ai/config");
+        const config = payload.config || {};
+        if ($("activeModuleModel")) {
+          $("activeModuleModel").textContent = config.enabled
+            ? `单位模型：${config.model || "已启用"}`
+            : "单位模型：未启用，使用固定规则";
+        }
+        if ($("aiConfigSummary")) {
+          $("aiConfigSummary").textContent = config.enabled
+            ? `单位内网模型已启用；当前模型：${config.model || "单位模型"}`
+            : "单位模型未启用；实时质控使用固定工程规则。";
+        }
+        if ($("floatingQaMeta")) {
+          const modelText = config.enabled ? `${config.model || "单位模型"} / ${config.base_url || "-"}` : "未启用单位模型，当前使用固定工程规则巡检";
+          $("floatingQaMeta").textContent = `后台实时质控：${modelText}`;
+        }
+      }
+
+      function showOutputFolder() {
+        toast(`结果输出文件夹：\n${$("outputRoot").value || "-"}`);
+      }
+
+      function initEvents() {
+        $("intakeFile").addEventListener("change", () => previewIntakeFromFile().catch((error) => {
+          setStatus("提资解析失败", "bad");
+          toast(error.message);
+        }));
+        $("spectrumFile").addEventListener("change", () => previewSpectrumFromFile().catch((error) => {
+          $("spectrumHint").textContent = "反应谱解析失败，请检查文件格式或谱表配置。";
+          toast(error.message);
+        }));
+        $("chooseOutputFolder").addEventListener("click", chooseOutputFolder);
+        $("applyOutputPath").addEventListener("click", () => applyOutputPath().catch((error) => toast(error.message)));
+        $("useDefaultOutput").addEventListener("click", useDefaultOutput);
+        $("outputFolderPicker").addEventListener("change", () => {
+          const files = $("outputFolderPicker").files;
+          const first = files?.[0];
+          const folder = first?.webkitRelativePath?.split("/")?.[0] || "";
+          if (folder) toast(`浏览器已选择目录：${folder}。由于浏览器不暴露绝对路径，请确认结果输出文件夹文本框中的路径是否正确。`);
+        });
+        $("rowSelect").addEventListener("change", () => selectParsedRow(Number($("rowSelect").value || 0), { syncSelection: true }));
+        $("selectAllRows").addEventListener("click", () => {
+          state.selectedRows = new Set(state.rows.map((_, index) => index));
+          if (activeRowIndex() < 0 && state.rows.length) setActiveParsedRow(0, { forceIdentity: true });
+          renderParsedRows();
+          renderAiChecks();
+          saveIntakeSession();
+        });
+        $("clearSelectedRows").addEventListener("click", () => {
+          state.selectedRows.clear();
+          renderParsedRows();
+          renderAiChecks();
+          saveIntakeSession();
+        });
+        $("primaryIdentity").addEventListener("input", () => commitCurrentRowOverrides({ renderTable: false }));
+        $("primaryIdentity").addEventListener("change", () => commitCurrentRowOverrides({ renderTable: true }));
+        $("buildingOverride").addEventListener("change", () => {
+          applyCurrentRowOverrides();
+          renderLocationOptions(state.selectedRow || {});
+          renderAiChecks();
+          saveIntakeSession();
+        });
+        $("elevationOverride").addEventListener("change", () => {
+          commitCurrentRowOverrides({ renderTable: true });
+        });
+        $("outputRoot").addEventListener("input", () => {
+          renderTaskSummary();
+          saveIntakeSession();
+        });
+        $("applyIdentity").addEventListener("click", () => commitCurrentRowOverrides({ renderTable: true }));
+        $("reconcileReport").addEventListener("click", () => reconcileReportNumbers().catch((error) => toast(error.message)));
+        $("discoverAnsys").addEventListener("click", () => discoverAnsys().catch((error) => {
+          setStatus("ANSYS 查找失败", "bad");
+          toast(error.message);
+        }));
+        $("runOneClick").addEventListener("click", () => runOneClick().catch((error) => {
+          setStatus("计算失败或被阻断", "bad");
+          $("runOneClick").disabled = false;
+          $("runOneClick").textContent = "计算选中项";
+          toast(error.message);
+        }));
+        $("stopRunBtn").addEventListener("click", () => stopCurrentRun().catch((error) => toast(error.message)));
+        $("refreshRunBtn").addEventListener("click", () => pollRunStatus().catch((error) => toast(error.message)));
+        $("refreshJobBtn").addEventListener("click", () => loadEngineeringReview().catch((error) => toast(error.message)));
+        $("aiToolsBtn").addEventListener("click", () => window.open("/ai-tools", "_blank"));
+        if ($("openModelAdmin")) $("openModelAdmin").addEventListener("click", () => window.open("/ai-tools", "_blank"));
+        if ($("refreshAiMonitor")) $("refreshAiMonitor").addEventListener("click", () => refreshAiMonitor().catch((error) => toast(error.message)));
+        if ($("floatingQaButton")) {
+          $("floatingQaButton").addEventListener("click", () => {
+            const panel = $("floatingQaPanel");
+            const nextHidden = !panel?.hidden ? true : false;
+            if (panel) panel.hidden = nextHidden;
+            $("floatingQaButton").setAttribute("aria-expanded", String(!nextHidden));
+            if (!nextHidden) refreshAiMonitor().catch((error) => toast(error.message));
+          });
+        }
+        if ($("closeFloatingQa")) $("closeFloatingQa").addEventListener("click", () => {
+          if ($("floatingQaPanel")) $("floatingQaPanel").hidden = true;
+          if ($("floatingQaButton")) $("floatingQaButton").setAttribute("aria-expanded", "false");
+        });
+        if (!$("logoutBtn")) {
+          const logoutButton = document.createElement("button");
+          logoutButton.id = "logoutBtn";
+          logoutButton.textContent = "退出";
+          document.querySelector(".topbar .top-actions")?.appendChild(logoutButton);
+        }
+        if ($("logoutBtn")) $("logoutBtn").addEventListener("click", () => logout().catch((error) => toast(error.message)));
+        $("guideBtn").addEventListener("click", () => toast("推荐顺序：选择提资 Excel，系统自动解析；选择反应谱；确认输出文件夹；自动查找 ANSYS；一键计算；核查三份命令流、公式来源、载荷节点和云图；有问题写入错误备忘。"));
+        document.querySelectorAll("[data-command]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.commandRole = button.dataset.command;
+            renderCommands();
+          });
+        });
+        document.querySelectorAll("[data-result]").forEach((button) => button.addEventListener("click", () => setResultView(button.dataset.result)));
+        if ($("openReviewPage")) $("openReviewPage").addEventListener("click", openReviewPage);
+        if ($("openOutputFolderBtn")) $("openOutputFolderBtn").addEventListener("click", showOutputFolder);
+        if ($("buildTemplateReport")) $("buildTemplateReport").addEventListener("click", () => buildTemplateReport().catch((error) => toast(error.message)));
+        if ($("downloadTemplateReport")) $("downloadTemplateReport").addEventListener("click", downloadTemplateReport);
+        if ($("submitFeedback")) $("submitFeedback").addEventListener("click", () => submitFeedback().catch((error) => toast(error.message)));
+        if ($("loadAiConfig")) $("loadAiConfig").addEventListener("click", () => loadAiConfig().catch((error) => toast(error.message)));
+        if ($("addMemo")) $("addMemo").addEventListener("click", () => {
+          const text = $("memoText").value.trim();
+          if (!text) return;
+          state.memos.unshift({ type: $("memoType").value, text, time: new Date().toLocaleString() });
+          $("memoText").value = "";
+          renderMemos();
+        });
+        if ($("saveMemo")) $("saveMemo").addEventListener("click", () => saveMemo().catch((error) => toast(error.message)));
+        $("viewIso").addEventListener("click", () => { state.yaw = -0.55; state.pitch = 0.34; drawModel(); });
+        $("viewFront").addEventListener("click", () => { state.yaw = 0; state.pitch = 0; drawModel(); });
+        $("viewTop").addEventListener("click", () => { state.yaw = 0; state.pitch = Math.PI / 2; drawModel(); });
+        $("toggleSections").addEventListener("click", () => {
+          state.showSections = !state.showSections;
+          $("toggleSections").classList.toggle("active", state.showSections);
+          drawModel();
+        });
+        $("toggleOpenArrows").addEventListener("click", () => {
+          state.showOpenArrows = !state.showOpenArrows;
+          $("toggleOpenArrows").classList.toggle("active", state.showOpenArrows);
+          drawModel();
+        });
+        $("toggleNodeLabels").addEventListener("click", () => {
+          state.showNodeLabels = !state.showNodeLabels;
+          $("toggleNodeLabels").classList.toggle("active", state.showNodeLabels);
+          drawModel();
+        });
+        $("clearHighlight").addEventListener("click", () => { state.highlight.clear(); drawModel(); });
+        const canvas = $("modelCanvas");
+        canvas.addEventListener("pointerdown", (event) => {
+          state.dragging = true;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+          canvas.setPointerCapture(event.pointerId);
+        });
+        canvas.addEventListener("pointermove", (event) => {
+          if (!state.dragging) return;
+          state.yaw += (event.clientX - state.lastX) * 0.008;
+          state.pitch += (event.clientY - state.lastY) * 0.008;
+          state.pitch = Math.max(-1.35, Math.min(1.35, state.pitch));
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+          drawModel();
+        });
+        canvas.addEventListener("pointerup", () => { state.dragging = false; });
+        window.addEventListener("resize", drawModel);
+      }
+
+      async function initApp() {
+        initEvents();
+        await loadAuthSession().catch(() => {});
+        const restoredIntakeSession = restoreIntakeSession();
+        const restoredStillValid = restoredIntakeSession
+          ? await validateRestoredUploads().catch((error) => {
+              clearStaleIntakeSession(`提资恢复校验失败：${error.message || error}`);
+              return false;
+            })
+          : false;
+        await loadOperatorLocalConfig().catch(() => {});
+        if (restoredStillValid) {
+          renderParsedRows();
+          renderTaskSummary();
+          renderAiChecks();
+          setStatus("提资列表已恢复", "ok");
+        } else {
+          renderTaskSummary();
+          renderAiChecks();
+        }
+        renderCommands();
+        renderFormulaRows();
+        renderLoadRows();
+        renderMemos();
+        parseModelFromCommands();
+        drawModel();
+        if (state.activeJobId) {
+          $("jobBadge").textContent = state.activeJobId;
+          $("jobBadge").className = "pill blue";
+          loadEngineeringReview().catch((error) => {
+            state.activeJobId = "";
+            state.review = null;
+            $("jobBadge").textContent = "未选择任务";
+            $("jobBadge").className = "pill";
+            if (!/not found|404|Job not found/i.test(error.message || "")) {
+              toast(error.message);
+            }
+          });
+        }
+        await restoreRunStatus().catch((error) => toast(error.message));
+        pollProductionFullRunStatus();
+        loadAiConfig().finally(() => startAiAutoMonitor()).catch(() => startAiAutoMonitor());
+        discoverAnsys({ silent: true }).catch(() => setStatus("ANSYS 待选择", "warn"));
+      }
+
+      initApp().catch((error) => {
+        setStatus("页面初始化失败", "bad");
+        toast(error.message || error);
+      });
+    </script>
+  </body>
+</html>

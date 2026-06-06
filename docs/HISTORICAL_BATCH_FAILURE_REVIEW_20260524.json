@@ -1,0 +1,3696 @@
+{
+  "source_validation_json": "docs\\production_runs\\full_intake_report_validation_after_compute.json",
+  "validation_summary": {
+    "status": "fail",
+    "report_case_count": 47,
+    "pass_count": 7,
+    "fail_count": 11,
+    "baseline_conflict_count": 29,
+    "blocked_count": 0,
+    "error_count": 0,
+    "max_gate_error": 0.2622107969151671
+  },
+  "policy": "历史报告只作为后验校验和冲突发现依据；生产逻辑以标准命令流、规范公式、Excel 权威评定、真实 ANSYS 输出和 source_ref 为准。不能用报告数值硬凑结果。",
+  "domain_summary": [
+    {
+      "domain": "stress",
+      "label": "应力评定",
+      "failed_metric_count": 125,
+      "case_count": 8,
+      "cases": [
+        "18185NI-LXSJ4115",
+        "18185NI-LXSJ4135",
+        "18185NI-LXSJ4144",
+        "18185NI-LXSJ4147",
+        "18185NI-LXSJ4152",
+        "18185NI-LXSJ4153",
+        "18185NI-LXSJ4154",
+        "18185NI-LXSJ4249"
+      ]
+    },
+    {
+      "domain": "foundation_load",
+      "label": "基础载荷",
+      "failed_metric_count": 57,
+      "case_count": 10,
+      "cases": [
+        "18185NI-LXSJ4115",
+        "18185NI-LXSJ4135",
+        "18185NI-LXSJ4144",
+        "18185NI-LXSJ4147",
+        "18185NI-LXSJ4149",
+        "18185NI-LXSJ4152",
+        "18185NI-LXSJ4153",
+        "18185NI-LXSJ4154",
+        "18185NI-LXSJ4156",
+        "18185NI-LXSJ4249"
+      ]
+    },
+    {
+      "domain": "connection_bolt",
+      "label": "连接螺栓",
+      "failed_metric_count": 51,
+      "case_count": 11,
+      "cases": [
+        "18185NI-LXSJ4115",
+        "18185NI-LXSJ4135",
+        "18185NI-LXSJ4144",
+        "18185NI-LXSJ4146",
+        "18185NI-LXSJ4147",
+        "18185NI-LXSJ4149",
+        "18185NI-LXSJ4152",
+        "18185NI-LXSJ4153",
+        "18185NI-LXSJ4154",
+        "18185NI-LXSJ4156",
+        "18185NI-LXSJ4249"
+      ]
+    },
+    {
+      "domain": "weld",
+      "label": "焊缝",
+      "failed_metric_count": 43,
+      "case_count": 8,
+      "cases": [
+        "18185NI-LXSJ4115",
+        "18185NI-LXSJ4135",
+        "18185NI-LXSJ4144",
+        "18185NI-LXSJ4147",
+        "18185NI-LXSJ4152",
+        "18185NI-LXSJ4153",
+        "18185NI-LXSJ4154",
+        "18185NI-LXSJ4249"
+      ]
+    }
+  ],
+  "metric_counts": {
+    "foundation_load": 57,
+    "beam_calculation_value": 55,
+    "tray_arm_connection_load": 49,
+    "evaluation_ratio": 42,
+    "combination_ratio_value": 28,
+    "weld_equivalent_stress_value": 22,
+    "cantilever_root_load": 21,
+    "derived_bolt_load_missing": 2
+  },
+  "source_counts": {
+    "TMAXBEAMSTRESS.LIS": 70,
+    "MAXBEAMSTRESS.LIS": 62,
+    "JCZH.LIS": 57,
+    "LS-FORCE.LIS": 49,
+    "HF-FORCE.LIS": 21,
+    "SQUAREBEAMSTRESS.LIS": 15,
+    "LS-FORCE-NODES.LIS": 2
+  },
+  "failed_cases": [
+    {
+      "report_no": "18185NI-LXSJ4144",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4144__row_136",
+      "max_gate_error": 0.2622107969151671,
+      "failed_metric_count": 13,
+      "domain_counts": {
+        "stress": 2,
+        "weld": 2,
+        "foundation_load": 5,
+        "connection_bolt": 4
+      },
+      "top_failures": [
+        {
+          "name": "tray_arm_connection_loads[1].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 28.7,
+          "baseline": 38.9,
+          "gate_error": 0.2622107969151671,
+          "relative_error": 0.2622107969151671,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.upset.compression.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 0.3562206,
+          "baseline": 0.37,
+          "gate_error": 0.03724162162162162,
+          "relative_error": 0.03724162162162162,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "beam.cantilever_root_weld.upset.compression.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 0.3562206,
+          "baseline": 0.37,
+          "gate_error": 0.03724162162162162,
+          "relative_error": 0.03724162162162162,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fy",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 552.3,
+          "baseline": 567.6,
+          "gate_error": 0.026955602536998004,
+          "relative_error": 0.026955602536998004,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[1].my",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 549.4,
+          "baseline": 564.3,
+          "gate_error": 0.02640439482544742,
+          "relative_error": 0.02640439482544742,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fx",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 461.0,
+          "baseline": 472.2,
+          "gate_error": 0.02371876323591696,
+          "relative_error": 0.02371876323591696,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[1].fx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 1087.4,
+          "baseline": 1112.5,
+          "gate_error": 0.022561797752808907,
+          "relative_error": 0.022561797752808907,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 13.8,
+          "baseline": 14.1,
+          "gate_error": 0.021276595744680778,
+          "relative_error": 0.021276595744680778,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。",
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4135",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4135__row_77",
+      "max_gate_error": 0.18634268510377536,
+      "failed_metric_count": 64,
+      "domain_counts": {
+        "stress": 36,
+        "weld": 8,
+        "foundation_load": 11,
+        "connection_bolt": 9
+      },
+      "top_failures": [
+        {
+          "name": "foundation_loads[1].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 3053.9,
+          "baseline": 3753.3,
+          "gate_error": 0.18634268510377536,
+          "relative_error": 0.18634268510377536,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "combination.cantilever_arm.upset.compression_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.08752401867790205,
+          "baseline": 0.1,
+          "gate_error": 0.12475981322097957,
+          "relative_error": 0.12475981322097957,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "combination.cantilever_arm.upset.tension_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.08754489341300326,
+          "baseline": 0.1,
+          "gate_error": 0.1245510658699675,
+          "relative_error": 0.1245510658699675,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "foundation_loads[1].my",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 3924.1,
+          "baseline": 4349.2,
+          "gate_error": 0.09774211349213646,
+          "relative_error": 0.09774211349213646,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "beam.cantilever_arm.faulted.tension.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 0.6515675,
+          "baseline": 0.72,
+          "gate_error": 0.09504513888888891,
+          "relative_error": 0.09504513888888891,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "beam.cantilever_root_weld.faulted.tension.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 0.6515675,
+          "baseline": 0.72,
+          "gate_error": 0.09504513888888891,
+          "relative_error": 0.09504513888888891,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "foundation_loads[2].mz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 748.9,
+          "baseline": 825.0,
+          "gate_error": 0.09224242424242426,
+          "relative_error": 0.09224242424242426,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "foundation_loads[2].mx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 6127.1,
+          "baseline": 6749.2,
+          "gate_error": 0.09217388727552887,
+          "relative_error": 0.09217388727552887,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4152",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4152",
+      "max_gate_error": 0.1485849056603773,
+      "failed_metric_count": 45,
+      "domain_counts": {
+        "stress": 17,
+        "foundation_load": 9,
+        "weld": 11,
+        "connection_bolt": 8
+      },
+      "top_failures": [
+        {
+          "name": "tray_arm_connection_loads[1].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 72.2,
+          "baseline": 84.8,
+          "gate_error": 0.1485849056603773,
+          "relative_error": 0.1485849056603773,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "tray_arm_connection_loads[1].fz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 3349.9,
+          "baseline": 3872.3,
+          "gate_error": 0.1349069028742608,
+          "relative_error": 0.1349069028742608,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[2].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 7492.2,
+          "baseline": 8655.9,
+          "gate_error": 0.13444009288462203,
+          "relative_error": 0.13444009288462203,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "cantilever_root_loads[1].my",
+          "metric_type": "cantilever_root_load",
+          "domain": "weld",
+          "value": 992.8,
+          "baseline": 1142.2,
+          "gate_error": 0.13080021012081955,
+          "relative_error": 0.13080021012081955,
+          "source_file": "HF-FORCE.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "cantilever_root_loads[1].fz",
+          "metric_type": "cantilever_root_load",
+          "domain": "weld",
+          "value": 3329.9,
+          "baseline": 3827.5,
+          "gate_error": 0.13000653167864137,
+          "relative_error": 0.13000653167864137,
+          "source_file": "HF-FORCE.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "foundation_loads[1].mz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 708.1,
+          "baseline": 631.8,
+          "gate_error": 0.12076606521050977,
+          "relative_error": 0.12076606521050977,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].mz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 2.9,
+          "baseline": 2.6,
+          "gate_error": 0.11538461538461531,
+          "relative_error": 0.11538461538461531,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.faulted.shear.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 9.3736849,
+          "baseline": 10.48,
+          "gate_error": 0.10556441793893127,
+          "relative_error": 0.10556441793893127,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4249",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4249",
+      "max_gate_error": 0.11961756373937683,
+      "failed_metric_count": 35,
+      "domain_counts": {
+        "stress": 10,
+        "foundation_load": 8,
+        "weld": 10,
+        "connection_bolt": 7
+      },
+      "top_failures": [
+        {
+          "name": "tray_arm_connection_loads[1].fy",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 4972.4,
+          "baseline": 5648.0,
+          "gate_error": 0.11961756373937683,
+          "relative_error": 0.11961756373937683,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "cantilever_root_loads[1].mz",
+          "metric_type": "cantilever_root_load",
+          "domain": "weld",
+          "value": 1878.7,
+          "baseline": 2133.8,
+          "gate_error": 0.11955197300590502,
+          "relative_error": 0.11955197300590502,
+          "source_file": "HF-FORCE.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "cantilever_root_loads[1].fy",
+          "metric_type": "cantilever_root_load",
+          "domain": "weld",
+          "value": 5102.9,
+          "baseline": 5795.6,
+          "gate_error": 0.11952170612188569,
+          "relative_error": 0.11952170612188569,
+          "source_file": "HF-FORCE.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "cantilever_root_loads[1].mx",
+          "metric_type": "cantilever_root_load",
+          "domain": "weld",
+          "value": 248.7,
+          "baseline": 282.4,
+          "gate_error": 0.11933427762039657,
+          "relative_error": 0.11933427762039657,
+          "source_file": "HF-FORCE.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "tray_arm_connection_loads[1].mz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 1.5,
+          "baseline": 1.7,
+          "gate_error": 0.11764705882352938,
+          "relative_error": 0.11764705882352938,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[2].mx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 21740.2,
+          "baseline": 24612.4,
+          "gate_error": 0.11669727454453854,
+          "relative_error": 0.11669727454453854,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "foundation_loads[2].fy",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 18789.9,
+          "baseline": 21254.8,
+          "gate_error": 0.11596909874475403,
+          "relative_error": 0.11596909874475403,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "combination.mixed_beam_type_1.faulted.tension_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.7391346804909834,
+          "baseline": 0.82,
+          "gate_error": 0.09861624330367871,
+          "relative_error": 0.09861624330367871,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4115",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4115__row_18",
+      "max_gate_error": 0.09451945988880067,
+      "failed_metric_count": 37,
+      "domain_counts": {
+        "stress": 21,
+        "weld": 2,
+        "foundation_load": 7,
+        "connection_bolt": 7
+      },
+      "top_failures": [
+        {
+          "name": "tray_arm_connection_loads[1].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 114.0,
+          "baseline": 125.9,
+          "gate_error": 0.09451945988880067,
+          "relative_error": 0.09451945988880067,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 53.7,
+          "baseline": 58.1,
+          "gate_error": 0.07573149741824438,
+          "relative_error": 0.07573149741824438,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[2].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 7208.9,
+          "baseline": 7596.5,
+          "gate_error": 0.051023497663397664,
+          "relative_error": 0.051023497663397664,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].mz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 4.7,
+          "baseline": 4.9,
+          "gate_error": 0.040816326530612276,
+          "relative_error": 0.040816326530612276,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fy",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 641.8,
+          "baseline": 668.3,
+          "gate_error": 0.039652850516235225,
+          "relative_error": 0.039652850516235225,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "combination.cantilever_root_weld.faulted.compression_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.4424476523120384,
+          "baseline": 0.46,
+          "gate_error": 0.03815727758252522,
+          "relative_error": 0.03815727758252522,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "combination.cantilever_root_weld.faulted.tension_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.44249261334507056,
+          "baseline": 0.46,
+          "gate_error": 0.038059536206368386,
+          "relative_error": 0.038059536206368386,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "foundation_loads[1].mx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 5769.7,
+          "baseline": 5995.1,
+          "gate_error": 0.03759737118646904,
+          "relative_error": 0.03759737118646904,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4153",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4153",
+      "max_gate_error": 0.08951508249688815,
+      "failed_metric_count": 45,
+      "domain_counts": {
+        "stress": 25,
+        "weld": 6,
+        "foundation_load": 8,
+        "connection_bolt": 6
+      },
+      "top_failures": [
+        {
+          "name": "foundation_loads[1].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 3437.9,
+          "baseline": 3775.9,
+          "gate_error": 0.08951508249688815,
+          "relative_error": 0.08951508249688815,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[1].mz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 3.0,
+          "baseline": 3.2,
+          "gate_error": 0.06250000000000006,
+          "relative_error": 0.06250000000000006,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "tray_arm_connection_loads[1].fy",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 1678.4,
+          "baseline": 1770.8,
+          "gate_error": 0.05217980573751969,
+          "relative_error": 0.05217980573751969,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[2].mx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 11665.3,
+          "baseline": 12280.5,
+          "gate_error": 0.0500956801433167,
+          "relative_error": 0.0500956801433167,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "foundation_loads[2].fy",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 6708.6,
+          "baseline": 7057.3,
+          "gate_error": 0.04940983095518113,
+          "relative_error": 0.04940983095518113,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "foundation_loads[2].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 4915.8,
+          "baseline": 5094.8,
+          "gate_error": 0.03513386197691764,
+          "relative_error": 0.03513386197691764,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.faulted.bending.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 243.70524,
+          "baseline": 252.3,
+          "gate_error": 0.03406563614744355,
+          "relative_error": 0.03406563614744355,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.faulted.shear.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 8.205565400000001,
+          "baseline": 8.49,
+          "gate_error": 0.03350230859835089,
+          "relative_error": 0.03350230859835089,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4149",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4149__row_151",
+      "max_gate_error": 0.05073170731707312,
+      "failed_metric_count": 5,
+      "domain_counts": {
+        "foundation_load": 3,
+        "connection_bolt": 2
+      },
+      "top_failures": [
+        {
+          "name": "foundation_loads[1].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 1751.4,
+          "baseline": 1845.0,
+          "gate_error": 0.05073170731707312,
+          "relative_error": 0.05073170731707312,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 2840.7,
+          "baseline": 2896.2,
+          "gate_error": 0.01916304122643464,
+          "relative_error": 0.01916304122643464,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "tray_arm_connection_loads[1].fz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 3842.6,
+          "baseline": 3903.9,
+          "gate_error": 0.015702246471477287,
+          "relative_error": 0.015702246471477287,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[2].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 3807.3,
+          "baseline": 3855.6,
+          "gate_error": 0.012527233115468338,
+          "relative_error": 0.012527233115468338,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "foundation_loads[1].fx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 1396.8,
+          "baseline": 1411.1,
+          "gate_error": 0.010133938062504398,
+          "relative_error": 0.010133938062504398,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4147",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4147",
+      "max_gate_error": 0.04289256957413598,
+      "failed_metric_count": 13,
+      "domain_counts": {
+        "stress": 7,
+        "weld": 2,
+        "foundation_load": 2,
+        "connection_bolt": 2
+      },
+      "top_failures": [
+        {
+          "name": "foundation_loads[1].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 3126.2,
+          "baseline": 3266.3,
+          "gate_error": 0.04289256957413598,
+          "relative_error": 0.04289256957413598,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "combination.cantilever_root_weld.upset.tension_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.4482989306117459,
+          "baseline": 0.46,
+          "gate_error": 0.02543710736576979,
+          "relative_error": 0.02543710736576979,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "combination.cantilever_root_weld.upset.compression_bending.calculation_value",
+          "metric_type": "combination_ratio_value",
+          "domain": "stress",
+          "value": 0.4485606123098631,
+          "baseline": 0.46,
+          "gate_error": 0.024868234108993293,
+          "relative_error": 0.024868234108993293,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fz",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 2566.0,
+          "baseline": 2619.7,
+          "gate_error": 0.02049853036607238,
+          "relative_error": 0.02049853036607238,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.upset.shear.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 4.2479709,
+          "baseline": 4.33,
+          "gate_error": 0.018944364896073842,
+          "relative_error": 0.018944364896073842,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "beam.cantilever_root_weld.upset.shear.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 4.2479709,
+          "baseline": 4.33,
+          "gate_error": 0.018944364896073842,
+          "relative_error": 0.018944364896073842,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "weld.cantilever_root_weld.upset.shear.equivalent_stress_value",
+          "metric_type": "weld_equivalent_stress_value",
+          "domain": "weld",
+          "value": 8.07599030418251,
+          "baseline": 8.23,
+          "gate_error": 0.01871320726822491,
+          "relative_error": 0.01871320726822491,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "weld.cantilever_root_weld.upset.bending.equivalent_stress_value",
+          "metric_type": "weld_equivalent_stress_value",
+          "domain": "weld",
+          "value": 103.12653802281369,
+          "baseline": 104.97,
+          "gate_error": 0.01756179839179107,
+          "relative_error": 0.01756179839179107,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4156",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4156",
+      "max_gate_error": 0.04023267086766841,
+      "failed_metric_count": 3,
+      "domain_counts": {
+        "foundation_load": 1,
+        "connection_bolt": 2
+      },
+      "top_failures": [
+        {
+          "name": "foundation_loads[1].fz",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 594.0,
+          "baseline": 618.9,
+          "gate_error": 0.04023267086766841,
+          "relative_error": 0.04023267086766841,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "derived_bolt_loads[0]",
+          "metric_type": "derived_bolt_load_missing",
+          "domain": "connection_bolt",
+          "value": null,
+          "baseline": {
+            "fx": 437.1,
+            "fy": 426.1,
+            "fz": 951.4,
+            "my": 9.4,
+            "mz": 4.0
+          },
+          "gate_error": null,
+          "relative_error": null,
+          "source_file": "LS-FORCE-NODES.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "derived_bolt_loads[1]",
+          "metric_type": "derived_bolt_load_missing",
+          "domain": "connection_bolt",
+          "value": null,
+          "baseline": {
+            "fx": 1005.6,
+            "fy": 993.0,
+            "fz": 1053.8,
+            "my": 13.1,
+            "mz": 9.3
+          },
+          "gate_error": null,
+          "relative_error": null,
+          "source_file": "LS-FORCE-NODES.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4154",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4154__row_170",
+      "max_gate_error": 0.02589333333333336,
+      "failed_metric_count": 15,
+      "domain_counts": {
+        "stress": 7,
+        "weld": 2,
+        "foundation_load": 3,
+        "connection_bolt": 3
+      },
+      "top_failures": [
+        {
+          "name": "beam.cantilever_root_weld.upset.tension.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 1.2273744,
+          "baseline": 1.26,
+          "gate_error": 0.02589333333333336,
+          "relative_error": 0.02589333333333336,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "weld.cantilever_root_weld.upset.compression.equivalent_stress_value",
+          "metric_type": "weld_equivalent_stress_value",
+          "domain": "weld",
+          "value": 2.4168555133079845,
+          "baseline": 2.48,
+          "gate_error": 0.025461486569361067,
+          "relative_error": 0.025461486569361067,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "foundation_loads[1].my",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 9061.8,
+          "baseline": 9288.6,
+          "gate_error": 0.02441702732381641,
+          "relative_error": 0.02441702732381641,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "weld.cantilever_root_weld.upset.tension.equivalent_stress_value",
+          "metric_type": "weld_equivalent_stress_value",
+          "domain": "weld",
+          "value": 2.3334114068441063,
+          "baseline": 2.39,
+          "gate_error": 0.023677235630081093,
+          "relative_error": 0.023677235630081093,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "焊缝根部载荷、焊喉面积或等效应力公式输入差异；若上游 HF-FORCE 不一致，评定比值会同步偏差。"
+        },
+        {
+          "name": "tray_arm_connection_loads[0].fx",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 1569.7,
+          "baseline": 1606.2,
+          "gate_error": 0.02272444278421118,
+          "relative_error": 0.02272444278421118,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        },
+        {
+          "name": "foundation_loads[1].fx",
+          "metric_type": "foundation_load",
+          "domain": "foundation_load",
+          "value": 5799.6,
+          "baseline": 5932.9,
+          "gate_error": 0.02246793305129014,
+          "relative_error": 0.02246793305129014,
+          "source_file": "JCZH.LIS",
+          "likely_cause": "基础反力集合或谱/静力系数差异；结果来源应限定到 JCZH.LIS 的支架根部反力集合。"
+        },
+        {
+          "name": "beam.mixed_beam_type_1.upset.compression.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 1.271266,
+          "baseline": 1.3,
+          "gate_error": 0.02210307692307695,
+          "relative_error": 0.02210307692307695,
+          "source_file": "MAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        },
+        {
+          "name": "beam.cantilever_root_weld.upset.compression.calculation_value",
+          "metric_type": "beam_calculation_value",
+          "domain": "stress",
+          "value": 1.271266,
+          "baseline": 1.3,
+          "gate_error": 0.02210307692307695,
+          "relative_error": 0.02210307692307695,
+          "source_file": "TMAXBEAMSTRESS.LIS",
+          "likely_cause": "梁单元应力输出集合或 MAX/TMAX/SQUARE 表章节映射差异；支架方钢与托臂不能互相覆盖。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 MAX/TMAX/SQUARE 三类应力输出集合与报告 6.1/6.2 表章节映射。",
+        "审 JCZH 根部反力节点集、谱/静力系数和力矩参考点。",
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。",
+        "审 HF-FORCE 根部组件、焊缝尺寸和焊缝等效应力 source_ref。"
+      ]
+    },
+    {
+      "report_no": "18185NI-LXSJ4146",
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4146",
+      "max_gate_error": 0.016363636363636337,
+      "failed_metric_count": 1,
+      "domain_counts": {
+        "connection_bolt": 1
+      },
+      "top_failures": [
+        {
+          "name": "tray_arm_connection_loads[1].my",
+          "metric_type": "tray_arm_connection_load",
+          "domain": "connection_bolt",
+          "value": 54.1,
+          "baseline": 55.0,
+          "gate_error": 0.016363636363636337,
+          "relative_error": 0.016363636363636337,
+          "source_file": "LS-FORCE.LIS",
+          "likely_cause": "托盘-托臂连接节点集或螺栓载荷后处理集合差异；不应从全节点表按接近值反推。"
+        }
+      ],
+      "recommended_next_review": [
+        "审 LS-FORCE 托盘-托臂连接组件，禁止用全节点表按接近值替代。"
+      ]
+    }
+  ],
+  "baseline_conflict_summary": {
+    "count": 29,
+    "failed_required_check_counts": {
+      "spectrum_elevation_m": 22,
+      "support_spacing_m": 6,
+      "support_height_m": 5,
+      "double_side_layer_count": 4,
+      "square_section_spec": 1,
+      "three_side_layer_count": 1,
+      "tray_loads_kg_per_m": 1
+    },
+    "spectrum_elevation_source_counts": {
+      "command_envelope_line": 15,
+      "static_calculation_filename": 12,
+      "report_text": 2
+    },
+    "report_command_spectrum_conflict_count": 7,
+    "most_common_meaning": "主要冲突是历史报告或对应命令流采用多楼层包络谱/不同标高谱，而提资行只给出单一标高；需以命令流 source_ref 判定，不能用报告数值反推新提资谱选择。"
+  },
+  "baseline_conflicts": [
+    {
+      "report_no": "18185NI-LXSJ4116",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 93,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 127,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 150,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+                "line": 173,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              3.6,
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        3.6,
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        3.6
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4116\\计算文件\\02 计算用命令流.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4116__row_24"
+    },
+    {
+      "report_no": "18185NI-LXSJ4117",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 93,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 127,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 150,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+                "line": 173,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              3.6,
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        3.6,
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        3.6
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4117\\计算文件\\02 计算用命令流.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4117__row_28"
+    },
+    {
+      "report_no": "18185NI-LXSJ4118",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            3.6,
+            10.05,
+            6.15
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 94,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 129,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 152,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+                "line": 175,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  3.6,
+                  10.05,
+                  6.15
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              3.6,
+              7.5,
+              13.5,
+              10.05,
+              6.15
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        3.6,
+        7.5,
+        13.5,
+        10.05,
+        6.15
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        3.6,
+        10.05,
+        6.15
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6,
+            10.05,
+            6.15
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6,
+            10.05,
+            6.15
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4118\\计算文件\\02 计算用命令流.mac",
+          "line": 94,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,3.6) (NS环形区_1818,10.05) (NS环形区_1818,6.15)",
+          "elevations": [
+            7.5,
+            13.5,
+            3.6,
+            10.05,
+            6.15
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4118__row_96"
+    },
+    {
+      "report_no": "18185NI-LXSJ4119",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.5,
+          "expected": 2.0
+        },
+        {
+          "check_id": "square_section_spec",
+          "status": "fail",
+          "weight": 4,
+          "value": "100-100-8",
+          "expected": "100-100-6"
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        7.5
+      ],
+      "command_spectrum_elevations": [
+        7.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4119\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5)",
+          "elevations": [
+            7.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4119\\计算文件\\02 计算用命令流.mac",
+          "line": 69,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5)",
+          "elevations": [
+            7.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4119\\计算文件\\02 计算用命令流.mac",
+          "line": 92,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5)",
+          "elevations": [
+            7.5
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4119__row_103"
+    },
+    {
+      "report_no": "18185NI-LXSJ4121",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4121\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m.PIP",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4121\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m.PIP",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4121__row_23"
+    },
+    {
+      "report_no": "18185NI-LXSJ4122",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4122\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m.PIP",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4122\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m.PIP",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4122__row_25"
+    },
+    {
+      "report_no": "18185NI-LXSJ4124",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "report_text",
+            "source_refs": [],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "report_text",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4124__row_42"
+    },
+    {
+      "report_no": "18185NI-LXSJ4127",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.5,
+          "expected": 2.0
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4127\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4127\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4127__row_89"
+    },
+    {
+      "report_no": "18185NI-LXSJ4128",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "three_side_layer_count",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            4,
+            2,
+            1
+          ],
+          "expected": [
+            4,
+            3,
+            1
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5
+      ],
+      "command_spectrum_elevations": [
+        7.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4128\\计算文件\\02静力法-计算文件 7.5m.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5m.PIP",
+          "elevations": [
+            7.5
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4128__row_61"
+    },
+    {
+      "report_no": "18185NI-LXSJ4131",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "report_text",
+            "source_refs": [],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "report_text",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4131__row_98"
+    },
+    {
+      "report_no": "18185NI-LXSJ4132",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4132\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m.PIP",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4132\\计算文件\\02静力法-计算文件 7.5 13.5m.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m.PIP",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4132__row_92"
+    },
+    {
+      "report_no": "18185NI-LXSJ4134",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4134\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4134\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4134__row_108"
+    },
+    {
+      "report_no": "18185NI-LXSJ4136",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 69,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 92,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 124,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 147,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+                "line": 170,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+                "elevations": [
+                  7.5,
+                  13.5
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        },
+        {
+          "check_id": "double_side_layer_count",
+          "status": "fail",
+          "weight": 3,
+          "value": [
+            5,
+            1
+          ],
+          "expected": [
+            5,
+            2
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+          "line": 69,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4136\\计算文件\\02 计算用命令流.mac",
+          "line": 92,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5)",
+          "elevations": [
+            7.5,
+            13.5
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4136__row_49"
+    },
+    {
+      "report_no": "18185NI-LXSJ4137",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.5,
+          "expected": 2.0
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4137\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              5.75,
+              6.05,
+              7.5,
+              13.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": true
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        5.75,
+        6.05,
+        7.5,
+        13.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4137\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4137__row_106"
+    },
+    {
+      "report_no": "18185NI-LXSJ4138",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.0,
+          "expected": 2.0
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        13.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4138\\计算文件\\02静力法-计算文件 13.5m.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 13.5m.PIP",
+          "elevations": [
+            13.5
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4138__row_54"
+    },
+    {
+      "report_no": "18185NI-LXSJ4139",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.2,
+          "expected": 2.0
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            -3.5
+          ],
+          "expected": [
+            3.6,
+            7.5,
+            -3.5
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 93,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 126,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 149,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 172,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              3.6,
+              7.5,
+              -3.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        3.6,
+        7.5,
+        -3.5
+      ],
+      "command_spectrum_elevations": [
+        3.6,
+        7.5,
+        -3.5
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+          "elevations": [
+            3.6,
+            7.5,
+            -3.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+          "elevations": [
+            3.6,
+            7.5,
+            -3.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+          "elevations": [
+            3.6,
+            7.5,
+            -3.5
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4139__row_157"
+    },
+    {
+      "report_no": "18185NI-LXSJ4140",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "double_side_layer_count",
+          "status": "fail",
+          "weight": 3,
+          "value": [
+            3,
+            2
+          ],
+          "expected": [
+            2,
+            2
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        3.6
+      ],
+      "command_spectrum_elevations": [
+        3.6
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4140\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6)",
+          "elevations": [
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4140\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6)",
+          "elevations": [
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4140\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 94,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,3.6)",
+          "elevations": [
+            3.6
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4140"
+    },
+    {
+      "report_no": "18185NI-LXSJ4141",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            7.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            10.05
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 93,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 125,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 148,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+                "line": 171,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              7.5,
+              10.05,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        7.5,
+        10.05,
+        13.5
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        10.05
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+          "elevations": [
+            7.5,
+            13.5,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+          "line": 70,
+          "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+          "elevations": [
+            7.5,
+            13.5,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4141\\计算文件\\02 计算用命令流.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,7.5) (NS环形区_1818,13.5) (NS环形区_1818,10.05)",
+          "elevations": [
+            7.5,
+            13.5,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4141__row_116"
+    },
+    {
+      "report_no": "18185NI-LXSJ4142",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.8,
+          "expected": 2.0
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        21.95,
+        7.5
+      ],
+      "command_spectrum_elevations": [
+        21.95
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4142\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,21.95)",
+          "elevations": [
+            21.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4142\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 69,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,21.95)",
+          "elevations": [
+            21.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4142\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NR_1818,21.95)",
+          "elevations": [
+            21.95
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4142__row_134"
+    },
+    {
+      "report_no": "18185NI-LXSJ4143",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.0,
+          "expected": 1.1
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        8.5,
+        7.5
+      ],
+      "command_spectrum_elevations": [
+        8.5
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4143\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,8.5)",
+          "elevations": [
+            8.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4143\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 69,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,8.5)",
+          "elevations": [
+            8.5
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4143\\计算文件\\02计算用命令流AR  8.55 7-10.mac",
+          "line": 93,
+          "text": "!SL-1(Z) 7%  Envelop:(NR_1818,8.5)",
+          "elevations": [
+            8.5
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4143__row_135"
+    },
+    {
+      "report_no": "18185NI-LXSJ4145",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            0.0
+          ],
+          "expected": [
+            16.95,
+            0.0
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 68,
+                "text": "!SL-1(XY) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 90,
+                "text": "!SL-1(Z) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 123,
+                "text": "!SL-2(XY) 10%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 144,
+                "text": "!SL-2(XY) 10%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 165,
+                "text": "!SL-2(Z) 10%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+                "elevations": [
+                  16.95,
+                  0.0
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              0.0,
+              16.95
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        0.0,
+        16.95
+      ],
+      "command_spectrum_elevations": [
+        16.95,
+        0.0
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+          "elevations": [
+            16.95,
+            0.0
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 68,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+          "elevations": [
+            16.95,
+            0.0
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4145\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 90,
+          "text": "!SL-1(Z) 7%  Envelop:(NR_1818,16.95) (NR_1818,0)",
+          "elevations": [
+            16.95,
+            0.0
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4145__row_146"
+    },
+    {
+      "report_no": "18185NI-LXSJ4148",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.5,
+          "expected": 2.0
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            10.05
+          ],
+          "expected": [
+            12.95,
+            10.05
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 72,
+                "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 97,
+                "text": "!SL-1(Z) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 127,
+                "text": "!SL-2(XY) 10%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 150,
+                "text": "!SL-2(XY) 10%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 173,
+                "text": "!SL-2(Z) 10%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+                "elevations": [
+                  12.95,
+                  10.05
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              12.95,
+              10.05
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        },
+        {
+          "check_id": "tray_loads_kg_per_m",
+          "status": "fail",
+          "weight": 3,
+          "value": [
+            53.0,
+            90.5
+          ],
+          "expected": [
+            73.0,
+            90.5
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        12.95,
+        10.05
+      ],
+      "command_spectrum_elevations": [
+        12.95,
+        10.05
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+          "elevations": [
+            12.95,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 72,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+          "elevations": [
+            12.95,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4148\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 97,
+          "text": "!SL-1(Z) 7%  Envelop:(NR_1818,12.95) (NS环墙内_1818,10.05)",
+          "elevations": [
+            12.95,
+            10.05
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4148__row_35"
+    },
+    {
+      "report_no": "18185NI-LXSJ4150",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.8,
+          "expected": 2.0
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        12.95
+      ],
+      "command_spectrum_elevations": [
+        12.95
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4150\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95)",
+          "elevations": [
+            12.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4150\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 68,
+          "text": "!SL-1(XY) 7%  Envelop:(NR_1818,12.95)",
+          "elevations": [
+            12.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4150\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 89,
+          "text": "!SL-1(Z) 7%  Envelop:(NR_1818,12.95)",
+          "elevations": [
+            12.95
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4150__row_150"
+    },
+    {
+      "report_no": "18185NI-LXSJ4151",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            4.75
+          ],
+          "expected": [
+            4.8
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 68,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 89,
+                "text": "!SL-1(Z) 7%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 121,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 142,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 163,
+                "text": "!SL-2(Z) 10%  Envelop:(NL_1818,4.8)",
+                "elevations": [
+                  4.8
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              4.8
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        },
+        {
+          "check_id": "double_side_layer_count",
+          "status": "fail",
+          "weight": 3,
+          "value": [
+            2,
+            3
+          ],
+          "expected": [
+            4,
+            3
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        4.8
+      ],
+      "command_spectrum_elevations": [
+        4.8
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+          "elevations": [
+            4.8
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 68,
+          "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+          "elevations": [
+            4.8
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4151\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 89,
+          "text": "!SL-1(Z) 7%  Envelop:(NL_1818,4.8)",
+          "elevations": [
+            4.8
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4151"
+    },
+    {
+      "report_no": "18185NI-LXSJ4155",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.8,
+          "expected": 2.0
+        },
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.6,
+          "expected": 1.8
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            16.95
+          ],
+          "expected": [
+            22.0,
+            16.95
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 67,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 88,
+                "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 120,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 141,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 162,
+                "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              16.95,
+              22.0
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "spectrum_elevation_source": "command_envelope_line",
+      "report_spectrum_elevations": [
+        16.95,
+        22.0
+      ],
+      "command_spectrum_elevations": [
+        22.0,
+        16.95
+      ],
+      "report_command_spectrum_conflict": false,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 46,
+          "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+          "elevations": [
+            22.0,
+            16.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 67,
+          "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+          "elevations": [
+            22.0,
+            16.95
+          ],
+          "evidence": "command_envelope_line"
+        },
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+          "line": 88,
+          "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+          "elevations": [
+            22.0,
+            16.95
+          ],
+          "evidence": "command_envelope_line"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4155__row_165"
+    },
+    {
+      "report_no": "18185NI-LXSJ4225",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            19.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4225\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              19.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": true
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        19.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4225\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4225__row_70"
+    },
+    {
+      "report_no": "18185NI-LXSJ4226",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            19.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4226\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              19.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": true
+          }
+        },
+        {
+          "check_id": "double_side_layer_count",
+          "status": "fail",
+          "weight": 3,
+          "value": [
+            1,
+            1
+          ],
+          "expected": [
+            2,
+            1
+          ]
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        19.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4226\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4226__row_71"
+    },
+    {
+      "report_no": "18185NI-LXSJ4227",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            19.5
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4227\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              19.5,
+              15.46
+            ],
+            "report_command_spectrum_conflict": true
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        19.5,
+        15.46
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4227\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4227__row_123"
+    },
+    {
+      "report_no": "18185NI-LXSJ4228",
+      "reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            -2.165,
+            -1.765
+          ],
+          "expected": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "source": {
+            "source": "static_calculation_filename",
+            "source_refs": [
+              {
+                "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4228\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "line": null,
+                "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+                "elevations": [
+                  7.5,
+                  13.5,
+                  15.46
+                ],
+                "evidence": "static_calculation_filename"
+              }
+            ],
+            "report_spectrum_elevations": [
+              -1.765,
+              -2.165
+            ],
+            "report_command_spectrum_conflict": true
+          }
+        }
+      ],
+      "spectrum_elevation_source": "static_calculation_filename",
+      "report_spectrum_elevations": [
+        -1.765,
+        -2.165
+      ],
+      "command_spectrum_elevations": [
+        7.5,
+        13.5,
+        15.46
+      ],
+      "report_command_spectrum_conflict": true,
+      "command_spectrum_source_refs": [
+        {
+          "file": "source_materials\\model_commands\\报告及模型命令流\\18185NI-LXSJ4228\\计算文件\\02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "line": null,
+          "text": "02静力法-计算文件 7.5 13.5m 15.46.PIP",
+          "elevations": [
+            7.5,
+            13.5,
+            15.46
+          ],
+          "evidence": "static_calculation_filename"
+        }
+      ],
+      "selected_job": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\production_full_intake_runs\\full_all_intake_as_new_20260520_consolidated\\18185NI-LXSJ4228"
+    }
+  ],
+  "output_root": "docs\\production_runs"
+}

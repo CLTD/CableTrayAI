@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>电缆桥架单位模型质控</title>
+    <style>
+      :root {
+        --bg: #eef3f7;
+        --panel: #ffffff;
+        --soft: #f7fafc;
+        --line: #cedae6;
+        --line-strong: #9eb3c9;
+        --ink: #0f2236;
+        --muted: #607287;
+        --green: #007a5a;
+        --green-soft: #e8f8f2;
+        --blue: #2457a6;
+        --blue-soft: #eef5ff;
+        --red: #b42318;
+        --red-soft: #fff1ef;
+        --amber: #9a5a00;
+        --amber-soft: #fff8e7;
+        --code: #07111f;
+        --shadow: 0 10px 26px rgba(36, 65, 95, .08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 13px/1.5 "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      }
+      button,
+      input,
+      select,
+      textarea { font: inherit; }
+      button {
+        min-height: 34px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 6px 12px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button:hover { border-color: var(--blue); color: var(--blue); }
+      button.primary {
+        border-color: var(--green);
+        background: var(--green);
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+      }
+      button.ghost { background: #f8fbfd; }
+      button:disabled { opacity: .64; cursor: wait; }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 36px;
+        border: 1px solid var(--line-strong);
+        border-radius: 7px;
+        padding: 7px 10px;
+        background: #fff;
+        color: var(--ink);
+      }
+      input[readonly] { background: #f4f8fb; color: #465a70; }
+      textarea {
+        min-height: 86px;
+        max-height: 210px;
+        resize: vertical;
+      }
+      label {
+        display: block;
+        margin: 9px 0 4px;
+        color: #2a4058;
+        font-size: 12px;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(248, 251, 253, .98);
+      }
+      .brand h1 { margin: 0; font-size: 17px; line-height: 1.25; }
+      .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+      .top-actions { display: flex; gap: 8px; align-items: center; }
+      .layout {
+        display: grid;
+        grid-template-columns: 340px minmax(760px, 1fr);
+        gap: 12px;
+        padding: 12px;
+      }
+      .stack { display: grid; gap: 10px; align-content: start; }
+      .panel {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 42px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--soft);
+      }
+      .panel-title { font-weight: 700; font-size: 14px; }
+      .panel-subtitle { margin-top: 2px; color: var(--muted); font-size: 12px; }
+      .panel-body { padding: 12px; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 22px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 2px 8px;
+        background: #fff;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .ok { border-color: #84d0be; background: var(--green-soft); color: var(--green); }
+      .warn { border-color: #e1bd66; background: var(--amber-soft); color: var(--amber); }
+      .bad { border-color: #ed9c95; background: var(--red-soft); color: var(--red); }
+      .blue { border-color: #b7c9ea; background: var(--blue-soft); color: var(--blue); }
+      .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .hint { margin-top: 6px; color: var(--muted); font-size: 12px; }
+      .switch-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 7px 0;
+      }
+      .switch-row input { width: auto; min-height: auto; }
+      .route-list { display: grid; gap: 6px; margin-top: 9px; }
+      .route-row {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 8px;
+        align-items: start;
+        border: 1px solid #d7e1eb;
+        border-radius: 7px;
+        padding: 7px 8px;
+        background: #fbfdff;
+      }
+      .route-row b { font-size: 12px; }
+      .route-row span { color: var(--muted); font-size: 12px; }
+      .notice {
+        border: 1px solid #d7e1eb;
+        border-radius: 7px;
+        padding: 8px 9px;
+        background: #fbfdff;
+      }
+      .notice + .notice { margin-top: 7px; }
+      .access-list {
+        display: grid;
+        gap: 6px;
+        max-height: 164px;
+        overflow: auto;
+        margin-top: 8px;
+      }
+      .access-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #d7e1eb;
+        border-radius: 7px;
+        padding: 6px 8px;
+        background: #fff;
+      }
+      .access-item button { min-height: 28px; padding: 3px 8px; }
+      .main-grid {
+        display: grid;
+        grid-template-rows: auto minmax(540px, calc(100vh - 176px));
+        gap: 10px;
+      }
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .metric {
+        border: 1px solid #d7e1eb;
+        border-radius: 8px;
+        padding: 9px 10px;
+        background: #fff;
+      }
+      .metric b { display: block; font-size: 16px; line-height: 1.25; }
+      .metric span { color: var(--muted); font-size: 12px; }
+      .monitor-summary {
+        margin-top: 8px;
+        display: grid;
+        gap: 7px;
+      }
+      .chat-panel {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 540px;
+      }
+      .chat-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--soft);
+      }
+      .chat-title {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chat-title b { font-size: 15px; }
+      .chat-tools { display: flex; gap: 8px; align-items: center; }
+      .transcript {
+        overflow: auto;
+        padding: 16px;
+        background:
+          radial-gradient(circle at 20% 0%, rgba(36, 87, 166, .06), transparent 260px),
+          linear-gradient(180deg, #f7fbff, #ffffff 46%);
+      }
+      .msg-row {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .msg-row.user {
+        grid-template-columns: minmax(0, 1fr) 28px;
+      }
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--blue);
+        font-weight: 700;
+        font-size: 12px;
+      }
+      .msg-row.user .avatar {
+        grid-column: 2;
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+      .msg {
+        max-width: min(900px, 82%);
+        border: 1px solid #d2dee9;
+        border-radius: 10px;
+        padding: 9px 11px;
+        background: #fff;
+        white-space: pre-wrap;
+        box-shadow: 0 4px 14px rgba(15, 34, 54, .04);
+      }
+      .msg-row.user .msg {
+        justify-self: end;
+        border-color: #a9c3e9;
+        background: var(--blue-soft);
+      }
+      .msg-row.assistant .msg {
+        border-color: #a9d1c3;
+        background: #f5fcf8;
+      }
+      .msg-meta {
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .typing {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .typing i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: pulse 1s infinite ease-in-out;
+      }
+      .typing i:nth-child(2) { animation-delay: .15s; }
+      .typing i:nth-child(3) { animation-delay: .3s; }
+      @keyframes pulse {
+        0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+        40% { opacity: 1; transform: translateY(-2px); }
+      }
+      .composer {
+        border-top: 1px solid var(--line);
+        padding: 11px 12px 12px;
+        background: var(--soft);
+      }
+      .quickbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 9px;
+      }
+      .quickbar button {
+        min-height: 30px;
+        font-size: 12px;
+      }
+      .context-row {
+        display: grid;
+        grid-template-columns: 260px minmax(180px, 1fr) auto;
+        gap: 9px;
+        align-items: end;
+        margin-bottom: 8px;
+      }
+      .file-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        max-width: 100%;
+        margin: 2px 4px 0 0;
+        border: 1px solid #d7e1eb;
+        border-radius: 999px;
+        padding: 2px 8px;
+        background: #fff;
+        color: #2a4058;
+        font-size: 12px;
+      }
+      .send-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 108px;
+        gap: 8px;
+      }
+      .send-row button { min-height: 86px; }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      @media (max-width: 1180px) {
+        .layout { grid-template-columns: 1fr; }
+        .main-grid { grid-template-rows: auto minmax(520px, 1fr); }
+      }
+      @media (max-width: 760px) {
+        .topbar { flex-direction: column; align-items: stretch; }
+        .compact-grid,
+        .status-strip,
+        .context-row,
+        .send-row { grid-template-columns: 1fr; }
+        .msg { max-width: 100%; }
+        .chat-head { align-items: flex-start; flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <h1>电缆桥架单位模型质控</h1>
+        <p>面向电缆桥架力学分析一体化平台；模型做解释、巡检和修复建议，正式结论仍以 ANSYS、Excel、确定性公式和 source_ref 为准。</p>
+      </div>
+      <div class="top-actions">
+        <button type="button" onclick="location.href='/dashboard'">返回计算工作台</button>
+        <button type="button" class="primary" id="refreshAll">刷新质控</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="stack">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">模型接入</div>
+              <div class="panel-subtitle">按任务自动切换；不用手填模型名</div>
+            </div>
+            <span id="modelStatus" class="pill warn">读取中</span>
+          </div>
+          <div class="panel-body">
+            <div class="switch-row">
+              <input id="aiEnabled" type="checkbox" />
+              <label for="aiEnabled" style="margin:0">启用单位内网模型接口</label>
+            </div>
+            <div class="switch-row">
+              <input id="aiRoutingEnabled" type="checkbox" />
+              <label for="aiRoutingEnabled" style="margin:0">按任务自动选模型</label>
+            </div>
+            <label for="aiModelPreset">默认模型</label>
+            <select id="aiModelPreset"><option value="">读取模型清单...</option></select>
+            <label for="aiBaseUrl">接口地址</label>
+            <input id="aiBaseUrl" readonly />
+            <label for="aiModelName">当前模型</label>
+            <input id="aiModelName" readonly />
+            <label for="detectedModelSelect">接口返回的可用模型</label>
+            <select id="detectedModelSelect"><option value="">先探测连接</option></select>
+            <label for="aiApiKeyEnv">密钥环境变量</label>
+            <input id="aiApiKeyEnv" placeholder="单位模型无 key 时留空" />
+            <div class="compact-grid" style="margin-top:8px">
+              <button type="button" id="saveConfig" class="primary">保存模型</button>
+              <button type="button" id="probeConfig">探测连接</button>
+            </div>
+            <div id="probeResult" class="hint">探测只发送一句测试文本，不上传工程资料。默认优先 Qwen3-coder-30B。</div>
+            <div id="routeList" class="route-list"></div>
+          </div>
+        </section>
+
+      </aside>
+
+      <section class="main-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">实时巡检</div>
+              <div class="panel-subtitle">自动读取当前运行、失败任务和历史验证状态；不阻塞计算</div>
+            </div>
+            <span id="monitorBadge" class="pill warn">未刷新</span>
+          </div>
+          <div class="panel-body">
+            <div class="status-strip">
+              <div class="metric"><b id="runStatus">-</b><span>当前状态</span></div>
+              <div class="metric"><b id="activeRuns">0</b><span>活动运行</span></div>
+              <div class="metric"><b id="failedJobs">0</b><span>当前失败</span></div>
+              <div class="metric"><b id="monitorProvider">-</b><span>质控方式</span></div>
+            </div>
+            <div id="monitorOutput" class="monitor-summary"><div class="notice">等待刷新。</div></div>
+          </div>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="chat-head">
+            <div class="chat-title">
+              <b>质控对话</b>
+              <span id="chatModelChip" class="pill blue">模型：读取中</span>
+              <span id="chatModeChip" class="pill">自动判断问题类型</span>
+            </div>
+            <div class="chat-tools">
+              <button type="button" class="ghost" id="clearChat">清空对话</button>
+            </div>
+          </div>
+          <div class="transcript" id="transcript" aria-live="polite">
+            <div class="msg-row assistant">
+              <div class="avatar">AI</div>
+              <div class="msg">
+                可以直接问运行异常、UNKNOWN 节点、全零载荷、缺图、报告注入失败或 ANSYS 日志问题。系统会按问题类型自动选模型；模型只给建议，不替代工程结论。
+                <div class="msg-meta">提示：普通问题会走快速模型，疑难复核才走高精度模型。</div>
+              </div>
+            </div>
+          </div>
+          <div class="composer">
+            <div class="quickbar">
+              <button type="button" class="quickAsk" data-mode="run_monitor" data-text="检查当前运行状态，说明是否卡住、是否有失败任务、下一步看哪些日志。">运行状态</button>
+              <button type="button" class="quickAsk" data-mode="postprocess_qc" data-text="如果出现 UNKNOWN 节点、全零载荷、缺图或表格映射异常，应该按什么顺序排查？">结果提取</button>
+              <button type="button" class="quickAsk" data-mode="engineering_qc" data-text="报告注入失败或图表不对应时，应检查哪些文件和映射关系？">报告注入</button>
+              <button type="button" class="quickAsk" data-mode="safe_fix" data-text="根据当前错误给出安全修复建议，不能改变工程结论。">安全修复</button>
+              <button type="button" class="quickAsk" data-mode="deep_review" data-text="对当前疑难问题做深度复核，列出证据链和人工审核点。">疑难复核</button>
+            </div>
+            <div class="context-row">
+              <div>
+                <label for="fileInput">发送文件，可选</label>
+                <input id="fileInput" type="file" multiple />
+                <div id="fileList" class="hint">未上传文件。</div>
+              </div>
+              <div>
+                <label for="jobId">关联 job_id，可选</label>
+                <input id="jobId" placeholder="输入当前任务的 job_id" />
+              </div>
+              <div>
+                <label class="sr-only" for="detailToggle">详细程度</label>
+                <button type="button" id="detailToggle" class="ghost" aria-pressed="false">短答优先</button>
+              </div>
+            </div>
+            <label for="message">问题</label>
+            <div class="send-row">
+              <textarea id="message" placeholder="直接输入问题，按 Ctrl+Enter 发送。"></textarea>
+              <button type="button" id="sendMessage" class="primary">发送</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const state = {
+        attachments: [],
+        presets: [],
+        routes: {},
+        selectedPreset: null,
+        nextMode: "chat",
+        history: [],
+        detailed: false,
+      };
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let payload = {};
+        try { payload = text ? JSON.parse(text) : {}; } catch { payload = { detail: text }; }
+        if (!response.ok) throw new Error(payload.detail || `${response.status} ${response.statusText}`);
+        return payload;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+      }
+
+      function nowTime() {
+        return new Date().toLocaleTimeString("zh-CN", { hour12: false, hour: "2-digit", minute: "2-digit" });
+      }
+
+      function providerLabel(payload) {
+        if (payload?.provider === "openai_compatible") return payload.model || "单位模型";
+        if (payload?.provider === "rule_based_after_model_error") return "模型未返回，规则辅助";
+        if (payload?.provider === "rule_based") return "规则辅助";
+        return payload?.model || payload?.provider || "质控助手";
+      }
+
+      function renderFindings(findings) {
+        if (!Array.isArray(findings) || !findings.length) return "";
+        return "\n\n" + findings.slice(0, 5).map((item) => {
+          const severity = item.severity ? `【${item.severity}】` : "";
+          return `${severity}${item.issue || ""}\n建议：${item.suggested_fix || "继续人工复核。"}`;
+        }).join("\n\n");
+      }
+
+      function appendMessage(role, text, meta = "") {
+        const row = document.createElement("div");
+        row.className = `msg-row ${role}`;
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = role === "user" ? "我" : "AI";
+        const bubble = document.createElement("div");
+        bubble.className = "msg";
+        bubble.textContent = text;
+        if (meta) {
+          const metaNode = document.createElement("div");
+          metaNode.className = "msg-meta";
+          metaNode.textContent = meta;
+          bubble.appendChild(metaNode);
+        }
+        if (role === "user") {
+          row.appendChild(bubble);
+          row.appendChild(avatar);
+        } else {
+          row.appendChild(avatar);
+          row.appendChild(bubble);
+        }
+        $("transcript").appendChild(row);
+        $("transcript").scrollTop = $("transcript").scrollHeight;
+        return bubble;
+      }
+
+      function appendTyping() {
+        const row = document.createElement("div");
+        row.className = "msg-row assistant";
+        row.innerHTML = `<div class="avatar">AI</div><div class="msg"><span class="typing"><i></i><i></i><i></i></span><span style="margin-left:8px">正在读取上下文并调用模型...</span><div class="msg-meta">若单位模型暂时无响应，会明确标记为规则辅助。</div></div>`;
+        $("transcript").appendChild(row);
+        $("transcript").scrollTop = $("transcript").scrollHeight;
+        return row.querySelector(".msg");
+      }
+
+      function setBubbleText(bubble, text, meta = "") {
+        bubble.textContent = text;
+        if (meta) {
+          const metaNode = document.createElement("div");
+          metaNode.className = "msg-meta";
+          metaNode.textContent = meta;
+          bubble.appendChild(metaNode);
+        }
+      }
+
+      function labelStatus(value) {
+        if (value === "pass") return "通过";
+        if (value === "warning") return "警告";
+        if (value === "fail") return "失败";
+        if (value === "skipped") return "未执行";
+        if (value === "fallback") return "规则辅助";
+        if (value === "model_unavailable") return "模型未返回";
+        return value || "-";
+      }
+
+      function authPolicyLabel(value) {
+        if (value === "no_key") return "无 key";
+        if (value === "env_key_set") return "环境变量已设置";
+        if (value === "env_key_missing") return "环境变量缺失";
+        return value || "-";
+      }
+
+      function monitorProviderLabel(audit) {
+        if (audit?.provider === "openai_compatible" && audit?.status === "pass") return audit.model || "单位模型";
+        if (audit?.provider === "rule_based_after_model_error") return "模型未返回";
+        if (audit?.provider === "rule_based_fallback" || audit?.provider === "rule_based") return "规则质控";
+        return audit?.provider || "-";
+      }
+
+      function routeLabelForMode(mode) {
+        const route = state.routes[mode] || state.routes.engineering_qc || {};
+        return route.label || "自动路由";
+      }
+
+      function applySelectedPreset(presetId) {
+        const preset = state.presets.find((item) => item.preset_id === presetId) || state.presets.find((item) => item.recommended) || state.presets[0];
+        state.selectedPreset = preset || null;
+        if (!preset) return;
+        $("aiModelPreset").value = preset.preset_id;
+        $("aiBaseUrl").value = preset.base_url || "";
+        $("aiModelName").value = preset.model || "";
+        $("chatModelChip").textContent = `模型：${preset.model || preset.display_name}`;
+        $("probeResult").textContent = `${preset.display_name || preset.model}，${preset.role || ""}`;
+      }
+
+      function renderModelPresets(presets, selectedPresetId) {
+        state.presets = Array.isArray(presets) ? presets : [];
+        if (!state.presets.length) {
+          $("aiModelPreset").innerHTML = `<option value="">未读取到模型预设</option>`;
+          return;
+        }
+        $("aiModelPreset").innerHTML = state.presets.map((preset) => `<option value="${escapeHtml(preset.preset_id)}">${escapeHtml(preset.display_name || preset.model)}</option>`).join("");
+        const fallback = state.presets.find((item) => item.recommended)?.preset_id || state.presets[0].preset_id;
+        applySelectedPreset(selectedPresetId || fallback);
+      }
+
+      function renderRoutes(routes) {
+        state.routes = routes || {};
+        const labels = {
+          chat: "对话",
+          engineering_qc: "工程质控",
+          run_monitor: "实时巡检",
+          postprocess_qc: "后处理",
+          safe_fix: "安全修复",
+          deep_review: "疑难复核",
+        };
+        const order = ["chat", "engineering_qc", "run_monitor", "postprocess_qc", "safe_fix", "deep_review"];
+        $("routeList").innerHTML = order.filter((key) => state.routes[key]).map((key) => {
+          const route = state.routes[key];
+          const preset = state.presets.find((item) => item.preset_id === route.preset_id);
+          return `<div class="route-row"><b>${escapeHtml(labels[key] || route.label || key)}</b><span>${escapeHtml(preset?.model || route.preset_id)}，${escapeHtml(route.timeout_seconds)}s，${escapeHtml(route.purpose)}</span></div>`;
+        }).join("");
+      }
+
+      async function loadConfig() {
+        const payload = await requestJson("/ai/config", { cache: "no-store" });
+        const config = payload.config || {};
+        renderModelPresets(payload.presets || [], config.selected_preset_id || "qwen3-coder-30b");
+        renderRoutes(payload.routes || {});
+        $("aiEnabled").checked = Boolean(config.enabled);
+        $("aiRoutingEnabled").checked = config.routing_enabled !== false;
+        $("aiApiKeyEnv").value = config.api_key_env || "";
+        $("modelStatus").textContent = config.enabled ? "已启用" : "未启用";
+        $("modelStatus").className = `pill ${config.enabled ? "ok" : "warn"}`;
+      }
+
+      async function saveConfig() {
+        const payload = await requestJson("/ai/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            enabled: $("aiEnabled").checked,
+            preset_id: $("aiModelPreset").value,
+            base_url: $("aiBaseUrl").value.trim(),
+            model: $("aiModelName").value.trim(),
+            api_key_env: $("aiApiKeyEnv").value.trim(),
+            timeout_seconds: state.selectedPreset?.timeout_seconds || 60,
+            routing_enabled: $("aiRoutingEnabled").checked,
+          }),
+        });
+        appendMessage("assistant", `默认模型已保存：${payload.config?.model || "-"}`, nowTime());
+        await loadConfig();
+      }
+
+      async function probeConfig() {
+        $("probeResult").textContent = "正在探测，只发送测试文本...";
+        const started = performance.now();
+        const payload = await requestJson("/ai/probe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            base_url: $("aiBaseUrl").value.trim(),
+            model: $("aiModelName").value.trim(),
+            api_key_env: $("aiApiKeyEnv").value.trim(),
+            timeout_seconds: Math.min(state.selectedPreset?.timeout_seconds || 60, 18),
+          }),
+        });
+        const elapsed = Math.round(performance.now() - started);
+        const detected = Array.isArray(payload.available_models) ? payload.available_models : [];
+        if (detected.length) {
+          $("detectedModelSelect").innerHTML = detected.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+          if (payload.selected_model) $("detectedModelSelect").value = payload.selected_model;
+          $("aiModelName").value = $("detectedModelSelect").value || payload.selected_model || $("aiModelName").value;
+        } else {
+          $("detectedModelSelect").innerHTML = `<option value="">接口未返回模型清单</option>`;
+        }
+        $("probeResult").textContent = [
+          `探测：${labelStatus(payload.status)}`,
+          `聊天：${labelStatus(payload.chat_status)}`,
+          `耗时：${elapsed} ms`,
+          `授权：${authPolicyLabel(payload.auth_policy)}`,
+          detected.length ? `可选模型：${detected.length} 个` : "",
+          payload.chat_error ? `错误：${payload.chat_error.includes("502") ? "模型服务 502，可能未开放或正在加载。" : payload.chat_error}` : "",
+        ].filter(Boolean).join("；");
+      }
+
+      async function refreshMonitor() {
+        $("monitorBadge").textContent = "刷新中";
+        $("monitorBadge").className = "pill warn";
+        const payload = await requestJson("/ai/run-monitor", { cache: "no-store" });
+        const context = payload.context || {};
+        const audit = payload.audit || {};
+        const recentQuality = context.recent_job_quality || {};
+        const currentStatus = context.status === "idle" ? "空闲" : (context.status || "-");
+        const historicalFailed = context.historical_failed_jobs || [];
+        $("runStatus").textContent = currentStatus;
+        $("activeRuns").textContent = (context.active_runs || []).length;
+        $("failedJobs").textContent = recentQuality.fail_count || 0;
+        $("monitorProvider").textContent = monitorProviderLabel(audit);
+        const findings = (audit.findings || []).slice(0, 4).map((item) => `【${item.severity}】${item.issue}；建议：${item.suggested_fix}`).join("\n");
+        $("monitorOutput").innerHTML = `
+          <div class="notice"><b>当前：</b>${escapeHtml(currentStatus)}；活动 ${(context.active_runs || []).length} 个；近期质量 ${escapeHtml(recentQuality.status || "-")}。</div>
+          <div class="notice"><b>巡检：</b>${escapeHtml(audit.answer || "实时巡检正常。")}</div>
+          <div class="notice"><b>历史验证：</b>${historicalFailed.length ? `遗留 ${historicalFailed.length} 个后验样例，仅作研发审查资料，不代表当前新提资失败。` : "无遗留失败样例。"}</div>
+          ${findings ? `<pre>${escapeHtml(findings)}</pre>` : ""}
+        `;
+        $("monitorBadge").textContent = "已刷新";
+        $("monitorBadge").className = "pill ok";
+      }
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(",", 2)[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function uploadFiles() {
+        const files = Array.from($("fileInput").files || []);
+        if (!files.length) return;
+        state.attachments = [];
+        for (const file of files) {
+          const content_base64 = await fileToBase64(file);
+          const payload = await requestJson("/files/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: file.name, kind: "ai_tools", content_base64 }),
+          });
+          state.attachments.push({ path: payload.path, filename: payload.filename });
+        }
+        $("fileList").innerHTML = state.attachments.map((item) => `<span class="file-pill">${escapeHtml(item.filename)}</span>`).join("");
+      }
+
+      function inferMode(message) {
+        const text = String(message || "");
+        if (/复核|历史|冲突|1%|差异|详细|逐项/.test(text)) return "deep_review";
+        if (/UNKNOWN|全零|载荷|后处理|图片|缺图|LIS|节点/.test(text)) return "postprocess_qc";
+        if (/报告|注入|模板|图5|附录|表6/.test(text)) return "engineering_qc";
+        if (/修复|部署|网页|报错|错误|失败|打不开|安装/.test(text)) return "safe_fix";
+        if (/卡住|运行状态|进度|日志/.test(text)) return "run_monitor";
+        return "chat";
+      }
+
+      function recordHistory(role, content) {
+        state.history.push({ role, content: String(content || "").slice(0, 1800) });
+        if (state.history.length > 10) state.history = state.history.slice(-10);
+      }
+
+      async function sendMessage() {
+        const rawMessage = $("message").value.trim();
+        if (!rawMessage) return;
+        const mode = state.nextMode || inferMode(rawMessage);
+        const message = state.detailed && !/详细|展开|逐项|完整/.test(rawMessage) ? `${rawMessage}\n请稍微展开，但仍保持可执行。` : rawMessage;
+        $("chatModeChip").textContent = routeLabelForMode(mode);
+        appendMessage("user", rawMessage, nowTime());
+        recordHistory("user", rawMessage);
+        $("message").value = "";
+        $("sendMessage").disabled = true;
+        $("sendMessage").textContent = "分析中";
+        const pending = appendTyping();
+        const started = performance.now();
+        try {
+          if (($("fileInput").files || []).length && !state.attachments.length) await uploadFiles();
+          const payload = await requestJson("/ai/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message,
+              mode,
+              job_id: $("jobId").value.trim() || null,
+              attachments: state.attachments,
+              history: state.history.slice(-8),
+            }),
+          });
+          const elapsed = Math.max(1, Math.round(performance.now() - started));
+          const body = [payload.answer || "已完成。", renderFindings(payload.findings)].filter(Boolean).join("");
+          const route = payload.route?.label || payload.selected_preset_id || routeLabelForMode(mode);
+          const meta = `${providerLabel(payload)} · ${route} · ${labelStatus(payload.status)} · ${elapsed} ms`;
+          setBubbleText(pending, body, meta);
+          recordHistory("assistant", body);
+        } catch (error) {
+          setBubbleText(pending, `分析失败：${error.message}`, "请检查模型接口、登录权限或服务日志。");
+          recordHistory("assistant", `分析失败：${error.message}`);
+        } finally {
+          $("sendMessage").disabled = false;
+          $("sendMessage").textContent = "发送";
+          state.nextMode = "";
+          $("transcript").scrollTop = $("transcript").scrollHeight;
+        }
+      }
+
+      $("aiModelPreset").addEventListener("change", () => applySelectedPreset($("aiModelPreset").value));
+      $("detectedModelSelect").addEventListener("change", () => { if ($("detectedModelSelect").value) $("aiModelName").value = $("detectedModelSelect").value; });
+      $("saveConfig").addEventListener("click", () => saveConfig().catch((e) => appendMessage("assistant", e.message, nowTime())));
+      $("probeConfig").addEventListener("click", () => probeConfig().catch((e) => { $("probeResult").textContent = `探测失败：${e.message}`; }));
+      $("refreshAll").addEventListener("click", () => refreshMonitor().catch((e) => appendMessage("assistant", e.message, nowTime())));
+      $("fileInput").addEventListener("change", () => uploadFiles().catch((e) => appendMessage("assistant", e.message, nowTime())));
+      $("sendMessage").addEventListener("click", () => sendMessage().catch((e) => appendMessage("assistant", e.message, nowTime())));
+      $("message").addEventListener("keydown", (event) => { if (event.ctrlKey && event.key === "Enter") sendMessage().catch((e) => appendMessage("assistant", e.message, nowTime())); });
+      $("clearChat").addEventListener("click", () => {
+        state.history = [];
+        $("transcript").innerHTML = "";
+        appendMessage("assistant", "已清空当前对话。可以继续问运行、后处理、报告注入或部署问题。", nowTime());
+      });
+      $("detailToggle").addEventListener("click", () => {
+        state.detailed = !state.detailed;
+        $("detailToggle").textContent = state.detailed ? "详细回答" : "短答优先";
+        $("detailToggle").setAttribute("aria-pressed", String(state.detailed));
+      });
+      document.querySelectorAll(".quickAsk").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.nextMode = button.dataset.mode || "chat";
+          $("message").value = button.dataset.text || "";
+          sendMessage().catch((e) => appendMessage("assistant", e.message, nowTime()));
+        });
+      });
+
+      setInterval(() => refreshMonitor().catch(() => {}), 30000);
+      loadConfig().catch((e) => appendMessage("assistant", e.message, nowTime()));
+      refreshMonitor().catch(() => {});
+    </script>
+  </body>
+</html>

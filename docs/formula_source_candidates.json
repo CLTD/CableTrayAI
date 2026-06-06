@@ -1,0 +1,105 @@
+[
+  {
+    "formula_id": "material_allowable_normal",
+    "status": "confirmed",
+    "source_ref": "电缆桥架结果评定-q235材料.xlsx:应力评定!G2",
+    "candidate_files": [],
+    "questions": []
+  },
+  {
+    "formula_id": "material_allowable_shear",
+    "status": "confirmed",
+    "source_ref": "电缆桥架结果评定-q235材料.xlsx:应力评定!J2",
+    "candidate_files": [],
+    "questions": []
+  },
+  {
+    "formula_id": "direct_stress_ratio",
+    "status": "confirmed",
+    "source_ref": "电缆桥架结果评定-q235材料.xlsx:应力评定!K20/T20",
+    "candidate_files": [],
+    "questions": []
+  },
+  {
+    "formula_id": "bolt_tension_shear_combination",
+    "status": "confirmed",
+    "source_ref": "电缆桥架结果评定-q235材料.xlsx:螺栓!E57",
+    "candidate_files": [],
+    "questions": []
+  },
+  {
+    "formula_id": "weld_effective_throat",
+    "status": "confirmed",
+    "source_ref": "电缆桥架结果评定-q235材料.xlsx:异型钢焊缝评定!J30",
+    "candidate_files": [],
+    "questions": []
+  },
+  {
+    "formula_id": "support_tension_bending_combination",
+    "status": "unconfirmed_todo",
+    "source_ref": "TODO_FORMULA_SOURCE_REQUIRED",
+    "candidate_files": [
+      "source_materials/learning_docs/HDLXSC-25A5-01-01 抗震分析规范要求工作手册.pdf",
+      "source_materials/learning_docs/HDLXSC-25A5-02-03 支架、设备抗震分析工作手册.docx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-06Cr19Ni10材料.xlsx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-q235材料.xlsx",
+      "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/18185NI-LXSJ4120.docx"
+    ],
+    "questions": [
+      "Which workbook sheet/cell or standard clause defines this formula?",
+      "What units and applicability conditions govern the formula?",
+      "Which load cases and result fields feed the formula?"
+    ]
+  },
+  {
+    "formula_id": "support_compression_bending_combination",
+    "status": "unconfirmed_todo",
+    "source_ref": "TODO_FORMULA_SOURCE_REQUIRED",
+    "candidate_files": [
+      "source_materials/learning_docs/HDLXSC-25A5-01-01 抗震分析规范要求工作手册.pdf",
+      "source_materials/learning_docs/HDLXSC-25A5-02-03 支架、设备抗震分析工作手册.docx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-06Cr19Ni10材料.xlsx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-q235材料.xlsx",
+      "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/18185NI-LXSJ4120.docx"
+    ],
+    "questions": [
+      "Which workbook sheet/cell or standard clause defines this formula?",
+      "What units and applicability conditions govern the formula?",
+      "Which load cases and result fields feed the formula?"
+    ]
+  },
+  {
+    "formula_id": "weld_equivalent_stress",
+    "status": "unconfirmed_todo",
+    "source_ref": "TODO_FORMULA_SOURCE_REQUIRED",
+    "candidate_files": [
+      "source_materials/learning_docs/HDLXSC-25A5-01-01 抗震分析规范要求工作手册.pdf",
+      "source_materials/learning_docs/HDLXSC-25A5-02-03 支架、设备抗震分析工作手册.docx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-06Cr19Ni10材料.xlsx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-q235材料.xlsx",
+      "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/18185NI-LXSJ4120.docx"
+    ],
+    "questions": [
+      "Which workbook sheet/cell or standard clause defines this formula?",
+      "What units and applicability conditions govern the formula?",
+      "Which load cases and result fields feed the formula?"
+    ]
+  },
+  {
+    "formula_id": "expansion_bolt_combination",
+    "status": "unconfirmed_todo",
+    "source_ref": "TODO_FORMULA_SOURCE_REQUIRED",
+    "candidate_files": [
+      "source_materials/learning_docs/HDLXSC-25A5-01-01 抗震分析规范要求工作手册.pdf",
+      "source_materials/learning_docs/HDLXSC-25A5-02-03 支架、设备抗震分析工作手册.docx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-06Cr19Ni10材料.xlsx",
+      "source_materials/model_commands/上游专业提资/电缆桥架结果评定-q235材料.xlsx",
+      "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/18185NI-LXSJ4120.docx"
+    ],
+    "questions": [
+      "Which workbook sheet/cell or standard clause defines this formula?",
+      "What units and applicability conditions govern the formula?",
+      "Which load cases and result fields feed the formula?"
+    ]
+  }
+]

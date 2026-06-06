@@ -1,0 +1,29 @@
+{
+  "modules": {
+    "cable_tray": {
+      "selected_model": "DeepSeek",
+      "usage": "实时质控、运行状态解释、错误归因",
+      "status": "active"
+    },
+    "peps_pipe": {
+      "selected_model": "千问/Qwen",
+      "usage": "FRE、工况、约束和支吊架建模规则辅助",
+      "status": "knowledge_ready"
+    },
+    "drawing": {
+      "selected_model": "千问多模态/Qwen-VL",
+      "usage": "PDF、CAD/DXF、扫描件和图纸说明识别；结果需人工确认",
+      "status": "pending_vision_endpoint"
+    },
+    "knowledge": {
+      "selected_model": "DeepSeek",
+      "usage": "规范、手册、历史案例检索后的推理归纳",
+      "status": "knowledge_ready"
+    }
+  },
+  "selection_policy": {
+    "method": "module_contest",
+    "public_ui": "普通操作界面只显示 selected_model，不展示候选、分数或接口地址。",
+    "authority": "模型只做建议，不替代 ANSYS、Excel、确定性公式和人工审核。"
+  }
+}

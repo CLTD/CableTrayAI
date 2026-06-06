@@ -1,0 +1,27 @@
+[provider]
+# CableTrayAI unit intranet model endpoint.
+# The default uses the unit-provided Qwen3-coder-30B OpenAI-compatible /v1 service.
+enabled = true
+base_url = "http://models.ai.cnpe.cc/deepseek32b/v1"
+model = "Qwen3-coder-30B"
+api_key_env = ""
+timeout_seconds = 60
+routing_enabled = true
+preset_id = "qwen3-coder-30b"
+
+# Other vetted presets are exposed in the web UI:
+# - DeepSeek-R1-32B: http://models.ai.cnpe.cc/deepseek32b/v1
+# - Qwen3-235B: http://models.ai.cnpe.cc/qwen235b/v1
+# - Qwen3-32B: http://models.ai.cnpe.cc/qwen32b/v1
+
+[boundary]
+# Advisory only. The model may explain, retrieve, audit and suggest fixes, but
+# it must not replace ANSYS, Excel authoritative evaluation, deterministic
+# formulas, source_ref, result_validation, or report audit gates.
+authority = "advisory_only"
+
+[engineering_orchestration]
+# The model can propose intake intent and command-plan parameters. It must not
+# directly write executable APDL/PIP/MAC. CableTrayAI compiles the final three
+# command files from audited standard sources and blocks free command fields.
+mode = "llm_intent_plus_standard_template_compiler"

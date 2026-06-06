@@ -1,0 +1,94 @@
+{
+  "schema_version": "cabletray.job.v1",
+  "job_identity": {
+    "intake_id": "S2-intake-row-001",
+    "calculation_batch": "S2-intake-row-001",
+    "report_number": null,
+    "source_row_number": 12,
+    "source_workbook": "uploaded_intake.xlsx",
+    "source_sheet": "S2"
+  },
+  "project": {
+    "project_code": "custom",
+    "building": "QX",
+    "area": "QX",
+    "elevation_m": 10.45,
+    "floor_label": "+10.45m"
+  },
+  "analysis": {
+    "method": "response_spectrum",
+    "classification": "non_steel_platform",
+    "basis": "Rows without steel-platform wording use response spectrum method.",
+    "load_levels": ["DW", "SL-1", "SL-2"],
+    "directions": ["X", "Y", "Z"]
+  },
+  "support": {
+    "support_family": "S2",
+    "side_type": "double_side",
+    "front_layer_count": 2,
+    "back_layer_count": 2,
+    "geometry_notes": "Parsed from intake tray description.",
+    "steel_platform_contact": false
+  },
+  "materials": {
+    "default_member_material": "Q355",
+    "square_support_material": "Q355",
+    "tray_material_policy": "Non-steel-platform rows use Q355 unless discipline review overrides.",
+    "allowable_source_ref": "material_allowables.json plus authoritative Excel mapping"
+  },
+  "section": {
+    "square_tube": {
+      "outer_width_mm": null,
+      "thickness_mm": null,
+      "sect_file": null
+    },
+    "selection_policy": "candidate_search_ratio_below_1_closest"
+  },
+  "tray_layers": [
+    {
+      "layer_id": "front-1",
+      "side": "front",
+      "width_mm": 600,
+      "load_kg_per_m": 117.5,
+      "equivalent_density_kg_per_m3": 65423.162584,
+      "description": "front tray layer 1"
+    }
+  ],
+  "spectrum": {
+    "workbook": "uploaded_spectrum.xlsm",
+    "config_confirmed": false,
+    "selection": {
+      "building": "QX",
+      "elevation_m": 10.45,
+      "damping_by_level": {
+        "SL-1": 0.07,
+        "SL-2": 0.1
+      },
+      "interpolation": {
+        "mode": "exact",
+        "lower_elevation_m": null,
+        "upper_elevation_m": null
+      }
+    }
+  },
+  "loads": {
+    "dead_weight": {},
+    "seismic": {},
+    "manual_notes": null
+  },
+  "output": {
+    "output_root": "E:/CODEX/tray_platform/ANSYS Output",
+    "folder_name_policy": "intake_id_until_report_number",
+    "retain_raw_ansys_files": true
+  },
+  "traceability": {
+    "source_refs": [
+      "intake workbook row 12",
+      "selected spectrum workbook QX +10.45m",
+      "standard APDL/PIP/MAC source family"
+    ],
+    "created_by": "CableTrayAI",
+    "created_at": "2026-05-20T00:00:00Z",
+    "review_status": "draft"
+  }
+}

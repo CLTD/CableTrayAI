@@ -1,0 +1,2485 @@
+{
+  "status": "pass",
+  "required_missing": [],
+  "source_files": [
+    "导出数据-S2.PIP",
+    "常用托臂截面参数/100-100-5.SECT",
+    "常用托臂截面参数/100-100-6.SECT",
+    "常用托臂截面参数/100-100-8.SECT",
+    "常用托臂截面参数/100-75-2mm.SECT",
+    "常用托臂截面参数/120-120-10.SECT",
+    "常用托臂截面参数/120-120-12.SECT",
+    "常用托臂截面参数/120-120-6.SECT",
+    "常用托臂截面参数/120-120-8.SECT",
+    "常用托臂截面参数/140-140-10.SECT",
+    "常用托臂截面参数/140-140-12.SECT",
+    "常用托臂截面参数/140-140-8.SECT",
+    "常用托臂截面参数/150-150-10.SECT",
+    "常用托臂截面参数/150-150-12.SECT",
+    "常用托臂截面参数/150-150-14.SECT",
+    "常用托臂截面参数/150-150-8.SECT",
+    "常用托臂截面参数/160-160-10.SECT",
+    "常用托臂截面参数/160-160-12.SECT",
+    "常用托臂截面参数/160-160-14.SECT",
+    "常用托臂截面参数/160-160-8.SECT",
+    "常用托臂截面参数/180-180-10.SECT",
+    "常用托臂截面参数/180-180-12.SECT",
+    "常用托臂截面参数/180-180-14.SECT",
+    "常用托臂截面参数/180-180-8.SECT",
+    "常用托臂截面参数/200-75-2mm.SECT",
+    "常用托臂截面参数/300-75-2mm.SECT",
+    "常用托臂截面参数/50-42.SECT",
+    "常用托臂截面参数/500-75-2mm.SECT",
+    "常用托臂截面参数/600-75-2mm.SECT",
+    "常用托臂截面参数/80-80-6.SECT",
+    "常用托臂截面参数/80-80-8.SECT",
+    "常用托臂截面参数/BIANJIEMIAN10.SECT",
+    "常用托臂截面参数/BIANJIEMIAN120.SECT",
+    "常用托臂截面参数/BIANJIEMIAN15.SECT",
+    "常用托臂截面参数/BIANJIEMIAN80.SECT",
+    "常用托臂截面参数/CAOGANG42.SECT",
+    "常用托臂截面参数/CAOGANG42DAN.SECT",
+    "常用托臂截面参数/YIXINGGANG120.SECT",
+    "常用托臂截面参数/YIXINGGANG120DAN.SECT",
+    "常用托臂截面参数/YIXINGGANG140.SECT",
+    "常用托臂截面参数/YIXINGGANG140DAN.SECT",
+    "常用托臂截面参数/YIXINGGANG150.SECT",
+    "常用托臂截面参数/YIXINGGANG150DAN.SECT",
+    "常用托臂截面参数/YIXINGGANG160.SECT",
+    "常用托臂截面参数/YIXINGGANG160DAN.SECT",
+    "建模标准化命令流.txt",
+    "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4120/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4124/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4125/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4128/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4129/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4130/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4131/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4136/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "报告及模型命令流/18185NI-LXSJ4136/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4139/计算文件/02 计算用命令流.mac",
+    "报告及模型命令流/18185NI-LXSJ4141/计算文件/02 计算用命令流.mac"
+  ],
+  "blocks": [
+    {
+      "key": "element_type",
+      "label": "ET / BEAM188",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:5",
+          "line_start": 5,
+          "line_end": 5,
+          "text": "ET,1,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:6",
+          "line_start": 6,
+          "line_end": 6,
+          "text": "ET,2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:54",
+          "line_start": 54,
+          "line_end": 54,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:63",
+          "line_start": 63,
+          "line_end": 63,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:72",
+          "line_start": 72,
+          "line_end": 72,
+          "text": "ET,10*cengshu1+4,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:83",
+          "line_start": 83,
+          "line_end": 83,
+          "text": "ET,10*cengshu1+5,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:218",
+          "line_start": 218,
+          "line_end": 218,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:227",
+          "line_start": 227,
+          "line_end": 227,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:236",
+          "line_start": 236,
+          "line_end": 236,
+          "text": "ET,10*cengshu1+4,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:337",
+          "line_start": 337,
+          "line_end": 337,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:346",
+          "line_start": 346,
+          "line_end": 346,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:355",
+          "line_start": 355,
+          "line_end": 355,
+          "text": "ET,10*cengshu1+4,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:457",
+          "line_start": 457,
+          "line_end": 457,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:466",
+          "line_start": 466,
+          "line_end": 466,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:475",
+          "line_start": 475,
+          "line_end": 475,
+          "text": "ET,10*cengshu1+4,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:577",
+          "line_start": 577,
+          "line_end": 577,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:586",
+          "line_start": 586,
+          "line_end": 586,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:595",
+          "line_start": 595,
+          "line_end": 595,
+          "text": "ET,10*cengshu1+4,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:697",
+          "line_start": 697,
+          "line_end": 697,
+          "text": "ET,10*cengshu1+2,BEAM188",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:706",
+          "line_start": 706,
+          "line_end": 706,
+          "text": "ET,10*cengshu1+3,BEAM188",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 90,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:8",
+          "line_start": 8,
+          "line_end": 8,
+          "text": "ET,1,BEAM188"
+        }
+      ]
+    },
+    {
+      "key": "keyopt",
+      "label": "KEYOPT",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:8",
+          "line_start": 8,
+          "line_end": 8,
+          "text": "KEYOPT,1,1,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:55",
+          "line_start": 55,
+          "line_end": 55,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:64",
+          "line_start": 64,
+          "line_end": 64,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:73",
+          "line_start": 73,
+          "line_end": 73,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:84",
+          "line_start": 84,
+          "line_end": 84,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:219",
+          "line_start": 219,
+          "line_end": 219,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:228",
+          "line_start": 228,
+          "line_end": 228,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:237",
+          "line_start": 237,
+          "line_end": 237,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:338",
+          "line_start": 338,
+          "line_end": 338,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:347",
+          "line_start": 347,
+          "line_end": 347,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:356",
+          "line_start": 356,
+          "line_end": 356,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:458",
+          "line_start": 458,
+          "line_end": 458,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:467",
+          "line_start": 467,
+          "line_end": 467,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:476",
+          "line_start": 476,
+          "line_end": 476,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:578",
+          "line_start": 578,
+          "line_end": 578,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:587",
+          "line_start": 587,
+          "line_end": 587,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:596",
+          "line_start": 596,
+          "line_end": 596,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:698",
+          "line_start": 698,
+          "line_end": 698,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:707",
+          "line_start": 707,
+          "line_end": 707,
+          "text": "KEYOPT,1,4,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:716",
+          "line_start": 716,
+          "line_end": 716,
+          "text": "KEYOPT,2,4,2",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 95,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:9",
+          "line_start": 9,
+          "line_end": 9,
+          "text": "KEYOPT,1,4,2"
+        }
+      ]
+    },
+    {
+      "key": "material",
+      "label": "MP material properties",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:9",
+          "line_start": 9,
+          "line_end": 9,
+          "text": "MP,EX,1,2.04E11        !材料属性",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:10",
+          "line_start": 10,
+          "line_end": 10,
+          "text": "MP,PRXY,1,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:11",
+          "line_start": 11,
+          "line_end": 11,
+          "text": "MP,DENS,1,7850",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:56",
+          "line_start": 56,
+          "line_end": 56,
+          "text": "MP,EX,10*cengshu1+2,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:57",
+          "line_start": 57,
+          "line_end": 57,
+          "text": "MP,PRXY,10*cengshu1+2,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:58",
+          "line_start": 58,
+          "line_end": 58,
+          "text": "MP,DENS,10*cengshu1+2,7850",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:65",
+          "line_start": 65,
+          "line_end": 65,
+          "text": "MP,EX,10*cengshu1+3,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:66",
+          "line_start": 66,
+          "line_end": 66,
+          "text": "MP,PRXY,10*cengshu1+3,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:67",
+          "line_start": 67,
+          "line_end": 67,
+          "text": "MP,DENS,10*cengshu1+3,7850",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:74",
+          "line_start": 74,
+          "line_end": 74,
+          "text": "MP,EX,10*cengshu1+4,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:75",
+          "line_start": 75,
+          "line_end": 75,
+          "text": "MP,PRXY,10*cengshu1+4,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:76",
+          "line_start": 76,
+          "line_end": 76,
+          "text": "MP,DENS,10*cengshu1+4,(1CENGTUOPANMIDU)                                         !1层托盘密度",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:85",
+          "line_start": 85,
+          "line_end": 85,
+          "text": "MP,EX,10*cengshu1+5,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:86",
+          "line_start": 86,
+          "line_end": 86,
+          "text": "MP,PRXY,10*cengshu1+5,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:87",
+          "line_start": 87,
+          "line_end": 87,
+          "text": "MP,DENS,10*cengshu1+5,(1CENGTUOPANMIDU)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:220",
+          "line_start": 220,
+          "line_end": 220,
+          "text": "MP,EX,10*cengshu1+2,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:221",
+          "line_start": 221,
+          "line_end": 221,
+          "text": "MP,PRXY,10*cengshu1+2,0.3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:222",
+          "line_start": 222,
+          "line_end": 222,
+          "text": "MP,DENS,10*cengshu1+2,7850",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:229",
+          "line_start": 229,
+          "line_end": 229,
+          "text": "MP,EX,10*cengshu1+3,2.04E11",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:230",
+          "line_start": 230,
+          "line_end": 230,
+          "text": "MP,PRXY,10*cengshu1+3,0.3",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 243,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:13",
+          "line_start": 13,
+          "line_end": 13,
+          "text": "MP,EX,{{ loop.index }},{{ \"%.9g\"|format(material.elastic_modulus_pa) }}"
+        },
+        {
+          "source_ref": "templates/apdl:14",
+          "line_start": 14,
+          "line_end": 14,
+          "text": "MP,PRXY,{{ loop.index }},{{ \"%.6g\"|format(material.poisson_ratio) }}"
+        },
+        {
+          "source_ref": "templates/apdl:15",
+          "line_start": 15,
+          "line_end": 15,
+          "text": "MP,DENS,{{ loop.index }},{{ \"%.9g\"|format(material.density_kg_m3) }}"
+        }
+      ]
+    },
+    {
+      "key": "section",
+      "label": "SECTYPE / SECOFFSET / SECREAD",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:26",
+          "line_start": 26,
+          "line_end": 26,
+          "text": "SECTYPE,1,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:27",
+          "line_start": 27,
+          "line_end": 27,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:28",
+          "line_start": 28,
+          "line_end": 28,
+          "text": "SECREAD,'FANGGANGJIEMIAN','SECT',,MESH   !方钢截面名称++++++++++++++",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:59",
+          "line_start": 59,
+          "line_end": 59,
+          "text": "SECTYPE,10*cengshu1+2,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:60",
+          "line_start": 60,
+          "line_end": 60,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:61",
+          "line_start": 61,
+          "line_end": 61,
+          "text": "SECREAD,'1CENGTUOBIYIJIEMIAN','SECT',,MESH                                      !1层托臂1截面",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:68",
+          "line_start": 68,
+          "line_end": 68,
+          "text": "SECTYPE,10*cengshu1+3,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:69",
+          "line_start": 69,
+          "line_end": 69,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:70",
+          "line_start": 70,
+          "line_end": 70,
+          "text": "SECREAD,'1CENGTUOBIERJIEMIAN','SECT',,MESH                                      !1层托臂2截面",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:77",
+          "line_start": 77,
+          "line_end": 77,
+          "text": "SECTYPE,10*cengshu1+4,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:78",
+          "line_start": 78,
+          "line_end": 78,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:79",
+          "line_start": 79,
+          "line_end": 79,
+          "text": "SECREAD,'1CENGTUOPANJIEMIAN','SECT',,MESH                                       !1层托盘截面",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:88",
+          "line_start": 88,
+          "line_end": 88,
+          "text": "SECTYPE,10*cengshu1+5,BEAM,CSOLID",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:90",
+          "line_start": 90,
+          "line_end": 90,
+          "text": "SECOFFSET,USER,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:223",
+          "line_start": 223,
+          "line_end": 223,
+          "text": "SECTYPE,10*cengshu1+2,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:224",
+          "line_start": 224,
+          "line_end": 224,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:225",
+          "line_start": 225,
+          "line_end": 225,
+          "text": "SECREAD,'2CENGTUOBIYIJIEMIAN','SECT',,MESH                                      !2层托臂1截面",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:232",
+          "line_start": 232,
+          "line_end": 232,
+          "text": "SECTYPE,10*cengshu1+3,BEAM,MESH",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:233",
+          "line_start": 233,
+          "line_end": 233,
+          "text": "SECOFFSET,cent,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:234",
+          "line_start": 234,
+          "line_end": 234,
+          "text": "SECREAD,'2CENGTUOBIERJIEMIAN','SECT',,MESH                                      !2层托臂2截面",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 314,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:19",
+          "line_start": 19,
+          "line_end": 19,
+          "text": "SECTYPE,{{ loop.index }},BEAM,MESH"
+        },
+        {
+          "source_ref": "templates/apdl:20",
+          "line_start": 20,
+          "line_end": 20,
+          "text": "SECOFFSET,cent,"
+        },
+        {
+          "source_ref": "templates/apdl:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "SECREAD,'{{ section.sect_file | replace(\".SECT\", \"\") | replace(\".sect\", \"\") }}','SECT',,MESH"
+        }
+      ]
+    },
+    {
+      "key": "geometry",
+      "label": "K / L geometry",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "K,500+100*(J-1),0,0+L3*(J-1),0",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:33",
+          "line_start": 33,
+          "line_end": 33,
+          "text": "K,500+I+100*(J-1),0,0+L3*(J-1),0.1+0.2*(I-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:35",
+          "line_start": 35,
+          "line_end": 35,
+          "text": "K,500+zuidacengshu+1+100*(J-1),0,0+L3*(J-1),L2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:37",
+          "line_start": 37,
+          "line_end": 37,
+          "text": "L,500+(I-1)+100*(J-1),500+I+100*(J-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:94",
+          "line_start": 94,
+          "line_end": 94,
+          "text": "K,500+10*cengshu1+1,0.5*L1,0,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:95",
+          "line_start": 95,
+          "line_end": 95,
+          "text": "K,500+10*cengshu1+2,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,0,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:96",
+          "line_start": 96,
+          "line_end": 96,
+          "text": "K,500+10*cengshu1+3,0.5*L1+A%cengshu1%,0,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:97",
+          "line_start": 97,
+          "line_end": 97,
+          "text": "K,500+10*cengshu1+4,0.5*L1+A%cengshu1%+B%cengshu1%,0,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:100",
+          "line_start": 100,
+          "line_end": 100,
+          "text": "K,600+10*cengshu1+1,0.5*L1,L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:101",
+          "line_start": 101,
+          "line_end": 101,
+          "text": "K,600+10*cengshu1+2,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:102",
+          "line_start": 102,
+          "line_end": 102,
+          "text": "K,600+10*cengshu1+3,0.5*L1+A%cengshu1%,L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:103",
+          "line_start": 103,
+          "line_end": 103,
+          "text": "K,600+10*cengshu1+4,0.5*L1+A%cengshu1%+B%cengshu1%,L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:105",
+          "line_start": 105,
+          "line_end": 105,
+          "text": "K,700+10*cengshu1+1,0.5*L1,2*L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:106",
+          "line_start": 106,
+          "line_end": 106,
+          "text": "K,700+10*cengshu1+2,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,2*L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:107",
+          "line_start": 107,
+          "line_end": 107,
+          "text": "K,700+10*cengshu1+3,0.5*L1+A%cengshu1%,2*L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:108",
+          "line_start": 108,
+          "line_end": 108,
+          "text": "K,700+10*cengshu1+4,0.5*L1+A%cengshu1%+B%cengshu1%,2*L3,0.100*(2*cengshu1-1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:110",
+          "line_start": 110,
+          "line_end": 110,
+          "text": "K,500+10*cengshu1+6,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,-0.5*L3,0.100*(2*cengshu1-1)+0.074",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:111",
+          "line_start": 111,
+          "line_end": 111,
+          "text": "K,500+10*cengshu1+7,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,0,0.100*(2*cengshu1-1)+0.074",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:112",
+          "line_start": 112,
+          "line_end": 112,
+          "text": "K,500+10*cengshu1+8,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,0.5*L3,0.100*(2*cengshu1-1)+0.074",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:114",
+          "line_start": 114,
+          "line_end": 114,
+          "text": "K,600+10*cengshu1+7,0.5*L1+A%cengshu1%+B%cengshu1%-0.5*C%cengshu1%,1.0*L3,0.100*(2*cengshu1-1)+0.074",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 872,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:32",
+          "line_start": 32,
+          "line_end": 32,
+          "text": "K,500+100*(J-1),0,0+L4*(J-1),0"
+        },
+        {
+          "source_ref": "templates/apdl:34",
+          "line_start": 34,
+          "line_end": 34,
+          "text": "K,500+I+100*(J-1),0,0+L4*(J-1),0.1+0.2*(I-1)"
+        },
+        {
+          "source_ref": "templates/apdl:36",
+          "line_start": 36,
+          "line_end": 36,
+          "text": "K,500+MAX_LAYERS+1+100*(J-1),0,0+L4*(J-1),H2"
+        },
+        {
+          "source_ref": "templates/apdl:38",
+          "line_start": 38,
+          "line_end": 38,
+          "text": "L,500+(I-1)+100*(J-1),500+I+100*(J-1)"
+        }
+      ]
+    },
+    {
+      "key": "mesh",
+      "label": "LATT / LESIZE / LMESH",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:43",
+          "line_start": 43,
+          "line_end": 43,
+          "text": "LATT,1,,1,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:44",
+          "line_start": 44,
+          "line_end": 44,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:45",
+          "line_start": 45,
+          "line_end": 45,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:171",
+          "line_start": 171,
+          "line_end": 171,
+          "text": "LATT,10*cengshu1+2,,10*cengshu1+2,,,,10*cengshu1+2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:172",
+          "line_start": 172,
+          "line_end": 172,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:173",
+          "line_start": 173,
+          "line_end": 173,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:177",
+          "line_start": 177,
+          "line_end": 177,
+          "text": "LATT,10*cengshu1+3,,10*cengshu1+3,,,,10*cengshu1+3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:178",
+          "line_start": 178,
+          "line_end": 178,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:179",
+          "line_start": 179,
+          "line_end": 179,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:183",
+          "line_start": 183,
+          "line_end": 183,
+          "text": "LATT,10*cengshu1+4,,10*cengshu1+4,,,,10*cengshu1+4",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:184",
+          "line_start": 184,
+          "line_end": 184,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:185",
+          "line_start": 185,
+          "line_end": 185,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:190",
+          "line_start": 190,
+          "line_end": 190,
+          "text": "LATT,10*cengshu1+5,,10*cengshu1+5,,,,10*cengshu1+5",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:191",
+          "line_start": 191,
+          "line_end": 191,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:192",
+          "line_start": 192,
+          "line_end": 192,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:300",
+          "line_start": 300,
+          "line_end": 300,
+          "text": "LATT,10*cengshu1+2,,10*cengshu1+2,,,,10*cengshu1+2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:301",
+          "line_start": 301,
+          "line_end": 301,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:302",
+          "line_start": 302,
+          "line_end": 302,
+          "text": "LMESH,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:306",
+          "line_start": 306,
+          "line_end": 306,
+          "text": "LATT,10*cengshu1+3,,10*cengshu1+3,,,,10*cengshu1+3",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:307",
+          "line_start": 307,
+          "line_end": 307,
+          "text": "LESIZE,ALL,0.05,,,,,,,1",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 360,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:52",
+          "line_start": 52,
+          "line_end": 52,
+          "text": "LATT,1,,1,,,,1"
+        },
+        {
+          "source_ref": "templates/apdl:53",
+          "line_start": 53,
+          "line_end": 53,
+          "text": "LESIZE,ALL,0.05,,,,,,,1"
+        },
+        {
+          "source_ref": "templates/apdl:54",
+          "line_start": 54,
+          "line_end": 54,
+          "text": "LMESH,ALL"
+        }
+      ]
+    },
+    {
+      "key": "coupling",
+      "label": "CP / CPCYC",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "建模标准化命令流.txt:199",
+          "line_start": 199,
+          "line_end": 199,
+          "text": "CPCYC,UX,,,,,0.074-0.05",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:200",
+          "line_start": 200,
+          "line_end": 200,
+          "text": "CPCYC,UY,,,,,0.074-0.05",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:201",
+          "line_start": 201,
+          "line_end": 201,
+          "text": "CPCYC,UZ,,,,,0.074-0.05",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:202",
+          "line_start": 202,
+          "line_end": 202,
+          "text": "CPCYC,ROTY,,,,,0.074-0.05",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:203",
+          "line_start": 203,
+          "line_end": 203,
+          "text": "CPCYC,ROTZ,,,,,0.074-0.05",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:319",
+          "line_start": 319,
+          "line_end": 319,
+          "text": "CPCYC,UX,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:320",
+          "line_start": 320,
+          "line_end": 320,
+          "text": "CPCYC,UY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:321",
+          "line_start": 321,
+          "line_end": 321,
+          "text": "CPCYC,UZ,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:322",
+          "line_start": 322,
+          "line_end": 322,
+          "text": "CPCYC,ROTY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:323",
+          "line_start": 323,
+          "line_end": 323,
+          "text": "CPCYC,ROTZ,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:438",
+          "line_start": 438,
+          "line_end": 438,
+          "text": "CPCYC,UX,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:439",
+          "line_start": 439,
+          "line_end": 439,
+          "text": "CPCYC,UY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:440",
+          "line_start": 440,
+          "line_end": 440,
+          "text": "CPCYC,UZ,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:441",
+          "line_start": 441,
+          "line_end": 441,
+          "text": "CPCYC,ROTY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:442",
+          "line_start": 442,
+          "line_end": 442,
+          "text": "CPCYC,ROTZ,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:558",
+          "line_start": 558,
+          "line_end": 558,
+          "text": "CPCYC,UX,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:559",
+          "line_start": 559,
+          "line_end": 559,
+          "text": "CPCYC,UY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:560",
+          "line_start": 560,
+          "line_end": 560,
+          "text": "CPCYC,UZ,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:561",
+          "line_start": 561,
+          "line_end": 561,
+          "text": "CPCYC,ROTY,,,,,0.040",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:562",
+          "line_start": 562,
+          "line_end": 562,
+          "text": "CPCYC,ROTZ,,,,,0.040",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 181,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:60",
+          "line_start": 60,
+          "line_end": 60,
+          "text": "CP,1,UX,ALL"
+        },
+        {
+          "source_ref": "templates/apdl:61",
+          "line_start": 61,
+          "line_end": 61,
+          "text": "CP,2,UY,ALL"
+        },
+        {
+          "source_ref": "templates/apdl:62",
+          "line_start": 62,
+          "line_end": 62,
+          "text": "CP,3,UZ,ALL"
+        }
+      ]
+    },
+    {
+      "key": "selection",
+      "label": "NSEL / LSEL / CM / CMSEL",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:2552",
+          "line_start": 2552,
+          "line_end": 2552,
+          "text": "NSEL,S,,,NKXALS%I%",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2656",
+          "line_start": 2656,
+          "line_end": 2656,
+          "text": "NSEL,S,,,NKMS0%I%",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2752",
+          "line_start": 2752,
+          "line_end": 2752,
+          "text": "NSEL,S,,,NKYALS%I%",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:42",
+          "line_start": 42,
+          "line_end": 42,
+          "text": "Lsel,S,LOC,X,0",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:147",
+          "line_start": 147,
+          "line_end": 147,
+          "text": "lsel,s,loc,x,kx(500+10*cengshu1+1),kx(500+10*cengshu1+3)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:148",
+          "line_start": 148,
+          "line_end": 148,
+          "text": "lsel,r,loc,z,kz(500+10*cengshu1+1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:149",
+          "line_start": 149,
+          "line_end": 149,
+          "text": "cm,tuobi11,line",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:152",
+          "line_start": 152,
+          "line_end": 152,
+          "text": "lsel,s,loc,x,kx(500+10*cengshu1+3),kx(500+10*cengshu1+4)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:153",
+          "line_start": 153,
+          "line_end": 153,
+          "text": "lsel,r,loc,z,kz(500+10*cengshu1+1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:154",
+          "line_start": 154,
+          "line_end": 154,
+          "text": "cm,tuobi12,line",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:157",
+          "line_start": 157,
+          "line_end": 157,
+          "text": "lsel,s,loc,x,kx(500+10*cengshu1+6)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:158",
+          "line_start": 158,
+          "line_end": 158,
+          "text": "lsel,r,loc,z,kz(500+10*cengshu1+6)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:159",
+          "line_start": 159,
+          "line_end": 159,
+          "text": "cm,tuopan1,line",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:163",
+          "line_start": 163,
+          "line_end": 163,
+          "text": "lsel,s,loc,x,kx(500+10*cengshu1+2)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:164",
+          "line_start": 164,
+          "line_end": 164,
+          "text": "lsel,r,loc,z,kz(500+10*cengshu1+2),kz(500+10*cengshu1+9)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:165",
+          "line_start": 165,
+          "line_end": 165,
+          "text": "cm,luoshuan1,line",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:170",
+          "line_start": 170,
+          "line_end": 170,
+          "text": "cmsel,S,tuobi11      !双槽钢单元",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:176",
+          "line_start": 176,
+          "line_end": 176,
+          "text": "cmsel,S,tuobi12      !单槽钢单元",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:182",
+          "line_start": 182,
+          "line_end": 182,
+          "text": "cmsel,S,tuopan1      !tuopan单元",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "建模标准化命令流.txt:189",
+          "line_start": 189,
+          "line_end": 189,
+          "text": "cmsel,S,luoshuan1      !luoshuan单元",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 648,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:51",
+          "line_start": 51,
+          "line_end": 51,
+          "text": "LSEL,S,LOC,X,0"
+        },
+        {
+          "source_ref": "templates/apdl:57",
+          "line_start": 57,
+          "line_end": 57,
+          "text": "NSEL,S,LOC,X,0"
+        },
+        {
+          "source_ref": "templates/apdl:58",
+          "line_start": 58,
+          "line_end": 58,
+          "text": "CM,YUESHU,NODE"
+        }
+      ]
+    },
+    {
+      "key": "constraint",
+      "label": "D constraint command",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:2824",
+          "line_start": 2824,
+          "line_end": 2824,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP:186",
+          "line_start": 186,
+          "line_end": 186,
+          "text": "D,ALL,,,,,,ALL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:7",
+          "line_start": 7,
+          "line_end": 7,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:207",
+          "line_start": 207,
+          "line_end": 207,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:215",
+          "line_start": 215,
+          "line_end": 215,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:225",
+          "line_start": 225,
+          "line_end": 225,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:236",
+          "line_start": 236,
+          "line_end": 236,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:247",
+          "line_start": 247,
+          "line_end": 247,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:257",
+          "line_start": 257,
+          "line_end": 257,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:267",
+          "line_start": 267,
+          "line_end": 267,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:7",
+          "line_start": 7,
+          "line_end": 7,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:206",
+          "line_start": 206,
+          "line_end": 206,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:214",
+          "line_start": 214,
+          "line_end": 214,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:224",
+          "line_start": 224,
+          "line_end": 224,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:235",
+          "line_start": 235,
+          "line_end": 235,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:246",
+          "line_start": 246,
+          "line_end": 246,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:256",
+          "line_start": 256,
+          "line_end": 256,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:266",
+          "line_start": 266,
+          "line_end": 266,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac:7",
+          "line_start": 7,
+          "line_end": 7,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac:206",
+          "line_start": 206,
+          "line_end": 206,
+          "text": "D,YUESHU, , , , , ,ALL, , , , ,            !施加约束边界条件",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 70,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:108",
+          "line_start": 108,
+          "line_end": 108,
+          "text": "D,YUESHU,ALL"
+        }
+      ]
+    },
+    {
+      "key": "modal",
+      "label": "Modal analysis",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:2823",
+          "line_start": 2823,
+          "line_end": 2823,
+          "text": "ANTYPE,MODAL",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2825",
+          "line_start": 2825,
+          "line_end": 2825,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP:188",
+          "line_start": 188,
+          "line_end": 188,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP:189",
+          "line_start": 189,
+          "line_end": 189,
+          "text": "MODOPT,LANB,887",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP:194",
+          "line_start": 194,
+          "line_end": 194,
+          "text": "MODOPT,LANB,887,0,,,OFF",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:25",
+          "line_start": 25,
+          "line_end": 25,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "MODOPT,LANB,MT,0,0,,OFF",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:25",
+          "line_start": 25,
+          "line_end": 25,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "MODOPT,LANB,MT,0,0,,OFF",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac:25",
+          "line_start": 25,
+          "line_end": 25,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "MODOPT,LANB,MT,0,0,,OFF",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac:25",
+          "line_start": 25,
+          "line_end": 25,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "MODOPT,LANB,MT,0,0,,OFF",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac:21",
+          "line_start": 21,
+          "line_end": 21,
+          "text": "ANTYPE,2",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac:25",
+          "line_start": 25,
+          "line_end": 25,
+          "text": "MODOPT,LANB,MT",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac:31",
+          "line_start": 31,
+          "line_end": 31,
+          "text": "MODOPT,LANB,MT,0,0,,OFF",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 41,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:111",
+          "line_start": 111,
+          "line_end": 111,
+          "text": "ANTYPE,2"
+        },
+        {
+          "source_ref": "templates/apdl:113",
+          "line_start": 113,
+          "line_end": 113,
+          "text": "MODOPT,LANB,MT"
+        }
+      ]
+    },
+    {
+      "key": "spectrum",
+      "label": "Response spectrum analysis",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:40",
+          "line_start": 40,
+          "line_end": 40,
+          "text": "ANTYPE,8",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:41",
+          "line_start": 41,
+          "line_end": 41,
+          "text": "SPOPT,SPRS,MT,NO,YES",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:54",
+          "line_start": 54,
+          "line_end": 54,
+          "text": "SV, 0.07,  0.016,  0.020,  0.025,  0.028,  0.031,  0.039,  0.060,  0.079",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:55",
+          "line_start": 55,
+          "line_end": 55,
+          "text": "SV, 0.07,  0.093,  0.097,  0.100,  0.159,  0.174,  0.178,  0.209,  0.239",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:56",
+          "line_start": 56,
+          "line_end": 56,
+          "text": "SV, 0.07,  0.250,  0.313,  0.324,  0.356,  0.356,  0.355,  0.332,  0.292",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:57",
+          "line_start": 57,
+          "line_end": 57,
+          "text": "SV, 0.07,  0.231,  0.221,  0.272,  0.339,  0.378,  0.378,  0.338,  0.309",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:58",
+          "line_start": 58,
+          "line_end": 58,
+          "text": "SV, 0.07,  0.260,  0.230,  0.200,  0.205,  0.207,  0.207,  0.204,  0.198",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:59",
+          "line_start": 59,
+          "line_end": 59,
+          "text": "SV, 0.07,  0.192,  0.207,  0.207,  0.207,  0.207,  0.207,  0.207,  0.206",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:60",
+          "line_start": 60,
+          "line_end": 60,
+          "text": "SV, 0.07,  0.201,  0.178,  0.138,  0.137,  0.136,  0.135,  0.135",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:77",
+          "line_start": 77,
+          "line_end": 77,
+          "text": "SV, 0.07,  0.016,  0.020,  0.025,  0.028,  0.031,  0.039,  0.060,  0.079",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:78",
+          "line_start": 78,
+          "line_end": 78,
+          "text": "SV, 0.07,  0.093,  0.097,  0.100,  0.159,  0.174,  0.178,  0.209,  0.239",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:79",
+          "line_start": 79,
+          "line_end": 79,
+          "text": "SV, 0.07,  0.250,  0.313,  0.324,  0.356,  0.356,  0.355,  0.332,  0.292",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:80",
+          "line_start": 80,
+          "line_end": 80,
+          "text": "SV, 0.07,  0.231,  0.221,  0.272,  0.339,  0.378,  0.378,  0.338,  0.309",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:81",
+          "line_start": 81,
+          "line_end": 81,
+          "text": "SV, 0.07,  0.260,  0.230,  0.200,  0.205,  0.207,  0.207,  0.204,  0.198",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:82",
+          "line_start": 82,
+          "line_end": 82,
+          "text": "SV, 0.07,  0.192,  0.207,  0.207,  0.207,  0.207,  0.207,  0.207,  0.206",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:83",
+          "line_start": 83,
+          "line_end": 83,
+          "text": "SV, 0.07,  0.201,  0.178,  0.138,  0.137,  0.136,  0.135,  0.135",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:99",
+          "line_start": 99,
+          "line_end": 99,
+          "text": "SV, 0.07,  0.010,  0.034,  0.035,  0.038,  0.060,  0.084,  0.118,  0.182",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:100",
+          "line_start": 100,
+          "line_end": 100,
+          "text": "SV, 0.07,  0.190,  0.221,  0.227,  0.251,  0.383,  0.409,  0.409,  0.409",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:101",
+          "line_start": 101,
+          "line_end": 101,
+          "text": "SV, 0.07,  0.393,  0.341,  0.339,  0.334,  0.324,  0.293,  0.310,  0.324",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:102",
+          "line_start": 102,
+          "line_end": 102,
+          "text": "SV, 0.07,  0.335,  0.374,  0.375,  0.375,  0.375,  0.375,  0.374,  0.367",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 359,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:126",
+          "line_start": 126,
+          "line_end": 126,
+          "text": "ANTYPE,8"
+        },
+        {
+          "source_ref": "templates/apdl:127",
+          "line_start": 127,
+          "line_end": 127,
+          "text": "SPOPT,SPRS,MT,NO,YES"
+        },
+        {
+          "source_ref": "templates/apdl:145",
+          "line_start": 145,
+          "line_end": 145,
+          "text": "SV,{{ \"%.6g\"|format(spectrum.damping_ratio) }},0.01,0.02,0.05,0.10,0.20,0.18,0.12,0.08,0.04"
+        }
+      ]
+    },
+    {
+      "key": "post",
+      "label": "POST1/POST26 extraction",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:14",
+          "line_start": 14,
+          "line_end": 14,
+          "text": "/POST1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:59",
+          "line_start": 59,
+          "line_end": 59,
+          "text": "/POST1",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:144",
+          "line_start": 144,
+          "line_end": 144,
+          "text": "*GET,SDIR(I)  ,SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:145",
+          "line_start": 145,
+          "line_end": 145,
+          "text": "*GET,NSDIR(I)  ,SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:147",
+          "line_start": 147,
+          "line_end": 147,
+          "text": "*GET,SBEND1(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:148",
+          "line_start": 148,
+          "line_end": 148,
+          "text": "*GET,NSBEND1(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:150",
+          "line_start": 150,
+          "line_end": 150,
+          "text": "*GET,SBEND2(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:151",
+          "line_start": 151,
+          "line_end": 151,
+          "text": "*GET,NSBEND2(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:153",
+          "line_start": 153,
+          "line_end": 153,
+          "text": "*GET,SBEND3(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:154",
+          "line_start": 154,
+          "line_end": 154,
+          "text": "*GET,NSBEND3(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:156",
+          "line_start": 156,
+          "line_end": 156,
+          "text": "*GET,SBEND4(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:157",
+          "line_start": 157,
+          "line_end": 157,
+          "text": "*GET,NSBEND4(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:159",
+          "line_start": 159,
+          "line_end": 159,
+          "text": "*GET,SSHEAR(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:160",
+          "line_start": 160,
+          "line_end": 160,
+          "text": "*GET,NSSHEAR(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:185",
+          "line_start": 185,
+          "line_end": 185,
+          "text": "*GET,YSDIR(I)  ,SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:186",
+          "line_start": 186,
+          "line_end": 186,
+          "text": "*GET,YNSDIR(I)  ,SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:188",
+          "line_start": 188,
+          "line_end": 188,
+          "text": "*GET,YSBEND1(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:189",
+          "line_start": 189,
+          "line_end": 189,
+          "text": "*GET,YNSBEND1(I),SORT,,MIN",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:191",
+          "line_start": 191,
+          "line_end": 191,
+          "text": "*GET,YSBEND2(I),SORT,,MAX",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:192",
+          "line_start": 192,
+          "line_end": 192,
+          "text": "*GET,YNSBEND2(I),SORT,,MIN",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 128,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:67",
+          "line_start": 67,
+          "line_end": 67,
+          "text": "/POST1"
+        },
+        {
+          "source_ref": "templates/apdl:72",
+          "line_start": 72,
+          "line_end": 72,
+          "text": "*GET,MAX_SDIR,ELEM,0,MAX,S,1"
+        },
+        {
+          "source_ref": "templates/apdl:73",
+          "line_start": 73,
+          "line_end": 73,
+          "text": "*GET,MAX_SBEND,ELEM,0,MAX,S,EQV"
+        }
+      ]
+    },
+    {
+      "key": "lis_output",
+      "label": "LIS output",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:1228",
+          "line_start": 1228,
+          "line_end": 1228,
+          "text": "*CFOPEN,MAXBEAMSTRESS,LIS",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:1229",
+          "line_start": 1229,
+          "line_end": 1229,
+          "text": "*VWRITE,'LSCASE','TENSION','COMPRESSION','BEND','SHEAR'",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:1231",
+          "line_start": 1231,
+          "line_end": 1231,
+          "text": "*VWRITE,LSCASE(1),MAXSDIR1(1),MAXSDIR2(1),MAXSBEND(1),MAXSHEAR(1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2510",
+          "line_start": 2510,
+          "line_end": 2510,
+          "text": "*CFOPEN,TMAXBEAMSTRESS,LIS",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2511",
+          "line_start": 2511,
+          "line_end": 2511,
+          "text": "*VWRITE,'LSCASE','TENSION','COMPRESSION','BEND','SHEAR'",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2513",
+          "line_start": 2513,
+          "line_end": 2513,
+          "text": "*VWRITE,LSCASE(1),MAXSDIR1(1),MAXSDIR2(1),MAXSBEND(1),MAXSHEAR(1)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2613",
+          "line_start": 2613,
+          "line_end": 2613,
+          "text": "*CFOPEN,HF-FORCE,LIS",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2614",
+          "line_start": 2614,
+          "line_end": 2614,
+          "text": "*VWRITE,XAFLS24(1,1),XAFLS24(1,2),XAFLS24(1,3),XAFLS24(1,4),XAFLS24(1,5),XAFLS24(1,6)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2702",
+          "line_start": 2702,
+          "line_end": 2702,
+          "text": "*CFOPEN,JCZH,LIS",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2703",
+          "line_start": 2703,
+          "line_end": 2703,
+          "text": "*VWRITE",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2705",
+          "line_start": 2705,
+          "line_end": 2705,
+          "text": "*VWRITE,LSCASE1(1),FMS03(1,1),FMS03(1,2),FMS03(1,3),FMS03(1,4),FMS03(1,5),FMS03(1,6)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2807",
+          "line_start": 2807,
+          "line_end": 2807,
+          "text": "*CFOPEN,LS-FORCE,LIS",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2808",
+          "line_start": 2808,
+          "line_end": 2808,
+          "text": "*VWRITE,YAFLS24(1,1),YAFLS24(1,2),YAFLS24(1,3),YAFLS24(1,4),YAFLS24(1,5),YAFLS24(1,6)",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:2827",
+          "line_start": 2827,
+          "line_end": 2827,
+          "text": "/OUTPUT,'Mode','oup'",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP:181",
+          "line_start": 181,
+          "line_end": 181,
+          "text": "/OUTPUT,'8TEG009010','TXT','',",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:1",
+          "line_start": 1,
+          "line_end": 1,
+          "text": "/OUTPUT,TERM",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:32",
+          "line_start": 32,
+          "line_end": 32,
+          "text": "/OUTPUT,'Mode','oup','',",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac:36",
+          "line_start": 36,
+          "line_end": 36,
+          "text": "/OUTPUT,TERM",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:1",
+          "line_start": 1,
+          "line_end": 1,
+          "text": "/OUTPUT,TERM",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac:32",
+          "line_start": 32,
+          "line_end": 32,
+          "text": "/OUTPUT,'Mode','oup','',",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 43,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:71",
+          "line_start": 71,
+          "line_end": 71,
+          "text": "/OUTPUT,'MAXBEAMSTRESS','LIS',''"
+        },
+        {
+          "source_ref": "templates/apdl:75",
+          "line_start": 75,
+          "line_end": 75,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:77",
+          "line_start": 77,
+          "line_end": 77,
+          "text": "/OUTPUT,'TMAXBEAMSTRESS','LIS',''"
+        },
+        {
+          "source_ref": "templates/apdl:80",
+          "line_start": 80,
+          "line_end": 80,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:82",
+          "line_start": 82,
+          "line_end": 82,
+          "text": "/OUTPUT,'JCZH','LIS',''"
+        },
+        {
+          "source_ref": "templates/apdl:84",
+          "line_start": 84,
+          "line_end": 84,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:86",
+          "line_start": 86,
+          "line_end": 86,
+          "text": "/OUTPUT,'HF-FORCE','LIS',''"
+        },
+        {
+          "source_ref": "templates/apdl:88",
+          "line_start": 88,
+          "line_end": 88,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:90",
+          "line_start": 90,
+          "line_end": 90,
+          "text": "/OUTPUT,'LS-FORCE','LIS',''"
+        },
+        {
+          "source_ref": "templates/apdl:92",
+          "line_start": 92,
+          "line_end": 92,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:103",
+          "line_start": 103,
+          "line_end": 103,
+          "text": "/OUTPUT,TERM"
+        },
+        {
+          "source_ref": "templates/apdl:118",
+          "line_start": 118,
+          "line_end": 118,
+          "text": "/OUTPUT,'Mode','oup','',"
+        },
+        {
+          "source_ref": "templates/apdl:122",
+          "line_start": 122,
+          "line_end": 122,
+          "text": "/OUTPUT,TERM"
+        }
+      ]
+    },
+    {
+      "key": "image_output",
+      "label": "BMP/image output",
+      "required": true,
+      "status": "covered",
+      "source_matches": [
+        {
+          "source_ref": "导出数据-S2.PIP:40",
+          "line_start": 40,
+          "line_end": 40,
+          "text": "/image,save,SHITI,bmp",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:402",
+          "line_start": 402,
+          "line_end": 402,
+          "text": "/image,save,A1SDIR1-%MAXCSDIR1(1)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:427",
+          "line_start": 427,
+          "line_end": 427,
+          "text": "/image,save,B1SDIR1-%MAXCSDIR1(2)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:452",
+          "line_start": 452,
+          "line_end": 452,
+          "text": "/image,save,D1SDIR1-%MAXCSDIR1(3)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:479",
+          "line_start": 479,
+          "line_end": 479,
+          "text": "/image,save,A2SDIR2-%MAXCSDIR2(1)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:504",
+          "line_start": 504,
+          "line_end": 504,
+          "text": "/image,save,B2SDIR2-%MAXCSDIR2(2)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:529",
+          "line_start": 529,
+          "line_end": 529,
+          "text": "/image,save,D2SDIR2-%MAXCSDIR2(3)%,bmp    !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:554",
+          "line_start": 554,
+          "line_end": 554,
+          "text": "/image,save,A3SBEND1+%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:576",
+          "line_start": 576,
+          "line_end": 576,
+          "text": "/image,save,A3SBEND1-%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:598",
+          "line_start": 598,
+          "line_end": 598,
+          "text": "/image,save,A3SBEND2+%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:620",
+          "line_start": 620,
+          "line_end": 620,
+          "text": "/image,save,A3SBEND2-%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:642",
+          "line_start": 642,
+          "line_end": 642,
+          "text": "/image,save,A3SBEND3+%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:664",
+          "line_start": 664,
+          "line_end": 664,
+          "text": "/image,save,A3SBEND3-%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:686",
+          "line_start": 686,
+          "line_end": 686,
+          "text": "/image,save,A3SBEND4+%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:708",
+          "line_start": 708,
+          "line_end": 708,
+          "text": "/image,save,A3SBEND4-%MAXCSBEND(1)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:734",
+          "line_start": 734,
+          "line_end": 734,
+          "text": "/image,save,B3SBEND1+%MAXCSBEND(2)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:756",
+          "line_start": 756,
+          "line_end": 756,
+          "text": "/image,save,B3SBEND1-%MAXCSBEND(2)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:778",
+          "line_start": 778,
+          "line_end": 778,
+          "text": "/image,save,B3SBEND2+%MAXCSBEND(2)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:800",
+          "line_start": 800,
+          "line_end": 800,
+          "text": "/image,save,B3SBEND2-%MAXCSBEND(2)%,bmp       !",
+          "encoding": "gbk"
+        },
+        {
+          "source_ref": "导出数据-S2.PIP:822",
+          "line_start": 822,
+          "line_end": 822,
+          "text": "/image,save,B3SBEND3+%MAXCSBEND(2)%,bmp       !",
+          "encoding": "gbk"
+        }
+      ],
+      "source_match_count": 77,
+      "template_matches": [
+        {
+          "source_ref": "templates/apdl:94",
+          "line_start": 94,
+          "line_end": 94,
+          "text": "/IMAGE,SAVE,MOTAI-1,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:95",
+          "line_start": 95,
+          "line_end": 95,
+          "text": "/IMAGE,SAVE,MOTAI-2,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:96",
+          "line_start": 96,
+          "line_end": 96,
+          "text": "/IMAGE,SAVE,MOTAI-3,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:97",
+          "line_start": 97,
+          "line_end": 97,
+          "text": "/IMAGE,SAVE,MOTAI-4,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:98",
+          "line_start": 98,
+          "line_end": 98,
+          "text": "/IMAGE,SAVE,A-SDIR1,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:99",
+          "line_start": 99,
+          "line_end": 99,
+          "text": "/IMAGE,SAVE,B-SDIR1,BMP"
+        },
+        {
+          "source_ref": "templates/apdl:100",
+          "line_start": 100,
+          "line_end": 100,
+          "text": "/IMAGE,SAVE,D-SDIR1,BMP"
+        }
+      ]
+    }
+  ]
+}

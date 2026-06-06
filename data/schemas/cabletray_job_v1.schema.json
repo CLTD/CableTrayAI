@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cabletrayai.local/schemas/cabletray_job_v1.schema.json",
+  "title": "CableTrayAI Job JSON v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_identity",
+    "project",
+    "analysis",
+    "support",
+    "materials",
+    "section",
+    "tray_layers",
+    "spectrum",
+    "loads",
+    "output",
+    "traceability"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "cabletray.job.v1"
+    },
+    "job_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intake_id", "calculation_batch"],
+      "properties": {
+        "intake_id": {"type": "string", "minLength": 1},
+        "calculation_batch": {"type": "string", "minLength": 1},
+        "report_number": {"type": ["string", "null"]},
+        "source_row_number": {"type": ["integer", "null"], "minimum": 1},
+        "source_workbook": {"type": ["string", "null"]},
+        "source_sheet": {"type": ["string", "null"]}
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_code", "building", "area", "elevation_m"],
+      "properties": {
+        "project_code": {"type": "string", "minLength": 1},
+        "building": {"type": "string", "minLength": 1},
+        "area": {"type": "string", "minLength": 1},
+        "elevation_m": {"type": "number"},
+        "floor_label": {"type": ["string", "null"]}
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "classification", "load_levels", "directions"],
+      "properties": {
+        "method": {"enum": ["response_spectrum", "static"]},
+        "classification": {"enum": ["non_steel_platform", "steel_platform"]},
+        "basis": {"type": "string"},
+        "load_levels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["DW", "SL-1", "SL-2", "NORMAL", "UPSET", "FAULTED"]}
+        },
+        "directions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["X", "Y", "Z"]}
+        }
+      }
+    },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support_family", "side_type", "front_layer_count", "back_layer_count"],
+      "properties": {
+        "support_family": {"type": "string", "minLength": 1},
+        "side_type": {"enum": ["single_side", "double_side", "mixed", "unknown"]},
+        "front_layer_count": {"type": "integer", "minimum": 0},
+        "back_layer_count": {"type": "integer", "minimum": 0},
+        "geometry_notes": {"type": ["string", "null"]},
+        "steel_platform_contact": {"type": "boolean"}
+      }
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_member_material", "square_support_material", "tray_material_policy"],
+      "properties": {
+        "default_member_material": {"enum": ["Q235", "Q355", "06Cr19Ni10", "other"]},
+        "square_support_material": {"enum": ["Q235", "Q355", "06Cr19Ni10", "other"]},
+        "tray_material_policy": {"type": "string"},
+        "allowable_source_ref": {"type": "string"}
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["square_tube", "selection_policy"],
+      "properties": {
+        "square_tube": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["outer_width_mm", "thickness_mm"],
+          "properties": {
+            "outer_width_mm": {"type": ["number", "null"], "exclusiveMinimum": 0},
+            "thickness_mm": {"type": ["number", "null"], "exclusiveMinimum": 0},
+            "sect_file": {"type": ["string", "null"]}
+          }
+        },
+        "selection_policy": {
+          "enum": ["provided_by_intake", "candidate_search_ratio_below_1_closest", "manual_review_required"]
+        }
+      }
+    },
+    "tray_layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["layer_id", "side", "width_mm", "load_kg_per_m", "equivalent_density_kg_per_m3"],
+        "properties": {
+          "layer_id": {"type": "string", "minLength": 1},
+          "side": {"enum": ["front", "back", "left", "right", "center"]},
+          "width_mm": {"type": "number", "exclusiveMinimum": 0},
+          "load_kg_per_m": {"type": "number", "minimum": 0},
+          "equivalent_density_kg_per_m3": {"type": "number", "minimum": 0},
+          "description": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "spectrum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workbook", "config_confirmed", "selection"],
+      "properties": {
+        "workbook": {"type": "string", "minLength": 1},
+        "config_confirmed": {"type": "boolean"},
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["building", "elevation_m", "damping_by_level"],
+          "properties": {
+            "building": {"type": "string", "minLength": 1},
+            "elevation_m": {"type": "number"},
+            "damping_by_level": {
+              "type": "object",
+              "additionalProperties": {"type": "number", "minimum": 0}
+            },
+            "interpolation": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mode": {"enum": ["exact", "linear", "not_applicable"]},
+                "lower_elevation_m": {"type": ["number", "null"]},
+                "upper_elevation_m": {"type": ["number", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "loads": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dead_weight", "seismic"],
+      "properties": {
+        "dead_weight": {"type": "object"},
+        "seismic": {"type": "object"},
+        "manual_notes": {"type": ["string", "null"]}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["output_root", "folder_name_policy"],
+      "properties": {
+        "output_root": {"type": "string", "minLength": 1},
+        "folder_name_policy": {"enum": ["calculation_batch_or_report_number", "intake_id_until_report_number"]},
+        "retain_raw_ansys_files": {"type": "boolean"}
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_refs", "created_by", "created_at"],
+      "properties": {
+        "source_refs": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "created_by": {"type": "string"},
+        "created_at": {"type": "string"},
+        "review_status": {"enum": ["draft", "discipline_reviewed", "approved_for_ansys"]}
+      }
+    }
+  }
+}

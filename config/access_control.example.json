@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "server_ip": "10.102.15.203",
+  "allowed_ips": [
+    "10.102.15.203",
+    "10.102.15.110",
+    "10.102.15.102",
+    "10.102.15.105",
+    "127.0.0.1",
+    "::1"
+  ],
+  "admin_ips": [
+    "10.102.15.203",
+    "127.0.0.1",
+    "::1"
+  ],
+  "trusted_proxy_headers": false,
+  "feedback_store": "docs/operator_feedback",
+  "notes": [
+    "The deployment server is 10.102.15.203.",
+    "Only allowlisted intranet clients can open the web service.",
+    "Manual additions are written to config/access_control.local.json and are not overwritten by update packages."
+  ]
+}

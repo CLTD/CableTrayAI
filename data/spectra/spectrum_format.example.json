@@ -1,0 +1,24 @@
+{
+  "workbook_pattern": "*.xlsm",
+  "sheet": "Spectrum",
+  "header_row": 1,
+  "defaults": {
+    "project_code": "CUSTOM",
+    "building": "CUSTOM-BUILDING",
+    "area": "CUSTOM-AREA",
+    "damping": 0.1,
+    "level": "SL-2"
+  },
+  "columns": {
+    "project_code": "A",
+    "building": "B",
+    "area": "C",
+    "elevation": "D",
+    "damping": "E",
+    "level": "F",
+    "direction": "G",
+    "frequency_hz": "H",
+    "acceleration_g": "I",
+    "acceleration_columns": {}
+  }
+}

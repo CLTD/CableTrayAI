@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>电缆桥架智能力学分析平台 - 结果核查</title>
+    <style>
+      :root {
+        --bg: #f3f5f7;
+        --panel: #fff;
+        --soft: #f8fafc;
+        --line: #d9e1e8;
+        --line-strong: #bdc8d3;
+        --ink: #17212b;
+        --muted: #5c6b78;
+        --green: #0f7660;
+        --green-soft: #e7f5ef;
+        --blue: #1f5f99;
+        --blue-soft: #eaf3ff;
+        --red: #b42318;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(8px);
+      }
+
+      .topbar {
+        max-width: 1760px;
+        min-height: 62px;
+        margin: 0 auto;
+        padding: 12px 18px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      h1 { margin: 0; font-size: 19px; letter-spacing: 0; }
+      h2 { margin: 0; font-size: 15px; }
+      .sub { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+      main {
+        max-width: 1760px;
+        margin: 0 auto;
+        padding: 14px 18px 28px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .bar,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+
+      .bar {
+        padding: 10px 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .panel-head {
+        min-height: 40px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--soft);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .panel-body { padding: 12px; }
+
+      .pill {
+        display: inline-flex;
+        min-height: 24px;
+        padding: 2px 8px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: #fff;
+        align-items: center;
+        white-space: nowrap;
+        font-size: 12px;
+      }
+
+      .pill.ok { color: var(--green); background: var(--green-soft); border-color: #a9d7c4; }
+      .pill.bad { color: var(--red); background: #fff1ef; border-color: #efb2aa; }
+      .pill.blue { color: var(--blue); background: var(--blue-soft); border-color: #b7d3ee; }
+
+      button {
+        min-height: 32px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        -webkit-text-fill-color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+      }
+
+      button.active {
+        border-color: var(--green);
+        color: var(--green);
+        -webkit-text-fill-color: var(--green);
+        background: var(--green-soft);
+      }
+
+      button:hover,
+      button:focus-visible,
+      button:active {
+        color: var(--ink);
+        -webkit-text-fill-color: var(--ink);
+        outline: 2px solid #b7d3ee;
+        outline-offset: 1px;
+      }
+
+      button.active:hover,
+      button.active:focus-visible,
+      button.active:active {
+        color: var(--green);
+        -webkit-text-fill-color: var(--green);
+      }
+
+      .tabs { display: flex; gap: 7px; flex-wrap: wrap; }
+
+      .hidden { display: none !important; }
+      .muted { color: var(--muted); font-size: 12px; line-height: 1.55; }
+      .mono { font-family: Consolas, "Cascadia Mono", monospace; }
+
+      .chapter {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+
+      .chapter-title {
+        min-height: 38px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        background: #fbfcfd;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        font-weight: 700;
+      }
+
+      .table-wrap {
+        max-height: 560px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #e7edf3;
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #fbfcfd;
+      }
+
+      .report-table-title {
+        text-align: center;
+        font-family: SimSun, "宋体", serif;
+        font-size: 18px;
+        font-weight: 600;
+        padding: 10px 8px 6px;
+      }
+
+      .report-table {
+        border: 1px solid #111;
+        font-family: SimSun, "宋体", serif;
+        font-size: 16px;
+      }
+
+      .report-table th,
+      .report-table td {
+        border: 1px solid #111;
+        padding: 10px 12px;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .report-table th {
+        position: static;
+        background: #fff;
+        font-weight: 500;
+      }
+
+      .report-table .condition-cell {
+        width: 100px;
+        font-size: 17px;
+      }
+
+      .report-table .type-cell {
+        min-width: 120px;
+      }
+
+      .report-table .num {
+        white-space: nowrap;
+        font-family: "Times New Roman", SimSun, serif;
+      }
+
+      .fig-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+      }
+
+      .figure-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .figure-open {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: zoom-in;
+      }
+
+      .figure-card img {
+        display: block;
+        width: 100%;
+        min-height: 180px;
+        max-height: 360px;
+        object-fit: contain;
+        background: #f8fbfd;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .figure-caption {
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .figure-lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+        background: rgba(7, 18, 34, 0.78);
+      }
+
+      .figure-lightbox.open {
+        display: flex;
+      }
+
+      .figure-lightbox-inner {
+        position: relative;
+        max-width: min(94vw, 1360px);
+        max-height: 92vh;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+      }
+
+      .figure-lightbox img {
+        display: block;
+        max-width: 94vw;
+        max-height: 82vh;
+        object-fit: contain;
+        background: #fff;
+      }
+
+      .figure-lightbox-caption {
+        padding: 10px 14px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--ink);
+      }
+
+      .figure-lightbox-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        min-width: 36px;
+        height: 36px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--ink);
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      pre {
+        margin: 0;
+        max-height: 640px;
+        overflow: auto;
+        padding: 12px;
+        background: #0b1220;
+        color: #dbeafe;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        padding: 8px;
+        font: inherit;
+      }
+
+      .memo-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, .7fr);
+        gap: 12px;
+      }
+
+      .empty {
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 18px;
+      }
+
+      .validation-box {
+        border: 1px solid #efb2aa;
+        border-radius: 8px;
+        background: #fff7f5;
+        padding: 10px 12px;
+        color: var(--red);
+      }
+
+      .validation-box.pass {
+        border-color: #a9d7c4;
+        background: #f0fbf6;
+        color: var(--green);
+      }
+
+      .validation-box ul {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+
+      .check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px;
+      }
+
+      .check-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px 12px;
+        min-height: 118px;
+      }
+
+      .check-card.fail {
+        border-color: #efb2aa;
+        background: #fff7f5;
+      }
+
+      .check-card.warning {
+        border-color: #f0c36d;
+        background: #fff9eb;
+      }
+
+      .check-card.pass {
+        border-color: #a9d7c4;
+        background: #f7fffb;
+      }
+
+      .check-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .check-evidence {
+        margin-top: 8px;
+        max-height: 130px;
+        overflow: auto;
+        white-space: pre-wrap;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 900px) {
+        .topbar,
+        .memo-grid { display: grid; grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>电缆桥架智能力学分析平台 - 结果核查</h1>
+          <div class="sub">按报告第六章和附录结构查看评定表、载荷表、模态图、应力云图和三份命令流；本页不生成报告。</div>
+        </div>
+        <span id="jobPill" class="pill">读取 job</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="bar">
+        <div class="tabs">
+          <button class="active" data-tab="chapter6">第六章 结果评定</button>
+          <button data-tab="chapter5">第五章 模型图</button>
+          <button data-tab="appendixA">附录A 模态分析</button>
+          <button data-tab="appendixB">附录B 方钢应力图</button>
+          <button id="appendixCTab" data-tab="appendixC">附录C 托臂/焊缝</button>
+          <button data-tab="commands">三份命令流</button>
+          <button data-tab="memo">错误备忘</button>
+        </div>
+      </section>
+
+      <section id="validationPanel" class="hidden"></section>
+
+      <section id="issueFixPanel" class="panel hidden"></section>
+
+      <section id="chapter6" class="panel">
+        <div class="panel-head">
+          <h2>第六章 结果评定</h2>
+          <span class="pill blue">不显示公式，只显示评定表</span>
+        </div>
+        <div class="panel-body" id="chapter6Body"></div>
+      </section>
+
+      <section id="chapter5" class="panel hidden">
+        <div class="panel-head"><h2>第五章 计算模型</h2><span id="modelFigureCount" class="pill">0</span></div>
+        <div class="panel-body">
+          <div class="validation-box pass">
+            <b>图源规则</b>
+            <div class="muted">图5.1 必须来自 SHITI；图5.2 必须来自 TBMODEL。图5.2 不允许复用图5.1。</div>
+          </div>
+          <div id="modelFigures"></div>
+        </div>
+      </section>
+
+      <section id="appendixA" class="panel hidden">
+        <div class="panel-head"><h2>附录A 模态分析结果</h2><span id="modalCount" class="pill">0</span></div>
+        <div class="panel-body">
+          <div id="modalTable"></div>
+          <div style="height:12px"></div>
+          <div id="modalFigures"></div>
+        </div>
+      </section>
+
+      <section id="appendixB" class="panel hidden">
+        <div class="panel-head"><h2>附录B 方钢应力图</h2><span id="supportFigureCount" class="pill">0</span></div>
+        <div class="panel-body" id="supportFigures"></div>
+      </section>
+
+      <section id="appendixC" class="panel hidden">
+        <div class="panel-head"><h2 id="appendixCTitle">附录C 托臂应力图 / 焊缝评定原理</h2><span id="appendixCFigureCount" class="pill">0</span></div>
+        <div class="panel-body" id="appendixCFigures"></div>
+      </section>
+
+      <section id="commands" class="panel hidden">
+        <div class="panel-head">
+          <h2>三份命令流</h2>
+          <div class="tabs">
+            <button class="active" data-command="modeling">建模</button>
+            <button data-command="calculation">计算</button>
+            <button data-command="result_extraction">提取</button>
+          </div>
+        </div>
+        <pre id="commandText">等待读取命令流。</pre>
+      </section>
+
+      <section id="memo" class="panel hidden">
+        <div class="panel-head"><h2>错误备忘</h2><button id="saveMemo">保存</button></div>
+        <div class="panel-body memo-grid">
+          <div>
+            <textarea id="memoText" placeholder="记录人工核查发现的命令流、节点、载荷表、图片或评定问题。"></textarea>
+            <div style="margin-top:8px"><button id="addMemo" class="active">加入备忘</button></div>
+          </div>
+          <div id="memoList" class="muted"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="figureLightbox" class="figure-lightbox" role="dialog" aria-modal="true" aria-label="查看大图">
+      <div class="figure-lightbox-inner">
+        <button id="figureLightboxClose" class="figure-lightbox-close" type="button" aria-label="关闭大图">×</button>
+        <img id="figureLightboxImage" alt="" />
+        <div id="figureLightboxCaption" class="figure-lightbox-caption"></div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+      const params = new URLSearchParams(location.search);
+      const jobId = params.get("job_id") || "";
+      const state = { review: null, commandRole: "modeling", memos: [] };
+
+      function valueText(value, fallbackUnit = "") {
+        if (value === null || value === undefined || value === "") return "-";
+        if (typeof value === "object") {
+          const raw = value.normalized_value ?? value.value ?? value.raw_value ?? "";
+          const unit = value.unit || fallbackUnit || "";
+          return `${valueText(raw)}${unit ? ` ${unit}` : ""}`;
+        }
+        if (Number.isFinite(Number(value))) return String(Number(value).toFixed(6)).replace(/\.?0+$/, "");
+        return String(value);
+      }
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let payload = {};
+        if (text) {
+          try { payload = JSON.parse(text); } catch { payload = { detail: text }; }
+        }
+        if (!response.ok) throw new Error(payload.detail || `${response.status} ${response.statusText}`);
+        return payload;
+      }
+
+      function showTab(name) {
+        document.querySelectorAll("main > section.panel").forEach((section) => section.classList.toggle("hidden", section.id !== name));
+        document.querySelectorAll("[data-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tab === name));
+      }
+
+      function evaluationGroup(row) {
+        const text = `${row.check_id || ""} ${row.component || ""} ${row.category || ""}`.toLowerCase();
+        if (text.includes("bolt")) return "6.4 支架螺栓应力评定表";
+        if (text.includes("weld")) return "6.2 托臂根部焊缝评定结果";
+        if (text.includes("mixed_beam") || text.includes("tray") || text.includes("cantilever")) return "6.1 托臂应力评定表";
+        if (text.includes("support") || text.includes("square")) return "6.1 支架方钢应力评定表";
+        return "6.x 其它评定项";
+      }
+
+      function loadGroup(scope) {
+        if (scope === "foundation") return "6.3 支架基础载荷";
+        if (scope === "bolt_connection" || scope === "connection_nodes") return "6.4 支架连接螺栓载荷";
+        if (scope === "weld_root") return "6.2 托臂根部所受载荷";
+        return "6.x 其它载荷提取";
+      }
+
+      function compactNumber(value, digits = 2) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return "-";
+        if (number !== 0 && Math.abs(number) < Math.pow(10, -digits)) {
+          return number.toPrecision(4).replace(/\.?0+e/, "e");
+        }
+        return number.toFixed(digits).replace(/\.?0+$/, "");
+      }
+
+      function engineeringValueText(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return "-";
+        const abs = Math.abs(number);
+        if (abs === 0) return "0";
+        if (abs >= 100) return compactNumber(number, 2);
+        if (abs >= 1) return compactNumber(number, 3);
+        if (abs >= 0.01) return compactNumber(number, 4);
+        return compactNumber(number, 6);
+      }
+
+      function ratioText(value) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return "-";
+        const abs = Math.abs(number);
+        if (abs === 0) return "0";
+        if (abs < 0.01) return compactNumber(number, 6);
+        return compactNumber(number, 3);
+      }
+
+      function stressTypeText(type) {
+        const key = String(type || "").toUpperCase();
+        if (key.includes("TENSION")) return "拉伸应力";
+        if (key.includes("COMPRESSION")) return "压缩应力";
+        if (key.includes("BEND")) return "弯曲应力";
+        if (key.includes("SHEAR")) return "剪切应力";
+        return key || "-";
+      }
+
+      function normalizedStressKey(type) {
+        const key = String(type || "").toUpperCase();
+        if (key.includes("TENSION")) return "tension";
+        if (key.includes("COMPRESSION")) return "compression";
+        if (key.includes("BEND")) return "bending";
+        if (key.includes("SHEAR")) return "shear";
+        return key.toLowerCase();
+      }
+
+      function conditionForLoadCase(loadCase) {
+        const key = String(loadCase || "").toUpperCase();
+        if (["FAULTED", "D", "SL-2", "ACCIDENT"].includes(key)) return "事故";
+        if (["NORMAL", "UPSET", "A", "B", "DW", "SL-1"].includes(key)) return "正常异常";
+        return "正常异常";
+      }
+
+      function sourceRowsForComponent(component) {
+        const rows = state.review?.result?.beam_stress_results || [];
+        return rows.filter((row) => {
+          const hint = row.report_component_hint || row.component || "";
+          const scope = row.component_scope || "";
+          const file = row.source_file || "";
+          if (component === "square_support") return hint === "square_support" || file === "SQUAREBEAMSTRESS.LIS";
+          if (component === "mixed_beam_type_1") return hint === "mixed_beam_type_1" || file === "MAXBEAMSTRESS.LIS" || scope.includes("all_sections");
+          if (component === "cantilever_arm") return hint === "cantilever_arm" || file === "TMAXBEAMSTRESS.LIS" || scope.includes("cantilever");
+          return hint === component;
+        });
+      }
+
+      function formulaRowsForComponent(component) {
+        return (state.review?.formulas || []).filter((row) => row.component === component);
+      }
+
+      function materialIdForComponent(component) {
+        return formulaRowsForComponent(component).find((row) => row.material_id)?.material_id || "";
+      }
+
+      function isSteelPlatformJob() {
+        const metadata = state.review?.input?.metadata || {};
+        const method = String(metadata.analysis_method || metadata.method || "").toLowerCase();
+        const raw = metadata.raw_intake_row || {};
+        const supportText = `${raw.生根层 || ""} ${raw.支架形式 || ""} ${metadata.tray_load_description || ""}`;
+        return method === "static" || supportText.includes("钢平台");
+      }
+
+      function isLargeSquareWeldPrinciple() {
+        const scope = state.review?.analysis_scope || {};
+        const width = Number(scope.square_outer_width_mm);
+        return scope.appendix_c_mode === "weld_evaluation_principle" || (Number.isFinite(width) && width > 120);
+      }
+
+      function normalAllowables(component) {
+        const rows = formulaRowsForComponent(component);
+        const bySuffix = (suffix) => rows.find((row) => String(row.check_id || "").endsWith(suffix))?.allowable_value;
+        return {
+          tension: Number(bySuffix("support_tension")),
+          compression: Number(bySuffix("support_compression")),
+          bending: Number(bySuffix("support_bending")),
+          shear: Number(bySuffix("support_shear")),
+        };
+      }
+
+      function accidentFactor(component) {
+        const material = materialIdForComponent(component).toLowerCase();
+        if (material === "q235") return 1.66;
+        if (material === "q355") return 1.5450422535;
+        return 1.0;
+      }
+
+      function allowableFor(component, stressKey, condition) {
+        if (stressKey === "tension_bending" || stressKey === "compression_bending") return 1;
+        const base = normalAllowables(component)[stressKey];
+        if (!Number.isFinite(base)) return NaN;
+        return condition === "事故" ? base * accidentFactor(component) : base;
+      }
+
+      function envelopeStressValues(rows, condition) {
+        const values = {};
+        rows.filter((row) => conditionForLoadCase(row.load_case) === condition).forEach((row) => {
+          const key = normalizedStressKey(row.stress_type);
+          const value = Math.abs(Number(row.value_mpa));
+          if (!Number.isFinite(value)) return;
+          values[key] = Math.max(values[key] || 0, value);
+        });
+        return values;
+      }
+
+      function reportStressRows(component, condition) {
+        const values = envelopeStressValues(sourceRowsForComponent(component), condition);
+        const direct = [
+          ["tension", "拉伸应力"],
+          ["compression", "压缩应力"],
+          ["bending", "弯曲应力"],
+          ["shear", "剪切应力"],
+        ].map(([key, label]) => {
+          const calculation = values[key];
+          const allowable = allowableFor(component, key, condition);
+          const ratio = Number.isFinite(calculation) && Number.isFinite(allowable) && allowable !== 0 ? calculation / allowable : NaN;
+          return { key, label, calculation, allowable, ratio };
+        });
+        const tensionRatio = direct.find((row) => row.key === "tension")?.ratio;
+        const compressionRatio = direct.find((row) => row.key === "compression")?.ratio;
+        const bendingRatio = direct.find((row) => row.key === "bending")?.ratio;
+        direct.push({
+          key: "tension_bending",
+          label: "拉弯组合",
+          calculation: Number.isFinite(tensionRatio) && Number.isFinite(bendingRatio) ? tensionRatio + bendingRatio : NaN,
+          allowable: 1,
+          ratio: Number.isFinite(tensionRatio) && Number.isFinite(bendingRatio) ? tensionRatio + bendingRatio : NaN,
+        });
+        direct.push({
+          key: "compression_bending",
+          label: "压弯组合",
+          calculation: Number.isFinite(compressionRatio) && Number.isFinite(bendingRatio) ? compressionRatio + bendingRatio : NaN,
+          allowable: 1,
+          ratio: Number.isFinite(compressionRatio) && Number.isFinite(bendingRatio) ? compressionRatio + bendingRatio : NaN,
+        });
+        return direct;
+      }
+
+      function renderReportStressTable({ title, component }) {
+        const rows = sourceRowsForComponent(component);
+        if (!rows.length) return "";
+        const hasNonZero = rows.some((row) => Math.abs(Number(row.value_mpa || 0)) > 1e-9);
+        if (!hasNonZero) return `<div class="validation-box"><b>${esc(title)} 未展示</b><div class="muted">对应 LIS 提取行全为 0，已禁止作为正式评定表。请检查后处理选择集或该章节是否属于当前提资范围。</div></div>`;
+        const conditions = ["正常异常", "事故"];
+        const body = conditions.map((condition) => {
+          const stressRows = reportStressRows(component, condition);
+          return stressRows.map((row, index) => `
+            <tr>
+              ${index === 0 ? `<td class="condition-cell" rowspan="${stressRows.length}">${esc(condition)}</td>` : ""}
+              <td class="type-cell">${esc(row.label)}</td>
+              <td class="num">${Number.isFinite(row.calculation) ? esc(engineeringValueText(row.calculation)) : "-"}</td>
+              <td class="num">${Number.isFinite(row.allowable) ? esc(engineeringValueText(row.allowable)) : "-"}</td>
+              <td class="num">${Number.isFinite(row.ratio) ? esc(ratioText(row.ratio)) : "-"}</td>
+            </tr>`).join("");
+        }).join("");
+        return `
+          <div class="chapter">
+            <div class="report-table-title">${esc(title)}</div>
+            <div class="table-wrap">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>工况</th>
+                    <th>应力类型</th>
+                    <th>计算值<br>(MPa)</th>
+                    <th>许用值<br>(MPa)</th>
+                    <th>应力比</th>
+                  </tr>
+                </thead>
+                <tbody>${body}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function renderReportLoadTable(title, rows) {
+        if (!rows.length) return "";
+        const nodeDisplay = (row) => row.node_display || row.node || row.keypoint || (Array.isArray(row.source_keypoints) && row.source_keypoints.length ? `KP ${row.source_keypoints.join(", ")}` : "-");
+        const body = rows.map((row) => `
+          <tr>
+            <td>${esc(row.load_case || "-")}</td>
+            <td>${esc(nodeDisplay(row))}</td>
+            <td class="num">${esc(valueText(row.fx))}</td>
+            <td class="num">${esc(valueText(row.fy))}</td>
+            <td class="num">${esc(valueText(row.fz))}</td>
+            <td class="num">${esc(valueText(row.my))}</td>
+            <td class="num">${esc(valueText(row.mz))}</td>
+            <td>${esc(row.source_file || "-")}</td>
+          </tr>`).join("");
+        return `
+          <div class="chapter">
+            <div class="report-table-title">${esc(title)}</div>
+            <div class="table-wrap">
+              <table class="report-table">
+                <thead><tr><th>工况</th><th>节点/关键点</th><th>FX(N)</th><th>FY(N)</th><th>FZ(N)</th><th>MY(Nm)</th><th>MZ(Nm)</th><th>来源</th></tr></thead>
+                <tbody>${body}</tbody>
+              </table>
+            </div>
+          </div>`;
+      }
+
+      function renderServerChapter6Tables(tables) {
+        return tables.map((table) => `
+          <div class="chapter">
+            <div class="report-table-title">${esc(table.title || "-")}</div>
+            <div class="table-wrap">
+              <table class="report-table">
+                <thead><tr>${(table.columns || []).map((column) => `<th>${esc(column)}</th>`).join("")}</tr></thead>
+                <tbody>${(table.rows || []).map((row) => `<tr>${row.map((cell, index) => `<td class="${index >= 2 ? "num" : ""}">${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
+              </table>
+            </div>
+          </div>`).join("");
+      }
+
+      function renderSimpleTable(rows, columns, emptyText) {
+        if (!rows.length) return `<div class="empty">${esc(emptyText)}</div>`;
+        return `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${columns.map((col) => `<th>${esc(col.label)}</th>`).join("")}</tr></thead>
+              <tbody>${rows.map((row) => `<tr>${columns.map((col) => `<td>${esc(col.get(row))}</td>`).join("")}</tr>`).join("")}</tbody>
+            </table>
+          </div>`;
+      }
+
+      function renderValidation() {
+        const validation = state.review?.result_validation || state.review?.result?.result_validation || {};
+        const panel = $("validationPanel");
+        if (!validation || !validation.status) {
+          panel.className = "hidden";
+          panel.innerHTML = "";
+          return;
+        }
+        const failed = (validation.checks || []).filter((item) => item.status === "fail");
+        const isPass = validation.status === "pass";
+        panel.className = `validation-box${isPass ? " pass" : ""}`;
+        panel.innerHTML = isPass
+          ? `<b>结果有效性门禁通过。</b><div class="muted">当前结果文件通过非零值、节点来源和必需输出检查。</div>`
+          : `<b>结果有效性门禁未通过：禁止把当前评定表作为正式结论。</b>
+             <div class="muted">这类问题必须回到建模、载荷、约束或 PIP/LIS 提取集合修复，不能靠报告数值硬凑。</div>
+             <ul>${failed.slice(0, 8).map((item) => `<li>${esc(item.check_id)}: ${esc(item.message)}</li>`).join("")}</ul>`;
+      }
+
+      function statusPill(status) {
+        if (status === "pass") return `<span class="pill ok">通过</span>`;
+        if (status === "warning") return `<span class="pill blue">提醒</span>`;
+        if (status === "fail") return `<span class="pill bad">未通过</span>`;
+        return `<span class="pill">${esc(status || "-")}</span>`;
+      }
+
+      function evidenceText(evidence) {
+        if (evidence == null || evidence === "") return "";
+        if (typeof evidence === "string") return evidence;
+        try {
+          return JSON.stringify(evidence, null, 2);
+        } catch (_error) {
+          return String(evidence);
+        }
+      }
+
+      function renderIssueFixReview() {
+        const panel = $("issueFixPanel");
+        if (!panel) return;
+        panel.className = "hidden";
+        panel.innerHTML = "";
+      }
+
+      function maskInvalidChapter6Conclusions() {
+        const validation = state.review?.result_validation || state.review?.result?.result_validation || {};
+        if (validation.status !== "fail") return;
+        document.querySelectorAll("#chapter6Body table tbody tr").forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          if (cells.length) cells[cells.length - 1].textContent = "结果提取无效，禁止结论";
+        });
+      }
+
+      function renderChapter6() {
+        const serverTables = state.review?.report_chapter6_tables || [];
+        if (Array.isArray(serverTables) && serverTables.length) {
+          $("chapter6Body").innerHTML = renderServerChapter6Tables(serverTables);
+          return;
+        }
+        const loads = Array.isArray(state.review?.load_extractions) ? state.review.load_extractions : [];
+        const loadGroups = new Map();
+        loads.forEach((row) => {
+          const group = loadGroup(row.scope);
+          if (!loadGroups.has(group)) loadGroups.set(group, []);
+          loadGroups.get(group).push(row);
+        });
+
+        const blocks = [];
+        if (isSteelPlatformJob() && isLargeSquareWeldPrinciple()) {
+          blocks.push(renderReportStressTable({ title: "表 6-1-1 支架应力评定", component: "mixed_beam_type_1" }));
+          blocks.push(renderReportStressTable({ title: "表 6-1-2 支架方钢应力评定", component: "square_support" }));
+          for (const [title, rows] of loadGroups) {
+            blocks.push(renderReportLoadTable(title, title.includes("杩炴帴铻烘爴") && rows.length > 30 ? rows.slice(0, 30) : rows));
+          }
+          const html = blocks.filter(Boolean).join("");
+          $("chapter6Body").innerHTML = html || `<div class="empty">当前 job 尚未生成可展示的第六章结果。</div>`;
+          return;
+        }
+        if (isSteelPlatformJob()) {
+          blocks.push(renderReportStressTable({ title: "表 6-1-1 · 支架方钢应力评定", component: "square_support" }));
+          blocks.push(renderReportStressTable({ title: "表 6-1-2 · 托臂应力评定", component: "cantilever_arm" }));
+        } else {
+          const mixed = renderReportStressTable({ title: "表 6-1-1 · 支架应力评定", component: "mixed_beam_type_1" });
+          blocks.push(mixed || renderReportStressTable({ title: "表 6-1-1 · 支架应力评定", component: "square_support" }));
+        }
+        for (const [title, rows] of loadGroups) {
+          if (title.includes("连接螺栓") && rows.length > 30) {
+            blocks.push(renderReportLoadTable(title, rows.slice(0, 30)));
+            continue;
+          }
+          blocks.push(renderReportLoadTable(title, rows));
+        }
+        const html = blocks.filter(Boolean).join("");
+        $("chapter6Body").innerHTML = html || `<div class="empty">当前 job 尚未生成可展示的第六章结果。</div>`;
+      }
+
+      function figureUrl(fig) {
+        return `/jobs/${encodeURIComponent(jobId)}/figures/${encodeURIComponent(fig.figure_id || "")}/file`;
+      }
+
+      function figureText(fig) {
+        return [fig.caption, fig.source_file, fig.case || fig.load_case, fig.stress_type].filter(Boolean).join(" / ") || fig.figure_id || "figure";
+      }
+
+      function renderFigures(targetId, figures, emptyText) {
+        $(targetId).innerHTML = figures.length ? `<div class="fig-grid">${figures.map((fig) => `
+          <figure class="figure-card">
+            <button class="figure-open" type="button" data-figure-src="${esc(figureUrl(fig))}" data-figure-caption="${esc(figureText(fig))}" aria-label="放大查看 ${esc(figureText(fig))}">
+              <img src="${esc(figureUrl(fig))}" alt="${esc(figureText(fig))}" loading="lazy" onerror="this.closest('figure').classList.add('bad-figure');this.replaceWith(document.createTextNode('图片文件缺失或无法读取'))" />
+            </button>
+            <figcaption class="figure-caption">
+              <b>${esc(figureText(fig))}</b>
+              <div class="muted">${esc(fig.figure_id || "")} ${fig.appendix ? ` / 附录${fig.appendix}` : ""}</div>
+            </figcaption>
+          </figure>`).join("")}</div>` : `<div class="empty">${esc(emptyText)}</div>`;
+      }
+
+      function isModelFigure5(fig) {
+        const text = `${fig.figure_id || ""} ${fig.source_file || ""} ${fig.target_file || ""} ${fig.caption || ""} ${fig.component_scope || ""}`.toUpperCase();
+        return text.includes("SHITI") || text.includes("TBMODEL") || text.includes("TUOBI_MODEL") || text.includes("TUOBI_MO");
+      }
+
+      function renderChapter5ModelFigures() {
+        const figures = (state.review?.figures || []).filter(isModelFigure5);
+        const hasWhole = figures.some((fig) => `${fig.figure_id || ""} ${fig.source_file || ""} ${fig.target_file || ""}`.toUpperCase().includes("SHITI"));
+        const hasArm = figures.some((fig) => `${fig.figure_id || ""} ${fig.source_file || ""} ${fig.target_file || ""}`.toUpperCase().match(/TBMODEL|TUOBI_MODEL|TUOBI_MO/));
+        $("modelFigureCount").textContent = `${figures.length} ?`;
+        renderFigures(
+          "modelFigures",
+          figures,
+          "暂无图5.1/图5.2模型图。请先导出 ANSYS 图片；图5.2 必须是 TBMODEL，不能复用 SHITI。"
+        );
+        if (figures.length && (!hasWhole || !hasArm)) {
+          $("modelFigures").insertAdjacentHTML(
+            "afterbegin",
+            `<div class="validation-box"><b>模型图不完整</b><div class="muted">当前缺少 ${hasWhole ? "" : "SHITI(图5.1)"} ${hasArm ? "" : "TBMODEL(图5.2)"}；模板报告注入会拒绝复用同一张图。</div></div>`
+          );
+        }
+      }
+
+      function renderModal() {
+        const result = state.review?.result || {};
+        const modal = Array.isArray(result.modal_results) ? result.modal_results : [];
+        const cols = [
+          { label: "阶次", get: (row) => row.mode || "-" },
+          { label: "频率 Hz", get: (row) => valueText(row.frequency_hz) },
+          { label: "周期 s", get: (row) => valueText(row.period_s) },
+          { label: "来源", get: (row) => row.source_file || row.source_ref || "-" },
+        ];
+        $("modalTable").innerHTML = renderSimpleTable(modal, cols, "暂无模态频率表。");
+        const figures = (state.review?.figures || []).filter((fig) => fig.appendix === "A" || fig.figure_type === "modal" || fig.category === "modal");
+        $("modalCount").textContent = `${figures.length} 图`;
+        renderFigures("modalFigures", figures, "暂无附录A模态图。请先确认 ANSYS 输出目录中存在 MOTAI 图片并完成导入。");
+      }
+
+      function isAppendixBFigure(fig) {
+        const text = `${fig.figure_id || ""} ${fig.source_file || ""} ${fig.caption || ""} ${fig.component_scope || ""} ${fig.category || ""}`.toUpperCase();
+        if (fig.appendix === "B") return true;
+        if (text.includes("MOTAI") || text.includes("TB") || text.includes("TD")) return false;
+        return text.includes("SQ") || text.includes("SUPPORT") || text.includes("SQUARE") || text.includes("SDIR") || text.includes("SBEND") || text.includes("SHEAR");
+      }
+
+      function isAppendixCFigure(fig) {
+        const source = `${fig.source_file || ""} ${fig.target_file || ""}`.toUpperCase();
+        const text = `${fig.figure_id || ""} ${source} ${fig.caption || ""} ${fig.component_scope || ""} ${fig.category || ""}`.toUpperCase();
+        if (fig.figure_type === "model" || source.includes("TBMODEL") || source.includes("TUOBI_MODEL") || source.includes("TUOBI_MO")) {
+          return false;
+        }
+        if (fig.appendix === "C") return true;
+        return /\bT[BD]\d+(SDIR|SBEND|SHEAR)/.test(source) || text.includes("CANTILEVER_STRESS");
+      }
+
+      function appendixCMode() {
+        const scope = state.review?.analysis_scope || {};
+        const validation = state.review?.result_validation || state.review?.result?.result_validation || {};
+        const requirements = validation.requirements || {};
+        return scope.appendix_c_mode || requirements.appendix_c_mode || "not_applicable";
+      }
+
+      function appendixCTitle(mode) {
+        if (mode === "cantilever_stress_cloud") return "附录C 托臂应力图";
+        if (mode === "weld_evaluation_principle") return "附录C 焊缝评定原理";
+        if (mode === "needs_square_section_selection") return "附录C 待方钢截面确认";
+        return "附录C";
+      }
+
+      function renderWeldPrincipleAppendix() {
+        const loads = (state.review?.load_extractions || []).filter((row) => row.scope === "weld_root");
+        const rows = loads.length ? loads : [];
+        const loadTable = renderReportLoadTable("6.2 托臂根部所受载荷", rows);
+        return `
+          <div class="chapter">
+            <div class="report-table-title">焊缝评定原理</div>
+            <div class="muted">
+              方钢外边长大于 120 mm 时，附录C不输出 TB/TD 托臂云图；按焊缝评定原理和 HF-FORCE.LIS 提取的托臂根部载荷进入第六章评定。
+              若这里缺少 HF-FORCE.LIS 或载荷为零，说明后处理分支或关键点映射仍需修复，不能用空值代替结论。
+            </div>
+          </div>
+          ${loadTable || `<div class="empty">当前 job 未提取到托臂根部焊缝载荷。请检查 H1 分支、HF-FORCE.LIS 和后处理关键点映射。</div>`}`;
+      }
+
+      function renderAppendices() {
+        const figures = Array.isArray(state.review?.figures) ? state.review.figures : [];
+        const mode = appendixCMode();
+        const support = figures.filter(isAppendixBFigure);
+        const appendixC = mode === "cantilever_stress_cloud" ? figures.filter(isAppendixCFigure) : [];
+        const title = appendixCTitle(mode);
+        $("appendixCTab").textContent = title;
+        $("appendixCTitle").textContent = title;
+        $("supportFigureCount").textContent = `${support.length} 图`;
+        $("appendixCFigureCount").textContent = mode === "weld_evaluation_principle" ? "原理" : `${appendixC.length} 图`;
+        renderFigures("supportFigures", support, "暂无附录B方钢应力图。请先完成真实 ANSYS 输出导入或检查 figures_manifest.json。");
+        if (mode === "weld_evaluation_principle") {
+          $("appendixCFigures").innerHTML = renderWeldPrincipleAppendix();
+        } else if (mode === "needs_square_section_selection") {
+          $("appendixCFigures").innerHTML = `<div class="empty">当前提资缺少方钢截面，需先完成自动选型或人工确认后再决定附录C输出。</div>`;
+        } else {
+          renderFigures("appendixCFigures", appendixC, "当前 job 需要附录C托臂云图，但 figures_manifest.json 未登记 TB/TD 图片。请检查 TMAXBEAMSTRESS 后处理集合和 ANSYS /IMAGE 输出。");
+        }
+      }
+
+      function renderCommands() {
+        const stream = (state.review?.command_streams || []).find((item) => item.role === state.commandRole);
+        $("commandText").textContent = stream?.text || "当前 job 尚未生成对应命令流。";
+        document.querySelectorAll("[data-command]").forEach((button) => button.classList.toggle("active", button.dataset.command === state.commandRole));
+      }
+
+      function openFigureLightbox(src, caption) {
+        if (!src) return;
+        $("figureLightboxImage").src = src;
+        $("figureLightboxImage").alt = caption || "ANSYS 图片";
+        $("figureLightboxCaption").textContent = caption || "";
+        $("figureLightbox").classList.add("open");
+      }
+
+      function closeFigureLightbox() {
+        $("figureLightbox").classList.remove("open");
+        $("figureLightboxImage").removeAttribute("src");
+      }
+
+      function renderMemos() {
+        $("memoList").innerHTML = state.memos.length ? state.memos.map((item, index) => `<div style="border-bottom:1px solid #e7edf3;padding:8px 0"><b>${esc(item.type || "人工备忘")}</b><button data-del="${index}" style="float:right;min-height:24px">删除</button><div>${esc(item.text)}</div><div class="muted">${esc(item.time || "")}</div></div>`).join("") : "暂无备忘。";
+        document.querySelectorAll("[data-del]").forEach((button) => button.addEventListener("click", () => { state.memos.splice(Number(button.dataset.del), 1); renderMemos(); }));
+      }
+
+      function renderAll() {
+        renderValidation();
+        renderIssueFixReview();
+        renderChapter6();
+        maskInvalidChapter6Conclusions();
+        renderChapter5ModelFigures();
+        renderModal();
+        renderAppendices();
+        renderCommands();
+        renderMemos();
+      }
+
+      async function loadReview() {
+        if (!jobId) throw new Error("URL 缺少 job_id。请从主页选择已计算任务后打开结果核查页。");
+        state.review = await requestJson(`/jobs/${encodeURIComponent(jobId)}/engineering-review`, { cache: "no-store" });
+        state.memos = state.review?.review_memo?.items || [];
+        $("jobPill").textContent = jobId;
+        $("jobPill").className = "pill ok";
+        renderAll();
+      }
+
+      document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => showTab(button.dataset.tab)));
+      document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => { state.commandRole = button.dataset.command; renderCommands(); }));
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest(".figure-open");
+        if (button) openFigureLightbox(button.dataset.figureSrc, button.dataset.figureCaption);
+      });
+      $("figureLightboxClose").addEventListener("click", closeFigureLightbox);
+      $("figureLightbox").addEventListener("click", (event) => {
+        if (event.target.id === "figureLightbox") closeFigureLightbox();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeFigureLightbox();
+      });
+      $("addMemo").addEventListener("click", () => {
+        const text = $("memoText").value.trim();
+        if (!text) return;
+        state.memos.unshift({ type: "人工核查", text, time: new Date().toLocaleString() });
+        $("memoText").value = "";
+        renderMemos();
+      });
+      $("saveMemo").addEventListener("click", async () => {
+        if (!jobId) return;
+        await requestJson(`/jobs/${encodeURIComponent(jobId)}/review-memo`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: state.memos }) });
+        $("jobPill").textContent = `${jobId} / 备忘已保存`;
+      });
+
+      loadReview().catch((error) => {
+        $("jobPill").textContent = error.message;
+        $("jobPill").className = "pill bad";
+        $("chapter6Body").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+      });
+    </script>
+  </body>
+</html>

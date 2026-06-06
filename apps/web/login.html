@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>电缆桥架力学分析一体化平台 - 登录</title>
+    <style>
+      :root {
+        --ink: #12243a;
+        --muted: #607488;
+        --line: #d6e2ee;
+        --green: #007a5a;
+        --green-dark: #00664c;
+        --panel: rgba(255, 255, 255, .94);
+        --shadow: 0 24px 70px rgba(12, 29, 50, .22);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        position: relative;
+        color: var(--ink);
+        font: 14px/1.55 "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+        background:
+          linear-gradient(128deg, #25205b 0%, #413987 28%, rgba(78, 186, 196, .86) 49%, rgba(187, 236, 228, .96) 72%, #efc98f 100%),
+          #eef7f8;
+        overflow: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(116deg, rgba(255,255,255,.05) 0 24%, transparent 24% 100%),
+          repeating-linear-gradient(118deg, rgba(255,255,255,.16) 0 1px, transparent 1px 44px);
+        mix-blend-mode: soft-light;
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: auto 0 0;
+        height: 120px;
+        pointer-events: none;
+        background: linear-gradient(180deg, transparent, rgba(12, 29, 50, .18));
+      }
+      .shell {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(720px, 1fr) 390px;
+        gap: clamp(64px, 10vw, 160px);
+        align-items: center;
+        width: 100%;
+        padding: 64px clamp(88px, 8vw, 148px);
+      }
+      .shell::before {
+        content: "CableTrayAI";
+        position: fixed;
+        left: 26px;
+        top: 18px;
+        color: rgba(255,255,255,.9);
+        font-weight: 800;
+        letter-spacing: .02em;
+      }
+      .hero {
+        position: relative;
+        min-height: calc(100vh - 128px);
+        overflow: visible;
+      }
+      .hero-header {
+        position: absolute;
+        left: 0;
+        top: 51%;
+        transform: translateY(-8%);
+        z-index: 3;
+        width: min(700px, 100%);
+        padding: 0;
+      }
+      .cnpe-wordmark {
+        display: block;
+        margin: 0 0 42px -8px;
+        color: transparent;
+        -webkit-text-stroke: 1.5px rgba(255, 72, 82, .92);
+        text-shadow: 0 10px 34px rgba(255, 72, 82, .12);
+        font-family: "Segoe UI Light", "Microsoft YaHei UI Light", "Microsoft YaHei", Arial, sans-serif;
+        font-size: clamp(104px, 13vw, 214px);
+        font-weight: 300;
+        line-height: .78;
+        letter-spacing: .03em;
+      }
+      .mark {
+        display: none;
+        place-items: center;
+        width: 82px;
+        height: 40px;
+        border-radius: 8px;
+        background: rgba(0, 122, 90, .92);
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: .04em;
+        box-shadow: 0 14px 30px rgba(17, 36, 58, .18);
+      }
+      h1 {
+        margin: 0 0 16px;
+        max-width: 680px;
+        color: #fff;
+        font-size: clamp(36px, 4.15vw, 58px);
+        line-height: 1.12;
+        letter-spacing: 0;
+        text-shadow: 0 8px 28px rgba(18, 29, 55, .22);
+      }
+      .subtitle {
+        max-width: 620px;
+        color: rgba(255,255,255,.84);
+        font-size: 16px;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        perspective: 980px;
+        display: grid;
+        place-items: center;
+        opacity: .40;
+        pointer-events: none;
+      }
+      .tray-stage {
+        position: relative;
+        width: min(820px, 44vw);
+        min-width: 560px;
+        height: 430px;
+        margin-left: min(24vw, 360px);
+        transform-style: preserve-3d;
+        animation: orbit 18s linear infinite;
+      }
+      .beam, .rail, .rung, .post, .brace, .plate {
+        position: absolute;
+        transform-style: preserve-3d;
+        border-radius: 2px;
+        background: linear-gradient(180deg, rgba(122, 236, 238, .92), rgba(34, 149, 174, .92));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.45), 0 14px 24px rgba(16,34,53,.22);
+      }
+      .beam::after, .rail::after, .rung::after, .post::after {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border: 1px solid rgba(255,255,255,.35);
+      }
+      .post { width: 30px; height: 230px; left: 92px; top: 48px; transform: rotateY(0deg) translateZ(0); }
+      .beam { width: 320px; height: 28px; left: 122px; transform-origin: left center; }
+      .beam.b1 { top: 80px; transform: rotateY(-18deg) translateZ(54px); }
+      .beam.b2 { top: 164px; transform: rotateY(-18deg) translateZ(28px); }
+      .beam.b3 { top: 248px; transform: rotateY(-18deg) translateZ(2px); }
+      .rail {
+        width: 420px;
+        height: 12px;
+        left: 185px;
+        transform-origin: left center;
+        background: linear-gradient(180deg, rgba(54, 98, 142, .92), rgba(28, 61, 100, .92));
+      }
+      .rail.r1 { top: 66px; transform: rotateY(-18deg) translateZ(74px); }
+      .rail.r2 { top: 106px; transform: rotateY(-18deg) translateZ(38px); }
+      .rail.r3 { top: 150px; transform: rotateY(-18deg) translateZ(48px); }
+      .rail.r4 { top: 190px; transform: rotateY(-18deg) translateZ(12px); }
+      .rail.r5 { top: 234px; transform: rotateY(-18deg) translateZ(22px); }
+      .rail.r6 { top: 274px; transform: rotateY(-18deg) translateZ(-14px); }
+      .rung {
+        width: 10px;
+        height: 62px;
+        background: linear-gradient(180deg, rgba(73, 108, 146, .94), rgba(40, 71, 102, .94));
+        transform: rotateZ(58deg) rotateY(-18deg);
+      }
+      .rung:nth-of-type(11) { left: 250px; top: 70px; }
+      .rung:nth-of-type(12) { left: 335px; top: 82px; }
+      .rung:nth-of-type(13) { left: 420px; top: 94px; }
+      .rung:nth-of-type(14) { left: 505px; top: 106px; }
+      .rung:nth-of-type(15) { left: 250px; top: 154px; }
+      .rung:nth-of-type(16) { left: 335px; top: 166px; }
+      .rung:nth-of-type(17) { left: 420px; top: 178px; }
+      .rung:nth-of-type(18) { left: 505px; top: 190px; }
+      .brace { width: 150px; height: 8px; left: 94px; top: 214px; transform: rotateZ(-32deg) rotateY(-16deg) translateZ(10px); background: rgba(38, 73, 110, .94); }
+      .plate { width: 76px; height: 10px; left: 68px; top: 282px; background: rgba(24, 59, 94, .94); }
+      .axis {
+        position: absolute;
+        right: 40px;
+        bottom: 26px;
+        color: rgba(255,255,255,.82);
+        font: 700 12px/1 "Consolas", monospace;
+      }
+      .axis span { display: inline-block; margin-left: 8px; }
+      @keyframes orbit {
+        0% { transform: rotateX(62deg) rotateZ(-32deg) rotateY(0deg); }
+        100% { transform: rotateX(62deg) rotateZ(-32deg) rotateY(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tray-stage { animation: none; transform: rotateX(62deg) rotateZ(-32deg) rotateY(-22deg); }
+      }
+      .login-card {
+        align-self: center;
+        justify-self: end;
+        width: 390px;
+        border: 1px solid rgba(255,255,255,.72);
+        border-radius: 16px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        padding: 36px 34px;
+        backdrop-filter: blur(10px);
+      }
+      .login-card h2 { margin: 0 0 6px; font-size: 24px; }
+      .login-card p { margin: 0 0 20px; color: var(--muted); }
+      label { display: block; margin: 12px 0 6px; color: #29445f; font-weight: 700; }
+      input {
+        width: 100%;
+        height: 44px;
+        border: 1px solid #aebfd1;
+        border-radius: 8px;
+        padding: 8px 11px;
+        font: inherit;
+        background: #fff;
+        color: var(--ink);
+      }
+      input:focus {
+        outline: 2px solid rgba(23, 79, 134, .18);
+        border-color: #174f86;
+      }
+      button {
+        width: 100%;
+        height: 44px;
+        margin-top: 18px;
+        border: 1px solid var(--green);
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button:hover { background: var(--green-dark); }
+      button:disabled { opacity: .72; cursor: wait; }
+      .status {
+        min-height: 22px;
+        margin-top: 12px;
+        color: #b42318;
+        font-size: 13px;
+      }
+      .hint {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #d8e4ef;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+      }
+      .principles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 20px;
+      }
+      .principles span {
+        position: relative;
+        color: rgba(255,255,255,.88);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .principles span::before {
+        content: "";
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        margin-right: 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.9);
+      }
+      @media (max-width: 1180px) {
+        body { overflow: auto; }
+        .shell { grid-template-columns: 1fr; padding: 64px 24px 32px; }
+        .hero { min-height: 340px; }
+        .hero-header { position: relative; top: auto; transform: none; padding-top: 56px; }
+        .cnpe-wordmark { margin-bottom: 28px; font-size: clamp(76px, 18vw, 132px); }
+        .tray-stage { width: min(620px, 90vw); height: 320px; min-width: 0; margin-left: 0; }
+        .scene { transform: scale(.8); transform-origin: center; opacity: .34; }
+        .login-card { width: min(430px, 100%); justify-self: center; }
+      }
+      @media (max-width: 620px) {
+        .shell { padding: 58px 16px 24px; gap: 18px; }
+        .hero-header { padding-top: 24px; }
+        .hero { min-height: 260px; }
+        .cnpe-wordmark { margin-bottom: 20px; }
+        .subtitle { font-size: 14px; }
+        .principles { gap: 8px 12px; }
+        .scene { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero" aria-label="平台说明">
+        <div class="hero-header">
+          <div class="cnpe-wordmark" aria-hidden="true">CNPE</div>
+          <h1>在一个平台，完成提资、建模、计算、评定与报告输出</h1>
+          <div class="subtitle">
+            面向力学室内网使用，把标准命令流、反应谱、ANSYS 批处理、结果提取和 Excel 评定串成可追溯流程。
+          </div>
+          <div class="principles">
+            <span>标准命令流</span>
+            <span>ANSYS 批处理</span>
+            <span>Excel 权威评定</span>
+            <span>source_ref 溯源</span>
+          </div>
+        </div>
+        <div class="scene" aria-hidden="true">
+          <div class="tray-stage">
+            <div class="post"></div>
+            <div class="beam b1"></div>
+            <div class="beam b2"></div>
+            <div class="beam b3"></div>
+            <div class="rail r1"></div>
+            <div class="rail r2"></div>
+            <div class="rail r3"></div>
+            <div class="rail r4"></div>
+            <div class="rail r5"></div>
+            <div class="rail r6"></div>
+            <div class="rung"></div><div class="rung"></div><div class="rung"></div><div class="rung"></div>
+            <div class="rung"></div><div class="rung"></div><div class="rung"></div><div class="rung"></div>
+            <div class="brace"></div>
+            <div class="plate"></div>
+            <div class="axis"><span>X</span><span>Y</span><span>Z</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="login-card" aria-label="登录">
+        <h2>账号登录</h2>
+        <p>登录 CableTrayAI 后进入电缆桥架计算工作台。</p>
+        <form id="loginForm">
+          <label for="username">账号</label>
+          <input id="username" name="username" autocomplete="username" required autofocus />
+          <label for="password">密码</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+          <button id="loginButton" type="submit">进入平台</button>
+          <div id="status" class="status" role="alert"></div>
+        </form>
+        <div class="hint">如无法登录，请联系管理员-duxyb 检查账号权限。</div>
+      </section>
+    </main>
+    <script>
+      const form = document.getElementById("loginForm");
+      const statusEl = document.getElementById("status");
+      const button = document.getElementById("loginButton");
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next") || "/";
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        statusEl.textContent = "";
+        button.disabled = true;
+        button.textContent = "正在登录...";
+        try {
+          const response = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: form.username.value.trim(),
+              password: form.password.value,
+            }),
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(payload.detail || "账号或密码错误");
+          window.location.href = next.startsWith("/") ? next : "/";
+        } catch (error) {
+          statusEl.textContent = error.message || "登录失败";
+          button.disabled = false;
+          button.textContent = "进入平台";
+        }
+      });
+    </script>
+  </body>
+</html>

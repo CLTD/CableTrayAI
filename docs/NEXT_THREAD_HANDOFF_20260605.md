@@ -1,0 +1,218 @@
+# CableTrayAI 新对话交接 2026-06-05
+
+本对话已按用户要求停止实际修复和运行。新对话不要重新猜目标，直接从本文件继续。
+
+## 当前未完成目标
+
+1. 修复方钢截面选型仍然按允许截面列表全量顺序试算的问题。
+2. 修改网页流程：选中提资行后，先生成并显示三份命令流，人工确认后才允许真实计算。
+3. 安全接入 Git/GitHub：本机已有 Git，但项目目录还不是 Git 仓库。
+4. 重新核查 `Unable to allocate output buffer` 是否来自旧安装包、旧 job 状态，还是当前代码仍触发。
+
+## 已定位根因
+
+### 1. 方钢截面选型
+
+重点文件：
+
+- `core/optimizer/square_section_workflow.py`
+- `core/optimizer/square_section_selector.py`
+- `tests/unit/test_square_section_workflow_policy.py`
+
+已定位问题：
+
+- `select_and_apply_square_section()` 中 `allowed_filter_applied` 分支会清空 `preferred_section`。
+- 同一分支还把 `stop_after_first_feasible`、`smart_jumps_enabled`、`smart_order` 都按允许截面列表禁用。
+- `optimize_failed_square_section()` 中也有同类逻辑。
+- 这导致提资计算说明给出允许截面时，软件仍按列表全量顺序试算，出现 140 已满足但继续往后算的现象。
+
+应改成：
+
+- 提资“计算说明”给出的允许截面是硬边界，未列出的截面不能试算。
+- 在允许边界内，使用工程估算、相似提资学习记录和完整第六章评定比值进行候选排序。
+- 找到完整确定性评定 `ratio < 1.0` 且满足策略的截面后停止，不继续往更大截面跑。
+- 如果最小允许截面已经很保守且满足，也允许选最小截面。
+- 如果所有允许截面都不满足，明确报“提资允许截面不足”，不能扩展到未允许截面。
+- 试算控制比值必须和最终第六章评定来源一致，不能试算大、第六章小。
+
+### 2. 先审命令流再计算
+
+重点文件：
+
+- `apps/web/index.html`
+- `apps/api/app/main.py`
+
+已定位入口：
+
+- 前端计算入口在 `runOneClick()`。
+- 前端已有命令流显示相关函数：`loadEngineeringReview()`、`commandText()`。
+- 后端已有：
+  - `/jobs/{job_id}/render-standard-commands`
+  - `/jobs/{job_id}/engineering-review`
+
+应补：
+
+- 选中提资行后先生成 `generated_model.mac`、`generated_solve.mac`、`generated_post.mac`。
+- 页面显示三份命令流并要求人工确认。
+- 后端写入命令流确认状态，例如 `command_stream_confirmation.json`。
+- `/runs/start` 或真实 ANSYS 入口必须检查确认状态；未确认时拒绝运行。
+
+### 3. Git/GitHub
+
+当前状态：
+
+- 本机已有 `git version 2.51.0.windows.1`。
+- 当前项目目录还没有 `.git`。
+- `.gitignore` 已存在，并排除了 `source_materials/`、`jobs/`、`uploads/`、`outputs/`、`logs/`、本地模型和部署产物等。
+
+应做：
+
+- 可以 `git init`。
+- 新增安全脚本 `scripts/connect_github.ps1`，由用户提供远程仓库 URL 后再连接。
+- 不自动 push。
+- 不删除 E 盘资料。
+- 不修改 `source_materials`。
+- 不执行 `git reset --hard`。
+
+## 验证要求
+
+修改后至少执行：
+
+```powershell
+pytest -q tests/unit/test_square_section_workflow_policy.py tests/unit/test_square_section_selector.py
+rg --pcre2 -n "1818|7\.5m|(?<![A-Za-z])NB(?![A-Za-z])" core apps templates
+```
+
+若修改运行入口、网页或部署包，还要做：
+
+```powershell
+pytest -q
+```
+
+并启动本机服务做网页 smoke，确认：
+
+- 打开平台不恢复旧 job。
+- 未选提资/反应谱时不显示旧文件。
+- 选择提资后先显示命令流。
+- 未确认命令流时不能真实计算。
+
+## 不允许做的事
+
+- 不修改 `source_materials`。
+- 不用 mock 冒充真实计算。
+- 不硬编码项目号、厂房、标高、谱文件名。
+- 不删除用户资料。
+- 不清理 E 盘非本项目生成物。
+- 不用历史报告数值硬凑通过。
+
+## 2026-06-05 4210 / 100x8 ????
+
+?????? ANSYS ?? 4210???????????????????
+
+1. ?????`100-100-8` ?????????????? ANSYS ? `SQUAREBEAMSTRESS.LIS` ?????????????????????????`6.655874 / 246.8205 + 288.4764 / 362.0034 = 0.8238551033866901`???????? Q355?
+2. ??????????????????? `ratio < 1` ???????????? 1 ?????????? `140-140-8`???? `0.9050741886218011`?
+3. ??????????????? `140` job ???????? `100/120` ???? `square_section_selected=140` ? `analysis_scope.json` ???????????????? `input.json`?`generated_post.mac`?????????????????? `analysis_scope.json`?
+4. ????? no-reuse ?? ANSYS ?????`jobs/real_ansys_4210_scopefix_20260605_122100/18185NI-LXSJ4210`??????`E:/CODEX/tray_platform/ANSYS Output/codex_real_ansys_4210_scopefix_20260605_122100/18185NI-LXSJ4210`?`result_validation.json` ? 14/14 pass?
+5. ????????`100-100-6=1.0860649507711804 fail`?`100-100-8=0.8238551033866901 numeric pass but not selected`?`120-120-6=1.1176208624928199 fail`?`120-120-10=1.0897604486587695 fail`?`140-140-8=0.9050741886218011 selected pass`?`160-160-8=0.5530764105162179 pass but not selected`?
+6. ???????????????? 140 ?????? Q355 ?? ANSYS ?????? `100-100-8` ??????????????????????????? 100/120/140 ?????Excel ???? LIS ????????????????????????
+7. ???????????????????????????????????? `100-100-8` ?? pass ????????
+8. ??????? `real_ansys_4210_20260605_110744`?`real_ansys_4210_syncfix_20260605_114610` ??? `docs/production_runs` ? ANSYS ??????????????? 100/8 ?????ANSYS `.lNN` ???????????
+9. ???`python -m pytest -q -p no:cacheprovider` ?? 56 tests????? `py_compile` ???`apps/web/index.html` ?? JS ?? `node --check`?`????` ??????`1818|7.5m|NB` ?????????
+
+## 2026-06-05 4210 / 100x8 ASCII recovery note
+
+1. Direct answer: 100-100-8 is reported as a numeric candidate pass because real ANSYS SQUAREBEAMSTRESS.LIS plus deterministic evaluation gives square_support accident tension+bending ratio 0.8238551033866901. Formula path: 6.655874 / 246.8205 + 288.4764 / 362.0034. Material policy is non-steel-platform Q355.
+2. 100-100-8 is not the final accepted section. The final formal selection still chooses 140-140-8 because its ratio 0.9050741886218011 is closer to 1.0 while remaining below 1.0.
+3. A real bug was fixed: copied final jobs could keep stale square_section_selected=140 and stale analysis_scope.json while trialing 100/120. Replacement now syncs input.json and generated_post.mac, clears stale selected metadata when it conflicts with the current trial section, rewrites analysis_scope.json, and trial copy ignores stale derived scope/selection files.
+4. Formal no-reuse real ANSYS rerun after the fix passed at jobs/real_ansys_4210_scopefix_20260605_122100/18185NI-LXSJ4210. Published output is E:/CODEX/tray_platform/ANSYS Output/codex_real_ansys_4210_scopefix_20260605_122100/18185NI-LXSJ4210. result_validation.json is 14/14 pass.
+5. Candidate ratios after the fix: 100-100-6=1.0860649507711804 fail; 100-100-8=0.8238551033866901 numeric pass, not selected; 120-120-6=1.1176208624928199 fail; 120-120-10=1.0897604486587695 fail; 140-140-8=0.9050741886218011 selected pass; 160-160-8=0.5530764105162179 pass, not selected.
+6. Manual baseline conflict is still open. The coworker/manual statement says only 140x140x8 satisfies 4210, but current Q355 real-ANSYS deterministic calculation says 100-100-8 is a numeric pass. Do not claim the manual baseline is matched until the coworker 100/120/140 sheet, Excel cells, or LIS comparison is available.
+7. Web/API wording now separates candidate numeric pass/fail from final acceptance so 100-100-8 is displayed as numeric pass but not selected, not as the publishable section.
+8. Cleanup: superseded 4210 runs real_ansys_4210_20260605_110744 and real_ansys_4210_syncfix_20260605_114610 plus their docs/production_runs and ANSYS outputs were deleted. Latest scopefix run and the 100x8 diagnostic evidence were retained. ANSYS .lNN load-step caches are now removed by cleanup_heavy_solver_artifacts.
+9. Verification: python -m pytest -q -p no:cacheprovider passed 56 tests; py_compile passed for touched modules; apps/web/index.html inline JS passed node --check; forbidden terminology scan for the old square-support phrase had no hits; hardcode scan for 1818, 7.5m, and standalone NB over core/apps/templates had no hits.
+
+
+## 2026-06-05 deployment handoff addendum
+
+Use this addendum first if a new thread continues from this handoff.
+
+Completed after the 4210/100x8 recovery note:
+
+1. Desktop package for coworker review:
+   - `C:/Users/duxy/Desktop/4210_100x8_command_stream_for_review_20260605_134215`
+   - `C:/Users/duxy/Desktop/4210_100x8_command_stream_for_review_20260605_134215.zip`
+2. Package contents include modeling, solve, post-processing command streams, PIP/MAC/SECT inputs, ANSYS LIS/OUP evidence, evaluation JSON, and `README_100x8_review.txt`.
+3. Current deployment package:
+   - `C:/Users/duxy/Desktop/duxyb/CableTrayAI`
+   - `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`
+4. The package was applied to `D:/CableTrayAI`; the active service was restarted from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`.
+5. Hash checks confirmed the installed app matches the source for the square-section selector, analysis scope validator, ANSYS runner, frontend page, and package script.
+6. The old Desktop folder `C:/Users/duxy/Desktop/duxyb/CableTrayAI (2)` and temporary `D:/CableTrayAI/_internal_update` were removed. `D:/CableTrayAI/_update_backups/20260605_134644` is a backup only and does not affect runtime imports.
+7. The service health check passed at `http://127.0.0.1:8000/health`; root HTML uses no-store/no-cache headers.
+8. `command_stream_error` is fixed for optional MAPDL selection warnings. WARNING-context undefined entity / ignored ESEL messages are warnings only; true ERROR/FATAL command stream messages remain blocking.
+9. Added regression coverage: `tests/unit/test_ansys_command_stream_warning_gate.py`.
+10. Final verification passed: full pytest, hardcode scan for `1818|7.5m|NB`, old terminology scan, package inspection, installed hash comparison, and service smoke.
+
+Do not reopen already resolved issues unless new evidence appears. The only unresolved technical/business discrepancy is the coworker/manual baseline claim for 4210: coworker says only 140x140x8 satisfies, while current Q355 real ANSYS deterministic evaluation says 100-100-8 is numeric pass but not finally selected. Compare coworker Excel cells, formulas, or LIS values before changing the evaluator.
+
+## 2026-06-05 latest handoff addendum after spectrum/row6 fixes
+
+Use this addendum first if continuing in a new thread.
+
+1. Spectrum elevation selection is now fixed: a requested intake elevation must not be satisfied by a lower spectrum floor. Exact elevation is used when available; otherwise the selected curve is linearly interpolated between the nearest lower and higher spectrum floors. Above the highest available floor fails.
+2. 4210 NR +8.5 now records `requested_elevation=8.5`, `selected_elevation=8.5`, `mode=linear_interpolation`, lower `8.45`, upper `12.95`. It is not using 8.45 directly.
+3. The web last-row calculation failure was reproduced and fixed. Root cause: single-side source-family APDL did not define `senum1`, so ANSYS emitted `Unknown parameter name= SENUM1` and the real-run command-stream gate blocked post-processing. `core/apdl/intake_standard_family_renderer.py` now writes `senum1=0` for single-side rows.
+4. Real ANSYS no-reuse rerun for the last physical intake row passed at `jobs/real_ansys_row6_senumfix_20260605_151201/1818_S2_20240711_S2_row_6` and published to `E:/CODEX/tray_platform/ANSYS Output/codex_real_ansys_row6_senumfix_20260605_151201`.
+5. Last-row candidate ratios: `100-100-6=1.475624234262047 fail`, `100-100-8=1.4919176724914107 fail`, `120-120-6=1.5468087394032437 fail`, `120-120-10=1.5467520208216183 fail`, `140-140-8=0.888341903997755 pass`, `160-160-8=0.9131955968601544 selected pass`.
+6. Current 4210 formal run is `jobs/real_ansys_4210_spectrumfix_20260605_143107/18185NI-LXSJ4210`, selected `140-140-8`, ratio `0.9050741886218011`. The 4210 `100-100-8` diagnostic run is `jobs/diagnostic_4210_100x8_spectrumfix_20260605_145434/18185NI-LXSJ4210_100-100-8`, Q355 max ratio `0.8238551033866901`, validation pass. This remains a manual-baseline conflict.
+7. Latest Desktop coworker review package is `C:/Users/duxy/Desktop/4210_100x8_spectrumfix_review_20260605_145910.zip`; it supersedes the earlier 13:42 package because it contains corrected spectrum interpolation evidence.
+8. Deployment package was rebuilt at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260605_152520`. `D:/CableTrayAI/_internal_update` was removed.
+9. Active service: `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, PID 19896. `/health` returns ok and root page has no-store/no-cache headers. Installed hashes match source for touched files.
+10. Verification passed: targeted pytest 21, full pytest 66, py_compile, frontend inline JS parse, hardcode scan, package inspection, installed hash checks, service smoke. Source tree cleanup removed generated runtime/PyInstaller artifacts and the superseded failed row6 job; `.pytest_cache` and `.pytest_tmp` remain as local ACL-denied cache directories, not packaged and not calculation state.
+
+Only open item: reconcile the 4210 coworker/manual statement that only 140x140x8 satisfies against the current Q355 real-ANSYS deterministic 100-100-8 numeric pass. Do not change material policy, allowables, or RCC-M formulas without coworker Excel cells, hand calculation, or LIS comparison evidence.
+
+## 2026-06-05 latest handoff addendum after floorpolicy change
+
+Use this addendum first if continuing in a new thread. It supersedes the earlier interpolation-based spectrum addendum.
+
+1. Spectrum elevation selection now has no floor interpolation. The active rule is: select the lowest common workbook spectrum elevation satisfying `selected_elevation >= intake_elevation - 0.1 m`.
+2. 4210 NR +8.5 selects `8.45`, mode `lower_floor_within_0p1m_tolerance`, minimum allowed elevation `8.4`; it no longer interpolates 8.45/12.95 to 8.5.
+3. User's NS ring example is covered: if intake elevation is `8.0` and available floors are `7.5` and `13.5`, then `7.5` is below the tolerance and selector chooses `13.5`.
+4. Real ANSYS no-reuse 4210 floorpolicy run passed at `jobs/real_ansys_4210_floorpolicy_20260605_194143/18185NI-LXSJ4210`; published output is `E:/CODEX/tray_platform/ANSYS Output/codex_real_ansys_4210_floorpolicy_20260605_194143/18185NI-LXSJ4210`.
+5. Latest 4210 candidate ratios: `100-100-6=1.08448973904665 fail`, `100-100-8=0.8226542680722521 numeric pass but not selected`, `120-120-6=1.1154633008050938 fail`, `120-120-10=1.0873576336575843 fail`, `140-140-8=0.9030941184530311 selected pass`, `160-160-8=0.5519631912112796 pass but not selected`.
+6. Latest 4210 `100-100-8` diagnostic run passed at `jobs/diagnostic_4210_100x8_floorpolicy_20260605_200418/18185NI-LXSJ4210_100-100-8`; it uses SECREAD `100-100-8`, `50-42`, `CAOGANG42DAN`, and `500-75-2mm`; max deterministic ratio is `0.8226542680722521`, material `q355`, validation pass/publishable.
+7. Latest coworker review package is `C:/Users/duxy/Desktop/4210_100x8_floorpolicy_review_simplified_20260605_2008.zip`. Review `generated_solve.mac`, `ansys_spectrum_sl1.mac`, `ansys_spectrum_sl2.mac`, `spectrum_selection.json`, LIS/OUP/evaluation JSON, and SECT files. The merged `ansys_spectrum.mac` is audit-only and intentionally omitted from this simplified package.
+8. `core/spectra/interpolation.py` was deleted. `scripts/apply_internal_update.ps1` now removes known stale installed files after package apply so a deployment cannot keep this deleted module.
+9. Deployment package `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` was rebuilt and applied to `D:/CableTrayAI`; the exact backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`. Active service is `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`; `/health` returns ok and root HTML has no-store/no-cache headers. Installed hashes match source for touched files.
+10. Package inspection passed: no root `jobs/`, `uploads/`, `outputs/`, `logs/`, no `runtime/auth_sessions.json`, no local config files, no `core/spectra/interpolation.py`.
+11. Source cleanup retained only `jobs/real_ansys_4210_floorpolicy_20260605_194143`, `jobs/diagnostic_4210_100x8_floorpolicy_20260605_200418`, and `jobs/real_ansys_row6_senumfix_20260605_151201`. Superseded `spectrumfix` jobs and old Desktop review packages were removed.
+12. Verification passed: `python -m pytest -q -p no:cacheprovider`, py_compile for touched spectrum modules, hardcode scan for `1818|7.5m|NB`, runtime interpolation scan over `core apps templates scripts`, package inspection, installed hash comparison, and service smoke.
+
+Only open item: coworker/manual baseline still says only `140x140x8` satisfies 4210, while current Q355 real ANSYS floorpolicy calculation gives `100-100-8` numeric pass and final selection `140-140-8`. Do not change material policy, allowables, RCC-M formulas, or section-selection policy without coworker Excel cells, hand calculation, or LIS comparison evidence.
+
+## 2026-06-05 latest handoff addendum after workbook-VBA spectrum fix
+
+Use this addendum first in a new thread. It supersedes the earlier floorpolicy spectrum package note for spectrum data comparison.
+
+1. The user found the generated spectrum data still did not match the Excel workbook's red-box `ANSYS Format` output. The root cause was the old generation path using legacy source-command frequency-guide/compression logic, not the workbook VBA path.
+2. The workbook VBA was extracted and learned. `Module1` contains level lookup, spectrum extraction, interpolation helpers, and XY envelope functions. `Module2` contains `Simplify`, `GetSpecRg`, `PrintPepsSysp`, `StrAnsys`, and `GetSimpSpec`; `PrintPepsSysp` plus `StrAnsys` is the path that writes the ANSYS-specific format shown in Excel.
+3. `core/spectra/response_spectrum_writer.py` now writes an additional review file, `ansys_spectrum_workbook_format.mac`, which should be compared directly with the Excel `ANSYS Format` area. The actual solve macros are still `ansys_spectrum_sl1.mac` and `ansys_spectrum_sl2.mac`; they now use the same workbook-VBA FREQ/SV points.
+4. The elevation rule remains the user's no-floor-interpolation rule: select the lowest common workbook elevation satisfying `selected_elevation >= intake_elevation - 0.1 m`. For 4210 NR +8.5, the selected elevation is `8.45`, mode `lower_floor_within_0p1m_tolerance`.
+5. The generated workbook-format review file for 4210 starts with `!SL-1(XY) 7%  Envelop:(NR_1818,8.45)` and the first FREQ/SV lines match the screenshot: `0.100, 0.123, 0.146, 0.187, ...` and `0.015, 0.025, 0.031, ...`.
+6. Latest formal real ANSYS 4210 run after the VBA spectrum fix: `jobs/real_ansys_4210_vbaspectrum_20260605_205920/18185NI-LXSJ4210`, published to `E:/CODEX/tray_platform/ANSYS Output/codex_real_ansys_4210_vbaspectrum_20260605_205920/18185NI-LXSJ4210`; selected `140-140-8`, controlling ratio `0.9031454745084346`, validation publishable.
+7. Latest 4210 candidate ratios: `100-100-6=1.1023869580598782 fail`, `100-100-8=0.8229657592534583 numeric pass but not selected`, `120-120-6=1.1169614521115918 fail`, `120-120-10=1.0874272040907167 fail`, `140-140-8=0.9031454745084346 selected pass`, `160-160-8=0.5520012955679422 pass but not selected`.
+8. Latest 4210 `100-100-8` diagnostic run: `jobs/diagnostic_4210_100x8_vbaspectrum_20260605_212110/18185NI-LXSJ4210_100-100-8`; model uses SECREAD `100-100-8`, `50-42`, `CAOGANG42DAN`, and `500-75-2mm`; max deterministic ratio `0.8229657592534583`, material `q355`, validation publishable.
+9. Latest clean Desktop package for coworker review: `C:/Users/duxy/Desktop/4210_100x8_vbaspectrum_code_clean_20260605_212801.zip`. It includes model/solve/post commands, actual SL-1/SL-2 spectrum solve macros, `ansys_spectrum_workbook_format.mac`, spectrum/evaluation/result JSON, and only the SECT files used by the 100x8 model.
+10. Verification already passed before deployment refresh: full pytest 68 passed; targeted spectrum/ANSYS/intake tests 18 passed; py_compile passed for existing spectrum modules; hardcode scan over `core apps templates` had no `1818`, `7.5m`, or standalone `NB`; old spectrum logic scan had no legacy frequency-guide/compression/interpolation hits.
+
+Deployment and cleanup after this fix are also complete:
+
+1. Rebuilt package: `C:/Users/duxy/Desktop/duxyb/CableTrayAI` and `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, zip size `79000638` bytes.
+2. Package inspection passed: no root `jobs/`, `uploads/`, `outputs/`, `logs/`, no `runtime/auth_sessions.json`, no local config files, and no `core/spectra/interpolation.py`.
+3. Applied to `D:/CableTrayAI`; backup path `D:/CableTrayAI/_update_backups/20260605_213341`.
+4. Active service restarted from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, PID `4204`; `/health` is ok and root HTML has no-store/no-cache headers.
+5. Installed hashes match source for `core/spectra/response_spectrum_writer.py` and `scripts/apply_internal_update.ps1`.
+6. Cleanup removed temporary VBA extraction files, temporary spectrum-check jobs, superseded floorpolicy jobs, old Desktop review packages, `D:/CableTrayAI/_internal_update`, source runtime/PyInstaller build artifacts, and non-cache `__pycache__` artifacts. Source `jobs/` now keeps only the latest vbaspectrum 4210 formal job, latest vbaspectrum 100x8 diagnostic job, and row6 senumfix job.
+
+The only open engineering discrepancy remains the coworker/manual baseline: coworker says only 140x140x8 satisfies 4210, while current Q355 real ANSYS VBA-spectrum calculation gives 100-100-8 numeric pass but final selection 140-140-8. Compare coworker Excel cells, hand calculation, or LIS values before changing material policy, allowables, RCC-M formulas, or section-selection policy.

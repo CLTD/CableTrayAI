@@ -1,0 +1,37 @@
+{
+  "aliases": [
+    {
+      "match": "NB厂房内部结构环形区域",
+      "sheet_template": "NS环形区_{project_code}"
+    },
+    {
+      "match": "NB厂房内部结构环墙内区域",
+      "sheet_template": "NS环形区_{project_code}"
+    },
+    {
+      "match": "NB内部结构环形区",
+      "sheet_template": "NS环形区_{project_code}"
+    },
+    {
+      "match": "NS环形区",
+      "sheet_template": "NS环形区_{project_code}"
+    },
+    {
+      "match": "NE",
+      "sheet_template": "NE电气区_{project_code}"
+    },
+    {
+      "match": "NR",
+      "sheet_template": "NR_{project_code}"
+    },
+    {
+      "match": "LL",
+      "sheet_template": "LX廊道区_{project_code}",
+      "reason": "1916新增提资中 LL 行对应的支吊架路径为 /3LX...，反应谱工作簿使用 LX廊道区 命名。"
+    },
+    {
+      "match": "LX",
+      "sheet_template": "LX廊道区_{project_code}"
+    }
+  ]
+}

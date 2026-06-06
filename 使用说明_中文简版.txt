@@ -1,0 +1,21 @@
+电缆桥架力学分析一体化平台：中文简版
+
+1. 解压 CableTrayAI.zip。
+2. 双击 CableTrayAI_Installer.exe。
+3. 在弹出的安装窗口里选择本机安装目录，例如 D:\CableTrayAI。
+4. 安装完成后，桌面会生成 CableTrayAI 图标，开始菜单也会生成 CableTrayAI 和卸载入口。
+5. 后续只从桌面 CableTrayAI 图标启动，不要直接运行解压包里的程序。
+6. 程序会自动查找当前电脑上的 ANSYS Mechanical APDL。
+7. 程序会让当前电脑选择结果输出文件夹。
+8. 程序会自动启动网页并打开 http://127.0.0.1:8000/login。
+9. 登录账号：duxyb、jianghl、wanggangb；初始密码均为 configured-locally。
+10. 上传提资 Excel 和对应反应谱文件后，系统自动解析提资任务。
+11. 勾选一个或多个提资任务，确认 ANSYS 路径和输出目录后，点击“计算选中项”。
+12. 计算结果、命令流、图片、报告和日志会写入所选输出目录以及本机 jobs 目录。
+13. 卸载方式：Windows 设置/控制面板中卸载 CableTrayAI，或开始菜单点击 Uninstall CableTrayAI。
+14. 卸载默认保留本地 jobs、uploads、outputs、本地配置和操作反馈，避免误删工程资料。
+15. 后续更新：用新的完整包或更新包安装到同一个目录，程序文件会替换，本地数据和本地配置会保留。
+16. 如果网页打不开，查看安装目录下 logs\desktop_server.err.log。
+17. 如果 ANSYS 没找到，可在网页顶部手动填写 ansys.exe 或 ANSYS182.exe 的完整路径。
+18. 本版本不再使用本机 Worker。每台电脑安装并运行自己的 CableTrayAI，谁启动桌面图标，谁的电脑调用本机 ANSYS。
+19. AI 只做提资理解、日志解释、异常归因和质控建议；正式结论仍以 ANSYS、Excel 权威评定、确定性公式和 source_ref 为准。

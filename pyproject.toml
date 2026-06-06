@@ -1,0 +1,22 @@
+[project]
+name = "cable-tray-ai"
+version = "0.1.0"
+description = "Cable tray mechanical analysis platform based on APDL, PIP, RCC-M evaluation and report automation."
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  "jinja2",
+  "openpyxl",
+  "pandas",
+  "numpy",
+  "python-docx",
+  "pillow",
+  "pytest"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q -p no:cacheprovider"

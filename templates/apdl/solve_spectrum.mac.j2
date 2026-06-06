@@ -1,0 +1,309 @@
+/OUTPUT,TERM
+/UIS,MSGPOP,3
+
+! Generated calculation command stream.
+! Steel-platform rows use static method; other rows use response-spectrum method.
+
+/SOL
+LSCLEAR,ALL
+ALLSEL,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+MT={{ modal_mode_count }}
+ANTYPE,2
+MSAVE,0
+MODOPT,LANB,MT
+EQSLV,SPAR
+MXPAND,MT,,,1
+LUMPM,0
+PSTRES,0
+MODOPT,LANB,MT,0,0,,OFF
+/OUTPUT,'Mode','oup',
+SOLVE
+FINISH
+/OUTPUT,TERM
+
+{% if metadata.get("analysis_method") == "static" %}
+! Static method for steel-platform support.
+/SOL
+ALLSEL,ALL
+ANTYPE,0
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,0,9.81
+LSWRITE,1,
+
+! Equivalent static load steps use configured SL-1 and SL-2 zero-period acceleration coefficients.
+static_factor={{ "%.9g"|format(metadata.get("static_acceleration_factor", 1.0)) }}
+paox=static_factor*{{ "%.9g"|format(metadata.get("zpa_obe_x_g", 0.0)) }}*9.81
+paoy=static_factor*{{ "%.9g"|format(metadata.get("zpa_obe_y_g", 0.0)) }}*9.81
+paoz=static_factor*{{ "%.9g"|format(metadata.get("zpa_obe_z_g", 0.0)) }}*9.81
+pasx=static_factor*{{ "%.9g"|format(metadata.get("zpa_sse_x_g", 0.0)) }}*9.81
+pasy=static_factor*{{ "%.9g"|format(metadata.get("zpa_sse_y_g", 0.0)) }}*9.81
+pasz=static_factor*{{ "%.9g"|format(metadata.get("zpa_sse_z_g", 0.0)) }}*9.81
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,paox,paoy,paoz
+LSWRITE,2,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,pasx,pasy,pasz
+LSWRITE,3,
+
+ALLSEL,ALL
+LSSOLVE,1,3,1
+FINISH
+{% else %}
+! Response-spectrum method for non-steel-platform support.
+/SOL
+ALLSEL,ALL
+ANTYPE,8
+SPOPT,SPRS,MT,NO,YES
+! The selected spectrum workbook is rendered to separate SL-1/SL-2 macros.
+! This follows the audited source stream: define three SL-1 spectrum load steps,
+! solve them, then define and solve three SL-2 steps.
+/INPUT,'ansys_spectrum_sl1','mac','','',0
+LSSOLVE,21,23,1
+! Preserve the SL-1 grouping-combination macro before SL-2 overwrites the job .mcom.
+/SYS,copy /Y CableTrayAI_Run.mcom OBE_MCOM.mac
+FINISH
+
+/POST1
+! ANSYS writes modal grouping combination instructions to .mcom.
+! OBE_MCOM is copied immediately after the SL-1 spectrum solve.
+/INPUT,'OBE_MCOM','mac','','',0
+LCWRITE,92,'OBE','',''
+LCFILE,92,'OBE','l92',''
+FINISH
+
+! Rebuild the same audited model before the SL-2 spectrum group.
+! MAPDL can stall when SL-2 is solved after SL-1 in the same in-memory spectrum state.
+! Re-inputting generated_model.mac keeps the model deterministic while isolating the groups.
+/INPUT,'generated_model','mac','','',0
+
+/SOL
+LSCLEAR,ALL
+ALLSEL,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+MT={{ modal_mode_count }}
+ANTYPE,2
+MSAVE,0
+MODOPT,LANB,MT
+EQSLV,SPAR
+MXPAND,MT,,,1
+LUMPM,0
+PSTRES,0
+MODOPT,LANB,MT,0,0,,OFF
+/OUTPUT,'Mode','oup',
+SOLVE
+FINISH
+/OUTPUT,TERM
+
+/SOL
+ALLSEL,ALL
+ANTYPE,8
+SPOPT,SPRS,MT,NO,YES
+/INPUT,'ansys_spectrum_sl2','mac','','',0
+LSSOLVE,24,26,1
+/SYS,copy /Y CableTrayAI_Run.mcom SSE_MCOM.mac
+FINISH
+
+/POST1
+/INPUT,'SSE_MCOM','mac','','',0
+LCWRITE,93,'SSE','',''
+LCFILE,93,'SSE','l93',''
+FINISH
+
+! Rebuild before the zero-period static correction load steps.
+! Spectrum grouping macros leave POST1/load-case state in memory; using a fresh
+! copy of the same audited model keeps the static correction solve deterministic.
+/INPUT,'generated_model','mac','','',0
+
+/SOL
+ALLSEL,ALL
+ANTYPE,0
+/INPUT,'ansys_zpa_parameters','mac','','',0
+
+! Zero-period static correction load steps, matching the standard source stream.
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,0,9.81
+LSWRITE,1,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,paox,0,0
+LSWRITE,2,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,paoy,0
+LSWRITE,3,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,0,paoz
+LSWRITE,4,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,pasx,0,0
+LSWRITE,5,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,pasy,0
+LSWRITE,6,
+
+LSCLEAR,ALL
+D,YUESHU,ALL,0
+ALLSEL,ALL
+ACEL,0,0,pasz
+LSWRITE,7,
+
+LSSOLVE,1,7,1
+FINISH
+{% endif %}
+
+/POST1
+{% if metadata.get("analysis_method") == "static" %}
+LCDEF,1,1,
+LCDEF,2,2,
+LCDEF,3,3,
+
+LCZERO
+LCASE,1,
+LCWRITE,80,'Normal','',''
+
+LCZERO
+LCASE,1,
+LCOPER,ADD,2,,,
+LCWRITE,81,'UP1','',''
+
+LCZERO
+LCASE,1,
+LCOPER,SUB,2,,,
+LCWRITE,82,'UP2','',''
+
+LCZERO
+LCASE,81,
+LCOPER,ABMX,82,,,
+LCWRITE,61,'UpSet'
+
+LCZERO
+LCASE,1,
+LCOPER,ADD,3,,,
+LCWRITE,83,'FA1','',''
+
+LCZERO
+LCASE,1,
+LCOPER,SUB,3,,,
+LCWRITE,84,'FA2','',''
+
+LCZERO
+LCASE,1,
+LCWRITE,39,'ZIZHONG','',''
+
+LCZERO
+LCASE,2,
+LCWRITE,40,'SL1','',''
+
+LCZERO
+LCASE,3,
+LCWRITE,41,'SL2','',''
+
+LCZERO
+LCASE,83,
+LCOPER,ABMX,84,,,
+LCWRITE,62,'Faulted'
+
+LCFILE,80,'Normal','l80',''
+LCFILE,61,'UpSet','l61',''
+LCFILE,62,'Faulted','l62',''
+{% else %}
+LCFILE,92,'OBE','l92',''
+LCFILE,93,'SSE','l93',''
+
+LCDEF,1,1,,
+LCDEF,2,2,,
+LCDEF,3,3,,
+LCDEF,4,4,,
+LCDEF,5,5,,
+LCDEF,6,6,,
+LCDEF,7,7,,
+
+LCASE,2,
+LCOPER,SRSS,3,,,
+LCOPER,SRSS,4,,,
+LCOPER,SRSS,92,,,
+LCWRITE,40,'SOBE','',''
+LCFILE,40,'SOBE','l40',''
+
+LCASE,5,
+LCOPER,SRSS,6,,,
+LCOPER,SRSS,7,,,
+LCOPER,SRSS,93,,,
+LCWRITE,41,'SSSE','',''
+LCFILE,41,'SSSE','l41',''
+
+LCZERO
+LCASE,1,
+LCWRITE,80,'Normal','',''
+
+LCZERO
+LCASE,1,
+LCOPER,ADD,40,,,
+LCWRITE,81,'UP1','',''
+
+LCZERO
+LCASE,1,
+LCOPER,SUB,40,,,
+LCWRITE,82,'UP2','',''
+
+LCZERO
+LCASE,1,
+LCOPER,ADD,41,,,
+LCWRITE,83,'FA1','',''
+
+LCZERO
+LCASE,1,
+LCOPER,SUB,41,,,
+LCWRITE,84,'FA2','',''
+
+LCZERO
+LCASE,1,
+LCWRITE,39,'ZIZHONG','',''
+
+LCFILE,81,'UP1','l81',''
+LCFILE,82,'UP2','l82',''
+LCFILE,83,'FA1','l83',''
+LCFILE,84,'FA2','l84',''
+
+LCZERO
+LCASE,81,
+LCOPER,ABMX,82,,,
+LCWRITE,61,'UpSet','',''
+
+LCZERO
+LCASE,83,
+LCOPER,ABMX,84,,,
+LCWRITE,62,'Faulted','',''
+
+LCFILE,80,'Normal','l80',''
+LCFILE,61,'UpSet','l61',''
+LCFILE,62,'Faulted','l62',''
+{% endif %}
+SAVE
+FINISH

@@ -1,0 +1,2558 @@
+[
+  {
+    "path": "source_materials/learning_docs/1818T5013电缆桥架支撑的安装、预制标准手册.pdf",
+    "sha256": "393fd56c88a591c3cd4ffe0be073f2062ac187d75b1f798e089eb62d1ffe75ed",
+    "size_bytes": 7370151,
+    "extension": ".pdf",
+    "modified_time_utc": "2026-04-17T07:57:28.095082+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/learning_docs/HDLXSC-25A5-01-01 抗震分析规范要求工作手册.pdf",
+    "sha256": "2e67a2d3ed7b143a7663eaddaf98d76f3d96a48ad818a25a0b263fda03e4a5c7",
+    "size_bytes": 1357056,
+    "extension": ".pdf",
+    "modified_time_utc": "2022-10-31T05:36:42.357861+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/learning_docs/HDLXSC-25A5-02-03 支架、设备抗震分析工作手册.docx",
+    "sha256": "16b3b1a697de33396dca9fd72480af3455a12d7af5f4d414a335daad0d2799f1",
+    "size_bytes": 921113,
+    "extension": ".docx",
+    "modified_time_utc": "2026-04-17T07:11:21.187912+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/learning_docs/电缆桥架工作流思路.docx",
+    "sha256": "c0b3f5b544447710713b88263a52aa264e42dd927881048292956df66c2050df",
+    "size_bytes": 15928,
+    "extension": ".docx",
+    "modified_time_utc": "2026-04-17T08:01:34.720285+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/learning_docs/电缆桥架抗震分析标准流程-郭石永 .xmind",
+    "sha256": "973b2dcba7e3e93678607635d5d94cdb0cd767f57ea2d87f0e44285a80b97a02",
+    "size_bytes": 118338,
+    "extension": ".xmind",
+    "modified_time_utc": "2024-10-11T05:37:32.290150+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/上游专业提资/1818 S2支架需求补充-7.28.xlsx",
+    "sha256": "815279c42c561031fcc4a9df4989cededc960fa0bf3694d257639895087ccd70",
+    "size_bytes": 125206,
+    "extension": ".xlsx",
+    "modified_time_utc": "2026-01-06T03:23:44+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/上游专业提资/一键导入图片.xlsm",
+    "sha256": "0735163bcbcf852dd3ed6d66aa6bdad183cf861de9c818e41953dfb595f441c6",
+    "size_bytes": 33329,
+    "extension": ".xlsm",
+    "modified_time_utc": "2025-11-07T01:53:33+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/上游专业提资/楼层谱1818 ANSYS格式 标高线性.xlsm",
+    "sha256": "40c8c814a5ed021d02774aeb364fb03acff6b230c96ca4d2e5409a30a0951f8a",
+    "size_bytes": 4892803,
+    "extension": ".xlsm",
+    "modified_time_utc": "2025-11-07T01:53:41+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/上游专业提资/电缆桥架结果评定-06Cr19Ni10材料.xlsx",
+    "sha256": "f48cc8a262808157dc779a53b0175eb0a30bad9555625d9c063e2a31dccb4c8d",
+    "size_bytes": 116953,
+    "extension": ".xlsx",
+    "modified_time_utc": "2025-03-07T02:11:57+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/上游专业提资/电缆桥架结果评定-q235材料.xlsx",
+    "sha256": "e02488eaef4292d4a26c144d67b6cfc3305a5f3821b59e933ddf9e23f13cc290",
+    "size_bytes": 115623,
+    "extension": ".xlsx",
+    "modified_time_utc": "2026-01-06T03:10:31+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/导出数据-S2.PIP",
+    "sha256": "722816acb40e3122e55edfb424e565fd8e8aebb5dd351bb8579889ecc7b03904",
+    "size_bytes": 79606,
+    "extension": ".pip",
+    "modified_time_utc": "2026-04-20T03:41:26.006291+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/100-100-5.SECT",
+    "sha256": "1d7d66592bc0e32bce7706326d1d1a81ea658cfc4d4c8eb45745628e2f475b6a",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-06-10T00:20:40+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/100-100-6.SECT",
+    "sha256": "7a0c6964a53e3f231afdc0a53a9cf2d1f5af36ced32073f47bad21f89f359bf6",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-06-10T00:15:37+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/100-100-8.SECT",
+    "sha256": "021ed9d75ab75b88ddb07d77c253d4167f992c7bfb0d259564f388eb683b69d2",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-04-21T06:42:28+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/100-75-2mm.SECT",
+    "sha256": "381e68cfce43f59e71f0a808ee9fca6d232f7b0ae1f7861aa1d4b60047ce1b2a",
+    "size_bytes": 84993,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T01:36:29+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/120-120-10.SECT",
+    "sha256": "b307fba0560e509f0985a004a4201f4738e9a6a1b1a85e910c62c86a966dc146",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:12:10+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/120-120-12.SECT",
+    "sha256": "e99b4513c1ec94fad48734fceb6cae7ed4236348adfe8896b9429fc78d5ab890",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:12:31+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/120-120-6.SECT",
+    "sha256": "b85ea01828c555aa44f583a4914cd334f0c84c3a0da669464a7bedd9bb96599c",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-07-30T01:26:42+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/120-120-8.SECT",
+    "sha256": "e3f57fae9571ecdcbdd46208f9f89f724389313c008c139d10cc334964dc4623",
+    "size_bytes": 95379,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T01:08:03+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/140-140-10.SECT",
+    "sha256": "1275e4b9bfbf8b07ec98e34e2aa5ec5fc721c97e24821dee30effd19bc91794b",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:13:09+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/140-140-12.SECT",
+    "sha256": "746bf750d424689c658a763cc3d8ab78168e74e158fe367103ac93a011220749",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:13:31+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/140-140-8.SECT",
+    "sha256": "3ed5a66477b2a2a02e7fc61bf7cb3f18a174c5c515a084aa73770922450284b5",
+    "size_bytes": 95379,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T07:30:02+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/150-150-10.SECT",
+    "sha256": "0b77cbb1936e6e5d5955c2609170ce65133333b8fe491806411b2540ef7128c2",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:14:22+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/150-150-12.SECT",
+    "sha256": "6f5655b71725f790ef650826c7e0d77727e9502f942588bb89b54586014f78f3",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:14:39+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/150-150-14.SECT",
+    "sha256": "931a1c890e91a2b619a2f9e4013cfe119d9f8920142906743cdcdccbd8ad4f18",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:14:57+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/150-150-8.SECT",
+    "sha256": "7869e9784325df4dc25cbb55fb8dfebb75b6fd80ca3278df8d46496dbf60edc9",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:14:24+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/160-160-10.SECT",
+    "sha256": "ebb72c776fb3d293a4ce4aee42c9f4aba95518337188d07bab6a93703f9167a7",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:16:06+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/160-160-12.SECT",
+    "sha256": "1c4f8d08e7c21a021baed2efb5464653ccdfab0c2e85fc7163849c880bd50363",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:16:19+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/160-160-14.SECT",
+    "sha256": "1f5fa7955a43aa5ef18350bf13439f67b41a4446041517a1db569872ecc38c70",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:16:31+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/160-160-8.SECT",
+    "sha256": "bb808909d813dac6fd4636553c331b04d1065e6d753fc60af23368f3d06c7ce8",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:15:46+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/180-180-10.SECT",
+    "sha256": "1f8a4d9b10b6c6dda257e5a048f1fa0a1da8b4bc3459883ac7bded6880ba12e0",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:17:25+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/180-180-12.SECT",
+    "sha256": "561493d5341d0b59b7cb4589510ee411161357c40e7792be3bb2d85a85b013ef",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:17:34+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/180-180-14.SECT",
+    "sha256": "32cf6c42229ad5a40f265fceb2f48b644e98f0e0ebc62d3ae3e4379abcb531e6",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:17:46+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/180-180-8.SECT",
+    "sha256": "2f108e42e613327092145014d1ee8fce6f0cf8b6333abd03612d8ea17e806a23",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2019-06-18T00:17:12+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/200-75-2mm.SECT",
+    "sha256": "ef511a455d8c469b3eef6b0cafac1b01a2c2a527367a33997b09114da758f070",
+    "size_bytes": 117093,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T01:36:05+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/300-75-2mm.SECT",
+    "sha256": "e9d7b256ad3fde1ddb6772d1ce96d30c26228cc3904d5b7a4398460b151274e1",
+    "size_bytes": 104253,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-06T01:58:34+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/50-42.SECT",
+    "sha256": "6eb1e22874da1bec393e04d704d53b73345dc47e1cccaafde2704182acd742b7",
+    "size_bytes": 182679,
+    "extension": ".sect",
+    "modified_time_utc": "2020-08-27T02:21:30+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/500-75-2mm.SECT",
+    "sha256": "e442de0e99ade8d8b1f863e70bd8661f1c2675da29d04e2a13a3f2789da5c47d",
+    "size_bytes": 110673,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T02:20:42+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/600-75-2mm.SECT",
+    "sha256": "553a04cb9cd235a49b4326af309318c1a014e94841c8044ac8d5c731d72e5f07",
+    "size_bytes": 117093,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T01:08:39+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/80-80-6.SECT",
+    "sha256": "bd895b82219d8e036386c8e5f88ed78c59153918349b1995b76d7557ff0aeeb1",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-06-09T09:32:38+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/80-80-8.SECT",
+    "sha256": "a6308ce919ad90c4f85f784fa558ee6a77eb0f5fcc98bdf75153d9591119262b",
+    "size_bytes": 123987,
+    "extension": ".sect",
+    "modified_time_utc": "2020-06-09T09:32:26+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/BIANJIEMIAN10.SECT",
+    "sha256": "a068538b2d63a8c066707f15a6e44549721df2b0d7fa920e4ccf3482e2880e81",
+    "size_bytes": 37485,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T00:46:39+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/BIANJIEMIAN120.SECT",
+    "sha256": "331492f245ca6214f8b929a01658fd185d9ccac4a9e38789fad807fd8f69883a",
+    "size_bytes": 37485,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T00:46:58+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/BIANJIEMIAN15.SECT",
+    "sha256": "08943daa0d4fd7c8f53b3d2b272cb4d668239752bbf9ff65b3ac6d22a03da2a3",
+    "size_bytes": 37485,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T00:47:07+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/BIANJIEMIAN80.SECT",
+    "sha256": "7398e33c552331b5e601c01d11251600c57d4c528a462e6cb0b850b77e28a399",
+    "size_bytes": 37485,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-23T00:46:29+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/CAOGANG42.SECT",
+    "sha256": "239990558009d41b3eae6fdd0ebe788d5bf7e14c3b6361823a11c03e1b616d77",
+    "size_bytes": 119289,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-22T08:58:07+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/CAOGANG42DAN.SECT",
+    "sha256": "bfc8c873ada7acb9a6ebc68159020902b6a8846dde27756901e9dbb8b77d5ec3",
+    "size_bytes": 60597,
+    "extension": ".sect",
+    "modified_time_utc": "2020-08-27T02:27:26+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/H型钢截面.PIP",
+    "sha256": "076212123339d35c2dbfc7c7ef14b8508a2cde8f923c8fe55d197d2e978cb9ab",
+    "size_bytes": 1038,
+    "extension": ".pip",
+    "modified_time_utc": "2024-05-31T01:16:53+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG120.SECT",
+    "sha256": "9c1a87d0b80e189aa276c8ecb0365aba6abe59203e72b5cda3b1d20f13900b15",
+    "size_bytes": 164685,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T01:00:33+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG120DAN.SECT",
+    "sha256": "cbf6dfdef09b9602be5bbe60c785fd306cf9ba6b419b34c7c952ad32d9186202",
+    "size_bytes": 83709,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T01:08:21+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG140.SECT",
+    "sha256": "ade42765b00d8649a4d3b73ddabc97153e71d67585b52a9ae56e250ce2745ad1",
+    "size_bytes": 172389,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T07:31:41+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG140DAN.SECT",
+    "sha256": "7915684fe4218789da0a99ab64e1e775aed25d4f5bf287c878aa96ccb1578fa7",
+    "size_bytes": 87561,
+    "extension": ".sect",
+    "modified_time_utc": "2019-05-05T07:31:56+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG150.SECT",
+    "sha256": "f20880f54345a60c7b040744612e5cbe15c9354552a64b661fc222dc4c64e0d3",
+    "size_bytes": 255109,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-08T01:09:48+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG150DAN.SECT",
+    "sha256": "167ddb3ad6498c1d41f22f371e94398a06f930c9c33a1c99c1c36612a9597d1b",
+    "size_bytes": 129933,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-08T01:08:47+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG160.SECT",
+    "sha256": "183abf8530e0df16b7af2214a93ffa9b51a8cd4ba3c4221fdb8d4b2256920a90",
+    "size_bytes": 255109,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-08T01:22:00+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/常用托臂截面参数/YIXINGGANG160DAN.SECT",
+    "sha256": "f237cf2a3094bba702a834c3679e30d4261e4eb9f8672259e91418a8c9a16439",
+    "size_bytes": 129933,
+    "extension": ".sect",
+    "modified_time_utc": "2019-08-08T01:24:12+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/建模标准化命令流.txt",
+    "sha256": "d7f58c35d5026ad6e82887e0db44b294f95b930c778cd1f90e49a39638b83bfe",
+    "size_bytes": 100503,
+    "extension": ".txt",
+    "modified_time_utc": "2026-04-20T09:16:35.695093+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4115/18185NI-LXSJ4115.docx",
+    "sha256": "19cd0d4617dbffc2cad674004c61bb5ad0fc5bc90dd2a9d367d3359f8b770cfb",
+    "size_bytes": 1231687,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T01:44:28+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "e80b5dc484bab086a4eccbe949f9cab43ba91d122bb41bc2b705913dfba68fc4",
+    "size_bytes": 4739,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-22T01:23:04+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4115/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "798f236c9d5da10adfde1eda35d209dfe4fe32e8e4745a73c0d266f95a374519",
+    "size_bytes": 4565,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T01:19:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac",
+    "sha256": "1987b61745a9a874923c2a06b7b943a925c7557b0f71173a3876fb68924d5d36",
+    "size_bytes": 10583,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-22T01:28:06+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4115/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "6046a6eb7f2dc3f6602a49c236ee86960403022b13ba9a229e02c3cdc1e3c6f7",
+    "size_bytes": 10584,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T01:24:47+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4116/18185NI-LXSJ4116.docx",
+    "sha256": "74718e3b956b01fcbae99a226d195a7ec8e74a114c473f884e367d41ec32b1fa",
+    "size_bytes": 1172192,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T01:51:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4116/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "1fc92cec791724feca4d0a61a4607b1e57f4905896b495afb875c3fccb0c4a9a",
+    "size_bytes": 3261,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-22T01:45:11+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4116/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "1ab789fb348df1d218b9246d4375aadc2165ac3ca6c602699d9255d73944d94f",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T01:31:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac",
+    "sha256": "a65a412f11d1c2f36ccb6d139f949278f978391c0ad6a695fadbf00ebdcf7ca4",
+    "size_bytes": 10619,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-24T03:42:33+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4116/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "23aad867bb20a860dbfc220fc3807d6a67789059112fb7f4b19711989e7aed5e",
+    "size_bytes": 10619,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-24T03:20:32+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4117/18185NI-LXSJ4117.docx",
+    "sha256": "3acf30264038cd68cb0e80e75109ad4c8e1bedf02e94428e3327643253426c99",
+    "size_bytes": 1104422,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T01:54:49+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4117/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "88689d229cfbfccabe8dfea61f42221775439049e6087d121cf97a8d13c4ab82",
+    "size_bytes": 3261,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-22T01:59:55+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4117/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "1fc92cec791724feca4d0a61a4607b1e57f4905896b495afb875c3fccb0c4a9a",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T01:59:52+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac",
+    "sha256": "23aad867bb20a860dbfc220fc3807d6a67789059112fb7f4b19711989e7aed5e",
+    "size_bytes": 10619,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-24T03:20:32+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4117/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "96f6ce0d9586e925dc44a3fac8cb2b2ff44e94e479f1723be2d9c117ade566d5",
+    "size_bytes": 10619,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-24T03:20:21+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4118/18185NI-LXSJ4118.docx",
+    "sha256": "87a9e54eb140df5b8d706e58547e3b652aa51579397e1a4bb1530c20ce70510e",
+    "size_bytes": 1090123,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T01:57:33+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4118/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "cc66ce680ee36eb1aac9bec5a24949a287fdbebb335ec8285aa554e49b8dd8cd",
+    "size_bytes": 3312,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-27T05:56:32+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4118/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "7ae98d1e967c41df17e0891efcaef8e1c0261f92eb80673b60f143a68f4e96ab",
+    "size_bytes": 3312,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T07:50:19+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac",
+    "sha256": "073c99692608b379f4b5707a001d69f3027cd172034073e48be181c1efb1662f",
+    "size_bytes": 10849,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-27T06:35:07+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4118/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "a9b24f5f8b8d21d2ab062e2964d635c4c459349e3fff021237440a20d52df655",
+    "size_bytes": 10849,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-27T05:59:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4119/18185NI-LXSJ4119.docx",
+    "sha256": "c9de71dd643d69fc905d892f72c529e7af043bdd7ab26653d0b38c5b4e1922ca",
+    "size_bytes": 1152492,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:01:43+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4119/计算文件/01双侧同类型电缆桥架-方钢300.PIP",
+    "sha256": "a4c11a046aa462cbf8a14110af251e72cb0e966de0728ab875fc9c3829fb92e1",
+    "size_bytes": 3915,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-22T02:46:06+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4119/计算文件/01双侧同类型电缆桥架-方钢300.PIP.bak",
+    "sha256": "b294860482248bd57cc16e4070469042ba44c3cca6dd507421a6691d72b81d95",
+    "size_bytes": 3917,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T02:37:13+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac",
+    "sha256": "365f91e618bbe9fe1c85a41597e7e29a610c0f27adcbcaac77e207afb56437a1",
+    "size_bytes": 10583,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-22T02:46:09+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4119/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "ab176dc6e6a42388c48eadab25a80ae62ad4b52ceb4c9da6e731e06d3efc86e9",
+    "size_bytes": 10583,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T02:38:28+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/18185NI-LXSJ4120.docx",
+    "sha256": "8124979c5d239db98e53986c4215121bdb6180f04b868be5e57166668260d225",
+    "size_bytes": 1069483,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:37:47+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "83c0267b73918340521eee2ad6ee85e14853a3d9bf15807ede88e938e2379019",
+    "size_bytes": 4708,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T06:49:28+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "38e7aa727236c3acfa45987a81331f4134624627b93448eb3f5c664bf5ee47e2",
+    "size_bytes": 4708,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T06:49:25+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/计算文件/02静力法-计算文件.PIP",
+    "sha256": "0924c089e3f016782f95b07662b5a9e4e3861d862284201943034efcfb948959",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-27T07:22:31+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4120/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "e81c2523cd6e20d4809c56a3ff20457f662c85c16827a37433b2bc8e2a895aa2",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T05:41:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4121/18185NI-LXSJ4121.docx",
+    "sha256": "4ad9ea292572f8456c23c10315fc65a767795030636e36556bcd8b902037e6b2",
+    "size_bytes": 1042494,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:38:27+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4121/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "9125800bc1f2657bdaf4d98c7b8464a72b02bd9209add40f65d2bda32e7b499d",
+    "size_bytes": 2985,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:35:47+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4121/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "015bb3a9494b4cc9492bf10a7f0256f7447dd72c6a158d7449317412cf71f6df",
+    "size_bytes": 3230,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T06:13:36+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4121/计算文件/02静力法-计算文件 7.5 13.5m.PIP",
+    "sha256": "93ad640ad57c726c838efa6946afc50a3f2a5c9176a7ccc013070ae5cff52311",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:03:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4122/18185NI-LXSJ4122.docx",
+    "sha256": "06d4da738ac3c55d9618465f9cc81028a3df1603369dfa79dd9c392288723f55",
+    "size_bytes": 1122864,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:38:51+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4122/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "a3508841f94395a06d2b56d7f00053908e80ddca993e592f8c6dc1d1e8214202",
+    "size_bytes": 3017,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:48:46+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4122/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "b13784358548c313e7e6df686baa384a09aa8ac5d6b1d747b119004f60b506d1",
+    "size_bytes": 3262,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T06:24:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4122/计算文件/02静力法-计算文件 7.5 13.5m.PIP",
+    "sha256": "93ad640ad57c726c838efa6946afc50a3f2a5c9176a7ccc013070ae5cff52311",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:03:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4123/18185NI-LXSJ4123.docx",
+    "sha256": "dbc860f5eeb68240905119979858e483698daeb4da3a4f6ae6fd6089893cd260",
+    "size_bytes": 1090688,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:39:10+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4123/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "778b8302d2823dfd97f06f105ee453890d4428ea4aa2cf2330fb7076382f48d7",
+    "size_bytes": 3261,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-22T06:34:26+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4123/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "e9db031c3b81b7af034139220efaa3b661c04c11bac130e7e3124cc0a3db37f2",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T06:34:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4123/计算文件/02静力法-计算文件 7.5m.PIP",
+    "sha256": "0924c089e3f016782f95b07662b5a9e4e3861d862284201943034efcfb948959",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:12:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4124/18185NI-LXSJ4124.docx",
+    "sha256": "d00f334e38a450cb64140909190af23809f9477cad8eed62f96a745aea19d226",
+    "size_bytes": 1136217,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:39:28+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4124/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "366848297d525cf60e246d5118fa6eb444b95f36a7e9c650a3cfd5002672642b",
+    "size_bytes": 4708,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:08:51+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4124/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "75cb51245683eff5ca4d604481a5256031cecdc684f65e8653bbb16e7fb307d5",
+    "size_bytes": 4708,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T07:04:56+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4124/计算文件/02静力法-计算文件.PIP",
+    "sha256": "93ad640ad57c726c838efa6946afc50a3f2a5c9176a7ccc013070ae5cff52311",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:03:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4124/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "3df6444b7914cf54411480c70690811ca335a11a002e3fb79241cda91d502170",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T07:03:07+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4125/18185NI-LXSJ4125.docx",
+    "sha256": "5f269001b855fcf5cb246963a5206d499f3bc4fe0cc882c22bc8fb069657bcbc",
+    "size_bytes": 1161234,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:39:49+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4125/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "b85747edca0a8b73a835b52e3125d77d9cb75e6c6c9f11bd378e7686d45a5c49",
+    "size_bytes": 4458,
+    "extension": ".pip",
+    "modified_time_utc": "2025-11-10T02:08:32+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4125/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "92697c932496d10f4fcbbcbf9cb3c5e1db0372f6bbca4f3c1a66bdde93089772",
+    "size_bytes": 4705,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T07:11:35+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4125/计算文件/02静力法-计算文件.PIP",
+    "sha256": "0924c089e3f016782f95b07662b5a9e4e3861d862284201943034efcfb948959",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:12:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4125/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "e81c2523cd6e20d4809c56a3ff20457f662c85c16827a37433b2bc8e2a895aa2",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T05:41:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4126/18185NI-LXSJ4126.docx",
+    "sha256": "58d3ca873feacec989c7bf183a3a814109be985fc4e7c2fb28db126887cab7fb",
+    "size_bytes": 1093177,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:40:08+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4126/计算文件/01双侧同类型电缆桥架-方钢300 - 副本.txt",
+    "sha256": "74a6b518c90701c972cd8f75017e308813e33742bb900b24a392a3ea290da8df",
+    "size_bytes": 3672,
+    "extension": ".txt",
+    "modified_time_utc": "2025-10-23T08:24:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4126/计算文件/01双侧同类型电缆桥架-方钢300.PIP",
+    "sha256": "74a6b518c90701c972cd8f75017e308813e33742bb900b24a392a3ea290da8df",
+    "size_bytes": 3672,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:24:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4126/计算文件/01双侧同类型电缆桥架-方钢300.PIP.bak",
+    "sha256": "3a84a3d2ea0a9233d891d4b8ead371f0134c0f3c7b6cfebb957e251274c8fdb8",
+    "size_bytes": 3917,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T07:25:34+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4126/计算文件/02静力法-计算文件 7.5m.txt",
+    "sha256": "0924c089e3f016782f95b07662b5a9e4e3861d862284201943034efcfb948959",
+    "size_bytes": 1503,
+    "extension": ".txt",
+    "modified_time_utc": "2025-10-23T08:12:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4127/18185NI-LXSJ4127.docx",
+    "sha256": "fcb5b71d4cac8bc4201ed8b9dc1ff152f48cfaefef23d7910937c9bf625ec32d",
+    "size_bytes": 1079265,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:40:27+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4127/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "9d1db8f9fa17917a68de9d6578a4ba364524b7ef41629e2cab7fc60a91730b6e",
+    "size_bytes": 2997,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:59:16+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4127/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "9e64965c487dab0e233681e0ff4de49a178927ae3efccc3f84137056a0a52a7b",
+    "size_bytes": 3017,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:59:03+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4127/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "798301c0f03a0ccca4e512086b080e39fa79441515037061c6b6c42fab04a486",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:29:13+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4128/18185NI-LXSJ4128.docx",
+    "sha256": "15ab72b63f7d816572ba3a5dc225bcb0194669b67ce9734f4415c9410797a42c",
+    "size_bytes": 1092652,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:40:46+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4128/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "b39a58500aae2ea0134c5be3b218da9f2916e9643bee90621617fb59680c54fa",
+    "size_bytes": 6534,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-27T08:52:00+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4128/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "1dababe2defa4332030007b3e7f49ca79f678d3ce13ab43c8a81d29c0fd91522",
+    "size_bytes": 6534,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-27T08:40:37+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4128/计算文件/02静力法-计算文件 7.5m.PIP",
+    "sha256": "0924c089e3f016782f95b07662b5a9e4e3861d862284201943034efcfb948959",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:12:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4128/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "94dd2e17997879aab50bd00e4da77df316743d595ca15df82fe8715db44c662a",
+    "size_bytes": 1513,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T10:27:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4129/18185NI-LXSJ4129.docx",
+    "sha256": "1ee2a48ba7e6555753228e993a8ad1cf6dc22f0a2a53c90ebba8842abd32d361",
+    "size_bytes": 1082752,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:41:04+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4129/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "fd03f64b763c05d8c9a70c1f3b7faf8dedd45e2fe1eb033e0da554b8cf606d42",
+    "size_bytes": 4708,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T03:22:43+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4129/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "02e097bf74fc10d2e6151cba7e1dcd7a1ce6228e534c3b3c709536760f2a446f",
+    "size_bytes": 4708,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T03:22:18+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4129/计算文件/02静力法-计算文件.PIP",
+    "sha256": "28d9d6ad7238435127c1009cfea1abb39c0a4fdfb3ce0a9414f5eb402b3eed14",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T03:27:19+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4129/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "e81c2523cd6e20d4809c56a3ff20457f662c85c16827a37433b2bc8e2a895aa2",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T05:41:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4130/18185NI-LXSJ4130.docx",
+    "sha256": "b365d54b05e813a30d6de334417d5e76b27ab442c94b345d4020ffa24df5a6f6",
+    "size_bytes": 1085497,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:41:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4130/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "96b83368e1a48ecee8af4ba52cc5180378c781bfc112bf99bf67931c39667408",
+    "size_bytes": 4464,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-27T10:08:07+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4130/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "00be293ca418bb82e7e0168ac15b5e5b0394a03389ab2f146325633939c94f7b",
+    "size_bytes": 4710,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T03:41:41+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4130/计算文件/02静力法-计算文件.PIP",
+    "sha256": "28d9d6ad7238435127c1009cfea1abb39c0a4fdfb3ce0a9414f5eb402b3eed14",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T03:27:19+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4130/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "e81c2523cd6e20d4809c56a3ff20457f662c85c16827a37433b2bc8e2a895aa2",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T05:41:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4131/18185NI-LXSJ4131.docx",
+    "sha256": "10676ed00e2dccf34b2ae38cd1f1e91ea8d88b8406e08ac8c93d81364c0a2e22",
+    "size_bytes": 1137834,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:41:42+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4131/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "93ed8ad5aa2f7f332945256370c780fa0fab63ba4aa0cf72a9da034d489c84fd",
+    "size_bytes": 4459,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:59:27+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4131/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "2eccff00adc47f709b4a309c2e914d65ed3d2a6113fbb3b32e24ff019b8c1c77",
+    "size_bytes": 4459,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T07:58:33+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4131/计算文件/02静力法-计算文件.PIP",
+    "sha256": "93ad640ad57c726c838efa6946afc50a3f2a5c9176a7ccc013070ae5cff52311",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:03:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4131/计算文件/02静力法-计算文件.PIP.bak",
+    "sha256": "8699769a09eb01f536a0dcd48aeb2a78bbd7a4bc968e24e941a1cdc20b3ff9c1",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T07:46:28+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4132/18185NI-LXSJ4132.docx",
+    "sha256": "c1b717defab7a9359b7c92a90d8ba93d6514730473aa575cd8ec126d34f8006e",
+    "size_bytes": 1203613,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:42:02+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4132/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "cfe7975c07737c154eaa7fe4cb0b2a225784f72a82c3cbb915f6469d62b83d7e",
+    "size_bytes": 2985,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T08:57:23+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4132/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "5d8c38faef81933d7930556bec3560ad822ff6253bdbf801882ced55a39a85ab",
+    "size_bytes": 3018,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T08:57:11+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4132/计算文件/02静力法-计算文件 7.5 13.5m.PIP",
+    "sha256": "93ad640ad57c726c838efa6946afc50a3f2a5c9176a7ccc013070ae5cff52311",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T07:03:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4133/18185NI-LXSJ4133.docx",
+    "sha256": "254d0067c72618485265189bebb1c0cbdd6d7682b2147d4c14c211735bc84059",
+    "size_bytes": 1118478,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:42:21+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4133/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "753e881177861df9296bd7d22376382f658f02d73b2470495d880cf3c120f889",
+    "size_bytes": 2983,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:13:36+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4133/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "0b5ac67b932dd472f8ff7d7ef494acd588ef4c400d5a8232b3d09287015cef18",
+    "size_bytes": 2983,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:10:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4133/计算文件/02静力法-计算文件 13.5m.PIP",
+    "sha256": "28d9d6ad7238435127c1009cfea1abb39c0a4fdfb3ce0a9414f5eb402b3eed14",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:09:58+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4134/18185NI-LXSJ4134.docx",
+    "sha256": "0ba864599c5c145ae77ebed8ef70ed65385df55dc18716b94ef5492404208371",
+    "size_bytes": 1102726,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:42:42+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4134/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "296b3f14d259c8d457c248e8b801388e2f5be90c603ee3f61a0981390a05b8c6",
+    "size_bytes": 2985,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:24:12+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4134/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "b6b3c37c95a6e7ce9bb70d95b9df97b8befab9baf368bdfd01baea9d6d6aa8c7",
+    "size_bytes": 2983,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:24:09+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4134/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "798301c0f03a0ccca4e512086b080e39fa79441515037061c6b6c42fab04a486",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:29:13+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4134/计算文件/02静力法-计算文件 7.5 13.5m.PIP.bak",
+    "sha256": "e054feefd0bdf33d07b242f22beed3ac20a247aa69ec97118b2765991296d73c",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:29:04+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4135/18185NI-LXSJ4135.docx",
+    "sha256": "469755bf69a5994f51420527a71c1ad7522237127b78d4016706c86d746471f4",
+    "size_bytes": 1139392,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T09:45:52+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4135/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "c391640dd9710d75659ee052636dce49f6e5c60b1bbb444f02cc983f0385a4ed",
+    "size_bytes": 3019,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:48:01+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4135/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "782dcb9f57bc8c81480fc20313fbadbf48a6fcfccceff98bc984f4bfe60fe2f8",
+    "size_bytes": 3280,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:47:35+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4135/计算文件/02静力法-计算文件 13.5m.PIP",
+    "sha256": "28d9d6ad7238435127c1009cfea1abb39c0a4fdfb3ce0a9414f5eb402b3eed14",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:09:58+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4136/18185NI-LXSJ4136.docx",
+    "sha256": "51ac67546b68811e85384f0e62392faf9458634af617530187876d21be8f07c9",
+    "size_bytes": 1238059,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:33:12+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4136/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "d602322e8afb0045c231fc4ba2aa32f42ddb7e8478b8b7b45d18467f15bfcaea",
+    "size_bytes": 4741,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-24T02:47:12+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4136/计算文件/01 双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "1f4a40db13b473fca11260dfad6509a937303a8b95d1d09df3e84354088b7c55",
+    "size_bytes": 4739,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-24T02:47:08+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4136/计算文件/02 计算用命令流.mac",
+    "sha256": "fe2b7f34d45afbb03e10d36e662e947d309d42fdc5dae74c5ac498e64f99ed80",
+    "size_bytes": 10413,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-24T03:07:54+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4136/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "53ed36ff95481d5b2509cb478b5424c3c0580f0d8cda48b67a5cec0c0ec6f9a1",
+    "size_bytes": 10414,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-24T02:49:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4137/18185NI-LXSJ4137.docx",
+    "sha256": "55893951ac5986f8483ad117d4ba7ed2f45dc172669c057d0a8c4b392ba2e213",
+    "size_bytes": 1078307,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:43:33+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4137/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "22d50499a283ad90ca697a38a8ff671478beec9d4e00d66050234cd62e41c49a",
+    "size_bytes": 2997,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-28T01:35:04+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4137/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "9d1db8f9fa17917a68de9d6578a4ba364524b7ef41629e2cab7fc60a91730b6e",
+    "size_bytes": 2997,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-23T09:59:16+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4137/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "798301c0f03a0ccca4e512086b080e39fa79441515037061c6b6c42fab04a486",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:29:13+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4138/18185NI-LXSJ4138.docx",
+    "sha256": "af02c18ed5bf4e414645d3befc87b34d5146e4910cf7f56303e27949927f7eef",
+    "size_bytes": 1071103,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T08:43:52+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4138/~$电缆桥架--.xlsx",
+    "sha256": "77f99b90c7724467115000d7d23f8a70c0e4947505f8749cbc451e2bace1fe89",
+    "size_bytes": 165,
+    "extension": ".xlsx",
+    "modified_time_utc": "2025-10-28T03:14:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4138/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "c9aa19ce9a0d96d779e057e04ec4382e1466cc67d59b959b973346afe0c53936",
+    "size_bytes": 2981,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-28T03:23:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4138/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "69c38b0323cf153d1e9460d4031bf50d58bd99200b1be5dd00da255d91594ee9",
+    "size_bytes": 2985,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-28T03:23:30+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4138/计算文件/02静力法-计算文件 13.5m.PIP",
+    "sha256": "28d9d6ad7238435127c1009cfea1abb39c0a4fdfb3ce0a9414f5eb402b3eed14",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-23T09:09:58+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4139/18185NI-LXSJ4139.docx",
+    "sha256": "f4e925162da516914c1082b73fb88734c032f1b657df013efa100406966ba452",
+    "size_bytes": 1104667,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:40:18+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4139/计算文件/01双侧同类型电缆桥架-方钢.PIP",
+    "sha256": "b6eca7529a2ea0bbaf9db2f2166396592b4d9167dfdef44f2c056ef02f9a6e9f",
+    "size_bytes": 3038,
+    "extension": ".pip",
+    "modified_time_utc": "2025-11-03T06:35:52+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4139/计算文件/01双侧同类型电缆桥架-方钢.PIP.bak",
+    "sha256": "f793d25989c12783f203953bbbe406544705b13c6a488327dde6ce4407d800e0",
+    "size_bytes": 3038,
+    "extension": ".bak",
+    "modified_time_utc": "2025-11-03T06:35:11+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4139/计算文件/02 计算用命令流.mac",
+    "sha256": "9090ef4f7a335644d552d83c8b040feb7d64ae11468256b02edd60909c1c8137",
+    "size_bytes": 10313,
+    "extension": ".mac",
+    "modified_time_utc": "2025-11-03T06:38:26+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4139/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "22aa9e1f0eb14151da45d60cb38ed0d81b2eadecf36557b982509d54f6853f5c",
+    "size_bytes": 10313,
+    "extension": ".bak",
+    "modified_time_utc": "2025-11-03T06:34:15+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4140/18185NI-LXSJ4140.docx",
+    "sha256": "dbb0b1578b6dcaf69da71bd13bb4f25a49a92a116114102ff54531e7fa615f0a",
+    "size_bytes": 1174769,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:44:55+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4140/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "c89a5ec4fe12df5bbf833541c671230462af5487007e4c9319b087e2cd029e24",
+    "size_bytes": 4631,
+    "extension": ".pip",
+    "modified_time_utc": "2025-09-04T09:51:10+00:00",
+    "encoding": "utf-8",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4140/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "b7f26ba06eff04a95f0739421bac838c283e2f5496129a689fe03bd1d6198702",
+    "size_bytes": 4618,
+    "extension": ".bak",
+    "modified_time_utc": "2025-09-04T09:51:08+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4140/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "ffc1f0990a47b2bf6b57d83a946248637bd0de3b84ee73c750f21633f0ae47ee",
+    "size_bytes": 10245,
+    "extension": ".mac",
+    "modified_time_utc": "2025-09-04T09:52:56+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4140/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "ec9a1d3ca4c6f62003426d09803d40293f5b2796ff123a621a568962310f4f10",
+    "size_bytes": 10245,
+    "extension": ".bak",
+    "modified_time_utc": "2025-09-04T09:50:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4141/18185NI-LXSJ4141.docx",
+    "sha256": "60661d678ad6a8c7c7ad38c0a2dd33fdee7e38e97719e8faf5df2954f07aaea3",
+    "size_bytes": 1083613,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:47:23+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4141/计算文件/01单侧电缆桥架-方钢托臂.PIP",
+    "sha256": "2f79508281c407a60e9bd50312fac51778ffd72d77c75e8fd539dbe0cc00012d",
+    "size_bytes": 3261,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-28T06:47:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4141/计算文件/01单侧电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "88689d229cfbfccabe8dfea61f42221775439049e6087d121cf97a8d13c4ab82",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-22T01:59:55+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4141/计算文件/02 计算用命令流.mac",
+    "sha256": "c5d5d4a44a3ce8f313d9049bc5788369497de4a2f0f26a78dcdee9d490fca340",
+    "size_bytes": 10515,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-28T06:50:38+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4141/计算文件/02 计算用命令流.mac.bak",
+    "sha256": "bb8bb50816df53a31f6c4c0a079dbc72e2fe35ec339640189606a5eb56e6890f",
+    "size_bytes": 10515,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-28T06:49:30+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/18185NI-LXSJ4142.docx",
+    "sha256": "4aed384b914afbc24ee4fdeecdcd9149823000c6a44813bc38a659e19dbbaf18",
+    "size_bytes": 1076645,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-07T01:07:10+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/计算文件/01单侧不同500+600-异型钢.PIP",
+    "sha256": "11499506f433b73f8ecba032ee79f0884277213402de0cd6f75e1ce6e333c35d",
+    "size_bytes": 6724,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-29T08:27:20+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/计算文件/01单侧不同500+600-异型钢.PIP.bak",
+    "sha256": "2946949cc677d76bbf283225f771c7a327e0a04559f93f7037f24e0b4a9faf77",
+    "size_bytes": 6721,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-29T08:24:16+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/计算文件/02计算用命令流AR  8.55 7-10.mac",
+    "sha256": "97cb73ae1329b7891fcf0d67a7013b5df16b4bc3bdca6c5d2edfb743af62d510",
+    "size_bytes": 9651,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-29T08:27:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/计算文件/02计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "aa417123e5311894b05b8433d15c4666e36f67f031e35e3727554e5330711ea7",
+    "size_bytes": 9652,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-29T08:24:24+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4142/计算文件/单侧不同500+600-异型钢.PIP.bak",
+    "sha256": "fdc2db45decd5fe87cc0b1d2d1241a4493b4780847ae09ec9a56c59a1f02fd20",
+    "size_bytes": 6726,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-29T08:23:16+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4143/18185NI-LXSJ4143.docx",
+    "sha256": "20a9696ef32a627beb9d93417a07b547e83b9f521713bdd1a1f65cc72236d64c",
+    "size_bytes": 1220540,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:51:20+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4143/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "5968f1fcff0fd55813c900ba6bc2fbbf76a2a8f263aecb40b49df744a4bd0896",
+    "size_bytes": 4740,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-30T09:04:22+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4143/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "e7c8418d53e2bbede65ab6f0a753a864b0dc9e80de6d1739c4f3d61b2028e307",
+    "size_bytes": 4701,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:04:19+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4143/计算文件/02计算用命令流AR  8.55 7-10.mac",
+    "sha256": "69ebb07dd07fb8cff4a961dc38bfb52aa4610b2a4ec64aa766df18f7e107bd87",
+    "size_bytes": 9621,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-30T09:04:25+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4143/计算文件/02计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "fad75f6528c5f79e41e1849f213c79cf858e8739d82bde046b13dc711ea4d6f9",
+    "size_bytes": 9621,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:02:15+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4144/18185NI-LXSJ4144.docx",
+    "sha256": "d2df14b32d97118f1b4759fd7ae90d00c922463ebda8a38d88b7c2a98e5a20c9",
+    "size_bytes": 1212948,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:54:35+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4144/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "ef6f0f1b5477bcb31fea6fe4b47b9de06b7f118637cd59c3b1689eaa866dba48",
+    "size_bytes": 4740,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-30T09:27:10+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4144/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "e3d3b540319057259bc5d3a2bd084393b19d2efaac977d3d7d8ac0b50de590fb",
+    "size_bytes": 4738,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:26:59+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4144/计算文件/02计算用命令流AR  8.55 7-10.mac",
+    "sha256": "c0246742adf04c89697ee10c8e3afe2a019ebe98c3fe1be444e447dcf658d442",
+    "size_bytes": 9621,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-30T09:27:17+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4144/计算文件/02计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "69ebb07dd07fb8cff4a961dc38bfb52aa4610b2a4ec64aa766df18f7e107bd87",
+    "size_bytes": 9621,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:04:25+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4145/18185NI-LXSJ4145.docx",
+    "sha256": "fdb8f17129f571bca00dc800e7c3dba4081d9cb56229a622381d9bc3b8cfb52d",
+    "size_bytes": 1065375,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T02:56:58+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4145/计算文件/01单侧电缆桥架.PIP",
+    "sha256": "1ad5549e5a3f8119527a982a49838cb18c49092ef2322b833f16ac1e4c6f7fd5",
+    "size_bytes": 3257,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-30T09:52:01+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4145/计算文件/01单侧电缆桥架.PIP.bak",
+    "sha256": "6493cb736cf37dde7c9e570aa004135fc34da1143b6b4bff5dce74e9cf3fe5c5",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:51:57+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4145/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "5bdbf8d24a1211fe5cccf91e0644c90e05ab2c8c44184422f36b04bdee41a2f9",
+    "size_bytes": 9641,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-30T09:54:31+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4145/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "2d0c7c7f5b120912c3e90c07c65398b6e8a4fb74a58389bffeb29688c48a5827",
+    "size_bytes": 9451,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-30T09:54:25+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4146/18185NI-LXSJ4146.docx",
+    "sha256": "bc677df2db444db1e80781ca8efd986f9909b5f8f8bbacbb72b8e2b060b79ab4",
+    "size_bytes": 1156836,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T09:35:46+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4146/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "24421df311c157be0669233a2b250f9c59581bd5d5c0944a32e841bfb62cb577",
+    "size_bytes": 4740,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T01:53:13+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4146/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "cc7903a65e09321e6e4c477527c92d9e4c9170cd2f938d1a2c06855d431145ec",
+    "size_bytes": 4740,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T01:45:48+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4146/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "96f952db413259aa329f71968b85e34f750bbd485818a9482425a05bebad2270",
+    "size_bytes": 9481,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T01:53:33+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4146/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "c337d42d8328c45fdacb0e80b0dee6b9b396768b468266b99901207dbcede9d4",
+    "size_bytes": 9481,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T01:53:07+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4147/18185NI-LXSJ4147.docx",
+    "sha256": "b1674a2d3b80f013a03c5863cc4238315ba801d9ef225f9567b00526b5fe034a",
+    "size_bytes": 1169223,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T09:14:56+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4147/计算文件/01单侧电缆桥架.PIP",
+    "sha256": "00852b0c66d052350fd67c71939c44b885112fbcf13e527f2d181c4956c94cc0",
+    "size_bytes": 3262,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T02:09:04+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4147/计算文件/01单侧电缆桥架.PIP.bak",
+    "sha256": "5a0bc301812b1a4ed55dfc65bb7f5c2c1f9d75fe6c22d8b6f2e0024b21c1753f",
+    "size_bytes": 3258,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T02:07:23+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4147/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "c337d42d8328c45fdacb0e80b0dee6b9b396768b468266b99901207dbcede9d4",
+    "size_bytes": 9481,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T02:08:01+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4147/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "96f952db413259aa329f71968b85e34f750bbd485818a9482425a05bebad2270",
+    "size_bytes": 9481,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T01:53:33+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4148/18185NI-LXSJ4148.docx",
+    "sha256": "06a32dad4dffabbe90185fde2cb5d5d16ce015c9a0fc55d6cf16bc8a5e3a9f79",
+    "size_bytes": 1117829,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T09:16:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4148/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "c589461fba56659b554d4599fb8ebcbf34632a6f227b2f3c7f3eb45b2dcc27ae",
+    "size_bytes": 4849,
+    "extension": ".pip",
+    "modified_time_utc": "2025-11-03T06:01:03+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4148/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "b759496c36cd7ccfe9b5c36cdd255e7c6c604e8616d2c9531f748dd302852339",
+    "size_bytes": 4849,
+    "extension": ".bak",
+    "modified_time_utc": "2025-11-03T06:00:36+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4148/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "af2347276bb9b247acbff1e90002587dbacd8e7a2d9165fa7ddd6de9c37edc7f",
+    "size_bytes": 10439,
+    "extension": ".mac",
+    "modified_time_utc": "2025-11-03T06:09:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4148/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "8bf2696934b4d2ba0464c73a38da22aebda145063b3897080bc0b3717889b5ef",
+    "size_bytes": 10238,
+    "extension": ".bak",
+    "modified_time_utc": "2025-11-03T06:09:39+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4149/18185NI-LXSJ4149.docx",
+    "sha256": "d5c0c38945a7087f5cf57fc1fa0b280b4e89f41a16b7bfe203a1e8b702553e2f",
+    "size_bytes": 1111365,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T03:10:43+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4149/计算文件/01单侧电缆桥架.PIP",
+    "sha256": "88e26e18a44310f4fa357897a619681b64e29eb60883d10d324749c46fe04587",
+    "size_bytes": 3259,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T02:45:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4149/计算文件/01单侧电缆桥架.PIP.bak",
+    "sha256": "27b2df472fedd64cc58838b0edb00de57fe695d2be040eeb8246f8f778dfb508",
+    "size_bytes": 3259,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T02:45:40+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4149/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "72390adea23e1742480bc53f3485469ede904ff674cb2e6f43f0432c007e7d15",
+    "size_bytes": 9347,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T02:38:22+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4149/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "6ac89c96899e7ae284d99b94ed543a22794719e96d19378f78f42948e4611437",
+    "size_bytes": 9347,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T02:37:05+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4150/18185NI-LXSJ4150.docx",
+    "sha256": "eaf12d5f6e87ad11b86265e0348b7779b9df9035d43545e161bab97dbdd0edf4",
+    "size_bytes": 1050159,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-07T01:18:21+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4150/计算文件/01单侧电缆桥架.PIP",
+    "sha256": "1f9fae8bd6a19909581dba25be4a13ef521b719e4954add94425df50b4cc0a63",
+    "size_bytes": 3261,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T03:07:43+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4150/计算文件/01单侧电缆桥架.PIP.bak",
+    "sha256": "b079cb505c0aea4865507ebd7da7a40322da039648e22f577f407e6bb7e1fdeb",
+    "size_bytes": 3261,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T03:07:39+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4150/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "c6f5f93c08e18c1f1455e8b070d3330c13632529c26d03510877a8ce7ec482a5",
+    "size_bytes": 9347,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T02:59:25+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4150/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "72390adea23e1742480bc53f3485469ede904ff674cb2e6f43f0432c007e7d15",
+    "size_bytes": 9347,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T02:38:22+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/18185NI-LXSJ4151.docx",
+    "sha256": "020b330f42449ccbd5f5ca6da3332b7c07538a95bd109e913734ce1b77c55e7f",
+    "size_bytes": 1115773,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-07T01:23:11+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/~$电缆桥架--.xlsx",
+    "sha256": "77f99b90c7724467115000d7d23f8a70c0e4947505f8749cbc451e2bace1fe89",
+    "size_bytes": 165,
+    "extension": ".xlsx",
+    "modified_time_utc": "2025-10-31T03:15:41+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "8ee6002e9e1dc508488144501ef96225fef090dc42548c7103ba0e1a49959383",
+    "size_bytes": 4810,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T05:51:37+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "662278a9c113f2f48494f2b88ff4eaf523e0bda10461e59a54dd7f96801b6bc7",
+    "size_bytes": 4810,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T05:51:31+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "02486477d925a16be84000553f20722daa72e4040744704a7f7f57b49ca8c909",
+    "size_bytes": 9387,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T05:33:15+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4151/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "bcab4781f0f52a69946fcedec18f11fbd8eed85a2778939cca3a2af15616a9ed",
+    "size_bytes": 9388,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T04:05:09+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/18185NI-LXSJ4152.docx",
+    "sha256": "8d72ddba6e51209d42278abd26d2cf7ccc3069e0d5d966d4ed035c4af2eea07a",
+    "size_bytes": 1088790,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-07T01:24:32+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/~$电缆桥架--.xlsx",
+    "sha256": "77f99b90c7724467115000d7d23f8a70c0e4947505f8749cbc451e2bace1fe89",
+    "size_bytes": 165,
+    "extension": ".xlsx",
+    "modified_time_utc": "2025-10-31T03:15:41+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "c1cea837cdb990d307eeaf3b5649ab11ac5df6a9a46483ea8f7dc71c446f0a17",
+    "size_bytes": 4745,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T06:42:00+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "949fd35acb78de8e211f01ea8021a2a07fe8378d9e73771d3e2cd4300740ec94",
+    "size_bytes": 4741,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T06:33:12+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "98e26c24f6edbfc44731d8c27c894a12b166aed1b40395e98d868c3618d86616",
+    "size_bytes": 9387,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T06:19:33+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4152/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "bcab4781f0f52a69946fcedec18f11fbd8eed85a2778939cca3a2af15616a9ed",
+    "size_bytes": 9388,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T06:19:00+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/18185NI-LXSJ4153.docx",
+    "sha256": "daf237ca88a1e3cbc1b34c0090b0eeb49d8643855132421d6794da0d5545f153",
+    "size_bytes": 1163266,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T03:18:27+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/~$电缆桥架--.xlsx",
+    "sha256": "77f99b90c7724467115000d7d23f8a70c0e4947505f8749cbc451e2bace1fe89",
+    "size_bytes": 165,
+    "extension": ".xlsx",
+    "modified_time_utc": "2025-10-31T03:15:41+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "fe3f678fb291ff94f6ea88bbe92aed6e5523ec2786d0df0482078656748e309a",
+    "size_bytes": 4740,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T07:11:07+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "87c58e9f376d377a003dcce3e939f7e268f4e7030fa9f55758a365bc5a14905f",
+    "size_bytes": 4740,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T07:07:05+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "8fe9f98478c071099944874cf7771f330c8fa0f09b02a33cb57fbd08dddee632",
+    "size_bytes": 9843,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T07:02:14+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4153/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "19af8944d24e02c6b4c9694ac18a0f95584e2e7e38cbef2925cc9a0e5c3ca15a",
+    "size_bytes": 9843,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T07:01:51+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4154/18185NI-LXSJ4154.docx",
+    "sha256": "fd5849bd400639769ef7b2ac2518cb319211b6b86bf13d01a2946f3317c06f87",
+    "size_bytes": 1168003,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T03:22:35+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4154/计算文件/01单侧电缆桥架.PIP",
+    "sha256": "3f542417986a79ff1ef4da50cd885dd8c95794523f9eba63ef93fec9fd6c21dd",
+    "size_bytes": 3259,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T07:25:08+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4154/计算文件/01单侧电缆桥架.PIP.bak",
+    "sha256": "f0fff32206190dd237dfa04d6889192f3bcfa3fc81cc4c58a8a73900d49e93c2",
+    "size_bytes": 3260,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T07:24:11+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4154/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "0f870c38b4c58f0d7705e4eb7aefc78f2361321d7378920965f419bc8904d2db",
+    "size_bytes": 9689,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T07:24:45+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4154/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "2c7044f029f70e224396831fec9f1c313fa29c2572b1bfba75413c4b65bb37c8",
+    "size_bytes": 9689,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T07:24:00+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/18185NI-LXSJ4155.docx",
+    "sha256": "9d69d35f77eeef894f3c488a6e00b74d58f60a6c6edf1dd37f635463e83b098a",
+    "size_bytes": 1130528,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-10T03:23:23+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/计算文件/01双侧同类型电缆桥架-方钢300.PIP",
+    "sha256": "42785f549e0bf3e1641676763ee4d2ddfa76408e647deb893feda8641662b266",
+    "size_bytes": 4460,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T08:16:31+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/计算文件/01双侧同类型电缆桥架-方钢300.PIP.bak",
+    "sha256": "953ad0d296fa47733ed31b4b94295250f345c7b1b1e6c44be8aee81de0feb5db",
+    "size_bytes": 4460,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T08:15:57+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "af08f3be6769d7a17ac5673ee560ea0d9a51b44e5fcb4cc40d0d5f5865f49451",
+    "size_bytes": 9663,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T08:20:43+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "33b092b27cf2f7ee5daa306252f9f0ba82567191b552773aabdcfed52e844f83",
+    "size_bytes": 9663,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T08:19:47+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4156/18185NI-LXSJ4156.docx",
+    "sha256": "a7cf471d9455cac83f535461cba53a7255cd1a5512f154bb97ca4e12c79609b5",
+    "size_bytes": 1062056,
+    "extension": ".docx",
+    "modified_time_utc": "2025-11-14T09:41:39+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4156/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "32f9a0ec21ec21434c8ed8a0ed2c7a29dd3dd2cd04a4d1a305db1135d0837091",
+    "size_bytes": 3299,
+    "extension": ".pip",
+    "modified_time_utc": "2025-10-31T08:44:04+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4156/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "ef97c8e904ff68c55e6cfbfb0e430a19663cb819c449fcb221c410720ad3d320",
+    "size_bytes": 3299,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T08:44:01+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4156/计算文件/02 计算用命令流AR  8.55 7-10.mac",
+    "sha256": "9b92771fa9780d8a07f325163100a1ad35a711427e97f8f5ac9e41a6ba008c7e",
+    "size_bytes": 9689,
+    "extension": ".mac",
+    "modified_time_utc": "2025-10-31T08:40:21+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4156/计算文件/02 计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "d23620fde1eb601ac6fb6bd4accc06e659a7e8d14ef0ef94c7df6f5c24a58871",
+    "size_bytes": 9689,
+    "extension": ".bak",
+    "modified_time_utc": "2025-10-31T08:39:54+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4225/18185NI-LXSJ4225.docx",
+    "sha256": "bb92a7f1af1de63a646afb2abefd2a6128478e6e1311e6af58238edc6a69d5c0",
+    "size_bytes": 1341889,
+    "extension": ".docx",
+    "modified_time_utc": "2026-01-08T09:59:10+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4225/计算文件/01单侧350托臂--方钢.PIP",
+    "sha256": "032da46d75bc9d35cb238cf520e5a63671a2806e1bfa0506601c651b8d63d5e7",
+    "size_bytes": 5308,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T06:22:29+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4225/计算文件/01单侧350托臂--方钢.PIP.bak",
+    "sha256": "acbe5566f121c1295959c10c26d6cd9d50791e834cf960f9c45ff195fa9e07a2",
+    "size_bytes": 5306,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-05T06:16:56+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4225/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "c0d5bd571fefbccc68eb7b6b66d9c1db9a301cbeaed8ab0222e34490c5c541df",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T03:05:40+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4225/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP.bak",
+    "sha256": "f60ca25794ac1b0e7ac99ed07b662923969bc5fa245cc44e1186ad12a8d5427d",
+    "size_bytes": 1503,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-05T03:05:26+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4226/18185NI-LXSJ4226.docx",
+    "sha256": "b7045fcba51b5843f5b2f1578062e2f5656ea0c13aeb9de4fbe575998c4d673b",
+    "size_bytes": 1340539,
+    "extension": ".docx",
+    "modified_time_utc": "2026-01-08T09:58:53+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4226/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "bf9caee8a5a3f596f68087cd2c61e490624581d6d2395ad5872009f07511128b",
+    "size_bytes": 4510,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T07:11:08+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4226/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "5a55dde7ac3453a38594268c02a771772ff312215197d0ceb4b34d9239f3d3c9",
+    "size_bytes": 4755,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-05T07:09:47+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4226/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "c0d5bd571fefbccc68eb7b6b66d9c1db9a301cbeaed8ab0222e34490c5c541df",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T03:05:40+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4227/18185NI-LXSJ4227.docx",
+    "sha256": "1e1b8887f2efbf24dd585fa179bc1458590446a48613ce4eec984addfaba8ce7",
+    "size_bytes": 1379595,
+    "extension": ".docx",
+    "modified_time_utc": "2026-01-08T09:58:43+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4227/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "e333a695be4dfcba5ffbcadf9ad45a40a5101b56fef419db9bcaff017d31ee37",
+    "size_bytes": 4538,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T07:40:58+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4227/计算文件/01双侧不同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "e0fefd1a2fa84b6907c84d15e80f8fda1a07fcd6000d432d6903dd87851a4ec1",
+    "size_bytes": 4538,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-05T07:34:49+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4227/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "c0d5bd571fefbccc68eb7b6b66d9c1db9a301cbeaed8ab0222e34490c5c541df",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T03:05:40+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4228/18185NI-LXSJ4228.docx",
+    "sha256": "092afd1acf00fdfb56231507181dbd81746bc74c6ae5d5837c114e8aa16ba876",
+    "size_bytes": 1411512,
+    "extension": ".docx",
+    "modified_time_utc": "2026-01-08T09:58:31+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4228/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "7693203b56aaec7e834823aafa01687534cb3ea2a00f573319a8a08e27877f31",
+    "size_bytes": 4263,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T08:08:23+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4228/计算文件/02静力法-计算文件 7.5 13.5m 15.46.PIP",
+    "sha256": "1307f05689100a8a50fbd12a07b133a84b610f97f10693cc6b5ebd61f72c7520",
+    "size_bytes": 1503,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-05T08:01:19+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4249/18185NI-LXSJ4249.docx",
+    "sha256": "2a1e700da970dab552c9bc3bd475f5b9b1439bf564197c3dad2a624c471fcdfd",
+    "size_bytes": 1255932,
+    "extension": ".docx",
+    "modified_time_utc": "2026-01-06T10:58:39+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4249/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP",
+    "sha256": "1579be7bd160e776ac0e947c2bc3ef84802c1ae5d73eeb6bf3bc479f653a10e1",
+    "size_bytes": 4743,
+    "extension": ".pip",
+    "modified_time_utc": "2026-01-06T02:55:44+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4249/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP.bak",
+    "sha256": "5df76c324c59cf63a284f7e6aeaa62d5928c96b4e442ea66ed9a8813a8931d5d",
+    "size_bytes": 4743,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-06T02:55:38+00:00",
+    "encoding": null,
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4249/计算文件/02计算用命令流AR  8.55 7-10.mac",
+    "sha256": "72143fb2a2f2d58f683733befba52139a7d8966a38c0ae3dab63009f6d4c6420",
+    "size_bytes": 9273,
+    "extension": ".mac",
+    "modified_time_utc": "2026-01-06T10:58:18+00:00",
+    "encoding": "gbk",
+    "decode_error": null
+  },
+  {
+    "path": "source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4249/计算文件/02计算用命令流AR  8.55 7-10.mac.bak",
+    "sha256": "e2b597ac1a54263e70509426ed9c9e1b46855887f460be917d7164bd74d1606c",
+    "size_bytes": 9273,
+    "extension": ".bak",
+    "modified_time_utc": "2026-01-06T02:57:07+00:00",
+    "encoding": null,
+    "decode_error": null
+  }
+]

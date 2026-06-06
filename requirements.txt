@@ -1,0 +1,10 @@
+﻿fastapi
+uvicorn
+pydantic
+jinja2
+openpyxl
+pandas
+numpy
+python-docx
+pillow
+pytest
