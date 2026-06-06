@@ -1,5 +1,22 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-06 18185NI-LXSJ4213 static modal gate closeout
+
+Resolved in source, local installed evidence, package, and running web service:
+
+1. Root cause: `18185NI-LXSJ4213` is a steel-platform static-method job, but result validation incorrectly reused the response-spectrum 50 Hz modal cutoff gate.
+2. ANSYS itself was successful: `D:/CableTrayAI/jobs/18185NI-LXSJ4213/ansys_run_audit.json` has `status=success`, `returncode=0`.
+3. Fixed policy: static-method jobs still require `Mode.oup` modal rows for report appendix/table traceability, but they no longer require a row above 50 Hz. Response-spectrum jobs remain strictly blocked by the 50 Hz modal coverage gate.
+4. Reassembled installed job evidence now passes: `result_status=usable`, `result_validation.status=pass`, `fail_count=0`; `modal_mt_cutoff` evidence records 232 rows and `last_frequency_hz=21.8866546846`.
+5. Regression tests added: static below-50 Hz modal rows pass, response-spectrum below-50 Hz modal rows fail.
+6. Verification passed: `python -m py_compile core/validation/result_validity_gate.py tests/unit/test_result_validity_square_section.py`; `python -m pytest tests/unit/test_result_validity_square_section.py -q -p no:cacheprovider`; `python -m pytest tests/unit -q -p no:cacheprovider`; hardcode scan over `core/apps/templates`; package gate; installed hash check.
+7. Deployment completed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` size `79091232` bytes, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260606_215835`, service restarted as PID `40768`, `/health` ok.
+
+Open queue:
+
+1. No blocking item remains for the current `modal_mt_cutoff` web-side failure.
+2. Historical `docs/web_runs/*` records may still show the old failed run message; future/re-run web calculations use the fixed gate.
+
 ## 2026-06-06 4210 MT/选型优化队列 closeout
 
 本节为当前最新队列状态，覆盖旧的 4210 / 100x8 追查分支。

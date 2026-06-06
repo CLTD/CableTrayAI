@@ -452,3 +452,15 @@ Evaluation from raw unit `MAXBEAMSTRESS.LIS`:
 - Q235 accident tension+bending `1.1592838171512616`, not satisfied.
 
 Conclusion: the unit raw result-extraction command stream itself does not reproduce the coworker/manual over-limit result under the current 4210 `non_steel_platform` Q355 policy. The same ANSYS stresses do exceed 1.0 if evaluated as Q235, so the remaining reconciliation should focus on the coworker's exact material/evaluation workbook path or the exact command streams they used. Stop further root-cause chasing until those files are available.
+
+## 2026-06-06 static modal gate fix for 18185NI-LXSJ4213
+
+Resolved in source, installed job evidence, package, and local web service:
+
+1. The web-side failure for `18185NI-LXSJ4213` was not an ANSYS solve failure. `D:/CableTrayAI/jobs/18185NI-LXSJ4213/ansys_run_audit.json` reports `status=success` and `returncode=0`.
+2. The job is a steel-platform static-method calculation (`analysis_method=static`). Modal output is still required for appendix/table traceability, but the 50 Hz modal coverage rule is a response-spectrum truncation gate and must not block equivalent-static seismic calculation.
+3. `core/validation/result_validity_gate.py` now passes `modal_mt_cutoff` for static-method jobs when `Mode.oup` has modal rows. Response-spectrum jobs still require a modal row above 50 Hz.
+4. Regression tests were added in `tests/unit/test_result_validity_square_section.py`: static below-50 Hz modal rows pass, response-spectrum below-50 Hz modal rows fail.
+5. Reassembling `D:/CableTrayAI/jobs/18185NI-LXSJ4213` with the fixed gate gives `result_status=usable`, `result_validation.status=pass`, `fail_count=0`; `modal_mt_cutoff` evidence records 232 modal rows and last frequency `21.8866546846 Hz`.
+6. Verification passed: `py_compile`, targeted result-validity tests, full unit tests, hardcode scan over `core/apps/templates`, package gate, installed hash check, and service `/health`.
+7. Latest package: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `79091232` bytes. Installed backup: `D:/CableTrayAI/_update_backups/20260606_215835`. Active service PID after restart: `40768`.

@@ -1,5 +1,19 @@
 # CableTrayAI 新对话交接 2026-06-05
 
+## 2026-06-06 latest handoff addendum after 18185NI-LXSJ4213 static modal gate fix
+
+Use this addendum first in a new thread.
+
+1. The current web-side failure was `18185NI-LXSJ4213: modal_mt_cutoff`. This was a result-validation policy bug, not an ANSYS solve failure.
+2. The job is steel-platform static method (`analysis_method=static`). `Mode.oup` is required for appendix/table traceability, but 50 Hz modal coverage is only a response-spectrum truncation gate.
+3. `core/validation/result_validity_gate.py` now passes `modal_mt_cutoff` for static-method jobs when `Mode.oup` has modal rows. Response-spectrum jobs still require a modal row above 50 Hz.
+4. Installed job evidence was reassembled: `D:/CableTrayAI/jobs/18185NI-LXSJ4213/result.json` now has `result_status=usable`, embedded `result_validation.status=pass`, and `fail_count=0`.
+5. `D:/CableTrayAI/jobs/18185NI-LXSJ4213/result_validation.json` records `modal_row_count=232` and `last_frequency_hz=21.8866546846`; ANSYS audit remains `status=success`, `returncode=0`.
+6. Regression tests were added in `tests/unit/test_result_validity_square_section.py`: static below-50 Hz modal rows pass, response-spectrum below-50 Hz modal rows fail.
+7. Verification passed: `py_compile`, targeted result-validity tests, full unit tests, hardcode scan over `core/apps/templates`, package gate, installed hash check, and service `/health`.
+8. Latest Desktop package is `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `79091232` bytes. It was applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260606_215835`; active service PID `40768`.
+9. Historical `D:/CableTrayAI/docs/web_runs/91d3b240e060457cacdd9f0963903ca7.json` still records the old failed run message by design. Future or re-run web calculations use the fixed gate.
+
 ## 2026-06-06 latest handoff addendum after MT/section-selection optimization
 
 Use this addendum first in a new thread. It supersedes the older "当前未完成目标" section below and earlier 4210 notes where `100-100-8` appeared to pass under older spectrum-generation logic.

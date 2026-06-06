@@ -1,12 +1,12 @@
 {
     "schema":  "cabletrayai_codex_recovery_state_v1",
-    "updated_at":  "2026-06-06T19:40:00+08:00",
+    "updated_at":  "2026-06-06T22:03:00+08:00",
     "purpose":  "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
     "project_root":  "E:/CODEX/tray_platform/CableTrayAI",
     "current_objective":  [
-                              "Current section-learning optimization is complete: square-section learning is global for future intakes, not 4210-specific.",
-                              "Learning may move the starting candidate inside the current intake-allowed list only; it cannot add unlisted sections or replace current real ANSYS and deterministic evaluation.",
-                              "Local deployment and web service have been refreshed from the latest package. Any future calculation-rule change must rerun unit tests, hardcode scan, package gate, and real ANSYS acceptance."
+                              "Current 18185NI-LXSJ4213 modal_mt_cutoff web-side failure is fixed and deployed.",
+                              "Static-method steel-platform jobs require Mode.oup modal rows for report traceability but do not require response-spectrum 50 Hz modal coverage. Response-spectrum jobs still require a modal row above 50 Hz.",
+                              "Local deployment and web service have been refreshed from the latest package. Any future calculation-rule change must rerun unit tests, hardcode scan, package gate, and relevant real ANSYS acceptance."
                           ],
     "must_read_next":  [
                            "docs/CURRENT_WORK_STATE.md",
@@ -145,10 +145,14 @@
                            "2026-06-06 after the arm_section_family fix, direct source and installed learning-hit checks choose the v6 140-140-8 sample and start similar allowed-list searches at 120-120-6, skipping 100-100-6 and 100-100-8 while keeping current ANSYS verification mandatory.",
                            "2026-06-06 deployment package rebuilt at C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip, size about 75.43 MB, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_193731.",
                            "2026-06-06 installed service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 38056; /health returned ok; installed hashes match source for touched files and calibration caches.",
-                           "2026-06-06 verification for section-learning v6 passed: py_compile, target section tests, full unit tests, hardcode scan over core/apps/templates, package gate, real ANSYS validation, installed hash check and installed learning-hit check."
+                           "2026-06-06 verification for section-learning v6 passed: py_compile, target section tests, full unit tests, hardcode scan over core/apps/templates, package gate, real ANSYS validation, installed hash check and installed learning-hit check.",
+                           "2026-06-06 fixed web-side 18185NI-LXSJ4213 modal_mt_cutoff failure: core/validation/result_validity_gate.py now passes modal_mt_cutoff for analysis_method=static when Mode.oup has modal rows, while response-spectrum jobs still require 50 Hz coverage.",
+                           "2026-06-06 reassembled installed job D:/CableTrayAI/jobs/18185NI-LXSJ4213 with the fixed gate. result.json has result_status=usable and embedded result_validation.status=pass; result_validation.json has fail_count=0, modal_row_count=232, last_frequency_hz=21.8866546846. ansys_run_audit.json remains status=success, returncode=0.",
+                           "2026-06-06 regression tests added for static below-50 Hz modal rows passing and response-spectrum below-50 Hz modal rows failing. Verification passed: py_compile, target result-validity tests, full unit tests, hardcode scan over core/apps/templates, package gate, installed hash check, and service /health.",
+                           "2026-06-06 deployment after the static modal gate fix: rebuilt C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip size 79091232 bytes, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_215835, service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 40768, /health returned ok."
                        ],
     "open_tasks":  [
-                       "No blocking item remains for the 2026-06-06 section-learning optimization and deployment request.",
+                       "No blocking item remains for the current 18185NI-LXSJ4213 modal_mt_cutoff web-side failure.",
                        "Future successful real jobs may update data/calibration/square_section_selection_cache.json; keep the cache compact and review diffs before committing."
                    ],
     "do_not_do":  [

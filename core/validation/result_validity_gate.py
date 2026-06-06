@@ -432,10 +432,24 @@ def validate_result_outputs(job_dir: Path | str, *, raw: dict[str, Any], result:
 
     modal_rows = result.get("modal_results") or []
     if requires.get("modal_analysis"):
+        analysis_method = str(requirements.get("analysis_method") or "").strip().lower()
         cutoff_statuses = {str(row.get("modal_cutoff_status") or "") for row in modal_rows}
         mt_modes = [row.get("mt_mode") for row in modal_rows if row.get("mt_mode") is not None]
         if not modal_rows:
             _check(checks, "modal_mt_cutoff", "fail", "Mode.oup produced no modal rows.")
+        elif analysis_method == "static":
+            _check(
+                checks,
+                "modal_mt_cutoff",
+                "pass",
+                "Static-method job produced Mode.oup modal rows; 50 Hz modal coverage is not required for equivalent-static seismic calculation.",
+                {
+                    "analysis_method": analysis_method,
+                    "modal_row_count": len(modal_rows),
+                    "last_frequency_hz": modal_rows[-1].get("frequency_hz") if modal_rows else None,
+                    "policy": "Static-method steel-platform rows use modal output for appendix figures/table traceability, not for response-spectrum truncation.",
+                },
+            )
         elif "pass" in cutoff_statuses and mt_modes:
             _check(checks, "modal_mt_cutoff", "pass", "Mode.oup contains at least one FREQUENCY (HERTZ) row above 50 Hz.", {"mt_mode": max(mt_modes)})
         else:
