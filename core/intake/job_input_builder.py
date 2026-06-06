@@ -308,8 +308,9 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         "square_section_source": payload.get("square_section_source") or square_section_status,
         "square_section_selection_rule": (
             "If intake column I is blank, use only square sections allowed by the intake calculation notes when such a list is present. "
-            "Run candidates in increasing economy order, allow deterministic smart jumps only after a real failed ratio, and stop at the first "
-            "fresh real-ANSYS candidate whose controlling ratio is < 1.0. Later larger sections are not run after a pass because they are less economical. "
+            "Successful similar real runs may move the starting section inside the current allowed list with lower guard candidates, but cannot add "
+            "sections or prove acceptability. Run candidates in increasing economy order from that audited start, allow deterministic smart jumps only "
+            "after a real failed ratio, and stop at the first fresh real-ANSYS candidate whose controlling ratio is < 1.0. Later larger sections are not run after a pass because they are less economical. "
             "If no allowed section satisfies ratio < 1.0, fail with 提资允许截面不足."
         ),
         "allowed_square_section_ids": allowed_square_section_ids,

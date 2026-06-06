@@ -101,6 +101,25 @@
 
 当前未完成：无阻断项。后续若继续修改解析、计算、评定或打包逻辑，必须重新执行同等级真实 ANSYS 和部署验证。
 
+## 2026-06-06 截面选型长期学习优化 closeout
+
+本节是当前最新状态，覆盖上一节中“截面学习只记录 4210 初始样本”的限制说明。
+
+1. 截面选型长期学习已升级为 `square-section-cache-v6-learned-allowed-start`。缓存文件为 `data/calibration/square_section_selection_cache.json`，所有成功的真实 ANSYS 方钢选型 job 都会写入，不限 4210。
+2. 新提资命中相似历史样本时，只允许在当前提资“计算说明”允许截面列表内移动起算截面；不会新增未列截面，不会直接复用历史结果，不会跳过当前 job 的真实 ANSYS 和确定性评定。
+3. 旧策略问题已修复：相似特征不再使用 `arm_section_family`，因为该字段由当前方钢截面派生，会让选型前的 100 分支错误偏向旧 100 样本。
+4. 缓存命中 tie-break 已修复：相似度相同时优先当前 cache version，再优先更新的成功样本，避免旧缓存压过新验证样本。
+5. 长期缓存已压缩清理，只保留选型学习需要的字段：候选截面、控制比、方钢比、门禁状态、控制项、run 状态、相似特征、来源 job 和时间；不再保存 trial 目录替换审计和复制文件列表。
+6. 安装版已验证会命中最新 4210 `140-140-8` v6 样本，并从 `120-120-6` 起算，跳过 `100-100-6` 和 `100-100-8`，候选顺序为 `120-120-6`、`120-120-10`、`140-140-8`、`160-160-8`。
+7. 真实 ANSYS18.2 验证：
+   - `jobs/verify_4210_section_learning_20260606_190645/18185NI-LXSJ4210`：pass，最终 `140-140-8`，比值 `0.9052401909300667`。
+   - `jobs/verify_4210_section_learning_applied_20260606_192140/18185NI-LXSJ4210`：pass，最终 `140-140-8`，比值 `0.9052401909300667`。
+8. 第二次验证前的直接命中检查确认 v6 样本会从 `120-120-6` 起算；第二次真实 run 在修复 `arm_section_family` 前仍被旧 100 样本影响，修复后直接命中检查已确认安装版和源码均命中新 v6 140 样本。
+9. 部署包已重建并应用：`C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`，大小约 `75.43 MB`；安装备份为 `D:/CableTrayAI/_update_backups/20260606_193731`。服务已从 `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe` 重启，PID `38056`，`/health` 返回 `{"status":"ok"}`。
+10. 验证通过：目标截面测试 `20 passed`，全量 unit 测试通过，py_compile 通过，硬编码扫描在 `core/apps/templates` 无核心运行时命中，package gate 通过，安装目录关键文件 hash 与源码一致。
+
+当前未完成：无阻断项。下一次相似提资会继续写入截面学习缓存；学习只优化起算/少跑候选，不替代真实 ANSYS 和第六章确定性评定。
+
 ## 2026-06-05 stale run restore fix
 
 User saw the old `18185NI-LXSJ4210: Unable to allocate output buffer` message immediately after opening the platform. This was not a fresh ANSYS run. It was stale persisted run state from `docs/web_runs`, `jobs`, and browser localStorage being restored as the current calculation.

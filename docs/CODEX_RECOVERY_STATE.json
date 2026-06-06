@@ -1,13 +1,12 @@
 {
     "schema":  "cabletrayai_codex_recovery_state_v1",
-    "updated_at":  "2026-06-06T17:51:38+08:00",
+    "updated_at":  "2026-06-06T19:40:00+08:00",
     "purpose":  "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
     "project_root":  "E:/CODEX/tray_platform/CableTrayAI",
     "current_objective":  [
-                              "Current 4210 optimization request is complete: MT right-sizing/learning, first-feasible square-section stop, review command-stream publishing, real ANSYS validation, and local deployment refresh.",
-                              "Keep deterministic calculation authority: intake Excel, spectrum workbook ANSYS Format/workbook-envelope output, real ANSYS LIS/OUP, and Python RCC-M evaluation remain the sources of truth.",
-                              "Do not modify source_materials. Do not hardcode project numbers, factory names, elevations, or spectrum filenames in core/apps/templates.",
-                              "Any new parsing, calculation, evaluation, or packaging change must rerun unit tests, hardcode scan, package gate, and real ANSYS acceptance before release."
+                              "Current section-learning optimization is complete: square-section learning is global for future intakes, not 4210-specific.",
+                              "Learning may move the starting candidate inside the current intake-allowed list only; it cannot add unlisted sections or replace current real ANSYS and deterministic evaluation.",
+                              "Local deployment and web service have been refreshed from the latest package. Any future calculation-rule change must rerun unit tests, hardcode scan, package gate, and real ANSYS acceptance."
                           ],
     "must_read_next":  [
                            "docs/CURRENT_WORK_STATE.md",
@@ -136,11 +135,21 @@
                            "2026-06-06 command-stream publishing now includes spectrum and ZPA/static-correction review files when present: ansys_spectrum.mac, ansys_spectrum_sl1.mac, ansys_spectrum_sl2.mac, ansys_spectrum_workbook_format.mac, ansys_zpa_parameters.mac, plus generated_model/solve/post.",
                            "2026-06-06 refreshed E:/CODEX/tray_platform/ANSYS Output/18185NI-LXSJ4210/command_streams and E:/CODEX/tray_platform/ANSYS Output/verify_4210_optimized_20260606_173411/18185NI-LXSJ4210/command_streams; both contain the 8 review command-stream files.",
                            "2026-06-06 deployment package rebuilt at C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip, size about 75.43 MB, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_173008, service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 33516, /health returned ok.",
-                           "2026-06-06 verification for MT/section/command-stream optimization passed: py_compile on touched modules, targeted pytest 23 passed, full unit pytest 71 passed, hardcode scan had no core/apps/templates runtime hits, package gate passed, installed hashes matched source, and real ANSYS18.2 validation passed."
+                           "2026-06-06 verification for MT/section/command-stream optimization passed: py_compile on touched modules, targeted pytest 23 passed, full unit pytest 71 passed, hardcode scan had no core/apps/templates runtime hits, package gate passed, installed hashes matched source, and real ANSYS18.2 validation passed.",
+                           "2026-06-06 section-learning v6 implemented: data/calibration/square_section_selection_cache.json uses square-section-cache-v6-learned-allowed-start and records compact successful real-ANSYS section-selection samples for all future intakes, not only 4210.",
+                           "2026-06-06 learned section ordering policy: a high-similarity successful real run can move the starting point inside the current intake allowed list with lower guard candidates; it cannot add unlisted sections, cannot reuse a result, and cannot accept a section without fresh ANSYS and deterministic ratio gates.",
+                           "2026-06-06 fixed section-learning similarity: arm_section_family was removed from similarity features and cache key because it is derived from the current square tube, not an independent intake condition.",
+                           "2026-06-06 fixed section-learning cache tie-break: same-similarity hits prefer current cache version and then newest updated_at, so old v4/v5 samples no longer override fresh v6 evidence.",
+                           "2026-06-06 square_section_selection_cache.json was compacted to remove bulky trial replacement audits, copied file lists, and trial directories; it retains selected/candidate ratios, gate status, similarity features, source job, version and timestamp.",
+                           "2026-06-06 real ANSYS18.2 source validation passed at jobs/verify_4210_section_learning_20260606_190645/18185NI-LXSJ4210 and jobs/verify_4210_section_learning_applied_20260606_192140/18185NI-LXSJ4210; both selected 140-140-8 with ratio 0.9052401909300667.",
+                           "2026-06-06 after the arm_section_family fix, direct source and installed learning-hit checks choose the v6 140-140-8 sample and start similar allowed-list searches at 120-120-6, skipping 100-100-6 and 100-100-8 while keeping current ANSYS verification mandatory.",
+                           "2026-06-06 deployment package rebuilt at C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip, size about 75.43 MB, package gate passed, applied to D:/CableTrayAI with backup D:/CableTrayAI/_update_backups/20260606_193731.",
+                           "2026-06-06 installed service restarted from D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe PID 38056; /health returned ok; installed hashes match source for touched files and calibration caches.",
+                           "2026-06-06 verification for section-learning v6 passed: py_compile, target section tests, full unit tests, hardcode scan over core/apps/templates, package gate, real ANSYS validation, installed hash check and installed learning-hit check."
                        ],
     "open_tasks":  [
-                       "No blocking item remains for the 2026-06-06 4210 MT/section-selection/command-stream/deployment optimization request.",
-                       "If a future change touches parsing, spectrum selection/generation, APDL solve/post command streams, RCC-M evaluation, or deployment packaging, rerun the same real ANSYS acceptance and package gate before release."
+                       "No blocking item remains for the 2026-06-06 section-learning optimization and deployment request.",
+                       "Future successful real jobs may update data/calibration/square_section_selection_cache.json; keep the cache compact and review diffs before committing."
                    ],
     "do_not_do":  [
                       "Do not modify source_materials.",

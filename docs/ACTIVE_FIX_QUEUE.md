@@ -21,6 +21,26 @@ Open queue:
 1. No blocking item remains for the current 4210 MT/section-selection/command-stream/deployment request.
 2. If a future operator run uses a materially different intake/spectrum workbook, re-run the real ANSYS acceptance gate before release.
 
+## 2026-06-06 截面学习 v6 队列 closeout
+
+Resolved in source, package, local install, and verification:
+
+1. 方钢截面长期学习已启用，版本为 `square-section-cache-v6-learned-allowed-start`。它面向所有后续提资，不是 4210 专用。
+2. 每次真实 ANSYS 方钢选型成功后会记录相似特征、候选比值和最终截面；新提资只在相似度足够高时使用该记录作为允许列表内的起算提示。
+3. 学习记录不能新增提资未列截面，不能直接判定满足，不能替代当前 job 的真实 ANSYS 和 deterministic ratio gate。
+4. 已从相似特征移除 `arm_section_family`，因为它由当前方钢截面派生，不是独立提资条件；这避免选型前 100 分支错误命中旧 100 样本。
+5. 缓存命中 tie-break 已改为相似度、当前版本、更新时间优先，旧版本同分样本不会压过最新 v6 样本。
+6. `square_section_selection_cache.json` 已清理压缩，只保留学习必要字段，避免长期缓存带入 trial 目录审计和复制文件列表。
+7. 4210 源码真实 ANSYS 验证通过：`verify_4210_section_learning_20260606_190645` 与 `verify_4210_section_learning_applied_20260606_192140` 均 pass，最终 `140-140-8`，控制比 `0.9052401909300667`。
+8. 修复后源码和安装版直接命中检查均返回最新 v6 `140-140-8` 样本，学习起算顺序为 `120-120-6`、`120-120-10`、`140-140-8`、`160-160-8`，跳过 `100-100-6` 和 `100-100-8`。
+9. 部署包已重建并应用到 `D:/CableTrayAI`，备份 `D:/CableTrayAI/_update_backups/20260606_193731`；服务 PID `38056`，`/health` ok，安装文件 hash 与源码一致。
+10. Verification: py_compile passed, target tests passed, full unit tests passed, hardcode scan had no core/apps/templates runtime hits, package gate passed.
+
+Open queue:
+
+1. No blocking item remains for the section-learning optimization request.
+2. Future real successful jobs should be allowed to update `data/calibration/square_section_selection_cache.json`; review diffs to ensure the cache remains compact and contains no source_materials or bulky job artifacts.
+
 ## 队列顺序
 
 1. 检查 `core/intake/intake_excel_reader.py`：

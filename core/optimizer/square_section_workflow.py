@@ -23,7 +23,9 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v5-final-ratio-economy-proof"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v6-learned-allowed-start"
+SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
+SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 
 
 def _arm_sections_for_square_outer(square_outer_mm: float | None) -> tuple[str, str, str]:
@@ -57,7 +59,6 @@ def _selection_cache_key(payload: dict[str, Any]) -> str:
         "tray_layers": payload.get("tray_layers") or [],
         "load_cases": payload.get("load_cases") or [],
         "analysis_method": metadata.get("analysis_method"),
-        "arm_section_family": metadata.get("arm_section_family"),
         "tray_load_mapping": metadata.get("tray_load_mapping"),
         "allowed_square_section_ids": _allowed_square_section_ids_from_payload(payload),
         "static_acceleration": {
@@ -208,7 +209,6 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "support_type": _as_text(support.get("support_type")),
         "analysis_method": _as_text(metadata.get("analysis_method")),
-        "arm_section_family": _as_text(metadata.get("arm_section_family")),
         "building": _as_text(project.get("building")),
         "area": _as_text(project.get("area")),
         "elevation_m": _as_float(project.get("elevation")),
@@ -269,7 +269,6 @@ def _selection_similarity_score(current: dict[str, Any], cached: dict[str, Any])
     for key, points in (
         ("support_type", 2.0),
         ("analysis_method", 2.0),
-        ("arm_section_family", 1.0),
         ("building", 1.0),
         ("area", 1.0),
         ("layers_front", 1.0),
@@ -302,6 +301,7 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
     current_features = _selection_similarity_features(payload)
     cache = _load_selection_cache(cache_path)
     best: dict[str, Any] | None = None
+    best_rank: tuple[float, int, str] | None = None
     for cache_key, entry in (cache.get("entries") or {}).items():
         if not isinstance(entry, dict) or entry.get("status") != "pass":
             continue
@@ -322,12 +322,56 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
             "cache_path": str(cache_path),
             "source_job_dir": entry.get("source_job_dir"),
             "selected_section_hint": selected.get("section_name"),
+            "entry_cache_version": entry.get("cache_version"),
+            "entry_updated_at": entry.get("updated_at"),
+            "historical_candidate_results": [
+                {
+                    key: item.get(key)
+                    for key in (
+                        "section_name",
+                        "status",
+                        "run_status",
+                        "controlling_ratio",
+                        "square_support_ratio",
+                        "dominant_check_id",
+                        "result_gate_status",
+                    )
+                }
+                for item in entry.get("candidate_results", [])
+                if isinstance(item, dict)
+            ],
             "similarity": score,
             "source_ref": "square_section_selection_cache.json:similarity_features",
         }
-        if best is None or candidate["similarity"]["score"] > best["similarity"]["score"]:
+        rank = (
+            float(candidate["similarity"]["score"]),
+            1 if entry.get("cache_version") == SQUARE_SECTION_CACHE_VERSION else 0,
+            str(entry.get("updated_at") or ""),
+        )
+        if best is None or best_rank is None or rank > best_rank:
             best = candidate
+            best_rank = rank
     return best
+
+
+def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
+    keep_keys = (
+        "section_name",
+        "estimated_area_mm2",
+        "estimated_bending_section_modulus_mm3",
+        "source_kind",
+        "controlling_ratio",
+        "square_support_ratio",
+        "result_gate_status",
+        "trial_validation_status",
+        "effective_validation_status",
+        "validation_status",
+        "dominant_check_id",
+        "failed_non_ratio_checks",
+        "status",
+        "run_status",
+    )
+    return {key: item.get(key) for key in keep_keys if key in item}
 
 
 def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_path: Path) -> None:
@@ -339,11 +383,12 @@ def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_p
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache = _load_selection_cache(cache_path)
     entries = cache.setdefault("entries", {})
+    compact_selected = _compact_candidate_result_for_cache(selected)
     entries[key] = {
         "status": "pass",
-        "selected": selected,
+        "selected": compact_selected,
         "candidate_results": [
-            {k: v for k, v in item.items() if k != "trial_dir"}
+            _compact_candidate_result_for_cache(item)
             for item in selection.get("candidate_results", [])
             if isinstance(item, dict)
         ],
@@ -356,6 +401,61 @@ def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_p
     }
     cache["cache_version"] = SQUARE_SECTION_CACHE_VERSION
     cache_path.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _learned_allowed_candidate_start(
+    candidates: list[SquareSectionCandidate],
+    similar_hint: dict[str, Any] | None,
+    *,
+    threshold: float = SECTION_LEARNING_ALLOWED_START_THRESHOLD,
+    lower_guard_count: int = SECTION_LEARNING_LOWER_GUARD_COUNT,
+) -> tuple[list[SquareSectionCandidate], dict[str, Any]]:
+    if not candidates:
+        return candidates, {"status": "skipped", "reason": "empty_candidate_list"}
+    if not similar_hint:
+        return candidates, {"status": "skipped", "reason": "no_similar_successful_selection"}
+    similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
+    score = _as_float(similarity.get("score"))
+    if score is None or score < threshold:
+        return candidates, {
+            "status": "skipped",
+            "reason": "similarity_below_allowed_start_threshold",
+            "similarity_score": score,
+            "similarity_threshold": threshold,
+        }
+    section_name = str(similar_hint.get("selected_section_hint") or "")
+    selected_index = next((idx for idx, item in enumerate(candidates) if item.section_name == section_name), None)
+    if selected_index is None:
+        return candidates, {
+            "status": "skipped",
+            "reason": "learned_selected_section_not_in_current_allowed_list",
+            "selected_section_hint": section_name,
+            "similarity_score": score,
+            "similarity_threshold": threshold,
+        }
+    start_index = max(0, selected_index - max(0, int(lower_guard_count)))
+    skipped = candidates[:start_index]
+    ordered = candidates[start_index:]
+    return ordered, {
+        "status": "applied" if skipped else "not_needed",
+        "selected_section_hint": section_name,
+        "source_job_dir": similar_hint.get("source_job_dir"),
+        "cache_key": similar_hint.get("cache_key"),
+        "similarity_score": score,
+        "similarity_threshold": threshold,
+        "lower_guard_count": lower_guard_count,
+        "selected_index": selected_index,
+        "start_index": start_index,
+        "skipped_lower_allowed_sections": [item.section_name for item in skipped],
+        "candidate_sections": [item.section_name for item in ordered],
+        "historical_candidate_results": similar_hint.get("historical_candidate_results", []),
+        "policy": (
+            "A high-similarity successful real-ANSYS selection can move the starting point inside the current "
+            "intake-allowed section list, while keeping lower economic guard candidates before the learned section. "
+            "It cannot add unlisted sections and cannot accept a section without a fresh ANSYS trial and deterministic "
+            "ratio gate for the current job."
+        ),
+    }
 
 
 def square_section_auto_selection_required(job_dir: Path | str) -> bool:
@@ -874,6 +974,10 @@ def select_and_apply_square_section(
         return selection
     full_candidates = list(candidates)
     candidate_window_audit: dict[str, Any] = {"status": "skipped", "reason": "no high-similarity cache hit"}
+    learned_allowed_start_audit: dict[str, Any] = {
+        "status": "skipped",
+        "reason": "allowed-list learning not evaluated",
+    }
     similarity_score = None
     if similar_hint is not None:
         try:
@@ -891,24 +995,29 @@ def select_and_apply_square_section(
     lower_neighbor_count = 0
     if allowed_filter_applied:
         # The calculation note is the governing candidate boundary.  Run the
-        # reviewed allowed list with fresh trials.  Within that hard boundary,
-        # post-failure modulus jumps may skip only candidates that are still
-        # below a failed square-support ratio estimate; they never add
-        # unlisted sections.  The first passing section is the economical
-        # production stop because later candidates are ordered larger.
-        candidates = full_candidates
+        # reviewed allowed list with fresh trials.  A high-similarity learning
+        # cache may move the starting point upward inside that hard boundary,
+        # keeping lower guard candidates before the learned section.  Within
+        # the resulting allowed-list run, post-failure modulus jumps may skip
+        # only candidates that are still below a failed square-support ratio
+        # estimate; they never add unlisted sections.  The first passing
+        # section is the economical production stop because later candidates
+        # are ordered larger.
+        candidates, learned_allowed_start_audit = _learned_allowed_candidate_start(full_candidates, similar_hint)
         preferred_section = None
         preferred_section_source = None
         candidate_window_audit = {
             "status": "skipped",
-            "reason": "intake_allowed_sections_use_failure_only_smart_jumps",
+            "reason": "intake_allowed_sections_use_learned_start_and_failure_smart_jumps",
             "policy": (
                 "For intake calculation-note sections, only listed/reviewed candidates are allowed. "
                 "Every selected or jumped-to candidate is regenerated and checked by the deterministic ratio gate; "
-                "post-failure section-modulus jumps may skip only smaller allowed candidates that remain below the "
-                "estimated requirement from a real failed square-support ratio. The first fresh real-ANSYS candidate "
-                "with controlling ratio < 1.0 stops the search; larger listed sections are not run after a pass. "
-                "Engineering estimates and similar-job cache entries cannot skip or add candidates."
+                "a high-similarity learned cache may move the start point only inside the current allowed list and "
+                "with lower economic guard candidates retained; post-failure section-modulus jumps may skip only "
+                "smaller allowed candidates that remain below the estimated requirement from a real failed "
+                "square-support ratio. The first fresh real-ANSYS candidate with controlling ratio < 1.0 stops the "
+                "search; larger listed sections are not run after a pass. Engineering estimates cannot skip or add "
+                "candidates."
             ),
         }
     elif preferred_section is None:
@@ -946,6 +1055,7 @@ def select_and_apply_square_section(
     if engineering_anchor is not None:
         selection["engineering_candidate_anchor"] = engineering_anchor
     selection["allowed_square_section_filter"] = allowed_square_section_filter
+    selection["learned_allowed_section_start"] = learned_allowed_start_audit
     if candidate_window_audit.get("status") == "applied":
         selection["similar_cache_candidate_window"] = candidate_window_audit
         if selection.get("status") != "pass" and not selection.get("early_stop"):
@@ -976,6 +1086,7 @@ def select_and_apply_square_section(
             trials = expanded_trials
             selection = expanded
             selection["allowed_square_section_filter"] = allowed_square_section_filter
+            selection["learned_allowed_section_start"] = learned_allowed_start_audit
     if similar_hint is not None:
         selection["similar_cache_order_hint"] = similar_hint
     timeout_statuses = {
@@ -999,9 +1110,11 @@ def select_and_apply_square_section(
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
         "ratios; the selected section must have ratio < 1.0 within that intake-allowed list. Candidates are ordered by "
-        "economic section size, so the first fresh real-ANSYS passing candidate stops the search and later larger "
-        "sections are not run. Candidate order may not use deterministic engineering estimates, local catalog fallback "
-        "or historical results to skip/add candidates. After a real failed square-support ratio, section-modulus smart jumps may skip only "
+        "economic section size, with high-similarity learned real-run history allowed only to move the starting point "
+        "inside the current allowed list while keeping lower guard candidates. The first fresh real-ANSYS passing "
+        "candidate stops the search and later larger sections are not run. Candidate order may not use deterministic "
+        "engineering estimates, local catalog fallback or historical results to add unlisted candidates or accept a "
+        "section without current ANSYS evidence. After a real failed square-support ratio, section-modulus smart jumps may skip only "
         "under-sized allowed candidates and must record the skipped list. Generated APDL HREC candidates are disabled by default and only allowed when "
         "allow_native_hrec_generated=true is explicitly set for a reviewed engineering run. No nearest-report-value "
         "substitution is allowed."
@@ -1020,6 +1133,7 @@ def select_and_apply_square_section(
         "production_policy": selection["production_policy"],
         "allowed_square_section_filter": allowed_square_section_filter,
         "similar_cache_order_hint": selection.get("similar_cache_order_hint"),
+        "learned_allowed_section_start": selection.get("learned_allowed_section_start"),
         "candidate_results": [
             {key: value for key, value in item.items() if key != "trial_dir"}
             for item in selection.get("candidate_results", [])

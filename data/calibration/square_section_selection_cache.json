@@ -13,30 +13,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\production_validation_20260603_180419\\_square_section_trials\\18185NI-LXSJ4212\\20260603T100739Z\\120-120-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -51,28 +29,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "All feasible reviewed/intake-allowed sections have ratio < 0.70. This is treated as a light-duty row, so select the minimum feasible section rather than oversizing to chase ratio near 1.0.",
@@ -81,7 +38,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 21.95,
@@ -109,31 +65,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\production_validation_20260603_172459\\_square_section_trials\\18185NI-LXSJ4213\\20260603T093122Z\\140-140-8",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "modal_mt_cutoff",
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -148,29 +81,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-10",
@@ -184,29 +95,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "140-140-8",
@@ -220,29 +109,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -251,7 +118,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "static",
-        "arm_section_family": "square_gt_120_yixing_arm_family",
         "building": "nb厂房内部结构环形区域",
         "area": "nb厂房内部结构环形区域",
         "elevation_m": 7.5,
@@ -279,55 +145,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -342,53 +161,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4212\\20260603T165027Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "All feasible reviewed/intake-allowed sections have ratio < 0.70. This is treated as a light-duty row, so select the minimum feasible section rather than oversizing to chase ratio near 1.0.",
@@ -397,7 +170,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 21.95,
@@ -425,31 +197,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\production_validation_20260603_215229\\_square_section_trials\\18185NI-LXSJ4213\\20260603T135234Z\\140-140-8",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "modal_mt_cutoff",
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -464,29 +213,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-10",
@@ -500,29 +227,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "140-140-8",
@@ -536,29 +241,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -567,7 +250,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "static",
-        "arm_section_family": "square_gt_120_yixing_arm_family",
         "building": "nb厂房内部结构环形区域",
         "area": "nb厂房内部结构环形区域",
         "elevation_m": 7.5,
@@ -595,55 +277,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -658,53 +293,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4213\\20260603T165340Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -713,7 +302,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "static",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nb厂房内部结构环形区域",
         "area": "nb厂房内部结构环形区域",
         "elevation_m": 7.5,
@@ -741,55 +329,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -804,53 +345,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4210\\20260603T163205Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "All feasible reviewed/intake-allowed sections have ratio < 0.70. This is treated as a light-duty row, so select the minimum feasible section rather than oversizing to chase ratio near 1.0.",
@@ -859,7 +354,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 8.5,
@@ -887,55 +381,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -950,53 +397,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4211\\20260603T164238Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -1005,7 +406,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 21.95,
@@ -1033,55 +433,8 @@
         "validation_status": "fail",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -1096,53 +449,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\demo_real_validation_20260604_003152\\_square_section_trials\\18185NI-LXSJ4214\\20260603T165749Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "All feasible reviewed/intake-allowed sections have ratio < 0.70. This is treated as a light-duty row, so select the minimum feasible section rather than oversizing to chase ratio near 1.0.",
@@ -1151,7 +458,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nb厂房内部结构环形区域",
         "area": "nb厂房内部结构环形区域",
         "elevation_m": 7.5,
@@ -1181,56 +487,8 @@
         "validation_status": "pass",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "modal_mt_cutoff",
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "100-100-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-            "estimated_bending_section_modulus_mm3": 66717.44
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "copied": [
-              "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\50-42.SECT",
-              "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\sections\\50-42.SECT",
-              "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\CAOGANG42DAN.SECT",
-              "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -1247,54 +505,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "modal_mt_cutoff",
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "copied": [
-                "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\50-42.SECT",
-                "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\verify_4210_section_20260604_184807\\_square_section_trials\\18185NI-LXSJ4210\\20260604T104816Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "All feasible reviewed/intake-allowed sections have ratio < 0.70. This is treated as a light-duty row, so select the minimum feasible section rather than oversizing to chase ratio near 1.0.",
@@ -1303,7 +514,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 8.5,
@@ -1333,63 +543,8 @@
         "validation_status": "pass",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "120-120-6",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-6",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-6.SECT",
-            "estimated_bending_section_modulus_mm3": 99043.2
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "50-42",
-            "secondary_arm_section": "CAOGANG42DAN",
-            "primary_replacement_count": 1,
-            "secondary_replacement_count": 1,
-            "copied": [
-              "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\50-42.SECT",
-              "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\sections\\50-42.SECT",
-              "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\CAOGANG42DAN.SECT",
-              "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\sections\\CAOGANG42DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "tray_section_preservation_audit": {
-            "status": "pass",
-            "required_tray_sections": [
-              "500-75-2mm"
-            ]
-          },
-          "arm_section_family": "square_le_120_standard_channel_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -1406,61 +561,7 @@
           "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-6\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-6\\sections\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "100-100-8",
@@ -1476,61 +577,7 @@
           "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-8.SECT",
-              "estimated_bending_section_modulus_mm3": 83688.10666666667
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-8\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-8\\sections\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-8\\CAOGANG42DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\100-100-8\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-6",
@@ -1546,61 +593,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-6.SECT",
-              "estimated_bending_section_modulus_mm3": 99043.2
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\sections\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\CAOGANG42DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-10",
@@ -1616,61 +609,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-10",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-10",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-10.SECT",
-              "estimated_bending_section_modulus_mm3": 149111.1111111111
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-10\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-10\\sections\\50-42.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-10\\CAOGANG42DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\120-120-10\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "140-140-8",
@@ -1686,61 +625,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "140-140-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "140-140-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\140-140-8.SECT",
-              "estimated_bending_section_modulus_mm3": 175879.3142857143
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\140-140-8\\YIXINGGANG150.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\140-140-8\\sections\\YIXINGGANG150.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\140-140-8\\YIXINGGANG150DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\140-140-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "160-160-8",
@@ -1756,61 +641,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "160-160-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "160-160-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\160-160-8.SECT",
-              "estimated_bending_section_modulus_mm3": 234769.06666666665
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\160-160-8\\YIXINGGANG150.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\160-160-8\\sections\\YIXINGGANG150.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\160-160-8\\YIXINGGANG150DAN.SECT",
-                "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\_square_section_trials\\18185NI-LXSJ4212\\20260604T182304112902Z\\160-160-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -1819,7 +650,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_le_120_standard_channel_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 21.95,
@@ -1849,103 +679,8 @@
         "validation_status": "pass",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "140-140-8",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "140-140-8",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\140-140-8.SECT",
-            "estimated_bending_section_modulus_mm3": 175879.3142857143
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "YIXINGGANG150",
-            "secondary_arm_section": "YIXINGGANG150DAN",
-            "primary_replacement_count": 1,
-            "secondary_replacement_count": 1,
-            "copied": [
-              "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\YIXINGGANG150.SECT",
-              "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\sections\\YIXINGGANG150.SECT",
-              "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\YIXINGGANG150DAN.SECT",
-              "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\sections\\YIXINGGANG150DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "tray_section_preservation_audit": {
-            "status": "pass",
-            "required_tray_sections": [
-              "500-75-2mm"
-            ]
-          },
-          "trial_input_sync_audit": {
-            "status": "pass",
-            "section_name": "140-140-8",
-            "square_outer_mm": 140.0,
-            "square_thickness_mm": 8.0,
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "postprocessor_alignment": {
-              "status": "applied",
-              "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\generated_post.mac",
-              "branch_parameters": {
-                "status": "updated_existing",
-                "H1_m": 0.14,
-                "H2_m": 0.008,
-                "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-              },
-              "appendix_c_threshold": {
-                "status": "not_found",
-                "replaced_count": 0,
-                "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-              },
-              "tmax_selector": {
-                "status": "source_topology_preserved",
-                "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                "selector": [
-                  "ESEL,S,TYPE,,1",
-                  "ESEL,U,SEC,,1"
-                ],
-                "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-              },
-              "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-            },
-            "analysis_scope": {
-              "status": "pass",
-              "appendix_c_mode": "weld_evaluation_principle",
-              "square_outer_width_mm": 140.0,
-              "square_thickness_mm": 8.0
-            },
-            "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-            "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-          },
-          "arm_section_family": "square_gt_120_yixing_arm_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -1962,101 +697,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-6\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "square_outer_mm": 100.0,
-              "square_thickness_mm": 6.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-6\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.1,
-                  "H2_m": 0.006,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 100.0,
-                "square_thickness_mm": 6.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "100-100-8",
@@ -2072,101 +713,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-8.SECT",
-              "estimated_bending_section_modulus_mm3": 83688.10666666667
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-8\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-8\\sections\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-8\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-8\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "100-100-8",
-              "square_outer_mm": 100.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "unchanged",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\100-100-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "already_current",
-                  "H1_m": 0.1,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 100.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-6",
@@ -2182,101 +729,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-6.SECT",
-              "estimated_bending_section_modulus_mm3": 99043.2
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-6\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-6\\sections\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-6\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "120-120-6",
-              "square_outer_mm": 120.0,
-              "square_thickness_mm": 6.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-6\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.12,
-                  "H2_m": 0.006,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 120.0,
-                "square_thickness_mm": 6.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-10",
@@ -2292,101 +745,7 @@
           "dominant_check_id": "square_support.support_tension_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-10",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-10",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-10.SECT",
-              "estimated_bending_section_modulus_mm3": 149111.1111111111
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-10\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-10\\sections\\50-42.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-10\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-10\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "120-120-10",
-              "square_outer_mm": 120.0,
-              "square_thickness_mm": 10.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\120-120-10\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.12,
-                  "H2_m": 0.01,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 120.0,
-                "square_thickness_mm": 10.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "140-140-8",
@@ -2402,101 +761,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "140-140-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "140-140-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\140-140-8.SECT",
-              "estimated_bending_section_modulus_mm3": 175879.3142857143
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\sections\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\YIXINGGANG150DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "140-140-8",
-              "square_outer_mm": 140.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_gt_120_yixing_arm_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\140-140-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.14,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "weld_evaluation_principle",
-                "square_outer_width_mm": 140.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "160-160-8",
@@ -2512,101 +777,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "160-160-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "160-160-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\160-160-8.SECT",
-              "estimated_bending_section_modulus_mm3": 234769.06666666665
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\160-160-8\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\160-160-8\\sections\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\160-160-8\\YIXINGGANG150DAN.SECT",
-                "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\160-160-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "500-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "160-160-8",
-              "square_outer_mm": 160.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_gt_120_yixing_arm_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_4210_vbaspectrum_20260605_205920\\_square_section_trials\\18185NI-LXSJ4210\\20260605T125931408464Z\\160-160-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.16,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "weld_evaluation_principle",
-                "square_outer_width_mm": 160.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -2615,7 +786,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_gt_120_yixing_arm_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 8.5,
@@ -2645,103 +815,8 @@
         "validation_status": "pass",
         "dominant_check_id": null,
         "failed_non_ratio_checks": [],
-        "trial_dir": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8",
         "status": "pass",
-        "run_status": "pass",
-        "diagnosis": {
-          "status": "continue",
-          "continue_square_section_search": true,
-          "run_status": "pass",
-          "domains": [],
-          "failed_checks": [],
-          "ignored_trial_only_checks": [
-            "required_figures"
-          ],
-          "square_ratio_failure": false,
-          "deterministic_ratio_failure": false,
-          "recommendation": "No blocking extraction issue was detected for this candidate."
-        },
-        "trial_stale_output_cleanup": {
-          "status": "pass",
-          "removed_file_count": 0,
-          "removed_dir_count": 0,
-          "removed_files": [],
-          "removed_dirs": [],
-          "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-        },
-        "trial_section_replace_audit": {
-          "status": "pass",
-          "section_name": "160-160-8",
-          "replace_audit": {
-            "status": "pass",
-            "section_name": "160-160-8",
-            "source_kind": "local_sect",
-            "source_file": "source_materials\\model_commands\\常用托臂截面参数\\160-160-8.SECT",
-            "estimated_bending_section_modulus_mm3": 234769.06666666665
-          },
-          "arm_section_replace_audit": {
-            "status": "pass",
-            "primary_arm_section": "YIXINGGANG150",
-            "secondary_arm_section": "YIXINGGANG150DAN",
-            "primary_replacement_count": 1,
-            "secondary_replacement_count": 1,
-            "copied": [
-              "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\YIXINGGANG150.SECT",
-              "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\sections\\YIXINGGANG150.SECT",
-              "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\YIXINGGANG150DAN.SECT",
-              "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\sections\\YIXINGGANG150DAN.SECT"
-            ],
-            "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-          },
-          "tray_section_preservation_audit": {
-            "status": "pass",
-            "required_tray_sections": [
-              "600-75-2mm"
-            ]
-          },
-          "trial_input_sync_audit": {
-            "status": "pass",
-            "section_name": "160-160-8",
-            "square_outer_mm": 160.0,
-            "square_thickness_mm": 8.0,
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "postprocessor_alignment": {
-              "status": "applied",
-              "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\generated_post.mac",
-              "branch_parameters": {
-                "status": "updated_existing",
-                "H1_m": 0.16,
-                "H2_m": 0.008,
-                "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-              },
-              "appendix_c_threshold": {
-                "status": "not_found",
-                "replaced_count": 0,
-                "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-              },
-              "tmax_selector": {
-                "status": "source_topology_preserved",
-                "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                "selector": [
-                  "ESEL,S,TYPE,,1",
-                  "ESEL,U,SEC,,1"
-                ],
-                "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-              },
-              "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-            },
-            "analysis_scope": {
-              "status": "pass",
-              "appendix_c_mode": "weld_evaluation_principle",
-              "square_outer_width_mm": 160.0,
-              "square_thickness_mm": 8.0
-            },
-            "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-            "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-          },
-          "arm_section_family": "square_gt_120_yixing_arm_family",
-          "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-        }
+        "run_status": "pass"
       },
       "candidate_results": [
         {
@@ -2758,101 +833,7 @@
           "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-6.SECT",
-              "estimated_bending_section_modulus_mm3": 66717.44
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-6\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-6\\sections\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-6\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "100-100-6",
-              "square_outer_mm": 100.0,
-              "square_thickness_mm": 6.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-6\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.1,
-                  "H2_m": 0.006,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 100.0,
-                "square_thickness_mm": 6.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "100-100-8",
@@ -2868,101 +849,7 @@
           "dominant_check_id": "cantilever_root_weld_equivalent.accident.bending",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "100-100-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "100-100-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\100-100-8.SECT",
-              "estimated_bending_section_modulus_mm3": 83688.10666666667
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-8\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-8\\sections\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-8\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-8\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "100-100-8",
-              "square_outer_mm": 100.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "unchanged",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\100-100-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "already_current",
-                  "H1_m": 0.1,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 100.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-6",
@@ -2978,101 +865,7 @@
           "dominant_check_id": "cantilever_root_weld_equivalent.accident.bending",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": true,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue with larger square-section candidates; the governing failure is still a square-support ratio."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-6",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-6",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-6.SECT",
-              "estimated_bending_section_modulus_mm3": 99043.2
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-6\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-6\\sections\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-6\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-6\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "120-120-6",
-              "square_outer_mm": 120.0,
-              "square_thickness_mm": 6.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-6\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.12,
-                  "H2_m": 0.006,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 120.0,
-                "square_thickness_mm": 6.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "120-120-10",
@@ -3088,101 +881,7 @@
           "dominant_check_id": "cantilever_root_weld_equivalent.accident.bending",
           "failed_non_ratio_checks": [],
           "status": "fail",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": true,
-            "recommendation": "Continue only if the governing ratio is section-sensitive; otherwise review weld/bolt/source mapping."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "120-120-10",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "120-120-10",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\120-120-10.SECT",
-              "estimated_bending_section_modulus_mm3": 149111.1111111111
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "50-42",
-              "secondary_arm_section": "CAOGANG42DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-10\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-10\\sections\\50-42.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-10\\CAOGANG42DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-10\\sections\\CAOGANG42DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "120-120-10",
-              "square_outer_mm": 120.0,
-              "square_thickness_mm": 10.0,
-              "arm_section_family": "square_le_120_standard_channel_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\120-120-10\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.12,
-                  "H2_m": 0.01,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "cantilever_stress_cloud",
-                "square_outer_width_mm": 120.0,
-                "square_thickness_mm": 10.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_le_120_standard_channel_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "140-140-8",
@@ -3198,101 +897,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "140-140-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "140-140-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\140-140-8.SECT",
-              "estimated_bending_section_modulus_mm3": 175879.3142857143
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\140-140-8\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\140-140-8\\sections\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\140-140-8\\YIXINGGANG150DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\140-140-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "140-140-8",
-              "square_outer_mm": 140.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_gt_120_yixing_arm_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\140-140-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.14,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "weld_evaluation_principle",
-                "square_outer_width_mm": 140.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         },
         {
           "section_name": "160-160-8",
@@ -3308,101 +913,7 @@
           "dominant_check_id": null,
           "failed_non_ratio_checks": [],
           "status": "pass",
-          "run_status": "pass",
-          "diagnosis": {
-            "status": "continue",
-            "continue_square_section_search": true,
-            "run_status": "pass",
-            "domains": [],
-            "failed_checks": [],
-            "ignored_trial_only_checks": [
-              "required_figures"
-            ],
-            "square_ratio_failure": false,
-            "deterministic_ratio_failure": false,
-            "recommendation": "No blocking extraction issue was detected for this candidate."
-          },
-          "trial_stale_output_cleanup": {
-            "status": "pass",
-            "removed_file_count": 0,
-            "removed_dir_count": 0,
-            "removed_files": [],
-            "removed_dirs": [],
-            "policy": "candidate trials must generate fresh ANSYS/result/evaluation outputs; inherited runtime artifacts are ignored and deleted"
-          },
-          "trial_section_replace_audit": {
-            "status": "pass",
-            "section_name": "160-160-8",
-            "replace_audit": {
-              "status": "pass",
-              "section_name": "160-160-8",
-              "source_kind": "local_sect",
-              "source_file": "source_materials\\model_commands\\常用托臂截面参数\\160-160-8.SECT",
-              "estimated_bending_section_modulus_mm3": 234769.06666666665
-            },
-            "arm_section_replace_audit": {
-              "status": "pass",
-              "primary_arm_section": "YIXINGGANG150",
-              "secondary_arm_section": "YIXINGGANG150DAN",
-              "primary_replacement_count": 1,
-              "secondary_replacement_count": 1,
-              "copied": [
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\sections\\YIXINGGANG150.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\YIXINGGANG150DAN.SECT",
-                "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\sections\\YIXINGGANG150DAN.SECT"
-              ],
-              "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN"
-            },
-            "tray_section_preservation_audit": {
-              "status": "pass",
-              "required_tray_sections": [
-                "600-75-2mm"
-              ]
-            },
-            "trial_input_sync_audit": {
-              "status": "pass",
-              "section_name": "160-160-8",
-              "square_outer_mm": 160.0,
-              "square_thickness_mm": 8.0,
-              "arm_section_family": "square_gt_120_yixing_arm_family",
-              "postprocessor_alignment": {
-                "status": "applied",
-                "post_path": "jobs\\real_ansys_row6_senumfix_20260605_151201\\_square_section_trials\\1818_S2_20240711_S2_row_6\\20260605T071210032440Z\\160-160-8\\generated_post.mac",
-                "branch_parameters": {
-                  "status": "updated_existing",
-                  "H1_m": 0.16,
-                  "H2_m": 0.008,
-                  "source_ref": "input.json:metadata.square_section_outer_mm/support.square_tube_width_m"
-                },
-                "appendix_c_threshold": {
-                  "status": "not_found",
-                  "replaced_count": 0,
-                  "source_ref": "analysis_scope.square_outer_width_le_120_requires_cantilever_stress_clouds"
-                },
-                "tmax_selector": {
-                  "status": "source_topology_preserved",
-                  "source_ref": "generated_model.mac:LATT assigns square support and tray arms to TYPE=1 with SEC filtering",
-                  "selector": [
-                    "ESEL,S,TYPE,,1",
-                    "ESEL,U,SEC,,1"
-                  ],
-                  "policy": "Standard command-flow family models keep the audited source TMAX selector because tray arms are TYPE=1 and non-square sections."
-                },
-                "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter."
-              },
-              "analysis_scope": {
-                "status": "pass",
-                "appendix_c_mode": "weld_evaluation_principle",
-                "square_outer_width_mm": 160.0,
-                "square_thickness_mm": 8.0
-              },
-              "source_ref": "square_section_selector._sync_trial_input_to_square_section",
-              "policy": "Candidate trial input.json and generated_post.mac must match the same square-tube section as generated_model.mac before ANSYS runs."
-            },
-            "arm_section_family": "square_gt_120_yixing_arm_family",
-            "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model"
-          }
+          "run_status": "pass"
         }
       ],
       "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
@@ -3411,7 +922,6 @@
       "similarity_features": {
         "support_type": "s2",
         "analysis_method": "response_spectrum",
-        "arm_section_family": "square_gt_120_yixing_arm_family",
         "building": "nr",
         "area": "nr",
         "elevation_m": 26.2,
@@ -3425,7 +935,127 @@
       },
       "cache_version": "square-section-cache-v5-final-ratio-economy-proof",
       "updated_at": "2026-06-05T07:19:54.443057+00:00"
+    },
+    "e159623525039bfb39c97aa94c0a1a2047757aab23f9ded7418e74802279e966": {
+      "status": "pass",
+      "selected": {
+        "section_name": "140-140-8",
+        "estimated_area_mm2": 4224.0,
+        "estimated_bending_section_modulus_mm3": 175879.3142857143,
+        "source_kind": "local_sect",
+        "controlling_ratio": 0.9052401909300667,
+        "square_support_ratio": 0.9052401909300667,
+        "result_gate_status": "pass",
+        "trial_validation_status": "fail",
+        "effective_validation_status": "pass",
+        "validation_status": "pass",
+        "dominant_check_id": null,
+        "failed_non_ratio_checks": [],
+        "status": "pass",
+        "run_status": "pass"
+      },
+      "candidate_results": [
+        {
+          "section_name": "100-100-6",
+          "estimated_area_mm2": 2256.0,
+          "estimated_bending_section_modulus_mm3": 66717.44,
+          "source_kind": "local_sect",
+          "controlling_ratio": 1.1845095292843475,
+          "square_support_ratio": 1.1845095292843475,
+          "result_gate_status": "fail",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "fail",
+          "validation_status": "fail",
+          "dominant_check_id": "square_support.support_tension_bending_combined_accident",
+          "failed_non_ratio_checks": [],
+          "status": "fail",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "100-100-8",
+          "estimated_area_mm2": 2944.0,
+          "estimated_bending_section_modulus_mm3": 83688.10666666667,
+          "source_kind": "local_sect",
+          "controlling_ratio": 1.0698821329670751,
+          "square_support_ratio": 1.0698821329670751,
+          "result_gate_status": "fail",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "fail",
+          "validation_status": "fail",
+          "dominant_check_id": "square_support.support_tension_bending_combined_accident",
+          "failed_non_ratio_checks": [],
+          "status": "fail",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "120-120-6",
+          "estimated_area_mm2": 2736.0,
+          "estimated_bending_section_modulus_mm3": 99043.2,
+          "source_kind": "local_sect",
+          "controlling_ratio": 1.2389187235994654,
+          "square_support_ratio": 1.2389187235994654,
+          "result_gate_status": "fail",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "fail",
+          "validation_status": "fail",
+          "dominant_check_id": "square_support.support_tension_bending_combined_accident",
+          "failed_non_ratio_checks": [],
+          "status": "fail",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "120-120-10",
+          "estimated_area_mm2": 4400.0,
+          "estimated_bending_section_modulus_mm3": 149111.1111111111,
+          "source_kind": "local_sect",
+          "controlling_ratio": 1.089945134953613,
+          "square_support_ratio": 1.089945134953613,
+          "result_gate_status": "fail",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "fail",
+          "validation_status": "fail",
+          "dominant_check_id": "square_support.support_tension_bending_combined_accident",
+          "failed_non_ratio_checks": [],
+          "status": "fail",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "140-140-8",
+          "estimated_area_mm2": 4224.0,
+          "estimated_bending_section_modulus_mm3": 175879.3142857143,
+          "source_kind": "local_sect",
+          "controlling_ratio": 0.9052401909300667,
+          "square_support_ratio": 0.9052401909300667,
+          "result_gate_status": "pass",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "pass",
+          "validation_status": "pass",
+          "dominant_check_id": null,
+          "failed_non_ratio_checks": [],
+          "status": "pass",
+          "run_status": "pass"
+        }
+      ],
+      "policy": "Select the candidate whose complete deterministic result-validation ratio is < 1.0 and closest to 1.0. Area is only a tie-breaker.",
+      "source_job_dir": "jobs\\verify_4210_section_learning_applied_20260606_192140\\18185NI-LXSJ4210",
+      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
+      "similarity_features": {
+        "support_type": "s2",
+        "analysis_method": "response_spectrum",
+        "building": "nr",
+        "area": "nr",
+        "elevation_m": 8.5,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.7,
+        "layers_front": 3,
+        "layers_back": 3,
+        "layer_count": 6,
+        "tray_widths_mm": [],
+        "tray_load_sum_kg_m": null
+      },
+      "cache_version": "square-section-cache-v6-learned-allowed-start",
+      "updated_at": "2026-06-06T11:31:21.741721+00:00"
     }
   },
-  "cache_version": "square-section-cache-v5-final-ratio-economy-proof"
+  "cache_version": "square-section-cache-v6-learned-allowed-start"
 }

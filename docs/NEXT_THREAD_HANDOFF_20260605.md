@@ -19,6 +19,25 @@ Use this addendum first in a new thread. It supersedes the older "当前未完�
 
 Current open item: none for the requested MT/section-selection/command-stream/deployment optimization. Any new calculation-rule change must rerun the same real ANSYS acceptance gate before release.
 
+## 2026-06-06 latest handoff addendum after section-learning v6
+
+Use this addendum first. It supersedes the previous note where section learning was only a first 4210 sample.
+
+1. Square-section learning is now global for future intakes, not 4210-specific. The cache version is `square-section-cache-v6-learned-allowed-start`; file: `data/calibration/square_section_selection_cache.json`.
+2. Successful real ANSYS section selections are recorded with compact candidate ratios and intake similarity features. New similar intakes may start inside the current intake-allowed section list near the learned section, but cannot add unlisted sections or accept a section without current real ANSYS and deterministic ratio evidence.
+3. Similarity features no longer include `arm_section_family`; that field is derived from the current/provisional square tube and caused pre-selection jobs to over-match old 100-section samples.
+4. Cache hit ranking now prefers higher similarity, then the current cache version, then the newest successful entry. This prevents older v4/v5 samples from overriding fresh v6 evidence.
+5. The tracked square-section cache was compacted. Long trial replacement audits, copied file lists, and trial directory paths are not retained in the learning cache.
+6. Verified 4210 source real ANSYS18.2 runs:
+   - `jobs/verify_4210_section_learning_20260606_190645/18185NI-LXSJ4210`: pass, selected `140-140-8`, ratio `0.9052401909300667`.
+   - `jobs/verify_4210_section_learning_applied_20260606_192140/18185NI-LXSJ4210`: pass, selected `140-140-8`, ratio `0.9052401909300667`.
+7. After the `arm_section_family` fix, direct source and installed checks hit the v6 `140-140-8` sample and start the next similar allowed-list run at `120-120-6`, skipping `100-100-6` and `100-100-8`.
+8. Package was rebuilt at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, about `75.43 MB`, package gate passed, and applied to `D:/CableTrayAI`. Backup: `D:/CableTrayAI/_update_backups/20260606_193731`.
+9. Installed service restarted from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, PID `38056`; `/health` returns ok. Installed hashes match source for the touched files and both calibration caches.
+10. Verification passed: py_compile, target section tests, full unit tests, hardcode scan over `core apps templates`, package gate, real ANSYS validation, installed hash check, and installed learning-hit check.
+
+Current open item: none for section-learning/deployment. The cache may evolve as future real jobs run; keep it compact and never let it contain source_materials or bulky solver artifacts.
+
 本对话已按用户要求停止实际修复和运行。新对话不要重新猜目标，直接从本文件继续。
 
 ## 当前未完成目标
