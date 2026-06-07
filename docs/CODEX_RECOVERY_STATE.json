@@ -1,12 +1,13 @@
 {
     "schema":  "cabletrayai_codex_recovery_state_v1",
-    "updated_at":  "2026-06-07T15:47:53+08:00",
+    "updated_at":  "2026-06-07T16:06:34+08:00",
     "purpose":  "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
     "project_root":  "E:/CODEX/tray_platform/CableTrayAI",
     "current_objective":  [
-                              "18185NI-LXSJ4212 latest web result foundation-load zero values were audited against raw JCZH.LIS and are explicit ANSYS output values, not parser-created zeros.",
-                              "core/results/lis_parser.py is hardened so JCZH foundation loads require all six FX/FY/FZ/MX/MY/MZ components; missing or blank fields now raise LisParseError instead of defaulting to zero.",
-                              "The parser hardening is packaged and deployed to D:/CableTrayAI; historical 4212 result remains valid because its zeros are explicit raw JCZH values."
+                              "Frontend ANSYS model/command-stream review lifecycle was fixed: a new successful run clears the previous review panel, active job switches clear stale commands, and generated command streams are refreshed during render_commands/select_square_section/running_ansys instead of only after final completion.",
+                              "The calculation platform now preserves the last reviewed job and command streams across returning from the result page; restoreIntakeSession keeps activeJobId and validates the job by loading /jobs/{job_id}/engineering-review.",
+                              "apps/web/index.html now has concurrency guards so stale engineering-review responses from a previous job cannot overwrite the current panel.",
+                              "The fix is packaged and deployed to D:/CableTrayAI; installed apps/web/index.html hash matches the source tree."
                           ],
     "must_read_next":  [
                            "docs/CURRENT_WORK_STATE.md",
@@ -162,10 +163,13 @@
                            "2026-06-07 18185NI-LXSJ4213 square-section hotfix: existing installed failed-run evidence showed 140-140-8 ratio 0.9342488209446427 but old selector failed it only because static candidate trial lacked report-only required_file_Mode.oup and modal_frequency_table. core/optimizer/square_section_selector.py now ignores those two checks only for static candidate trials. Source verification passed: targeted square-section/static/result tests and full unit tests 87 passed; py_compile passed.",
                            "2026-06-07 deployment after 4213 square-section hotfix: package gate passed including runtime XML support and no-expat spectrum smoke, C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip was applied to D:/CableTrayAI, and /health returned ok. The exact latest backup path is recorded in D:/CableTrayAI/docs/last_internal_update_apply.json. Installed-code verification on the existing 4213 140-140-8 trial returns candidate status pass, ratio 0.9342488209446427, and no blocking diagnosis domain.",
                            "2026-06-07 18185NI-LXSJ4212 foundation-load zero audit: latest web job D:/CableTrayAI/jobs/18185NI-LXSJ4212 is evaluated with result_validation pass. The displayed DW FY=0 and MZ=0 match raw JCZH.LIS values FX=104.1, FY=0.0, FZ=4211.7, MX=0.0, MY=1128.7, MZ=0.0 and foundation_loads.json preserves raw_value \"0.0\". core/results/lis_parser.py now requires all six JCZH foundation components and rejects missing/blank fields instead of defaulting to zero. Source verification passed: targeted parser/result-validity tests, full unit tests 89 passed, py_compile, and hardcode scan.",
-                           "2026-06-07 deployment after JCZH parser hardening: package gate passed including runtime XML support and no-expat spectrum smoke, C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip was applied to D:/CableTrayAI, and /health returned ok. The exact latest backup path is recorded in D:/CableTrayAI/docs/last_internal_update_apply.json. Installed-code verification preserves explicit 0.0 from the same 4212 JCZH.LIS and rejects missing JCZH components instead of defaulting to zero."
+                           "2026-06-07 deployment after JCZH parser hardening: package gate passed including runtime XML support and no-expat spectrum smoke, C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip was applied to D:/CableTrayAI, and /health returned ok. The exact latest backup path is recorded in D:/CableTrayAI/docs/last_internal_update_apply.json. Installed-code verification preserves explicit 0.0 from the same 4212 JCZH.LIS and rejects missing JCZH components instead of defaulting to zero.",
+                           "2026-06-07 frontend command-stream review lifecycle fix: apps/web/index.html keeps activeJobId in the restored intake session, clears the ANSYS model/command-stream review only after a new /runs/start succeeds, clears stale review content on active_job_id changes, and refreshes engineering-review during command generation, square-section selection, ANSYS running, publish, and terminal stages.",
+                           "2026-06-07 frontend stale-response guard: engineering-review loads now track reviewGeneration/reviewJobId/reviewLoadJobId so an old job's delayed response cannot overwrite the current command-stream panel after a new calculation starts.",
+                           "2026-06-07 verification/deployment for frontend command review: inline index.html script parsed with Node, tests/unit passed 89 tests, hardcode scan over core/apps/templates had no hits, package gate passed, C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip was applied to D:/CableTrayAI, /health ok, root no-cache headers ok, installed index.html hash matches source. The exact latest backup path is recorded in D:/CableTrayAI/docs/last_internal_update_apply.json."
                        ],
     "open_tasks":  [
-                       "No blocking source/deployment item remains for the 18185NI-LXSJ4212 foundation-load zero audit and JCZH parser hardening.",
+                       "No blocking source/deployment item remains for the frontend ANSYS command-stream review lifecycle fix.",
                        "Future successful real jobs may update data/calibration/square_section_selection_cache.json; keep the cache compact and review diffs before committing."
                    ],
     "do_not_do":  [

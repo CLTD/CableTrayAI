@@ -1,6 +1,21 @@
 # CableTrayAI 当前工作状态
 
-更新时间：2026-06-05 10:58
+更新时间：2026-06-07 16:06
+
+## 2026-06-07 ANSYS 模型与命令流核查面板生命周期修复
+
+本节为当前最新状态。
+
+1. 已修复网页端“ANSYS 模型与命令流核查”只在最终完成后加载、返回计算平台后丢失的问题。
+2. `apps/web/index.html` 现在在新的 `/runs/start` 成功后才清空上一轮命令流核查；如果启动失败或已有任务占用，不会误删上一轮可审查命令流。
+3. 运行中一旦后端暴露 `active_job_id`，前端会在 `render_commands`、`select_square_section`、`running_ansys`、重算、发布和终态阶段节流刷新 `/jobs/{job_id}/engineering-review`，所以截面选型完成前后能实时显示当前 job 的 `generated_model.mac`、`generated_solve.mac`、`generated_post.mac`。
+4. 多行/多截面顺序运行时，如果 `active_job_id` 从上一 job 切到下一 job，前端会立即清空旧模型和旧命令文本，等下一 job 命令流生成后再显示，避免人工审查看串任务。
+5. `restoreIntakeSession()` 不再把 `activeJobId` 强制置空；返回计算平台且不开始新计算时，会保留上一 job 的命令流核查面板，并通过 `engineering-review` 接口校验 job 是否仍存在。
+6. 新增 `reviewGeneration/reviewJobId/reviewLoadJobId` 前端并发保护；旧 job 的延迟返回不会覆盖当前 job 面板。
+7. 顺手补齐旧的前端缺口：`refreshEngineeringReview()` 已定义为 `loadEngineeringReview({ force: true })`，模板报告相关按钮不会再因该函数未定义报错。
+8. 验证通过：Node 解析 `apps/web/index.html` 内联脚本通过；`python -m pytest tests/unit -q` 为 `89 passed`；`core/apps/templates` 硬编码扫描无命中。
+9. 部署完成：`C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` 已重建，package gate 通过；已应用到 `D:/CableTrayAI`，`/health` ok，首页 no-cache 头 ok。精确最新备份路径以 `D:/CableTrayAI/docs/last_internal_update_apply.json` 为准。
+10. 安装版 `D:/CableTrayAI/apps/web/index.html` 与源码 hash 一致；部署包没有顶层 `jobs/uploads/outputs/logs`，`runtime/auth_sessions.json` 未打包。
 
 ## 2026-06-07 4212 基础载荷 0 值核查与解析加固
 

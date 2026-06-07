@@ -1,5 +1,23 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-07 frontend ANSYS command-stream review lifecycle closeout
+
+Resolved in source, package, and local installation:
+
+1. User request: after section selection, the ANSYS model and command-stream review panel should show the current generated model/solve/post streams in real time; when the next calculation starts, old streams should be cleared; after returning from the result page, the panel should remain unless a new calculation starts.
+2. `apps/web/index.html` now keeps `activeJobId` in the restored intake session instead of clearing it in `restoreIntakeSession()`.
+3. A successful new `/runs/start` clears the old command-stream panel and saved active job; a failed start does not erase the last reviewable job.
+4. During run polling, active job changes clear stale model/commands immediately, and command review is reloaded during `render_commands`, `select_square_section`, `running_ansys`, retry, publish, and terminal stages.
+5. Engineering-review reloads are throttled and guarded by `reviewGeneration/reviewJobId/reviewLoadJobId`, so a delayed response from a previous job cannot overwrite the current job's panel.
+6. `refreshEngineeringReview()` is now defined and forwards to `loadEngineeringReview({ force: true })`, fixing the existing undefined-function path used by template-report figure checks.
+7. Verification passed: inline `apps/web/index.html` script parsed with Node, `python -m pytest tests/unit -q` passed with `89 passed`, and hardcode scan over `core/apps/templates` had no hits.
+8. Deployment completed: rebuilt `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, package gate passed, applied to `D:/CableTrayAI`, `/health` ok, root no-cache headers ok, installed `apps/web/index.html` hash matches source. The exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
+Open queue:
+
+1. No blocking item remains for the ANSYS command-stream review panel lifecycle fix.
+2. A future UX improvement can add visible “命令流已刷新/当前 job” status text, but current functional requirement is complete.
+
 ## 2026-06-07 18185NI-LXSJ4212 foundation-load zero extraction audit closeout
 
 Resolved in source and verified against the latest completed web run:

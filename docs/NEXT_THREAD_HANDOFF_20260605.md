@@ -1,5 +1,20 @@
 # CableTrayAI 新对话交接 2026-06-05
 
+## 2026-06-07 latest handoff addendum after frontend command-stream review lifecycle fix
+
+Use this addendum first in a new thread.
+
+1. User requested two frontend lifecycle fixes for `ANSYS 模型与命令流核查`: show generated model/solve/post streams as soon as the current job reaches command rendering/section selection, clear them when the next calculation starts, and keep them visible after returning from the result page unless a new calculation starts.
+2. Source fix is in `apps/web/index.html`.
+3. `restoreIntakeSession()` now preserves `activeJobId`; the startup path loads `/jobs/{job_id}/engineering-review` to validate and restore the panel.
+4. A new calculation clears the previous review panel only after `/runs/start` succeeds. If the start fails or an active run blocks it, the last review panel remains available.
+5. Run polling now refreshes engineering review during `render_commands`, `select_square_section`, `running_ansys`, retry, publish, and terminal stages. It no longer waits until final completion.
+6. If `active_job_id` changes from one intake row/job to the next, the old model and commands are cleared immediately before the new job's commands are loaded.
+7. Frontend concurrency guard added: `reviewGeneration`, `reviewJobId`, and `reviewLoadJobId` prevent delayed old-job engineering-review responses from overwriting the current command-stream panel.
+8. Existing undefined frontend helper `refreshEngineeringReview()` was added as `loadEngineeringReview({ force: true })`.
+9. Verification passed: Node parsed the inline `index.html` script, `python -m pytest tests/unit -q` returned `89 passed`, hardcode scan over `core/apps/templates` had no hits.
+10. Deployment completed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` rebuilt, package gate passed, applied to `D:/CableTrayAI`; `/health` ok; root no-cache headers ok; installed `D:/CableTrayAI/apps/web/index.html` hash matches source. The exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
 ## 2026-06-07 latest handoff addendum after 18185NI-LXSJ4212 foundation-load zero audit
 
 Use this addendum first in a new thread.

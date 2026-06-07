@@ -1386,6 +1386,11 @@
         intakeSessionRestored: false,
         runPollTimer: null,
         review: null,
+        reviewJobId: "",
+        reviewLoadInFlight: false,
+        reviewLoadJobId: "",
+        reviewLastLoadedAt: 0,
+        reviewGeneration: 0,
         spectrumPreview: null,
         commandRole: "modeling",
         resultView: "formula",
@@ -1483,7 +1488,7 @@
           state.selectedRowIndex = restoredIndex >= 0 && restoredIndex < state.rows.length ? restoredIndex : 0;
           state.selectedRow = state.rows[state.selectedRowIndex] || null;
           if (!state.selectedRows.size && state.selectedRow) state.selectedRows = new Set([state.selectedRowIndex]);
-          state.activeJobId = "";
+          state.activeJobId = String(snapshot.activeJobId || "").trim();
           state.spectrumPreview = snapshot.spectrumPreview || null;
           const identity = snapshot.identity || {};
           if ($("primaryIdentity")) $("primaryIdentity").value = identity.primaryIdentity || primaryIdentity(state.selectedRow, state.selectedRowIndex);
@@ -1623,8 +1628,7 @@
         renderParsedRows();
         renderTaskSummary();
         renderAiChecks();
-        renderCommands();
-        drawModel();
+        clearEngineeringReview({ clearJob: false });
         setStatus(message || "已清除失效的提资恢复状态，请重新选择文件", "warn");
       }
 
@@ -2420,6 +2424,8 @@
             row_overrides,
           }),
         });
+        clearEngineeringReview({ clearJob: true });
+        saveIntakeSession();
         state.activeRunId = payload.run_id;
         rememberRunId(payload.run_id, { active: true });
         renderRunStatus(payload);
@@ -2500,6 +2506,8 @@
           clearActiveRunId(payload.run_id || state.activeRunId || "");
           localStorage.removeItem(LATEST_RUN_STORAGE_KEY);
           state.activeRunId = "";
+          clearEngineeringReview({ clearJob: true });
+          saveIntakeSession();
           return;
         }
         const runKey = payload.run_id || state.activeRunId || payload.active_job_id || "current";
@@ -2526,11 +2534,15 @@
         $("jobBadge").textContent = payload.active_job_id || payload.run_id || payload.status || "运行中";
         $("jobBadge").className = `pill ${payload.status === "fail" ? "bad" : done ? "ok" : "warn"}`;
         if (payload.active_job_id) {
-          state.activeJobId = payload.active_job_id;
+          setActiveJobForReview(payload.active_job_id);
           loadSquareSectionReason().catch(() => {});
+          refreshEngineeringReviewDuringRun(payload).catch((error) => {
+            if (!/not found|404|Job not found/i.test(error.message || "")) toast(error.message);
+          });
         }
         if (payload.result) {
-          state.activeJobId = payload.active_job_id || currentSelectedJobId() || collectJobId(payload.result) || state.activeJobId;
+          const resultJobId = payload.active_job_id || currentSelectedJobId() || collectJobId(payload.result) || state.activeJobId;
+          if (resultJobId) setActiveJobForReview(resultJobId);
           const runSummary = summarizeRunResult(payload.result);
           if ($("runOutcome")) {
             $("runOutcome").textContent = runSummary.text;
@@ -2547,7 +2559,7 @@
             state.runPollTimer = null;
           }
           if (state.activeJobId) {
-            loadEngineeringReview().catch(() => {});
+            refreshEngineeringReviewDuringRun(payload, { force: true }).catch(() => {});
             loadSquareSectionReason().catch(() => {});
           }
         }
@@ -2767,18 +2779,109 @@
         saveIntakeSession();
       }
 
-      async function loadEngineeringReview() {
-        if (!state.activeJobId) return;
-        const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/engineering-review`, { cache: "no-store" });
-        state.review = payload;
-        loadSquareSectionReason().catch(() => {});
-        state.memos = payload.review_memo?.items?.length ? payload.review_memo.items : state.memos;
+      function clearEngineeringReview(options = {}) {
+        state.reviewGeneration += 1;
+        if (options.clearJob) state.activeJobId = "";
+        state.review = null;
+        state.reviewJobId = "";
+        state.reviewLoadInFlight = false;
+        state.reviewLoadJobId = "";
+        state.reviewLastLoadedAt = 0;
+        state.model = null;
+        state.highlight = new Set();
         parseModelFromCommands();
         renderCommands();
-        renderFormulaRows();
-        renderLoadRows();
-        renderMemos();
         drawModel();
+        renderSquareSectionReason(null);
+      }
+
+      function setActiveJobForReview(jobId, options = {}) {
+        const nextJobId = String(jobId || "").trim();
+        if (!nextJobId) return false;
+        const changed = state.activeJobId !== nextJobId;
+        state.activeJobId = nextJobId;
+        if (changed || options.resetPanel) {
+          clearEngineeringReview({ clearJob: false });
+          saveIntakeSession();
+        }
+        return changed;
+      }
+
+      function commandReviewStageReady(payload) {
+        const status = String(payload?.status || "");
+        const stage = String(payload?.stage || "");
+        if (["pass", "dry_run", "fail", "cancelled"].includes(status)) return true;
+        if (["completed", "failed", "cancelled"].includes(stage)) return true;
+        return [
+          "render_commands",
+          "select_square_section",
+          "running_ansys",
+          "ansys_startup_retry",
+          "ansys_resource_retry",
+          "rerunning_ansys_after_modal_retry",
+          "rerunning_ansys_after_section_reselection",
+          "rerunning_ansys_after_section_upgrade",
+          "exporting_connection_nodes",
+          "exporting_figures",
+          "ansys_post_exports_done",
+          "parsing_results",
+          "reuse_exact_result",
+          "upgrade_square_section",
+          "publish_outputs",
+          "job_finished",
+        ].includes(stage);
+      }
+
+      async function refreshEngineeringReviewDuringRun(payload, options = {}) {
+        const jobId = String(payload?.active_job_id || state.activeJobId || "").trim();
+        if (!jobId) return null;
+        if (!options.force && !commandReviewStageReady(payload)) return null;
+        if (!options.force && state.reviewLoadInFlight && state.reviewLoadJobId === jobId) return null;
+        const ageMs = Date.now() - Number(state.reviewLastLoadedAt || 0);
+        if (!options.force && state.reviewJobId === jobId && ageMs < 3000) return null;
+        try {
+          return await loadEngineeringReview({ jobId, force: options.force });
+        } catch (error) {
+          if (!options.force && /not found|404|Job not found/i.test(error.message || "")) return null;
+          throw error;
+        }
+      }
+
+      async function loadEngineeringReview(options = {}) {
+        const jobId = String(options.jobId || state.activeJobId || "").trim();
+        if (!jobId) return null;
+        if (!options.force && state.reviewLoadInFlight && state.reviewLoadJobId === jobId) return null;
+        state.reviewLoadInFlight = true;
+        state.reviewLoadJobId = jobId;
+        const reviewGeneration = state.reviewGeneration;
+        try {
+          const payload = await requestJson(`/jobs/${encodeURIComponent(jobId)}/engineering-review`, { cache: "no-store" });
+          if (state.reviewGeneration !== reviewGeneration) return null;
+          if (state.activeJobId !== jobId) return null;
+          state.activeJobId = jobId;
+          state.review = payload;
+          state.reviewJobId = jobId;
+          state.reviewLastLoadedAt = Date.now();
+          state.memos = payload.review_memo?.items?.length ? payload.review_memo.items : state.memos;
+          saveIntakeSession();
+          parseModelFromCommands();
+          renderCommands();
+          renderFormulaRows();
+          renderLoadRows();
+          renderMemos();
+          drawModel();
+          loadSquareSectionReason().catch(() => {});
+          return payload;
+        } finally {
+          if (state.reviewLoadJobId === jobId) {
+            state.reviewLoadInFlight = false;
+            state.reviewLoadJobId = "";
+          }
+        }
+      }
+
+      async function refreshEngineeringReview() {
+        return loadEngineeringReview({ force: true });
       }
 
       function commandText(role) {
@@ -3894,8 +3997,8 @@
           $("jobBadge").textContent = state.activeJobId;
           $("jobBadge").className = "pill blue";
           loadEngineeringReview().catch((error) => {
-            state.activeJobId = "";
-            state.review = null;
+            clearEngineeringReview({ clearJob: true });
+            saveIntakeSession();
             $("jobBadge").textContent = "未选择任务";
             $("jobBadge").className = "pill";
             if (!/not found|404|Job not found/i.test(error.message || "")) {
