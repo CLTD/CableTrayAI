@@ -1,5 +1,19 @@
 # CableTrayAI 新对话交接 2026-06-05
 
+## 2026-06-07 latest handoff addendum after 18185NI-LXSJ4212 foundation-load zero audit
+
+Use this addendum first in a new thread.
+
+1. User flagged zeros in the web result page foundation-load table. Latest completed web job is `D:/CableTrayAI/jobs/18185NI-LXSJ4212`, status `evaluated`, `result_validation.status=pass`.
+2. The displayed DW `FY=0` and `MZ=0` are not parser-created zeros. They match raw `JCZH.LIS`: `FX=104.1`, `FY=0.0`, `FZ=4211.7`, `MX=0.0`, `MY=1128.7`, `MZ=0.0`.
+3. `foundation_loads.json` preserves the displayed zeros with `raw_value: "0.0"` and `source_ref: "JCZH.LIS"`.
+4. This is not the bad extraction pattern where JCZH hits the wrong support set and produces only vertical `FZ`; DW also has non-zero `FX` and `MY`.
+5. Source hardening: `core/results/lis_parser.py` now requires all six JCZH foundation components `FX/FY/FZ/MX/MY/MZ`. Missing/blank fields raise `LisParseError` instead of silently defaulting to zero.
+6. Regression tests added in `tests/unit/test_lis_parser_foundation.py`: explicit `0.0` is preserved, missing components are rejected.
+7. Verification passed before deployment: targeted LIS parser/result-validity tests, full `tests/unit` with `89 passed`, `py_compile`, and hardcode scan over `core/apps/templates`.
+8. Deployment completed: package gate passed, `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` was applied to `D:/CableTrayAI`, and `/health` is ok. The exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+9. Installed-code verification passed: the installed parser preserves explicit `0.0` from the same 4212 `JCZH.LIS`, and rejects missing `JCZH` components instead of defaulting to zero.
+
 ## 2026-06-07 latest handoff addendum after 18185NI-LXSJ4213 square-section candidate gate hotfix
 
 Use this addendum first in a new thread.

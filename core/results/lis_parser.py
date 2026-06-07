@@ -393,18 +393,24 @@ def parse_foundation_load_lis(path: Path | str) -> list[dict]:
         force_unit = record.get("force_unit") or "N"
         moment_unit = record.get("moment_unit") or "N*m"
         source_ref = path.name
+        fx = _require(record, "fx", path)
+        fy = _require(record, "fy", path)
+        fz = _require(record, "fz", path)
+        mx = _require(record, "mx", path)
+        my = _require(record, "my", path)
+        mz = _require(record, "mz", path)
         results.append(
             {
                 "load_case": record.get("load_case") or record.get("case") or "UNKNOWN",
                 "node": record.get("node") or record.get("节点") or "UNKNOWN",
-                "fx": {"value": _float(record.get("fx") or 0), "unit": force_unit, "raw_value": record.get("fx"), "source_ref": source_ref},
-                "fy": {"value": _float(record.get("fy") or 0), "unit": force_unit, "raw_value": record.get("fy"), "source_ref": source_ref},
-                "fz": {"value": _float(record.get("fz") or 0), "unit": force_unit, "raw_value": record.get("fz"), "source_ref": source_ref},
-                "mx": {"value": _float(record.get("mx") or 0), "unit": moment_unit, "raw_value": record.get("mx"), "source_ref": source_ref},
-                "my": {"value": _float(record.get("my") or 0), "unit": moment_unit, "raw_value": record.get("my"), "source_ref": source_ref},
-                "mz": {"value": _float(record.get("mz") or 0), "unit": moment_unit, "raw_value": record.get("mz"), "source_ref": source_ref},
+                "fx": {"value": _float(fx), "unit": force_unit, "raw_value": fx, "source_ref": source_ref},
+                "fy": {"value": _float(fy), "unit": force_unit, "raw_value": fy, "source_ref": source_ref},
+                "fz": {"value": _float(fz), "unit": force_unit, "raw_value": fz, "source_ref": source_ref},
+                "mx": {"value": _float(mx), "unit": moment_unit, "raw_value": mx, "source_ref": source_ref},
+                "my": {"value": _float(my), "unit": moment_unit, "raw_value": my, "source_ref": source_ref},
+                "mz": {"value": _float(mz), "unit": moment_unit, "raw_value": mz, "source_ref": source_ref},
                 "source_ref": source_ref,
-                **_source_meta(path, record.get("fx") or "0"),
+                **_source_meta(path, fx),
             }
         )
     for item in results:

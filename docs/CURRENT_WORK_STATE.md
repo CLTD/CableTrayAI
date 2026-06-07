@@ -2,6 +2,20 @@
 
 更新时间：2026-06-05 10:58
 
+## 2026-06-07 4212 基础载荷 0 值核查与解析加固
+
+本节为当前最新状态。
+
+1. 最新网页完成 job：`D:/CableTrayAI/jobs/18185NI-LXSJ4212`，状态 `evaluated`，`result_validation.status=pass`。
+2. 页面 6.3 表中的 DW `FY=0`、`MZ=0` 与 `foundation_loads.json` 和原始 `JCZH.LIS` 一致，不是网页展示或 JSON 解析把非零值写成 0。
+3. 原始 `JCZH.LIS` DW 行为：`FX=104.1`、`FY=0.0`、`FZ=4211.7`、`MX=0.0`、`MY=1128.7`、`MZ=0.0`。其中 `FY/MZ` 是 ANSYS 导出的显式 `0.0`，`foundation_loads.json` 保留了 `raw_value: "0.0"`。
+4. 这不是“只剩 FZ 的错提取”异常；DW 仍有非零 `FX` 和 `MY`，现有 `foundation_load_values` 门禁通过。
+5. 已加固 `core/results/lis_parser.py`：`JCZH.LIS` 基础载荷行的 `FX/FY/FZ/MX/MY/MZ` 六列都必须真实存在，缺列或空值直接 `LisParseError`，不再用 `or 0` 静默补零。
+6. 已新增 `tests/unit/test_lis_parser_foundation.py`，锁定“显式 0 可保留、缺列不能补 0”的规则。
+7. 验证通过：目标测试通过、`python -m pytest tests/unit -q` 为 `89 passed`、`py_compile` 通过、`core/apps/templates` 硬编码扫描无命中。
+8. 部署完成：`C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` 已重建并应用到 `D:/CableTrayAI`，package gate 通过（含 runtime XML 支持与 no-expat 谱 smoke），`/health` ok。精确最新备份路径以 `D:/CableTrayAI/docs/last_internal_update_apply.json` 为准。
+9. 安装目录代码已复核：对 `D:/CableTrayAI/jobs/18185NI-LXSJ4212/JCZH.LIS` 的显式 `0.0` 保留原始值；对缺失 `JCZH` 分量的测试文件会抛 `LisParseError`，不再补 0。
+
 ## 2026-06-07 4213 网页端截面选型失败 hotfix
 
 本节为当前最新状态。

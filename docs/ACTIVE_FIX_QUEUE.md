@@ -1,5 +1,27 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-07 18185NI-LXSJ4212 foundation-load zero extraction audit closeout
+
+Resolved in source and verified against the latest completed web run:
+
+1. Latest completed web job checked: `D:/CableTrayAI/jobs/18185NI-LXSJ4212`, status `evaluated`, `result_validation.status=pass`.
+2. The result page's foundation load table values match `foundation_loads.json` and raw `JCZH.LIS`.
+3. The highlighted DW zero components are raw ANSYS-exported values, not parser defaults:
+   - `JCZH.LIS` DW row: `FX=104.1`, `FY=0.0`, `FZ=4211.7`, `MX=0.0`, `MY=1128.7`, `MZ=0.0`.
+   - `foundation_loads.json` keeps `raw_value: "0.0"` for the displayed `FY` and `MZ`.
+4. This is not the known bad pattern where extraction hits a wrong support node and leaves only `FZ`; DW still has non-zero `FX` and `MY`, and the job's `foundation_load_values` gate passed.
+5. Parser hardening added in `core/results/lis_parser.py`: `JCZH.LIS` foundation rows now require all six components `FX/FY/FZ/MX/MY/MZ` to be present. Missing or blank components raise `LisParseError`; they are no longer silently defaulted to `0`.
+6. Regression tests added in `tests/unit/test_lis_parser_foundation.py`:
+   - Explicit `0.0` components are preserved with raw-value traceability.
+   - Missing components are rejected instead of being converted to zero.
+7. Verification passed: targeted LIS parser/result-validity tests, full unit tests (`89 passed`), `py_compile`, and hardcode scan over `core/apps/templates`.
+8. Deployment completed: rebuilt `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, package gate passed including runtime XML support and no-expat spectrum smoke, applied to `D:/CableTrayAI`, and service `/health` returned ok. The exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+9. Installed-code verification passed: installed parser preserves explicit `0.0` from `D:/CableTrayAI/jobs/18185NI-LXSJ4212/JCZH.LIS` and rejects missing `JCZH` components instead of defaulting to zero.
+
+Open queue:
+
+1. No blocking source/deployment item remains for the 4212 foundation-load zero audit and `JCZH.LIS` parser hardening.
+
 ## 2026-06-07 18185NI-LXSJ4213 square-section candidate gate hotfix closeout
 
 Resolved in source and verified against the installed failed web-run evidence:
