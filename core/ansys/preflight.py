@@ -182,9 +182,15 @@ def run_preflight(job_dir: Path | str, config: AnsysLocalConfig | None = None) -
         if hardcoded_status == "warning":
             hardcoded_message = "APDL sample token scan; allowed because generated_solve.mac is source-traced to an audited standard calculation stream"
         checks.append(_check("hardcoded_sample_tokens", hardcoded_status, hardcoded_message, hardcoded, "generated_*.mac"))
-        checks.extend(_apdl_feature_checks(text))
+        analysis_method = str((metadata or {}).get("analysis_method") or "").strip().lower()
+        require_modal_analysis = analysis_method != "static"
+        checks.extend(_apdl_feature_checks(text, require_modal_analysis=require_modal_analysis))
         try:
-            audit = audit_rendered_apdl(macro_paths, job_dir / "apdl_audit_preflight.json")
+            audit = audit_rendered_apdl(
+                macro_paths,
+                job_dir / "apdl_audit_preflight.json",
+                require_modal_analysis=require_modal_analysis,
+            )
             checks.append(_check("apdl_audit", "pass" if audit["status"] == "pass" else "fail", "APDL audit status", audit, "apdl_audit_preflight.json"))
         except Exception as exc:
             checks.append(_check("apdl_audit", "fail", "APDL audit failed", str(exc), "generated_*.mac"))
@@ -323,7 +329,7 @@ def run_preflight(job_dir: Path | str, config: AnsysLocalConfig | None = None) -
     return payload
 
 
-def _apdl_feature_checks(text: str) -> list[dict]:
+def _apdl_feature_checks(text: str, *, require_modal_analysis: bool = True) -> list[dict]:
     features = {
         "apdl_beam188": (r"BEAM188|\bET\s*,\s*\d+\s*,\s*188\b", "BEAM188 element definition"),
         "apdl_secread": (r"\bSECREAD\s*,", "SECREAD section loading"),
@@ -338,5 +344,8 @@ def _apdl_feature_checks(text: str) -> list[dict]:
     checks = []
     for check_id, (pattern, message) in features.items():
         ok = bool(re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE))
+        if check_id == "apdl_modal" and not require_modal_analysis:
+            ok = True
+            message = "modal analysis command not required for static-method main solve"
         checks.append(_check(check_id, "pass" if ok else "fail", message, ok, "generated_*.mac"))
     return checks

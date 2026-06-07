@@ -11,10 +11,14 @@ def _minimal_modal_job(
     *,
     frequency_hz: float = 21.8866546846,
     cutoff_status: str = "insufficient_modes_below_50hz",
+    include_mode_file: bool = True,
 ) -> dict:
     job_dir.mkdir()
     (job_dir / "input.json").write_text(json.dumps({"support": {"support_type": "S2"}}), encoding="utf-8")
-    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS", "Mode.oup"):
+    required_files = ["MAXBEAMSTRESS.LIS", "JCZH.LIS"]
+    if include_mode_file:
+        required_files.append("Mode.oup")
+    for file_name in required_files:
         (job_dir / file_name).write_text("placeholder", encoding="utf-8")
     return {
         "beam_stress_results": [{"value_mpa": 1.0}],
@@ -32,13 +36,16 @@ def _minimal_modal_job(
 
 
 def _requirements_for_method(analysis_method: str) -> dict:
+    modal_required = analysis_method != "static"
+    modal_frequency_table = True
     return {
         "status": "pass",
         "classification": "steel_platform" if analysis_method == "static" else "non_steel_platform",
         "analysis_method": analysis_method,
         "support_type": "S2",
         "requires": {
-            "modal_analysis": True,
+            "modal_analysis": modal_required,
+            "modal_frequency_table": modal_frequency_table,
             "square_support_stress_eval": True,
             "cantilever_stress_eval": False,
             "cantilever_root_weld_eval": False,
@@ -50,7 +57,7 @@ def _requirements_for_method(analysis_method: str) -> dict:
     }
 
 
-def test_result_gate_blocks_static_modal_rows_below_50hz(tmp_path: Path, monkeypatch) -> None:
+def test_result_gate_does_not_require_modal_cutoff_for_static_method(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "static-job"
     result = _minimal_modal_job(job_dir)
     monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _requirements_for_method("static"))
@@ -58,21 +65,10 @@ def test_result_gate_blocks_static_modal_rows_below_50hz(tmp_path: Path, monkeyp
     payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)
 
     modal_gate = [item for item in payload["checks"] if item["check_id"] == "modal_mt_cutoff"]
-    assert modal_gate
-    assert modal_gate[0]["status"] == "fail"
-    assert payload["status"] == "fail"
-
-
-def test_result_gate_allows_static_modal_rows_above_50hz(tmp_path: Path, monkeypatch) -> None:
-    job_dir = tmp_path / "static-covered-job"
-    result = _minimal_modal_job(job_dir, frequency_hz=51.2, cutoff_status="pass")
-    monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _requirements_for_method("static"))
-
-    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)
-
-    modal_gate = [item for item in payload["checks"] if item["check_id"] == "modal_mt_cutoff"]
-    assert modal_gate
-    assert modal_gate[0]["status"] == "pass"
+    frequency_table_gate = [item for item in payload["checks"] if item["check_id"] == "modal_frequency_table"]
+    assert not modal_gate
+    assert frequency_table_gate
+    assert frequency_table_gate[0]["status"] == "pass"
     assert payload["status"] == "pass"
 
 

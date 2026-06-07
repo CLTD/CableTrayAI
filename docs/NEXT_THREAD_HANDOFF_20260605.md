@@ -269,3 +269,18 @@ Deployment and cleanup after this fix are also complete:
 6. Cleanup removed temporary VBA extraction files, temporary spectrum-check jobs, superseded floorpolicy jobs, old Desktop review packages, `D:/CableTrayAI/_internal_update`, source runtime/PyInstaller build artifacts, and non-cache `__pycache__` artifacts. Source `jobs/` now keeps only the latest vbaspectrum 4210 formal job, latest vbaspectrum 100x8 diagnostic job, and row6 senumfix job.
 
 The only open engineering discrepancy remains the coworker/manual baseline: coworker says only 140x140x8 satisfies 4210, while current Q355 real ANSYS VBA-spectrum calculation gives 100-100-8 numeric pass but final selection 140-140-8. Compare coworker Excel cells, hand calculation, or LIS values before changing material policy, allowables, RCC-M formulas, or section-selection policy.
+
+## 2026-06-07 static method no-main-MT handoff addendum
+
+Use this addendum first for static-method work. It supersedes the 2026-06-06 static modal gate note.
+
+1. Correct static policy: static-method jobs directly apply equivalent static acceleration loads and do not have response-spectrum modal extraction, main-solve MT, or a 50 Hz Mode.oup cutoff gate.
+2. Static S2 reports still require appendix-A modal content: MOTAI figures and the modal frequency table.
+3. Runtime split:
+   - `requires.modal_analysis=false` for static main solve, so no `modal_mt_cutoff` check and no MT retry.
+   - `requires.modal_figures=true` and `requires.modal_frequency_table=true`, so `Mode.oup` rows and MOTAI figures are still required.
+4. `generated_solve.mac` for static jobs preserves the audited static solve command stream and rewrites equivalent-static `ACEL` coefficients only; it does not insert `ANTYPE,2`, `MODOPT`, `MXPAND`, or `MT`.
+5. Static figure export runs a fixed four-mode post-only modal graphics solve, writes `/OUTPUT,'Mode','oup'` for the frequency table, and exports `MOTAI-1.PNG` through `MOTAI-4.PNG`. This is not a main-solve MT and has no 50 Hz gate.
+6. Removed stale static MT learning from `data/calibration/modal_mode_count_cache.json`; `record_modal_mode_count_learning` returns `not_required` for static jobs.
+7. Real ANSYS18.2 validation job `jobs/verify_4213_static_no_mt_20260607_140551` passed. Main solve duration was about `20.04s`; figure export succeeded with `figure_count=14`; result assembly is usable with `result_validation.status=pass`, `modal_rows=4`, `modal_frequency_table=pass`, `required_file_Mode.oup=pass`, `required_figures=pass`, and no `modal_mt_cutoff`.
+8. Deployment completed: rebuilt `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, package gate pass, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_141510`; service restarted as PID `14620`, `/health` ok. Installed static-policy smoke returns `modal_analysis=false`, `modal_figures=true`, `modal_frequency_table=true`, and `modal_mode_count=null`.

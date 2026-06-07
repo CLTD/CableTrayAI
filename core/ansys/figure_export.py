@@ -14,6 +14,7 @@ from core.ansys.master_macro import resolve_master_job_name
 from core.ansys.resources import resolve_ansys_nproc
 from core.apdl.modal_policy import modal_mode_count_from_job_dir, modal_policy_audit, rewrite_modal_mode_count
 from core.results.figure_collector import collect_figures
+from core.validation.result_requirements import classify_job_requirements
 
 
 FIGURE_EXPORT_MACRO = "export_figures.mac"
@@ -29,6 +30,18 @@ def _quote_apdl(value: str) -> str:
     return value.replace("'", "''")
 
 
+def _job_modal_requirements(job_dir: Path) -> tuple[bool, bool]:
+    try:
+        requirements = classify_job_requirements(job_dir)
+    except Exception:
+        return True, True
+    requires = requirements.get("requires") or {}
+    requires_modal_analysis = bool(requires.get("modal_analysis"))
+    required_figures = {str(name).upper() for name in requirements.get("required_figures") or []}
+    requires_modal_figures = bool(requires.get("modal_figures")) or any(name.startswith("MOTAI-") for name in required_figures)
+    return requires_modal_figures, requires_modal_analysis
+
+
 def _loadcase_lines(job_dir: Path) -> list[str]:
     lines: list[str] = []
     for path in sorted(job_dir.iterdir(), key=lambda item: item.name.upper()):
@@ -42,10 +55,10 @@ def _loadcase_lines(job_dir: Path) -> list[str]:
     return lines
 
 
-def _modal_figure_export_lines(modal_mode_count: int) -> list[str]:
-    return [
+def _modal_figure_export_lines(modal_mode_count: int, *, write_frequency_table: bool = False) -> list[str]:
+    solve_lines = [
         "! Export Appendix A modal figures with a bounded graphics-only modal solve.",
-        "! This four-mode solve is only for MOTAI images; Mode.oup frequencies remain from the main solve output.",
+        "! This bounded solve is only for MOTAI images and appendix-A frequency tables.",
         "FINISH",
         "/SOL",
         "LSCLEAR,ALL",
@@ -58,12 +71,21 @@ def _modal_figure_export_lines(modal_mode_count: int) -> list[str]:
         "  ALLSEL,ALL",
         "*ENDIF",
         "ANTYPE,2",
-        "MODOPT,LANB,4",
-        "MXPAND,4,,,YES",
-        "SOLVE",
-        "FINISH",
-        "/POST1",
-        "FILE,CableTrayAI_Run,rst",
+        f"MODOPT,LANB,{int(modal_mode_count)}",
+        f"MXPAND,{int(modal_mode_count)},,,YES",
+    ]
+    if write_frequency_table:
+        solve_lines.append("/OUTPUT,'Mode','oup',")
+    solve_lines.extend(
+        [
+            "SOLVE",
+            *([] if not write_frequency_table else ["/OUTPUT,TERM"]),
+            "FINISH",
+            "/POST1",
+            "FILE,CableTrayAI_Run,rst",
+        ]
+    )
+    figure_lines = [
         "SET,1,1",
         "/SHOW,PNG",
         "*CFOPEN,figure_export_names,txt,,APPEND",
@@ -97,6 +119,7 @@ def _modal_figure_export_lines(modal_mode_count: int) -> list[str]:
         "PLDISP,0",
         "/SHOW,CLOSE",
     ]
+    return solve_lines + figure_lines
 
 
 def _named_png_lines(image_name: str, plot_lines: list[str], *, note: str) -> list[str]:
@@ -353,7 +376,8 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
     names_path = job_dir / "figure_export_names.txt"
     if names_path.exists():
         names_path.unlink()
-    modal_mode_count = modal_mode_count_from_job_dir(job_dir)
+    requires_modal_figures, requires_modal_analysis = _job_modal_requirements(job_dir)
+    modal_mode_count = modal_mode_count_from_job_dir(job_dir) if requires_modal_analysis else None
     db_file = job_dir / f"{job_name}.db"
     rst_file = job_dir / f"{job_name}.rst"
     missing = [
@@ -374,7 +398,7 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
     )
     if figure_post.exists():
         figure_post_text = figure_post.read_text(encoding="utf-8", errors="replace")
-        if re.search(r"(?im)^\s*(MT\s*=|MODOPT\s*,\s*LANB\s*,)", figure_post_text):
+        if requires_modal_analysis and re.search(r"(?im)^\s*(MT\s*=|MODOPT\s*,\s*LANB\s*,)", figure_post_text):
             figure_post.write_text(
                 rewrite_modal_mode_count(figure_post_text, modal_mode_count),
                 encoding="utf-8",
@@ -411,7 +435,11 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         "! generated_post_figure_export.mac opens /SHOW,PNG only at each saved plot.",
         f"! Run the named-image copy of generated_post.mac; selections and plots remain source-derived.",
         f"/INPUT,{figure_post.stem},mac",
-        *_modal_figure_export_lines(modal_mode_count),
+        *(
+            _modal_figure_export_lines(4, write_frequency_table=not requires_modal_analysis)
+            if requires_modal_figures
+            else []
+        ),
         "/SHOW,CLOSE",
         "FINISH",
         "",
@@ -428,7 +456,21 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         "graphics_device": "PNG per saved plot",
         "registered_load_cases": loadcase_lines,
         "converted_post_macro": converted_post,
-        "modal_mode_policy": modal_policy_audit({}, f"MT={modal_mode_count}"),
+        "modal_mode_policy": (
+            modal_policy_audit({}, f"MT={modal_mode_count}")
+            if requires_modal_analysis
+            else {
+                "status": "figure_only" if requires_modal_figures else "not_required",
+                "analysis_method": "static" if requires_modal_figures else None,
+                "modal_figure_mode_count": 4 if requires_modal_figures else None,
+                "writes_frequency_table": bool(requires_modal_figures and not requires_modal_analysis),
+                "policy": (
+                    "Static-method jobs still export appendix-A MOTAI figures and the frequency table by running a fixed four-mode graphics-only modal solve during post-processing; this is not the main solve MT and has no 50 Hz cutoff gate."
+                    if requires_modal_figures
+                    else "This job does not require appendix-A modal figures."
+                ),
+            }
+        ),
         "source_policy": "Cloud images are generated from a mechanically converted copy of generated_post.mac; each executed /IMAGE,SAVE point is replayed to the batch PNG device and then renamed to the standard PIP image name.",
     }
     _write_json(job_dir / "figure_export_macro_audit.json", payload)
@@ -459,7 +501,8 @@ def build_figure_export_command(config: AnsysLocalConfig, job_dir: Path | str) -
         command.extend(["-p", ansys.product])
     resolved_nproc = resolve_ansys_nproc(ansys.nproc, ansys.nproc_percent)
     requested_nproc = resolved_nproc.nproc
-    modal_mode_count = modal_mode_count_from_job_dir(job_dir)
+    requires_modal_figures, requires_modal_analysis = _job_modal_requirements(job_dir)
+    modal_mode_count = modal_mode_count_from_job_dir(job_dir) if requires_modal_analysis else None
     effective_nproc = requested_nproc
     nproc_source = resolved_nproc.source
     high_modal_cap_applied = False
@@ -468,6 +511,7 @@ def build_figure_export_command(config: AnsysLocalConfig, job_dir: Path | str) -
     if (
         high_modal_cap
         and high_modal_cap > 0
+        and modal_mode_count is not None
         and modal_mode_count >= high_modal_threshold
         and (effective_nproc is None or effective_nproc > high_modal_cap)
     ):
@@ -495,6 +539,7 @@ def build_figure_export_command(config: AnsysLocalConfig, job_dir: Path | str) -
             "nproc_percent": resolved_nproc.nproc_percent,
             "logical_processors": resolved_nproc.logical_processors,
             "modal_mode_count": modal_mode_count,
+            "modal_mode_count_status": "required" if requires_modal_analysis else ("figure_only_static_method" if requires_modal_figures else "not_required"),
             "high_modal_nproc_cap_threshold": high_modal_threshold,
             "high_modal_nproc_cap": high_modal_cap,
             "high_modal_nproc_cap_applied": high_modal_cap_applied,

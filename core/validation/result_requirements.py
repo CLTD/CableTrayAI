@@ -86,7 +86,9 @@ def classify_report_requirements(report_path: Path | str) -> dict[str, Any]:
         "has_appendix_b_square_support": has_appendix_b,
         "has_appendix_c_cantilever": has_appendix_c,
         "requires": {
-            "modal_analysis": has_appendix_a,
+            "modal_analysis": bool(has_appendix_a and analysis_method != "static"),
+            "modal_figures": has_appendix_a,
+            "modal_frequency_table": has_appendix_a,
             "square_support_stress_eval": True,
             "cantilever_stress_eval": has_cantilever_eval,
             "cantilever_root_weld_eval": has_cantilever_weld,

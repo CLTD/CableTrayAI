@@ -375,7 +375,7 @@ def validate_result_outputs(job_dir: Path | str, *, raw: dict[str, Any], result:
     missing = set(raw.get("missing_expected_files") or [])
 
     required_files = {"MAXBEAMSTRESS.LIS", "JCZH.LIS"}
-    if requires.get("modal_analysis"):
+    if requires.get("modal_analysis") or requires.get("modal_frequency_table"):
         required_files.add("Mode.oup")
     equivalent_cantilever_weld = _uses_equivalent_cantilever_weld_table(requires, requirements)
     if requires.get("cantilever_root_weld_eval") and not equivalent_cantilever_weld:
@@ -446,6 +446,11 @@ def validate_result_outputs(job_dir: Path | str, *, raw: dict[str, Any], result:
                 "Mode.oup does not contain any FREQUENCY (HERTZ) row above 50 Hz; MT cannot be determined for the 50 Hz cutoff.",
                 {"last_frequency_hz": modal_rows[-1].get("frequency_hz") if modal_rows else None},
             )
+    elif requires.get("modal_frequency_table"):
+        if not modal_rows:
+            _check(checks, "modal_frequency_table", "fail", "Mode.oup did not produce modal frequency rows for the report appendix table.")
+        else:
+            _check(checks, "modal_frequency_table", "pass", "Mode.oup contains modal frequency rows for the report appendix table.", len(modal_rows))
 
     bolt_rows = result.get("bolt_force_results") or []
     connection_node_rows = result.get("connection_node_force_results") or []

@@ -1,5 +1,29 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-07 static-method no-main-MT correction closeout
+
+This section supersedes the 2026-06-06 static modal gate closeout below.
+
+Resolved in source and real ANSYS18.2 evidence:
+
+1. Corrected policy: static-method jobs do not use response-spectrum modal extraction and do not have a main-solve MT or 50 Hz Mode.oup cutoff gate.
+2. Static-method S2 reports still require appendix-A modal content: `MOTAI-1.PNG` through `MOTAI-4.PNG` and a frequency table.
+3. Implementation split the concepts:
+   - `requires.modal_analysis=false` for static main solve, so `modal_mt_cutoff` is not checked.
+   - `requires.modal_figures=true` and `requires.modal_frequency_table=true`, so `Mode.oup` rows and MOTAI figures are still required for the report.
+4. `generated_solve.mac` for static jobs preserves the audited static solve stream and rewrites only equivalent-static `ACEL` coefficients; it no longer inserts `ANTYPE,2`, `MODOPT`, `MXPAND`, or `MT`.
+5. Figure export now runs a fixed four-mode post-only modal graphics solve for static jobs, writes `Mode.oup` for the frequency table, and exports `MOTAI-1.PNG` through `MOTAI-4.PNG`. This is not the main solve MT and has no 50 Hz cutoff gate.
+6. The stale static MT learning entry was removed from `data/calibration/modal_mode_count_cache.json`; future static jobs are not recorded in modal MT learning.
+7. Real ANSYS18.2 validation job `jobs/verify_4213_static_no_mt_20260607_140551` succeeded: main solve duration about `20.04s`, no main modal/MT in `generated_solve.mac`, figure export success, `figure_count=14`, required MOTAI figures present.
+8. Result assembly for that job is `usable`, `result_validation.status=pass`, `fail_count=0`, `modal_rows=4`, `modal_frequency_table=pass`, `required_file_Mode.oup=pass`, `required_figures=pass`, and no `modal_mt_cutoff` check is emitted.
+9. Verification passed: targeted static/modal/result/renderer tests, full unit tests, py_compile, JSON validation, hardcode scan over `core/apps/templates`, and `source_materials` remained unchanged.
+10. Deployment completed: rebuilt `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` with package gate pass, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_141510`, service restarted as PID `14620`, `/health` ok. Installed static-policy smoke returns `modal_analysis=false`, `modal_figures=true`, `modal_frequency_table=true`, and `modal_mode_count=null`.
+
+Open queue:
+
+1. No blocking item remains for the corrected static-method no-main-MT policy.
+2. Historical web-run records may still show the old `modal_mt_cutoff` failure; rerun the job with the current service.
+
 ## 2026-06-06 18185NI-LXSJ4213 static modal gate closeout
 
 Resolved in source and real ANSYS18.2 evidence after reviewing the user's 4120 static command streams:

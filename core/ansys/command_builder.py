@@ -12,6 +12,18 @@ from core.apdl.modal_policy import modal_mode_count_from_job_dir
 DEFAULT_HIGH_MODAL_NPROC_CAP_THRESHOLD = 300
 
 
+def _static_method_job(job_dir: Path) -> bool:
+    input_path = job_dir / "input.json"
+    if not input_path.exists():
+        return False
+    try:
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    metadata = payload.get("metadata") if isinstance(payload, dict) else {}
+    return str((metadata or {}).get("analysis_method") or "").strip().lower() == "static"
+
+
 def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
     job_dir = Path(job_dir).resolve()
     ansys = config.ansys
@@ -36,7 +48,8 @@ def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
         command.extend(["-p", ansys.product])
     resolved_nproc = resolve_ansys_nproc(ansys.nproc, ansys.nproc_percent)
     requested_nproc = resolved_nproc.nproc
-    modal_mode_count = modal_mode_count_from_job_dir(job_dir)
+    static_method = _static_method_job(job_dir)
+    modal_mode_count = None if static_method else modal_mode_count_from_job_dir(job_dir)
     effective_nproc = requested_nproc
     nproc_source = resolved_nproc.source
     high_modal_cap_applied = False
@@ -45,6 +58,7 @@ def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
     if (
         high_modal_cap
         and high_modal_cap > 0
+        and modal_mode_count is not None
         and modal_mode_count >= high_modal_threshold
         and (effective_nproc is None or effective_nproc > high_modal_cap)
     ):
@@ -73,6 +87,7 @@ def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
             "nproc_percent": resolved_nproc.nproc_percent,
             "logical_processors": resolved_nproc.logical_processors,
             "modal_mode_count": modal_mode_count,
+            "modal_mode_count_status": "not_required_static_method" if static_method else "required_for_modal_or_spectrum_method",
             "high_modal_nproc_cap_threshold": high_modal_threshold,
             "high_modal_nproc_cap": high_modal_cap,
             "high_modal_nproc_cap_applied": high_modal_cap_applied,

@@ -319,6 +319,12 @@ def learned_modal_mode_count_from_payload(
     cache_path: Path | str = MODAL_MODE_COUNT_CACHE_PATH,
     threshold: float = MODAL_LEARNING_SIMILARITY_THRESHOLD,
 ) -> dict[str, Any]:
+    metadata = (payload or {}).get("metadata") if isinstance(payload, dict) else {}
+    if str((metadata or {}).get("analysis_method") or "").strip().lower() == "static":
+        return {
+            "status": "not_required",
+            "reason": "static_method_has_no_modal_mt_learning",
+        }
     features = _modal_learning_features(payload)
     cache = _read_modal_cache(cache_path)
     best: dict[str, Any] | None = None
@@ -397,6 +403,14 @@ def modal_mode_count_from_payload(payload: dict[str, Any] | None, source_text: s
 
 def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None = None) -> dict[str, Any]:
     metadata = (payload or {}).get("metadata") or {}
+    if str(metadata.get("analysis_method") or "").strip().lower() == "static":
+        return {
+            "status": "not_required",
+            "analysis_method": "static",
+            "assigned_modal_mode_count": None,
+            "assigned_modal_mode_count_source": "static_method_not_required",
+            "policy": "Static-method calculations apply equivalent static acceleration loads directly; MT and Mode.oup 50 Hz coverage are not part of the solve.",
+        }
     source_count = parse_source_modal_mode_count(source_text)
     requested_count = _as_positive_int(metadata.get("modal_mode_count"))
     requested_source = str(metadata.get("modal_mode_count_source") or "").strip()
@@ -488,21 +502,48 @@ def record_modal_mode_count_learning(
     job_dir = Path(job_dir)
     input_path = job_dir / "input.json"
     modal_path = job_dir / "modal_results.json"
-    if not input_path.exists() or not modal_path.exists():
+    if not input_path.exists():
         payload = {
             "status": "skipped",
-            "reason": "missing_input_or_modal_results",
+            "reason": "missing_input",
             "job_dir": str(job_dir),
         }
         (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return payload
     try:
         input_payload = json.loads(input_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        payload = {
+            "status": "skipped",
+            "reason": "unreadable_input",
+            "error": str(exc),
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    input_dict = input_payload if isinstance(input_payload, dict) else {}
+    if str(((input_dict.get("metadata") or {}).get("analysis_method") or "")).lower() == "static":
+        payload = {
+            "status": "not_required",
+            "reason": "static_method_has_no_modal_mt_learning",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    if not modal_path.exists():
+        payload = {
+            "status": "skipped",
+            "reason": "missing_modal_results",
+            "job_dir": str(job_dir),
+        }
+        (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return payload
+    try:
         rows = json.loads(modal_path.read_text(encoding="utf-8"))
     except Exception as exc:
         payload = {
             "status": "skipped",
-            "reason": "unreadable_input_or_modal_results",
+            "reason": "unreadable_modal_results",
             "error": str(exc),
             "job_dir": str(job_dir),
         }
@@ -550,7 +591,7 @@ def record_modal_mode_count_learning(
         (job_dir / "modal_mode_learning.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return payload
     recommended = _next_modal_retry_value(first_above + MODAL_LEARNING_MODE_MARGIN)
-    features = _modal_learning_features(input_payload if isinstance(input_payload, dict) else {})
+    features = _modal_learning_features(input_dict)
     cache_key = _modal_feature_cache_key(features)
     entry = {
         "cache_key": cache_key,

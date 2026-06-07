@@ -176,8 +176,9 @@ def classify_scope_from_input(input_payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     required_figures: list[str] = list(MODEL_FIGURES)
-    modal_required = bool(support_type.startswith("S2") or has_cantilever)
-    if modal_required:
+    modal_figures_required = bool(support_type.startswith("S2") or has_cantilever)
+    modal_required = bool(analysis_method != "static" and modal_figures_required)
+    if modal_figures_required:
         required_figures.extend(MODAL_FIGURES)
     required_figures.extend(SQUARE_SUPPORT_FIGURES)
     if cantilever_clouds:
@@ -205,6 +206,8 @@ def classify_scope_from_input(input_payload: dict[str, Any]) -> dict[str, Any]:
         "cantilever_stress_cloud_decision_source": decision_source,
         "requires": {
             "modal_analysis": modal_required,
+            "modal_figures": modal_figures_required,
+            "modal_frequency_table": modal_figures_required,
             "square_support_stress_eval": True,
             "cantilever_stress_eval": cantilever_clouds,
             "cantilever_root_weld_eval": has_root_weld,
@@ -219,7 +222,7 @@ def classify_scope_from_input(input_payload: dict[str, Any]) -> dict[str, Any]:
         "policy": [
             "New intake scope is derived from intake topology and confirmed template/config, not from a future report appendix.",
             "Cantilever root weld loads/evaluation are required for every confirmed S2 cantilever branch. Square tube outer width <= 120 mm uses the equivalent-stress table with coefficient 0.526 and also requires cantilever stress clouds.",
-            "Steel-platform support uses static method for seismic loading, but S2 reports still require modal frequencies and MOTAI figures for report appendix A.",
+            "Steel-platform support uses static method for seismic loading; S2 reports still require MOTAI appendix figures, but these are generated as post-only low-order modal graphics and do not create a 50 Hz MT gate.",
             "Square tube outer width <= 120 mm uses appendix C cantilever stress-cloud output; outer width > 120 mm uses appendix C weld-evaluation-principle output.",
             "If square tube size is unknown, select a candidate section before publishing cantilever figures.",
         ],

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from core.apdl.intake_standard_family_renderer import _modal_policy_source_bundle, _render_model_from_family
+from pathlib import Path
+
+from core.apdl.intake_standard_family_renderer import _modal_policy_source_bundle, _render_model_from_family, _render_solve_from_source
 from core.apdl.modal_policy import parse_source_modal_mode_count
 from core.apdl.intake_template_context import build_standard_s2_template_context
 
@@ -326,3 +328,37 @@ def test_modal_policy_source_bundle_uses_same_name_library_modal_source(tmp_path
 
     assert parse_source_modal_mode_count(bundle) == 887
     assert "library_modal_policy_source" in bundle
+
+
+def test_static_solve_from_source_does_not_insert_modal_or_mt() -> None:
+    source_text = "\n".join(
+        [
+            "/SOL",
+            "ANTYPE,0",
+            "ACEL,0.1,0.2,0.3",
+            "SOLVE",
+            "FINISH",
+        ]
+    )
+    payload = {
+        "metadata": {
+            "analysis_method": "static",
+            "zpa_obe_x_g": 0.11,
+            "zpa_obe_y_g": 0.12,
+            "zpa_obe_z_g": 0.13,
+            "zpa_sse_x_g": 0.21,
+            "zpa_sse_y_g": 0.22,
+            "zpa_sse_z_g": 0.23,
+            "static_acceleration_factor": 1.5,
+        },
+        "project": {"elevation": 8.5},
+    }
+
+    rendered, audit = _render_solve_from_source(Path("02静力法-计算文件.PIP"), source_text, payload)
+
+    assert "ANTYPE,2" not in rendered
+    assert "MODOPT" not in rendered
+    assert "MXPAND" not in rendered
+    assert "MT=" not in rendered
+    assert "ACEL,1.5*9.81*0.11,1.5*9.81*0.12,1.5*9.81*0.13" in rendered
+    assert audit["modal_mode_policy"]["status"] == "not_required"

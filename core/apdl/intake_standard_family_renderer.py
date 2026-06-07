@@ -974,12 +974,26 @@ def _render_solve_from_source(
 ) -> tuple[str, dict[str, Any]]:
     solve_payload, elevation_envelope_audit = _payload_with_static_source_elevation_envelope(source_path, source_text, payload)
     body, solve_parameterization = _rewrite_static_acel_from_payload(source_text, solve_payload)
-    modal_policy_source = source_text_for_modal_policy if source_text_for_modal_policy is not None else source_text
-    modal_count = modal_mode_count_from_payload(solve_payload, modal_policy_source)
-    body, modal_block_audit = _ensure_modal_analysis_block(body)
-    body = rewrite_modal_mode_count(body, modal_count)
-    solve_parameterization["modal_mode_policy"] = modal_policy_audit(solve_payload, modal_policy_source)
-    solve_parameterization["modal_analysis_block"] = modal_block_audit
+    analysis_method = str((solve_payload.get("metadata") or {}).get("analysis_method") or "").lower()
+    if analysis_method == "static":
+        solve_parameterization["modal_mode_policy"] = {
+            "status": "not_required",
+            "analysis_method": "static",
+            "policy": "Static-method calculations apply equivalent static acceleration loads directly; no MT, modal extraction, or 50 Hz Mode.oup gate is required.",
+        }
+        solve_parameterization["modal_analysis_block"] = {
+            "status": "not_required",
+            "analysis_method": "static",
+        }
+        modal_policy_line = "! Modal policy: not required for static-method calculation."
+    else:
+        modal_policy_source = source_text_for_modal_policy if source_text_for_modal_policy is not None else source_text
+        modal_count = modal_mode_count_from_payload(solve_payload, modal_policy_source)
+        body, modal_block_audit = _ensure_modal_analysis_block(body)
+        body = rewrite_modal_mode_count(body, modal_count)
+        solve_parameterization["modal_mode_policy"] = modal_policy_audit(solve_payload, modal_policy_source)
+        solve_parameterization["modal_analysis_block"] = modal_block_audit
+        modal_policy_line = f"! Modal policy: MT={modal_count}; verify Mode.oup last frequency exceeds 50 Hz after ANSYS run."
     if elevation_envelope_audit:
         solve_parameterization["static_elevation_envelope"] = elevation_envelope_audit
     header = "\n".join(
@@ -987,8 +1001,8 @@ def _render_solve_from_source(
             "! CableTrayAI generated_solve.mac",
             "! Source: audited standard calculation command stream.",
             f"! source_file={source_path.as_posix()}",
-            "! Policy: preserve audited solve structure; static-method ACEL values are parameterized from the current intake spectrum coefficients.",
-            f"! Modal policy: MT={modal_count}; verify Mode.oup last frequency exceeds 50 Hz after ANSYS run.",
+            "! Policy: preserve audited solve structure; static-method ACEL values are parameterized from the current intake static acceleration coefficients.",
+            modal_policy_line,
             "",
         ]
     )
@@ -1144,17 +1158,20 @@ def render_intake_standard_family_commands(
     solve_parameterization_audit: dict[str, Any] = {"status": "not_applicable"}
     solve_source_method = _classify_solve_command(solve_source_path, solve_source_text) if solve_source_path else "unknown"
     effective_analysis_method = expected_solve_method or ("static" if solve_source_method == "static" else None)
-    include_model_literal_modal_count = _allows_model_literal_modal_count(
-        render_context,
-        effective_analysis_method,
-        solve_source_text,
-    )
-    modal_policy_source_text = _modal_policy_source_bundle(
-        Path(family["source"]),
-        source_text,
-        solve_source_text,
-        include_family_literal_modopt=include_model_literal_modal_count,
-    )
+    if effective_analysis_method == "static":
+        modal_policy_source_text = None
+    else:
+        include_model_literal_modal_count = _allows_model_literal_modal_count(
+            render_context,
+            effective_analysis_method,
+            solve_source_text,
+        )
+        modal_policy_source_text = _modal_policy_source_bundle(
+            Path(family["source"]),
+            source_text,
+            solve_source_text,
+            include_family_literal_modopt=include_model_literal_modal_count,
+        )
     response_spectrum_method = expected_solve_method in {"response_spectrum", "spectrum"} or (
         expected_solve_method is None and solve_source_method == "spectrum"
     )
@@ -1195,7 +1212,7 @@ def render_intake_standard_family_commands(
             "source": str(solve_source_path),
             "source_encoding": solve_source_encoding,
             "source_sha256": _sha256(solve_source_path),
-            "policy": "generated_solve.mac is rendered from the adjacent audited 02 calculation command stream. Static earthquake ACEL coefficients are rewritten from the current intake spectrum workbook; response-spectrum points and load-case combinations remain source-traceable.",
+            "policy": "generated_solve.mac is rendered from the adjacent audited 02 calculation command stream. Static earthquake ACEL coefficients are rewritten from current intake static acceleration coefficients; no response-spectrum modal extraction or MT is inserted for static-method jobs.",
         }
     else:
         rendered_solve, solve_parameterization_audit = _render_solve_from_controlled_template(
@@ -1228,6 +1245,7 @@ def render_intake_standard_family_commands(
     apdl_audit = audit_rendered_apdl(
         [job_dir / "generated_model.mac", job_dir / "generated_solve.mac", job_dir / "generated_post.mac"],
         job_dir / "apdl_audit.json",
+        require_modal_analysis=expected_solve_method != "static",
     )
     section_failures = [item for item in sections if item.get("status") != "copied"]
     solve_parameterization_failed = solve_parameterization_audit.get("status") == "fail"

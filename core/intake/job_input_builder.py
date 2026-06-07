@@ -42,12 +42,15 @@ def _normalise_square_section_ids(values: object) -> list[str]:
     return normalised
 
 
-def _intake_modal_mode_count(payload: dict, tray_mapping: dict | None, base_payload: dict | None) -> tuple[int, str]:
+def _intake_modal_mode_count(payload: dict, tray_mapping: dict | None, base_payload: dict | None) -> tuple[int | None, str]:
+    base_payload = base_payload or {}
+    base_metadata = base_payload.get("metadata") or {}
+    analysis_method = str(payload.get("analysis_method") or base_metadata.get("analysis_method") or "").strip().lower()
+    if analysis_method == "static":
+        return None, "static_method_not_required"
     explicit = payload.get("modal_mode_count")
     if explicit not in (None, ""):
         return coerce_modal_mode_count(explicit), "intake_modal_mode_count_override"
-    base_payload = base_payload or {}
-    base_metadata = base_payload.get("metadata") or {}
     base_count = base_metadata.get("modal_mode_count")
     if base_count not in (None, ""):
         return coerce_modal_mode_count(base_count), "base_payload_modal_mode_count"
@@ -319,7 +322,11 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         "operator_flow": "upload_intake_select_spectrum_one_click",
         "modal_mode_count": modal_mode_count,
         "modal_mode_count_source": modal_mode_count_source,
-        "modal_mode_policy": "MT is assigned before ANSYS solves. Use explicit intake metadata first, then similar successful real-run modal cache, then safe audited source/layer fallback; verify Mode.oup exceeds 50 Hz and retry upward only when coverage is short.",
+        "modal_mode_policy": (
+            "Static-method calculations do not use response-spectrum modal extraction; MT and Mode.oup 50 Hz coverage are not required."
+            if analysis_method == "static"
+            else "MT is assigned before ANSYS solves. Use explicit intake metadata first, then similar successful real-run modal cache, then safe audited source/layer fallback; verify Mode.oup exceeds 50 Hz and retry upward only when coverage is short."
+        ),
     }
     return base
 

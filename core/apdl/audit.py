@@ -19,11 +19,18 @@ AUDIT_CHECKS = {
 }
 
 
-def audit_rendered_apdl(rendered_files: list[Path], output_path: Path | None = None) -> dict:
+def audit_rendered_apdl(
+    rendered_files: list[Path],
+    output_path: Path | None = None,
+    *,
+    require_modal_analysis: bool = True,
+) -> dict:
     combined = "\n".join(path.read_text(encoding="utf-8") for path in rendered_files)
     checks: dict[str, bool] = {}
     for name, tokens in AUDIT_CHECKS.items():
         checks[name] = any(token.upper() in combined.upper() for token in tokens)
+    if not require_modal_analysis:
+        checks["has_modal_analysis"] = True
 
     unresolved = PLACEHOLDER_PATTERN.findall(combined)
     audit = {

@@ -474,9 +474,10 @@ def _render_commands(job_dir: Path, jobs_dir: Path, package_id: str | None, *, s
     )
     result["command_source"] = "intake_standard_family_based_on_standard_sources"
     result["command_policy"] = (
-        "Static-method jobs preserve the adjacent audited static calculation command stream and rewrite only ACEL/MT from "
-        "the current intake and selected spectrum workbook. Response-spectrum jobs use the controlled spectrum solve "
-        "template so SL-1/SL-2 and zero-period correction are generated from the operator-selected spectrum workbook."
+        "Static-method jobs preserve the adjacent audited static calculation command stream and rewrite only equivalent "
+        "static ACEL coefficients from the current intake. They do not use response-spectrum modal extraction, MT, or "
+        "Mode.oup 50 Hz coverage. Response-spectrum jobs use the controlled spectrum solve template so SL-1/SL-2 and "
+        "zero-period correction are generated from the operator-selected spectrum workbook."
         if analysis_method == "static"
         else (
             "Default operator flow treats the uploaded intake as new intake. The LLM may propose a structured engineering intent "

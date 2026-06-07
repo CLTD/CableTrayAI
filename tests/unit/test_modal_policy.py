@@ -124,7 +124,7 @@ def test_audited_source_modal_mode_count_reads_traceability_for_high_retry(tmp_p
     assert audited_source_modal_mode_count_from_job(job_dir) == 887
 
 
-def test_learned_high_modal_count_overrides_auto_layer_metadata(tmp_path: Path, monkeypatch) -> None:
+def test_static_method_does_not_learn_or_apply_modal_mt(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     payload = {
         "support": {
@@ -171,8 +171,10 @@ def test_learned_high_modal_count_overrides_auto_layer_metadata(tmp_path: Path, 
 
     learned = record_modal_mode_count_learning(job_dir)
 
-    assert learned["recommended_modal_mode_count"] == 497
-    assert modal_mode_count_from_payload(payload, source_text="MODOPT,LANB,887") == 497
+    assert learned["status"] == "not_required"
+    assert learned["reason"] == "static_method_has_no_modal_mt_learning"
+    assert modal_mode_count_from_payload(payload, source_text="MODOPT,LANB,887") == 80
     audit = modal_policy_audit(payload, source_text="MODOPT,LANB,887")
-    assert audit["assigned_modal_mode_count"] == 497
-    assert audit["assigned_modal_mode_count_source"] == "learned_similar_intake_cache"
+    assert audit["status"] == "not_required"
+    assert audit["assigned_modal_mode_count"] is None
+    assert audit["assigned_modal_mode_count_source"] == "static_method_not_required"
