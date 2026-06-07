@@ -194,6 +194,118 @@ def test_run_square_section_search_requires_result_validation_by_default(tmp_pat
     assert "result_validation" in selection["candidate_results"][0]["diagnosis"]["domains"]
 
 
+def test_static_square_section_trial_ignores_report_only_modal_frequency_checks(tmp_path: Path) -> None:
+    base_job = tmp_path / "base"
+    _write_minimal_job(base_job)
+    (base_job / "input.json").write_text(
+        json.dumps({"metadata": {"analysis_method": "static"}}),
+        encoding="utf-8",
+    )
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in ("140-140-8", "50-42", "CAOGANG42DAN", "YIXINGGANG150", "YIXINGGANG150DAN"):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    def runner(trial_dir: Path) -> dict[str, str]:
+        (trial_dir / "evaluation_summary.json").write_text(
+            json.dumps([{"check_id": "square_support.fresh", "ratio": 0.934}]),
+            encoding="utf-8",
+        )
+        (trial_dir / "result_validation.json").write_text(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "checks": [
+                        {"check_id": "evaluation_ratio_limit", "status": "pass"},
+                        {"check_id": "required_file_Mode.oup", "status": "fail"},
+                        {"check_id": "modal_frequency_table", "status": "fail"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return {"status": "success"}
+
+    selection = run_square_section_search(
+        base_job,
+        tmp_path / "trials",
+        candidates=[
+            SquareSectionCandidate(
+                section_name="140-140-8",
+                outer_mm=140,
+                thickness_mm=8,
+                source_file=str(source_root / "140-140-8.SECT"),
+            )
+        ],
+        runner=runner,
+        source_root=source_root,
+        overwrite_trials=True,
+    )
+
+    result = selection["candidate_results"][0]
+    assert selection["status"] == "pass"
+    assert selection["selected"]["section_name"] == "140-140-8"
+    assert result["failed_non_ratio_checks"] == []
+    assert result["diagnosis"]["domains"] == []
+    assert result["diagnosis"]["ignored_trial_only_checks"] == [
+        "required_file_Mode.oup",
+        "modal_frequency_table",
+    ]
+
+
+def test_response_spectrum_square_section_trial_does_not_ignore_mode_file_check(tmp_path: Path) -> None:
+    base_job = tmp_path / "base"
+    _write_minimal_job(base_job)
+    (base_job / "input.json").write_text(
+        json.dumps({"metadata": {"analysis_method": "response_spectrum"}}),
+        encoding="utf-8",
+    )
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in ("140-140-8", "50-42", "CAOGANG42DAN", "YIXINGGANG150", "YIXINGGANG150DAN"):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    def runner(trial_dir: Path) -> dict[str, str]:
+        (trial_dir / "evaluation_summary.json").write_text(
+            json.dumps([{"check_id": "square_support.fresh", "ratio": 0.934}]),
+            encoding="utf-8",
+        )
+        (trial_dir / "result_validation.json").write_text(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "checks": [
+                        {"check_id": "evaluation_ratio_limit", "status": "pass"},
+                        {"check_id": "required_file_Mode.oup", "status": "fail"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return {"status": "success"}
+
+    selection = run_square_section_search(
+        base_job,
+        tmp_path / "trials",
+        candidates=[
+            SquareSectionCandidate(
+                section_name="140-140-8",
+                outer_mm=140,
+                thickness_mm=8,
+                source_file=str(source_root / "140-140-8.SECT"),
+            )
+        ],
+        runner=runner,
+        source_root=source_root,
+        overwrite_trials=True,
+    )
+
+    result = selection["candidate_results"][0]
+    assert selection["status"] == "fail"
+    assert result["failed_non_ratio_checks"] == ["required_file_Mode.oup"]
+    assert "result_validation" in result["diagnosis"]["domains"]
+
+
 def test_smart_jump_skips_only_after_failed_square_support_ratio(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     _write_minimal_job(base_job)

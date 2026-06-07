@@ -21,6 +21,11 @@ CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS = {
     "required_figures",
 }
 
+STATIC_CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS = {
+    "modal_frequency_table",
+    "required_file_Mode.oup",
+}
+
 # If every feasible candidate is far below the economy target, the intake is
 # simply light for the available reviewed section list.  In that case, choosing
 # a larger section just to chase ratio ~= 1 would be uneconomical and contrary
@@ -44,6 +49,28 @@ def _section_ratio_audit_fields() -> dict[str, str]:
         "ratio_basis": SECTION_RATIO_BASIS,
         "chapter6_ratio_basis": "same_source_as_final_chapter6_evaluation",
     }
+
+
+def _candidate_trial_analysis_method(trial_dir: Path) -> str:
+    input_path = trial_dir / "input.json"
+    if not input_path.exists():
+        return ""
+    try:
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ""
+    metadata = payload.get("metadata") if isinstance(payload, dict) else {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    return str(metadata.get("analysis_method") or payload.get("analysis_method") or "").strip().lower()
+
+
+def _candidate_ignored_non_ratio_checks(trial_dir: Path) -> set[str]:
+    ignored = set(CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS)
+    if _candidate_trial_analysis_method(trial_dir) == "static":
+        ignored.update(STATIC_CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS)
+    return ignored
+
 
 TRIAL_RUNTIME_OUTPUT_FILE_NAMES = {
     "result.json",
@@ -466,15 +493,16 @@ def candidate_publishable_ratio(
         for check in validation.get("checks") or []
         if check.get("status") == "fail" and check.get("check_id") != "evaluation_ratio_limit"
     ]
+    ignored_check_ids = _candidate_ignored_non_ratio_checks(trial_dir)
     failed_non_ratio = [
         check_id
         for check_id in raw_failed_non_ratio
-        if str(check_id) not in CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS
+        if str(check_id) not in ignored_check_ids
     ]
     ignored_non_ratio = [
         check_id
         for check_id in raw_failed_non_ratio
-        if str(check_id) in CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS
+        if str(check_id) in ignored_check_ids
     ]
     ratio = over_limit_ratio if over_limit_ratio is not None else summary_ratio
     if failed_non_ratio:
@@ -663,11 +691,12 @@ def _candidate_trial_diagnosis(
 
     run_status = str(run_result.get("status") or "")
     raw_failed_checks = list(dict.fromkeys([*failed_non_ratio_checks, *_failed_checks_from_result_validation(trial_dir)]))
+    ignored_check_ids = _candidate_ignored_non_ratio_checks(trial_dir)
     ignored_failed_checks = [
-        check for check in raw_failed_checks if check in CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS
+        check for check in raw_failed_checks if check in ignored_check_ids
     ]
     failed_checks = [
-        check for check in raw_failed_checks if check not in CANDIDATE_SELECTION_IGNORED_NON_RATIO_CHECKS
+        check for check in raw_failed_checks if check not in ignored_check_ids
     ]
     domains = sorted({_domain_for_failed_check(check) for check in failed_checks})
     if gate_status == "missing_summary":

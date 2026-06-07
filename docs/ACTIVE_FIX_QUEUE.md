@@ -1,5 +1,28 @@
 # CableTrayAI 当前修复队列
 
+## 2026-06-07 18185NI-LXSJ4213 square-section candidate gate hotfix closeout
+
+Resolved in source and verified against the installed failed web-run evidence:
+
+1. Web error `Square section auto-selection failed; formal calculation is blocked until a section with ratio <= 1.0 is found.` was not caused by all allowed sections failing.
+2. Installed run evidence `D:/CableTrayAI/jobs/18185NI-LXSJ4213/square_section_selection.json` showed:
+   - `100-100-6 = 2.3374003257388036` fail.
+   - `120-120-10 = 1.128459493680719` fail.
+   - `140-140-8 = 0.9342488209446427`, which is below 1.0 and should be selected.
+3. Root cause: candidate trials for static-method section selection do not run final report figure export, so they do not have the report-only appendix-A `Mode.oup` frequency table. The selector incorrectly treated `required_file_Mode.oup` and `modal_frequency_table` as source-blocking checks during candidate selection.
+4. Fix: `core/optimizer/square_section_selector.py` now ignores `required_file_Mode.oup` and `modal_frequency_table` only for static-method candidate trials. Response-spectrum trials still treat those checks as blocking, and final formal static reports still require MOTAI figures plus the frequency table.
+5. Regression tests added in `tests/unit/test_square_section_selector.py`:
+   - Static candidate with ratio below 1 and only report-only modal-frequency checks is accepted.
+   - Response-spectrum candidate with missing `Mode.oup` remains blocked.
+6. Verification passed: targeted square-section/static/result tests and full unit tests (`87 passed`), plus `py_compile` for the touched selector and test module.
+7. Deployment completed: rebuilt `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, package gate passed including runtime XML support and no-expat spectrum smoke, applied to `D:/CableTrayAI`, and service `/health` returned ok. The exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+8. Installed-code verification passed: reading the existing `D:/CableTrayAI/jobs/_square_section_trials/18185NI-LXSJ4213/20260607T062835489986Z/140-140-8` trial with installed code now returns candidate `status=pass`, ratio `0.9342488209446427`, and no blocking diagnosis domain.
+
+Open queue:
+
+1. No blocking source/deployment item remains for the 4213 square-section candidate gate hotfix.
+2. Historical failed job records still show the old failure until `18185NI-LXSJ4213` is rerun from the web.
+
 ## 2026-06-07 static-method no-main-MT correction closeout
 
 This section supersedes the 2026-06-06 static modal gate closeout below.

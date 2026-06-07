@@ -2,6 +2,19 @@
 
 更新时间：2026-06-05 10:58
 
+## 2026-06-07 4213 网页端截面选型失败 hotfix
+
+本节为当前最新状态。
+
+1. `18185NI-LXSJ4213` 网页端报错 `Square section auto-selection failed; formal calculation is blocked until a section with ratio <= 1.0 is found.` 已定位为候选试算门禁误判，不是所有允许截面都不满足。
+2. 已安装失败记录显示：`100-100-6 = 2.3374003257388036` 失败，`120-120-10 = 1.128459493680719` 失败，`140-140-8 = 0.9342488209446427`，应当作为第一个满足截面被选中。
+3. 根因是静力法候选试算阶段没有运行正式报告图表导出，因此缺少报告附录用 `Mode.oup`/频率表；选型器错误地把 `required_file_Mode.oup` 和 `modal_frequency_table` 当成候选截面阻断项。
+4. 源码修复：`core/optimizer/square_section_selector.py` 只在 `analysis_method=static` 的候选试算阶段忽略 `required_file_Mode.oup` 与 `modal_frequency_table`。反应谱候选不放宽；正式静力法报告仍要求 MOTAI 图和频率表。
+5. 已用现有 4213 `140-140-8` 试算目录复核：修复后 `candidate_publishable_ratio.status=pass`，控制比 `0.9342488209446427`，诊断无阻断域。
+6. 验证通过：`python -m pytest tests/unit/test_square_section_selector.py tests/unit/test_result_validity_square_section.py tests/unit/test_static_method_no_modal_policy.py -q` 通过；`python -m pytest tests/unit -q` 为 `87 passed`；`py_compile` 通过。
+7. 部署完成：`C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` 已重建，package gate 通过（含 runtime XML 支持与 no-expat 谱 smoke），已应用到 `D:/CableTrayAI`，`/health` ok。精确最新备份路径以 `D:/CableTrayAI/docs/last_internal_update_apply.json` 为准。
+8. 安装目录代码已复核 4213 历史试算：`140-140-8` 返回 `status=pass`，控制比 `0.9342488209446427`，无阻断诊断域。旧 job 记录仍会保留旧失败信息，需从网页重跑该行刷新结果。
+
 ## 当前总目标
 
 发布前必须完成并验证这一版：
