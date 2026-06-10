@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -59,6 +60,7 @@ namespace CableTrayAIInstaller
             ".gitignore",
             "AGENTS.md",
             "CableTrayAI.exe",
+            "CableTrayAI_Installer.exe",
             "CableTrayAI_Uninstall.exe",
             "README.md",
             "install_manifest.json",
@@ -102,21 +104,34 @@ namespace CableTrayAIInstaller
 
                 Log(packageRoot, "Selected install dir: " + installDir);
                 StopOldProcesses();
-                CleanupPreviousRegisteredInstallIfDifferent(installDir);
+                if (string.Equals(Environment.GetEnvironmentVariable("CABLETRAYAI_CLEAN_PREVIOUS_REGISTERED_INSTALL"), "1", StringComparison.OrdinalIgnoreCase))
+                {
+                    CleanupPreviousRegisteredInstallIfDifferent(installDir);
+                }
+                else
+                {
+                    Log(packageRoot, "Previous registered install cleanup skipped by default.");
+                }
                 CleanupExistingInstall(installDir);
                 CopyPackage(packageRoot, installDir);
+                AuthSetup authSetup = EnsureAuthLocal(installDir, packageRoot);
+                EnsureLoginInfoFile(installDir, authSetup);
                 EnsureDesktopExecutable(installDir);
                 string shortcut = CreateDesktopShortcut(installDir);
                 string uninstallExe = CopySelfAsUninstaller(installDir);
                 string startMenuShortcut = CreateStartMenuShortcut(installDir);
                 string uninstallShortcut = CreateStartMenuUninstallShortcut(installDir, uninstallExe);
                 RegisterUninstaller(installDir, uninstallExe);
-                WriteManifest(installDir, packageRoot, shortcut, startMenuShortcut, uninstallShortcut, uninstallExe);
+                WriteManifest(installDir, packageRoot, shortcut, startMenuShortcut, uninstallShortcut, uninstallExe, authSetup);
 
                 if (!QuietMode())
                 {
+                    string loginMessage = authSetup.Created
+                        ? "\n\nInitial login users: " + string.Join(", ", authSetup.Users.ToArray()) + "\nInitial password: " + authSetup.InitialPassword
+                        : "\n\nExisting local login config was kept:\n" + authSetup.Path;
+                    loginMessage += "\n\nLogin info file:\n" + authSetup.LoginInfoPath;
                     MessageBox.Show(
-                        "CableTrayAI has been installed.\n\nInstall folder:\n" + installDir + "\n\nDesktop shortcut:\n" + shortcut,
+                        "CableTrayAI has been installed.\n\nInstall folder:\n" + installDir + "\n\nDesktop shortcut:\n" + shortcut + loginMessage,
                         "CableTrayAI Installer",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -372,12 +387,15 @@ namespace CableTrayAIInstaller
                 }
             }
 
-            foreach (string dir in RuntimeDataDirs)
+            if (string.Equals(Environment.GetEnvironmentVariable("CABLETRAYAI_RESET_RUNTIME_DATA"), "1", StringComparison.OrdinalIgnoreCase))
             {
-                string target = Path.Combine(installDir, dir);
-                if (Directory.Exists(target))
+                foreach (string dir in RuntimeDataDirs)
                 {
-                    Directory.Delete(target, true);
+                    string target = Path.Combine(installDir, dir);
+                    if (Directory.Exists(target))
+                    {
+                        Directory.Delete(target, true);
+                    }
                 }
             }
 
@@ -487,6 +505,190 @@ namespace CableTrayAIInstaller
             if (File.Exists(runtimeExe))
             {
                 File.Copy(runtimeExe, rootExe, true);
+            }
+        }
+
+        private static AuthSetup EnsureAuthLocal(string installDir, string packageRoot)
+        {
+            string configDir = Path.Combine(installDir, "config");
+            Directory.CreateDirectory(configDir);
+            string authLocal = Path.Combine(configDir, "auth.local.json");
+            List<string> users = InitialUsers();
+            InitialPasswordChoice passwordChoice = ResolveInitialPassword(packageRoot);
+            if (File.Exists(authLocal) && !passwordChoice.FixedByDeployment)
+            {
+                return new AuthSetup
+                {
+                    Created = false,
+                    Path = authLocal,
+                    Users = users,
+                    InitialPassword = "",
+                    PasswordSource = "existing"
+                };
+            }
+
+            string initialPassword = passwordChoice.Password;
+            if (File.Exists(authLocal) && passwordChoice.FixedByDeployment)
+            {
+                BackupExistingAuthLocal(authLocal);
+            }
+
+            StringBuilder usersJson = new StringBuilder();
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (i > 0)
+                {
+                    usersJson.Append(",\n");
+                }
+                string username = users[i];
+                usersJson.Append("    { \"username\": \"")
+                    .Append(Escape(username))
+                    .Append("\", \"password_hash\": \"")
+                    .Append(PasswordHash(username, initialPassword))
+                    .Append("\" }");
+            }
+
+            string payload = "{\n"
+                + "  \"enabled\": true,\n"
+                + "  \"session_ttl_seconds\": 43200,\n"
+                + "  \"users\": [\n"
+                + usersJson
+                + "\n  ],\n"
+                + "  \"note\": \"Local machine credential file generated by CableTrayAI installer. Do not publish or commit.\"\n"
+                + "}\n";
+            File.WriteAllText(authLocal, payload, Encoding.UTF8);
+            return new AuthSetup
+            {
+                Created = true,
+                Path = authLocal,
+                Users = users,
+                InitialPassword = initialPassword,
+                PasswordSource = passwordChoice.Source,
+                LoginInfoPath = Path.Combine(installDir, "CableTrayAI_LOGIN_INFO.txt")
+            };
+        }
+
+        private static InitialPasswordChoice ResolveInitialPassword(string packageRoot)
+        {
+            string initialPassword = Environment.GetEnvironmentVariable("CABLETRAYAI_INITIAL_PASSWORD");
+            if (!string.IsNullOrWhiteSpace(initialPassword))
+            {
+                return new InitialPasswordChoice
+                {
+                    Password = initialPassword.Trim(),
+                    Source = "environment CABLETRAYAI_INITIAL_PASSWORD",
+                    FixedByDeployment = true
+                };
+            }
+
+            string packagedPasswordPath = Path.Combine(packageRoot, "config", "initial_password.txt");
+            if (File.Exists(packagedPasswordPath))
+            {
+                string packagedPassword = File.ReadAllText(packagedPasswordPath, Encoding.UTF8).Trim();
+                if (!string.IsNullOrWhiteSpace(packagedPassword))
+                {
+                    return new InitialPasswordChoice
+                    {
+                        Password = packagedPassword,
+                        Source = "deployment package config/initial_password.txt",
+                        FixedByDeployment = true
+                    };
+                }
+            }
+
+            return new InitialPasswordChoice
+            {
+                Password = GenerateInitialPassword(),
+                Source = "generated random first-install password",
+                FixedByDeployment = false
+            };
+        }
+
+        private static void BackupExistingAuthLocal(string authLocal)
+        {
+            string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string backup = authLocal + ".bak_" + stamp;
+            File.Copy(authLocal, backup, true);
+        }
+
+        private static void EnsureLoginInfoFile(string installDir, AuthSetup authSetup)
+        {
+            string path = Path.Combine(installDir, "CableTrayAI_LOGIN_INFO.txt");
+            authSetup.LoginInfoPath = path;
+            if (!authSetup.Created && File.Exists(path))
+            {
+                return;
+            }
+
+            StringBuilder body = new StringBuilder();
+            body.AppendLine("CableTrayAI Login Information");
+            body.AppendLine("================================");
+            body.AppendLine("Install folder: " + installDir);
+            body.AppendLine("Login URL: http://127.0.0.1:8000/");
+            body.AppendLine("Users: " + string.Join(", ", authSetup.Users.ToArray()));
+            if (authSetup.Created)
+            {
+                body.AppendLine("Initial password: " + authSetup.InitialPassword);
+                body.AppendLine("Password status: " + authSetup.PasswordSource + ".");
+            }
+            else
+            {
+                body.AppendLine("Password status: existing local auth was preserved; reinstall cannot recover the password.");
+            }
+            body.AppendLine("Auth config: " + authSetup.Path);
+            body.AppendLine("ANSYS config: " + Path.Combine(installDir, "config", "ansys.local.toml"));
+            body.AppendLine("");
+            body.AppendLine("Keep this file inside the unit machine. Do not publish, upload, or commit it.");
+            File.WriteAllText(path, body.ToString(), Encoding.UTF8);
+        }
+
+        private static List<string> InitialUsers()
+        {
+            string usersEnv = Environment.GetEnvironmentVariable("CABLETRAYAI_INITIAL_USERS");
+            List<string> users = new List<string>();
+            if (!string.IsNullOrWhiteSpace(usersEnv))
+            {
+                foreach (string item in usersEnv.Split(','))
+                {
+                    string user = item.Trim().ToLowerInvariant();
+                    if (user.Length > 0 && !users.Contains(user))
+                    {
+                        users.Add(user);
+                    }
+                }
+            }
+            if (users.Count == 0)
+            {
+                users.Add("duxyb");
+                users.Add("jianghl");
+                users.Add("wanggangb");
+            }
+            return users;
+        }
+
+        private static string GenerateInitialPassword()
+        {
+            byte[] bytes = new byte[18];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', 'A').Replace('/', 'B');
+        }
+
+        private static string PasswordHash(string username, string password)
+        {
+            string material = "CableTrayAI:" + username.Trim().ToLowerInvariant() + ":" + password;
+            byte[] bytes = Encoding.UTF8.GetBytes(material);
+            using (SHA256 sha = SHA256.Create())
+            {
+                byte[] digest = sha.ComputeHash(bytes);
+                StringBuilder hex = new StringBuilder(digest.Length * 2);
+                foreach (byte value in digest)
+                {
+                    hex.Append(value.ToString("x2"));
+                }
+                return hex.ToString();
             }
         }
 
@@ -762,8 +964,17 @@ namespace CableTrayAIInstaller
             });
         }
 
-        private static void WriteManifest(string installDir, string packageRoot, string shortcut, string startMenuShortcut, string uninstallShortcut, string uninstallExe)
+        private static void WriteManifest(string installDir, string packageRoot, string shortcut, string startMenuShortcut, string uninstallShortcut, string uninstallExe, AuthSetup authSetup)
         {
+            StringBuilder usersJson = new StringBuilder();
+            for (int i = 0; i < authSetup.Users.Count; i++)
+            {
+                if (i > 0)
+                {
+                    usersJson.Append(", ");
+                }
+                usersJson.Append("\"").Append(Escape(authSetup.Users[i])).Append("\"");
+            }
             string json = "{\n"
                 + "  \"status\": \"pass\",\n"
                 + "  \"installed_at\": \"" + Escape(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")) + "\",\n"
@@ -774,7 +985,13 @@ namespace CableTrayAIInstaller
                 + "  \"uninstall_shortcut\": \"" + Escape(uninstallShortcut) + "\",\n"
                 + "  \"uninstaller\": \"" + Escape(uninstallExe) + "\",\n"
                 + "  \"entry\": \"desktop shortcut -> CableTrayAI.exe\",\n"
-                + "  \"auth_policy\": \"account_login_only\"\n"
+                + "  \"auth_policy\": \"account_login_only\",\n"
+                + "  \"auth_local_path\": \"" + Escape(authSetup.Path) + "\",\n"
+                + "  \"login_info_path\": \"" + Escape(authSetup.LoginInfoPath) + "\",\n"
+                + "  \"auth_local_created\": " + (authSetup.Created ? "true" : "false") + ",\n"
+                + "  \"login_users\": [" + usersJson + "]"
+                + (authSetup.Created ? ",\n  \"initial_password\": \"" + Escape(authSetup.InitialPassword) + "\",\n  \"initial_password_notice\": \"Local first-install password only. Rotate by rewriting config/auth.local.json.\"" : "")
+                + "\n"
                 + "}\n";
             File.WriteAllText(Path.Combine(installDir, "install_manifest.json"), json, Encoding.UTF8);
         }
@@ -823,6 +1040,23 @@ namespace CableTrayAIInstaller
             {
             }
         }
+    }
+
+    internal sealed class AuthSetup
+    {
+        public bool Created;
+        public string Path;
+        public List<string> Users;
+        public string InitialPassword;
+        public string PasswordSource;
+        public string LoginInfoPath;
+    }
+
+    internal sealed class InitialPasswordChoice
+    {
+        public string Password;
+        public string Source;
+        public bool FixedByDeployment;
     }
 
     internal sealed class InstallForm : Form

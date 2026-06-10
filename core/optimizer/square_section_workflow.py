@@ -11,7 +11,12 @@ from typing import Any, Callable
 from core.ansys.artifact_cleanup import cleanup_heavy_solver_artifacts
 from core.ansys.config import AnsysLocalConfig
 from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
-from core.ansys.runner import run_real_ansys
+from core.ansys.runner import (
+    MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+    MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+    MIN_REAL_RUN_TIMEOUT_MINUTES,
+    run_real_ansys,
+)
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
@@ -593,24 +598,24 @@ def _trial_root(job_dir: Path) -> Path:
 
 
 def _section_trial_config(config: AnsysLocalConfig) -> AnsysLocalConfig:
-    """Use short, safe ANSYS limits for square-section candidate trials.
+    """Use production-safe ANSYS watchdogs for square-section trials.
 
-    Candidate trials only decide whether a nearby section is worth using; they
-    are not the final publishable calculation.  Keeping the production 120
-    minute timeout here is what makes a bad candidate look like a frozen
-    operator run at the unit site.
+    Candidate trials are not publishable results, but they still must run long
+    enough to produce deterministic APDL/PIP outputs.  A too-short local
+    timeout turns a valid section into a false "missing source outputs" failure
+    on slower unit-site machines.
     """
 
     cloned = config.model_copy(deep=True) if hasattr(config, "model_copy") else config.copy(deep=True)
-    cloned.ansys.timeout_minutes = min(int(cloned.ansys.timeout_minutes or 120), 12)
-    cloned.ansys.startup_no_output_timeout_seconds = min(
-        int(cloned.ansys.startup_no_output_timeout_seconds or 90),
-        90,
+    cloned.ansys.timeout_minutes = max(
+        int(cloned.ansys.timeout_minutes or MIN_REAL_RUN_TIMEOUT_MINUTES),
+        MIN_REAL_RUN_TIMEOUT_MINUTES,
     )
-    cloned.ansys.output_stall_timeout_seconds = min(
-        int(cloned.ansys.output_stall_timeout_seconds or 180),
-        180,
+    cloned.ansys.startup_no_output_timeout_seconds = max(
+        int(cloned.ansys.startup_no_output_timeout_seconds or MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS),
+        MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
     )
+    cloned.ansys.output_stall_timeout_seconds = 0
     return cloned
 
 
@@ -801,6 +806,8 @@ def apply_selected_square_section(
             "square_section_selected_ratio": selected.get("controlling_ratio"),
             "square_section_selection_policy": selection.get("policy"),
             "square_section_selection_source": "real_ansys_trial_runs",
+            "square_section_selection_validation_mode": selection.get("selection_validation_mode") or "candidate_trial_complete",
+            "square_section_selection_requires_formal_validation": bool(selected.get("formal_validation_required")),
             "arm_section_family": arm_policy,
         }
     )
@@ -994,30 +1001,29 @@ def select_and_apply_square_section(
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
     lower_neighbor_count = 0
     if allowed_filter_applied:
-        # The calculation note is the governing candidate boundary.  Run the
-        # reviewed allowed list with fresh trials.  A high-similarity learning
-        # cache may move the starting point upward inside that hard boundary,
-        # keeping lower guard candidates before the learned section.  Within
-        # the resulting allowed-list run, post-failure modulus jumps may skip
-        # only candidates that are still below a failed square-support ratio
-        # estimate; they never add unlisted sections.  The first passing
-        # section is the economical production stop because later candidates
-        # are ordered larger.
-        candidates, learned_allowed_start_audit = _learned_allowed_candidate_start(full_candidates, similar_hint)
-        preferred_section = None
-        preferred_section_source = None
+        # The calculation note is the governing candidate boundary.  Learning
+        # and deterministic estimates may choose the first candidate inside
+        # that hard boundary, but they never add unlisted sections and never
+        # accept a section without a fresh ANSYS trial.
+        _, learned_allowed_start_audit = _learned_allowed_candidate_start(full_candidates, similar_hint)
+        if learned_allowed_start_audit.get("status") in {"applied", "not_needed"} and learned_allowed_start_audit.get("selected_section_hint"):
+            preferred_section = str(learned_allowed_start_audit["selected_section_hint"])
+            preferred_section_source = "learned_allowed_start"
+        else:
+            engineering_anchor = _estimated_square_anchor_from_payload(input_payload, full_candidates)
+            if engineering_anchor:
+                preferred_section = str(engineering_anchor["section_name"])
+                preferred_section_source = "engineering_estimate_allowed_list"
+        candidates = full_candidates
         candidate_window_audit = {
             "status": "skipped",
-            "reason": "intake_allowed_sections_use_learned_start_and_failure_smart_jumps",
+            "reason": "intake_allowed_sections_use_two_trial_economy_strategy",
             "policy": (
                 "For intake calculation-note sections, only listed/reviewed candidates are allowed. "
-                "Every selected or jumped-to candidate is regenerated and checked by the deterministic ratio gate; "
-                "a high-similarity learned cache may move the start point only inside the current allowed list and "
-                "with lower economic guard candidates retained; post-failure section-modulus jumps may skip only "
-                "smaller allowed candidates that remain below the estimated requirement from a real failed "
-                "square-support ratio. The first fresh real-ANSYS candidate with controlling ratio < 1.0 stops the "
-                "search; larger listed sections are not run after a pass. Engineering estimates cannot skip or add "
-                "candidates."
+                "A high-similarity learned cache or deterministic engineering estimate may choose the first trial "
+                "inside the current allowed list. If the fresh ratio is outside the 0.60-0.9999 economy band, one "
+                "section-modulus correction trial is allowed. The search normally stops within two fresh ANSYS "
+                "candidate trials; larger listed sections are not swept after an economic pass."
             ),
         }
     elif preferred_section is None:
@@ -1046,10 +1052,11 @@ def select_and_apply_square_section(
         preferred_section=str(preferred_section) if preferred_section else None,
         preferred_section_source=preferred_section_source,
         stop_after_first_feasible=True,
-        feasible_confirmation_count=1 if allowed_filter_applied else 2,
+        feasible_confirmation_count=1,
         smart_jumps_enabled=True,
-        smart_order=not allowed_filter_applied,
+        smart_order=True,
         lower_neighbor_count=lower_neighbor_count,
+        max_evaluated_candidates=2,
         progress_callback=progress_callback,
     )
     if engineering_anchor is not None:
@@ -1071,10 +1078,11 @@ def select_and_apply_square_section(
                 preferred_section=str(preferred_section),
                 preferred_section_source=preferred_section_source,
                 stop_after_first_feasible=True,
-                feasible_confirmation_count=1 if allowed_filter_applied else 2,
+                feasible_confirmation_count=1,
                 smart_jumps_enabled=True,
-                smart_order=not allowed_filter_applied,
+                smart_order=True,
                 lower_neighbor_count=lower_neighbor_count,
+                max_evaluated_candidates=2,
                 progress_callback=progress_callback,
             )
             expanded["similar_cache_candidate_window"] = {
@@ -1101,21 +1109,20 @@ def select_and_apply_square_section(
             "status": "blocked",
             "detected_run_statuses": sorted(timeout_statuses),
             "policy": (
-                "Candidate ANSYS timeouts are not allowed to auto-select a square section. "
-                "The row must keep the failure evidence and be rerun after fixing ANSYS/output-stall issues."
+                "Candidate ANSYS timeouts are runtime failures, not section-ratio failures. "
+                "The row keeps the ANSYS evidence and must be rerun after fixing timeout/output-stall conditions; "
+                "the production runner applies code-level minimum watchdogs to avoid stale unit-site local configs."
             ),
         }
     selection["trial_root"] = str(trials)
     selection["production_policy"] = (
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
-        "ratios; the selected section must have ratio < 1.0 within that intake-allowed list. Candidates are ordered by "
-        "economic section size, with high-similarity learned real-run history allowed only to move the starting point "
-        "inside the current allowed list while keeping lower guard candidates. The first fresh real-ANSYS passing "
-        "candidate stops the search and later larger sections are not run. Candidate order may not use deterministic "
-        "engineering estimates, local catalog fallback or historical results to add unlisted candidates or accept a "
-        "section without current ANSYS evidence. After a real failed square-support ratio, section-modulus smart jumps may skip only "
-        "under-sized allowed candidates and must record the skipped list. Generated APDL HREC candidates are disabled by default and only allowed when "
+        "ratios; the selected section must have ratio <= 1.0 within that intake-allowed list. The production economy band is "
+        "0.60 <= ratio <= 0.9999, and section selection normally completes within two fresh ANSYS candidate trials: "
+        "one learned/estimated first trial plus one section-modulus correction if needed. Candidate order may not use "
+        "local catalog fallback or historical results to add unlisted candidates or accept a section without current "
+        "ANSYS evidence. Generated APDL HREC candidates are disabled by default and only allowed when "
         "allow_native_hrec_generated=true is explicitly set for a reviewed engineering run. No nearest-report-value "
         "substitution is allowed."
     )
@@ -1233,7 +1240,7 @@ def upgrade_square_section_after_ratio_fail(
             reason = _allowed_section_insufficient_reason(input_payload)
         elif not allow_native_hrec_generated:
             reason = (
-                "No reviewed square-tube SECT candidate satisfied ratio < 1.0; "
+                "No reviewed square-tube SECT candidate satisfied ratio <= 1.0; "
                 "generated APDL HREC candidates are disabled by default."
             )
         else:
@@ -1265,9 +1272,10 @@ def upgrade_square_section_after_ratio_fail(
         source_root=source_root,
         overwrite_trials=True,
         stop_after_first_feasible=True,
-        feasible_confirmation_count=1 if allowed_square_section_filter.get("status") == "applied" else 2,
+        feasible_confirmation_count=1,
         smart_jumps_enabled=not bool(estimated_required_modulus),
         smart_order=allowed_square_section_filter.get("status") != "applied",
+        max_evaluated_candidates=2,
     )
     selection["upgrade_reason"] = "Final deterministic evaluation ratio exceeded 1.0 for the current square tube."
     selection["current_section"] = current_name
@@ -1281,15 +1289,15 @@ def upgrade_square_section_after_ratio_fail(
         "policy": (
             "The filter only avoids candidates whose square-tube bending section modulus is far below the modulus "
             "implied by the failed real-ANSYS ratio. One lower trend candidate is still run; final acceptance remains "
-            "a real-ANSYS deterministic ratio < 1.0."
+            "a real-ANSYS deterministic ratio <= 1.0."
         ),
     }
     selection["production_policy"] = (
         "A provided or provisional square tube section is not accepted when final real-ANSYS deterministic ratios exceed 1.0. "
         "Only intake-allowed/reviewed local SECT candidates are tried by default. Generated job-local APDL HREC candidates are allowed "
         "only when allow_native_hrec_generated=true is set for a reviewed engineering run; selected section must still "
-        "have ratio < 1.0. Candidates are ordered by economy, so the first passing upgrade is retained and larger "
-        "sections are not run after a pass."
+        "have ratio <= 1.0. Upgrade selection uses the same bounded economy policy: target 0.60 <= ratio <= 0.9999 "
+        "within no more than two fresh ANSYS candidate trials, without sweeping larger sections after an economic pass."
     )
     if (
         selection.get("status") != "pass"
@@ -1310,7 +1318,7 @@ def upgrade_square_section_after_ratio_fail(
         and not selection.get("early_stop")
     ):
         selection["reason"] = (
-            "No reviewed square-tube SECT candidate satisfied ratio < 1.0; "
+            "No reviewed square-tube SECT candidate satisfied ratio <= 1.0; "
             "generated APDL HREC candidates are disabled by default."
         )
     if selection.get("status") != "pass":

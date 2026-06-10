@@ -57,6 +57,34 @@ def _requirements_for_method(analysis_method: str) -> dict:
     }
 
 
+def _foundation_requirements() -> dict:
+    return {
+        "status": "pass",
+        "classification": "steel_platform",
+        "analysis_method": "static",
+        "support_type": "S2",
+        "requires": {
+            "modal_analysis": False,
+            "modal_frequency_table": False,
+            "square_support_stress_eval": True,
+            "cantilever_stress_eval": False,
+            "cantilever_root_weld_eval": False,
+            "foundation_loads": True,
+            "tray_arm_connection_loads": False,
+            "bolt_stress_eval": False,
+        },
+        "required_figures": [],
+    }
+
+
+def _dw_vertical_only_result() -> dict:
+    return {
+        "beam_stress_results": [{"value_mpa": 1.0}],
+        "foundation_loads": [{"load_case": "DW", "node": "N1", "fx": 0.0, "fy": 0.0, "fz": 10.0, "mx": 0.0, "my": 0.0, "mz": 0.0}],
+        "evaluation_summary": [{"check_id": "square_support.support_bending", "ratio": 0.9, "allowable_value": 234.3}],
+    }
+
+
 def test_result_gate_does_not_require_modal_cutoff_for_static_method(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "static-job"
     result = _minimal_modal_job(job_dir)
@@ -86,6 +114,46 @@ def test_result_gate_keeps_response_spectrum_50hz_modal_cutoff(tmp_path: Path, m
     modal_gate = [item for item in payload["checks"] if item["check_id"] == "modal_mt_cutoff"]
     assert modal_gate
     assert modal_gate[0]["status"] == "fail"
+    assert payload["status"] == "fail"
+
+
+def test_result_gate_allows_vertical_only_dw_for_symmetric_double_side_counts(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "symmetric-dw"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        json.dumps({"support": {"support_type": "S2", "side_count": 2, "layers_front": 12, "layers_back": 12}}),
+        encoding="utf-8",
+    )
+    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS"):
+        (job_dir / file_name).write_text("placeholder", encoding="utf-8")
+    monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _foundation_requirements())
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=_dw_vertical_only_result())
+
+    symmetry = [item for item in payload["checks"] if item["check_id"] == "foundation_dw_self_weight_symmetry"]
+    assert symmetry
+    assert symmetry[0]["status"] == "pass"
+    assert symmetry[0]["evidence"]["symmetry"]["layer_stack_evidence"] == "symmetric_layer_counts"
+    assert not [item for item in payload["checks"] if item["check_id"] == "foundation_dw_moment_zero"]
+    assert payload["status"] == "pass"
+
+
+def test_result_gate_blocks_vertical_only_dw_for_asymmetric_double_side_counts(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "asymmetric-dw"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        json.dumps({"support": {"support_type": "S2", "side_count": 2, "layers_front": 12, "layers_back": 11}}),
+        encoding="utf-8",
+    )
+    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS"):
+        (job_dir / file_name).write_text("placeholder", encoding="utf-8")
+    monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _foundation_requirements())
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=_dw_vertical_only_result())
+
+    gate_rows = [item for item in payload["checks"] if item["check_id"] == "foundation_dw_moment_zero"]
+    assert gate_rows
+    assert gate_rows[0]["status"] == "fail"
     assert payload["status"] == "fail"
 
 

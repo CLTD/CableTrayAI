@@ -29,16 +29,23 @@ def resolve_master_job_name(job_dir: Path | str) -> str:
     return DEFAULT_JOB_NAME
 
 
-def build_run_all_macro(job_dir: Path | str, *, output_name: str = MASTER_MACRO_NAME) -> dict[str, Any]:
+def build_run_all_macro(
+    job_dir: Path | str,
+    *,
+    output_name: str = MASTER_MACRO_NAME,
+    post_macro_name: str = "generated_post.mac",
+) -> dict[str, Any]:
     job_dir = Path(job_dir)
-    missing = [name for name in REQUIRED_MACROS if not (job_dir / name).exists()]
+    run_macros = ["generated_model.mac", "generated_solve.mac", post_macro_name]
+    missing = [name for name in run_macros if not (job_dir / name).exists()]
+    review_missing = [name for name in REQUIRED_MACROS if not (job_dir / name).exists()]
     job_name = resolve_master_job_name(job_dir)
     lines = [
         "! CableTrayAI production master macro",
         "! This file is the only supported real ANSYS batch entrypoint.",
         f"/FILNAME,{job_name},1",
     ]
-    for macro_name in REQUIRED_MACROS:
+    for macro_name in run_macros:
         lines.append(f"! Begin {macro_name}")
         lines.append(macro_call_line(macro_name))
         lines.append(f"! End {macro_name}")
@@ -50,8 +57,12 @@ def build_run_all_macro(job_dir: Path | str, *, output_name: str = MASTER_MACRO_
         "status": "fail" if missing else "pass",
         "master_macro": output_path.name,
         "ansys_job_name": job_name,
-        "required_macros": REQUIRED_MACROS,
+        "required_macros": run_macros,
+        "review_required_macros": REQUIRED_MACROS,
         "missing_macros": missing,
+        "review_missing_macros": review_missing,
+        "post_macro_name": post_macro_name,
+        "post_macro_role": "numeric_main_run" if post_macro_name != "generated_post.mac" else "reviewed_post_stream",
         "entrypoint_policy": "ANSYS batch input must be run_all.mac for real and dry-run command generation.",
         "job_name_policy": "Use the legacy djs job name when source solve commands request djs.mcom; otherwise use the CableTrayAI job name.",
     }
@@ -70,7 +81,7 @@ def validate_run_all_macro(job_dir: Path | str, *, master_name: str = MASTER_MAC
     text = path.read_text(encoding="utf-8", errors="replace")
     checks.append({"check_id": "run_all_exists", "status": "pass", "message": f"{master_name} exists"})
     positions: list[int] = []
-    for macro_name in REQUIRED_MACROS:
+    for macro_name in ["generated_model.mac", "generated_solve.mac"]:
         line = macro_call_line(macro_name)
         position = text.lower().find(line.lower())
         positions.append(position)
@@ -82,6 +93,24 @@ def validate_run_all_macro(job_dir: Path | str, *, master_name: str = MASTER_MAC
                 "evidence": line,
             }
         )
+    post_candidates = ["generated_post.mac", "generated_post_numeric.mac"]
+    post_positions = [
+        text.lower().find(macro_call_line(macro_name).lower())
+        for macro_name in post_candidates
+    ]
+    post_position = next((position for position in post_positions if position >= 0), -1)
+    positions.append(post_position)
+    checks.append(
+        {
+            "check_id": "calls_post_macro",
+            "status": "pass" if post_position >= 0 else "fail",
+            "message": "run_all.mac calls a post-processing macro",
+            "evidence": {
+                "allowed": [macro_call_line(name) for name in post_candidates],
+                "positions": dict(zip(post_candidates, post_positions)),
+            },
+        }
+    )
     ordered = all(position >= 0 for position in positions) and positions == sorted(positions)
     checks.append(
         {

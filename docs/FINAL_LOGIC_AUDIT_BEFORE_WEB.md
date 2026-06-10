@@ -29,7 +29,7 @@ Current policy:
 - Formal report number/calculation batch is optional at initial calculation time.
 - If no formal number exists, the job uses a provisional identity based on workbook, sheet, and row/serial.
 - After the formal number is later added to the intake workbook, reconciliation can bind the existing job to the final output folder.
-- Intake column I is treated as the square tube section. If blank, the workflow marks `auto_selection_required`; candidate `*.SECT` sections must be tried and the selected section is the one with controlling ratio `< 1.0` or `<= 1.0` per configured gate and closest to `1.0`.
+- Intake column I is treated as the square tube section. If blank, the workflow marks `auto_selection_required`; candidate `*.SECT` sections must be tried inside the intake allowed list, and the selected section must satisfy the deterministic ratio gate `<= 1.0`. Production economy target is `0.60 <= ratio <= 0.9999` with at most two normal candidate trials.
 - Steel-platform rows use static method. Non-steel-platform rows use response-spectrum method.
 - Static jobs still require the selected project spectrum workbook or audited static acceleration coefficients so equivalent-static acceleration is traceable.
 - Generated engineering command streams are:

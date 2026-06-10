@@ -180,6 +180,45 @@ def _align_tmax_selector(text: str, *, preserve_source_type1_arm_topology: bool 
     }
 
 
+def _source_type1_tbmodel_selector() -> str:
+    return "\n".join(
+        [
+            "! CableTrayAI source-family TBMODEL selector.",
+            "! Source-family tray arms use TYPE=1 with non-square sections; do not select 10*layer TYPE IDs.",
+            "ESEL,S,TYPE,,1",
+            "ESEL,U,SEC,,1",
+        ]
+    )
+
+
+def _align_tbmodel_selector(text: str, *, preserve_source_type1_arm_topology: bool = False) -> tuple[str, dict[str, Any]]:
+    pattern = re.compile(
+        r"ESEL\s*,\s*NONE\s*\n"
+        r"\s*\*DO\s*,\s*_CTAI_LAYER\s*,\s*1\s*,\s*10\s*,\s*1\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*10\s*\*\s*_CTAI_LAYER\s*\+\s*2\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*10\s*\*\s*_CTAI_LAYER\s*\+\s*3\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*10\s*\*\s*_CTAI_LAYER\s*\+\s*4\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*200\s*\*\s*_CTAI_LAYER\s*\+\s*2\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*200\s*\*\s*_CTAI_LAYER\s*\+\s*3\s*\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*TYPE\s*,\s*,\s*200\s*\*\s*_CTAI_LAYER\s*\+\s*4\s*\n"
+        r"\s*\*ENDDO",
+        re.IGNORECASE,
+    )
+    if not preserve_source_type1_arm_topology:
+        return text, {
+            "status": "parameterized_type_selector_preserved",
+            "source_ref": "templates/apdl/post_extract_s2.mac.j2:TBMODEL selector",
+        }
+    updated, count = pattern.subn(_source_type1_tbmodel_selector(), text)
+    return updated, {
+        "status": "source_topology_applied" if count else "not_found",
+        "replaced_count": count,
+        "selector": ["ESEL,S,TYPE,,1", "ESEL,U,SEC,,1"],
+        "source_ref": "generated_model.mac:LATT assigns source-family tray arms to TYPE=1 and non-square sections",
+        "policy": "Fig. 5.2 TBMODEL selection follows the same source topology as TMAX so MAPDL does not warn about undefined 10*layer/200*layer TYPE IDs.",
+    }
+
+
 def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """Patch generated post commands so the shared S2 extractor matches the parameterized model.
 
@@ -198,6 +237,7 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
     text, branch_audit = _prepend_branch_parameters(original, payload)
     text, threshold_audit = _align_appendix_c_threshold(text)
     preserve_source_topology = _model_uses_source_type1_arm_topology(job_dir)
+    text, tbmodel_audit = _align_tbmodel_selector(text, preserve_source_type1_arm_topology=preserve_source_topology)
     text, selector_audit = _align_tmax_selector(text, preserve_source_type1_arm_topology=preserve_source_topology)
     changed = text != original
     if changed:
@@ -207,6 +247,7 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         "post_path": str(post_path),
         "branch_parameters": branch_audit,
         "appendix_c_threshold": threshold_audit,
+        "tbmodel_selector": tbmodel_audit,
         "tmax_selector": selector_audit,
         "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter.",
     }

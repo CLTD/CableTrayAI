@@ -130,7 +130,7 @@ def write_precision_diagnosis(
         "## Material Policy",
         "",
         "- Intake column I / 埋件 is treated as the square steel section size, not an embedded plate design result.",
-        "- If column I is blank in a first-pass intake, candidate square sections must be run and selected by controlling ratio <= 1.0 closest to 1.0.",
+        "- If column I is blank in a first-pass intake, candidate square sections must target 0.60 <= controlling ratio <= 0.9999 within no more than two fresh ANSYS candidate trials; ratio > 1.0 still fails.",
         "- Non-steel-platform support members use Q355 bending allowable `234.30 MPa`.",
         "- Steel-platform square support uses Q235 bending allowable `155.10 MPa` conservatively because only the square steel contacts the steel platform.",
         "",

@@ -10,8 +10,9 @@ Policy:
 - Do not treat it as an embedded plate result.
 - First-pass intake is expected to leave this value blank in future workflows.
 - When blank, the job records `auto_selection_required`.
-- CableTrayAI must run square steel section candidates from local `*.SECT` files and select the candidate whose controlling stress ratio is <= 1.0 and closest to 1.0.
-- The selected section must not be larger than necessary. Estimated area/weight is only a tie-breaker after satisfying the stress-ratio target.
+- CableTrayAI must run square steel section candidates from local `*.SECT` files and select a candidate whose controlling stress ratio is `<= 1.0`.
+- Production economic target is `0.60 <= ratio <= 0.9999`. A passing candidate inside `0.60 <= ratio <= 0.75` is treated as potentially conservative, so the selector runs exactly one immediately lower intake-allowed section before final selection.
+- The selected section must not be larger than necessary. Similar-intake learning and section-modulus estimates may choose the first candidate, but they cannot accept a result without current real ANSYS and deterministic evaluation.
 - No production result may claim final section optimization until the selected candidate has been run through real ANSYS and deterministic evaluation.
 
 ## Material Allowables
@@ -52,9 +53,11 @@ When `metadata.square_section_selection_status = auto_selection_required`, the o
 
 1. copy the rendered job into a separate `_square_section_trials/<job_id>/<timestamp>/` workspace;
 2. replace only the first square-support `SECREAD` with each candidate square `*.SECT`;
-3. run real ANSYS and deterministic evaluation for each candidate;
-4. choose the candidate with controlling square-support ratio `<= 1.0` and closest to `1.0`;
-5. apply the selected section back to `input.json` and `generated_model.mac`;
-6. run the final real calculation once with the selected section.
+3. run real ANSYS and deterministic evaluation for the first learned/estimated candidate;
+4. if the first candidate is outside `0.60 <= ratio <= 0.9999`, run at most one section-modulus correction candidate;
+5. if a passing larger candidate is inside `0.60 <= ratio <= 0.75`, run exactly one immediately lower intake-allowed candidate; if it fails, keep the already passing larger section;
+6. choose the candidate with controlling square-support ratio `<= 1.0` inside the economic band when available;
+7. apply the selected section back to `input.json` and `generated_model.mac`;
+8. run the final real calculation once with the selected section.
 
 If no candidate satisfies `ratio <= 1.0`, the job fails. It must not continue with an oversized default section or a guessed manual value.

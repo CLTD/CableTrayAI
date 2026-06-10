@@ -90,6 +90,76 @@ def test_trial_section_replacement_uses_same_arm_branch_as_final_model(tmp_path:
     assert "SECREAD,YIXINGGANG150DAN,SECT" in shaped_text
 
 
+def test_yixing_trial_replacement_removes_channel_secondary_offset(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-6",
+            "140-140-8",
+            "50-42",
+            "CAOGANG42DAN",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "SECREAD,100-100-6,SECT",
+                "SECOFFSET,cent,",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "140-140-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["arm_section_family"] == "square_gt_120_yixing_arm_family"
+    assert audit["arm_section_replace_audit"]["yixing_secoffset_replacements"] == 1
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,YIXINGGANG150DAN" not in text
+    assert "SECOFFSET,user\nSECREAD,YIXINGGANG150DAN" in text
+
+
+def test_channel_trial_replacement_keeps_channel_secondary_offset(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-6",
+            "50-42",
+            "CAOGANG42DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "SECREAD,100-100-6,SECT",
+                "SECOFFSET,cent,",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "120-120-6", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["arm_section_family"] == "square_le_120_standard_channel_family"
+    assert audit["arm_section_replace_audit"]["yixing_secoffset_replacements"] == 0
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,CAOGANG42DAN" in text
+
+
 def test_trial_section_replacement_does_not_overwrite_tray_secreads(tmp_path: Path) -> None:
     source_root = tmp_path / "source"
     _write_section_catalog(
@@ -123,6 +193,40 @@ def test_trial_section_replacement_does_not_overwrite_tray_secreads(tmp_path: Pa
     assert text.count("SECREAD,500-75-2mm,SECT") == 2
     assert "SECREAD,50-42,SECT" not in text
     assert "SECREAD,CAOGANG42DAN,SECT" in text
+
+
+def test_apply_selected_square_section_records_formal_validation_mode(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "140-140-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["140-140-8"])
+    _write_minimal_model_with_sections(job_dir)
+    selection = {
+        "status": "pass",
+        "selection_validation_mode": "formal_full_run_required",
+        "policy": "test formal fallback",
+        "selected": {
+            "section_name": "140-140-8",
+            "controlling_ratio": 0.91,
+            "formal_validation_required": True,
+        },
+    }
+
+    audit = workflow.apply_selected_square_section(job_dir, selection, source_root=source_root)
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    metadata = payload["metadata"]
+
+    assert audit["status"] == "pass"
+    assert metadata["square_section_selection_validation_mode"] == "formal_full_run_required"
+    assert metadata["square_section_selection_requires_formal_validation"] is True
+    assert metadata["square_section_selected"] == "140-140-8"
 
 
 def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sections(tmp_path: Path, monkeypatch) -> None:
@@ -169,9 +273,10 @@ def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sect
     assert captured["stop_after_first_feasible"] is True
     assert captured["feasible_confirmation_count"] == 1
     assert captured["smart_jumps_enabled"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert captured["lower_neighbor_count"] == 0
     assert captured["limit"] is None
+    assert captured["max_evaluated_candidates"] == 2
     assert captured["overwrite_trials"] is True
 
 
@@ -216,8 +321,9 @@ def test_allowed_square_sections_ignore_similar_cache_window_and_keep_smaller_ca
     captured_names = [candidate.section_name for candidate in captured["candidates"]]
     assert captured_names == ["100-100-6", "100-100-8", "120-120-6"]
     assert captured["stop_after_first_feasible"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert captured["smart_jumps_enabled"] is True
+    assert captured["max_evaluated_candidates"] == 2
 
 
 def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path: Path, monkeypatch) -> None:
@@ -272,6 +378,8 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
 
     assert result["status"] == "pass"
     assert [candidate.section_name for candidate in captured["candidates"]] == [
+        "100-100-6",
+        "100-100-8",
         "120-120-6",
         "120-120-10",
         "140-140-8",
@@ -285,7 +393,7 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
     ]
     assert result["learned_allowed_section_start"]["selected_section_hint"] == "140-140-8"
     assert captured["stop_after_first_feasible"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
 
 
 def test_similar_selection_cache_prefers_current_newer_entry_on_tie(tmp_path: Path) -> None:
@@ -361,7 +469,7 @@ def test_allowed_square_sections_keep_modulus_jump_inside_allowed_list(tmp_path:
     )
 
     assert captured["smart_jumps_enabled"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert [candidate.section_name for candidate in captured["candidates"]] == [
         "100-100-6",
         "100-100-8",

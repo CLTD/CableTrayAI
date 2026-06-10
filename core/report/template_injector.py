@@ -9,7 +9,8 @@ from typing import Any
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Inches
+from docx.oxml.ns import qn
+from docx.shared import Inches, RGBColor
 
 from core.validation.analysis_scope import classify_scope_from_input
 
@@ -25,6 +26,9 @@ STRESS_LABELS = [
     ("SBEND", "弯曲应力", "support_bending"),
     ("SHEAR", "剪切应力", "support_shear"),
 ]
+
+TITLE_RED = RGBColor(255, 0, 0)
+WELD_EQUIVALENT_COEFFICIENT = 0.526
 
 
 def _read_json(path: Path, default: Any) -> Any:
@@ -108,10 +112,110 @@ def _fmt_ratio(value: Any) -> str:
     return text
 
 
+def _fmt_ratio_precise(value: Any, digits: int = 3) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if abs(number) < 1e-12:
+        return "0"
+    text = f"{number:.{digits}f}".rstrip("0").rstrip(".")
+    return text or "0"
+
+
 def _metric_value(metric: Any) -> Any:
     if isinstance(metric, dict):
         return metric.get("value", metric.get("normalized_value"))
     return metric
+
+
+def _float_list(values: Any) -> list[float]:
+    if values is None:
+        return []
+    if not isinstance(values, (list, tuple)):
+        values = [values]
+    parsed: list[float] = []
+    for item in values:
+        try:
+            parsed.append(float(item))
+        except (TypeError, ValueError):
+            continue
+    return parsed
+
+
+def _static_report_spectrum_elevations(input_payload: dict[str, Any]) -> list[float]:
+    metadata = input_payload.get("metadata") or {}
+    if str(metadata.get("analysis_method") or "").lower() != "static":
+        return []
+    source = metadata.get("static_acceleration_source") or {}
+    selected = _float_list(source.get("elevations"))
+    selected.extend(_float_list(source.get("selected_elevations")))
+    selected.extend(_float_list(source.get("selected_elevation")))
+    selected.extend(_float_list(source.get("elevation")))
+    if selected:
+        return sorted(set(selected))
+    return sorted(set(_float_list(metadata.get("static_elevation_candidates"))))
+
+
+def _mark_paragraph_red(paragraph) -> bool:
+    if not paragraph.runs:
+        paragraph.add_run(paragraph.text)
+    for run in paragraph.runs:
+        run.font.color.rgb = TITLE_RED
+    return True
+
+
+def _mark_first_title_red(document: Document, *prefixes: str) -> str | None:
+    for paragraph in document.paragraphs:
+        text = paragraph.text.strip()
+        if any(text.startswith(prefix) for prefix in prefixes if prefix):
+            _mark_paragraph_red(paragraph)
+            return text
+    return None
+
+
+def _mark_titles_red(document: Document, prefixes: set[str]) -> list[str]:
+    marked: list[str] = []
+    for paragraph in document.paragraphs:
+        style_name = (paragraph.style.name or "").lower()
+        if style_name.startswith("toc"):
+            continue
+        text = paragraph.text.strip()
+        if not text:
+            continue
+        if any(text.startswith(prefix) for prefix in prefixes if prefix):
+            _mark_paragraph_red(paragraph)
+            marked.append(text)
+    return marked
+
+
+def _replacement_title_prefixes(replacements: list[dict[str, Any]]) -> set[str]:
+    prefixes: set[str] = set()
+    target_to_prefixes = {
+        "表3-1": {"表3-1"},
+        "支架应力评定": {"表6-1"},
+        "support stress evaluation": {"表6-1"},
+        "square support stress evaluation": {"表6-2"},
+        "cantilever/root weld stress evaluation": {"表6-2"},
+        "托臂根部焊缝评定结果": {"表6-2", "表6-3"},
+        "焊缝评定结果": {"表6-2", "表6-3"},
+        "托臂根部所受载荷": {"表6-2"},
+        "支架基础载荷": {"表6-4"},
+        "支架连接螺栓载荷": {"表6-5"},
+        "支架螺栓应力评定表": {"表6-6"},
+        "模态频率表": {"表A-1"},
+        "附录C": {"附录C"},
+    }
+    for item in replacements:
+        if item.get("status") not in {"pass", "warning"}:
+            continue
+        target = str(item.get("target") or item.get("caption") or "")
+        if target.startswith(("图", "表", "附录")):
+            prefixes.add(target)
+        for key, values in target_to_prefixes.items():
+            if key in target:
+                prefixes.update(values)
+    return prefixes
 
 
 def _condition_rows(component: str, result: dict[str, Any], evaluation: list[dict[str, Any]]) -> list[list[Any]]:
@@ -269,6 +373,115 @@ def _fill_weld_evaluation_table(table, weld_eval_rows: list[dict[str, Any]]) -> 
     return _fill_rows(table, rows, trim_unused=True)
 
 
+def _is_equivalent_weld_branch(scope: dict[str, Any] | None, evaluation: list[dict[str, Any]]) -> bool:
+    requires = (scope or {}).get("requires") or {}
+    if requires.get("cantilever_root_weld_equivalent_stress_table"):
+        return True
+    return any(str(item.get("check_id", "")).startswith("cantilever_root_weld_equivalent.") for item in evaluation)
+
+
+def _ensure_equivalent_weld_table_layout(document: Document, table_index: int = 10) -> dict[str, Any]:
+    if len(document.tables) <= table_index:
+        return {"status": "warning", "message": "equivalent weld table target is missing"}
+    table = document.tables[table_index]
+    removed_columns = 0
+    for grid_col in list(table._tbl.xpath("./w:tblGrid/w:gridCol"))[6:]:
+        grid_col.getparent().remove(grid_col)
+        removed_columns += 1
+    for tr in table._tbl.tr_lst:
+        for tc in list(tr.tc_lst)[6:]:
+            tr.remove(tc)
+        for tc in tr.tc_lst:
+            tc_pr = tc.tcPr
+            if tc_pr is None:
+                continue
+            for child in list(tc_pr):
+                if child.tag in {qn("w:vMerge"), qn("w:gridSpan")}:
+                    tc_pr.remove(child)
+    headers = ["工况", "应力类型", "计算值(MPa)", "等效应力(MPa)", "许用值(MPa)", "应力比"]
+    if len(table.rows[0].cells) < len(headers):
+        return {"status": "warning", "message": "equivalent weld table has fewer than 6 columns after normalization"}
+    for column, text in enumerate(headers):
+        _set_cell_text(table.rows[0].cells[column], text)
+    return {"status": "pass", "layout_normalized": True, "removed_columns": removed_columns}
+
+
+def _equivalent_weld_rows(
+    evaluation: list[dict[str, Any]],
+    *,
+    coefficient: float = WELD_EQUIVALENT_COEFFICIENT,
+) -> list[list[Any]]:
+    by_case_type: dict[tuple[str, str], dict[str, Any]] = {}
+    stress_type_by_token = {
+        "tension": "拉伸应力",
+        "compression": "压缩应力",
+        "bending": "弯曲应力",
+        "shear": "剪切应力",
+    }
+    for item in evaluation:
+        check_id = str(item.get("check_id") or "")
+        if not check_id.startswith("cantilever_root_weld_equivalent."):
+            continue
+        if item.get("ratio") is None:
+            continue
+        case = "accident" if ".accident." in check_id else "normal_abnormal"
+        token = check_id.rsplit(".", 1)[-1]
+        if token not in stress_type_by_token:
+            continue
+        by_case_type[(case, token)] = item
+
+    rows: list[list[Any]] = []
+    for case, label in (("normal_abnormal", "正常/异常"), ("accident", "事故")):
+        for token in ("tension", "compression", "bending", "shear"):
+            item = by_case_type.get((case, token))
+            if not item:
+                continue
+            calculation_value = item.get("calculation_value")
+            try:
+                equivalent_stress = float(calculation_value) / coefficient
+            except (TypeError, ValueError, ZeroDivisionError):
+                equivalent_stress = None
+            rows.append(
+                [
+                    label,
+                    stress_type_by_token[token],
+                    _fmt_num(calculation_value, 3),
+                    _fmt_num(equivalent_stress, 3),
+                    _fmt_num(item.get("allowable_value"), 3),
+                    _fmt_ratio_precise(item.get("ratio"), 3),
+                ]
+            )
+    return rows
+
+
+def _fill_equivalent_weld_table(
+    document: Document,
+    evaluation: list[dict[str, Any]],
+    *,
+    coefficient: float = WELD_EQUIVALENT_COEFFICIENT,
+) -> dict[str, Any]:
+    layout = _ensure_equivalent_weld_table_layout(document, 10)
+    if layout.get("status") != "pass" or len(document.tables) <= 10:
+        return {
+            "target": "托臂根部焊缝评定结果（应力比）",
+            "filled_rows": 0,
+            "status": "warning",
+            "message": layout.get("message", "equivalent weld table layout unavailable"),
+        }
+    rows = _equivalent_weld_rows(evaluation, coefficient=coefficient)
+    table = document.tables[10]
+    _ensure_table_rows(table, 1 + len(rows))
+    filled = _fill_rows(table, rows, trim_unused=True)
+    return {
+        "target": "托臂根部焊缝评定结果（应力比）",
+        "filled_rows": filled,
+        "status": "pass" if filled else "warning",
+        "equivalent_coefficient": coefficient,
+        "layout_normalized": layout.get("layout_normalized", False),
+        "removed_columns": layout.get("removed_columns", 0),
+    }
+
+
 def _fill_support_tables(
     document: Document,
     result: dict[str, Any],
@@ -282,6 +495,11 @@ def _fill_support_tables(
         return [{"target": "result_tables", "status": "warning", "message": "template has fewer tables than expected"}]
     requires = (scope or {}).get("requires") or {}
     root_weld_required = bool(requires.get("cantilever_root_weld_eval"))
+    equivalent_weld_branch = _is_equivalent_weld_branch(scope, evaluation)
+    try:
+        equivalent_weld_coefficient = float((scope or {}).get("cantilever_root_weld_equivalent_coefficient") or WELD_EQUIVALENT_COEFFICIENT)
+    except (TypeError, ValueError):
+        equivalent_weld_coefficient = WELD_EQUIVALENT_COEFFICIENT
 
     if mode == "steel_platform":
         mapping = [(8, "square_support", "支架方钢应力评定表"), (9, "cantilever_arm", "托臂应力评定表")]
@@ -333,7 +551,16 @@ def _fill_support_tables(
                     _fmt_num(_metric_value(values.get("mz")), 1),
                 ]
             )
-        if weld_force_rows:
+        if equivalent_weld_branch:
+            replacements.append(
+                {
+                    "target": "托臂根部所受载荷",
+                    "filled_rows": 0,
+                    "status": "not_applicable",
+                    "message": "square outer width <= 120 mm uses TMAXBEAMSTRESS equivalent weld-stress table; HF-FORCE root-load table is not required",
+                }
+            )
+        elif weld_force_rows:
             filled = _fill_rows(tables[9], weld_force_rows)
             replacements.append({"target": "托臂根部所受载荷", "filled_rows": filled, "status": "pass" if filled else "warning"})
         elif not root_weld_required:
@@ -350,7 +577,9 @@ def _fill_support_tables(
             replacements.append({"target": "托臂根部所受载荷", "filled_rows": 0, "status": "warning", "message": "no weld/root load rows in result.json"})
 
     weld_eval_rows = [item for item in evaluation if "weld" in str(item.get("check_id", "")).lower() and item.get("ratio") is not None]
-    if weld_eval_rows:
+    if equivalent_weld_branch:
+        replacements.append(_fill_equivalent_weld_table(document, evaluation, coefficient=equivalent_weld_coefficient))
+    elif weld_eval_rows:
         filled = _fill_weld_evaluation_table(tables[10], weld_eval_rows)
         replacements.append({"target": "焊缝评定结果", "filled_rows": filled, "status": "pass" if filled else "warning"})
     elif not root_weld_required:
@@ -633,13 +862,19 @@ def _insert_image_before_caption(
     paragraph = document.paragraphs[target_index]
     _clear_paragraph(paragraph)
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.keep_together = True
+    paragraph.paragraph_format.keep_with_next = True
     paragraph.add_run().add_picture(str(image_path), width=Inches(width_inches))
+    caption_paragraph = document.paragraphs[index]
+    caption_paragraph.paragraph_format.keep_together = True
+    _mark_paragraph_red(caption_paragraph)
     return {
         "caption": caption_prefix,
-        "matched_caption": document.paragraphs[index].text.strip(),
+        "matched_caption": caption_paragraph.text.strip(),
         "image": image_path.name,
         "status": "pass",
         "caption_added_to_template_copy": caption_added,
+        "title_marked_red": True,
     }
 
 
@@ -648,6 +883,41 @@ def _remove_paragraph(paragraph) -> None:
     parent = element.getparent()
     if parent is not None:
         parent.remove(element)
+
+
+def _paragraph_has_page_break(paragraph) -> bool:
+    return bool(paragraph._p.xpath(".//w:br[@w:type='page']") or paragraph._p.xpath("./w:pPr/w:pageBreakBefore"))
+
+
+def _remove_empty_page_breaks_inside_appendices(document: Document) -> dict[str, Any]:
+    appendix_start = None
+    for index, paragraph in enumerate(document.paragraphs):
+        style_name = (paragraph.style.name or "").lower()
+        if style_name.startswith("toc"):
+            continue
+        if paragraph.text.strip().startswith(("附录A", "附录B", "附录C")):
+            appendix_start = index
+            break
+    if appendix_start is None:
+        return {"target": "附录分页符", "status": "not_applicable", "removed": 0}
+    removed: list[dict[str, Any]] = []
+    for index, paragraph in list(enumerate(document.paragraphs))[appendix_start + 1 :]:
+        if paragraph.text.strip() or _paragraph_has_image(paragraph) or not _paragraph_has_page_break(paragraph):
+            continue
+        next_text = ""
+        for next_paragraph in document.paragraphs[index + 1 :]:
+            next_text = next_paragraph.text.strip()
+            if next_text or _paragraph_has_image(next_paragraph):
+                break
+        removed.append({"paragraph_index": index, "next_text": next_text[:40]})
+        _remove_paragraph(paragraph)
+    return {
+        "target": "附录分页符",
+        "status": "pass",
+        "removed": len(removed),
+        "removed_paragraphs": removed,
+        "message": "Removed empty page-break-only paragraphs inside appendices from the generated copy to avoid blank appendix pages.",
+    }
 
 
 def _remove_table(table) -> None:
@@ -701,6 +971,74 @@ def _remove_not_applicable_weld_section(
         "removed_tables": removed_tables,
         "removed_paragraphs": removed_paragraphs,
         "message": "cantilever root weld section removed because current scope uses cantilever cloud figures instead of weld-principle evaluation",
+    }
+
+
+def _remove_matching_paragraphs(document: Document, predicates: list) -> int:
+    removed = 0
+    for paragraph in list(document.paragraphs):
+        text = paragraph.text.strip()
+        if any(predicate(text) for predicate in predicates):
+            _remove_paragraph(paragraph)
+            removed += 1
+    return removed
+
+
+def _replace_first_paragraph_starting_with(document: Document, prefix: str, text: str) -> bool:
+    for paragraph in document.paragraphs:
+        if paragraph.text.strip().startswith(prefix):
+            _replace_paragraph_text(paragraph, text)
+            return True
+    return False
+
+
+def _adapt_equivalent_weld_section(
+    document: Document,
+    scope: dict[str, Any] | None,
+    evaluation: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not _is_equivalent_weld_branch(scope, evaluation):
+        return {"target": "6.2 等效焊缝评定", "status": "not_applicable"}
+    removed_tables = 0
+    if len(document.tables) > 9:
+        header = " ".join(cell.text.strip() for cell in document.tables[9].rows[0].cells)
+        if "FX" in header and "FZ" in header and "MZ" in header:
+            _remove_table(document.tables[9])
+            removed_tables = 1
+    removed_paragraphs = _remove_matching_paragraphs(
+        document,
+        [
+            lambda text: text.startswith("托臂与托臂底板之间焊缝的焊角高度"),
+            lambda text: text.startswith("图6.1 托臂根部焊缝截面投影形状"),
+            lambda text: text.startswith("托臂根部所受载荷如下表所示"),
+            lambda text: text.startswith("表6-2 托臂根部所受载荷"),
+            lambda text: text.startswith("根据上述载荷计算得到各个工况下的焊缝剪应力"),
+        ],
+    )
+    intro_changed = _replace_first_paragraph_starting_with(
+        document,
+        "支架的托臂与托臂底板之间",
+        "支架的托臂与托臂底板之间采用角焊进行连接。方钢外边长不大于120mm时，按托臂根部梁单元应力结果并采用等效系数0.526进行焊缝等效评定，评定结果如下表所示。",
+    )
+    title_changed = _replace_first_paragraph_starting_with(
+        document,
+        "表6-3 托臂根部焊缝评定结果",
+        "表6-2 托臂根部焊缝评定结果（应力比）",
+    )
+    marked_titles = []
+    for prefix in ("焊缝的评定", "表6-2 托臂根部焊缝评定结果"):
+        marked = _mark_first_title_red(document, prefix)
+        if marked:
+            marked_titles.append(marked)
+    return {
+        "target": "6.2 等效焊缝评定",
+        "status": "pass",
+        "removed_tables": removed_tables,
+        "removed_paragraphs": removed_paragraphs,
+        "intro_changed": intro_changed,
+        "table_title_changed": title_changed,
+        "marked_titles": marked_titles,
+        "message": "root-load table removed for <=120 mm equivalent weld-stress branch; table values come from evaluation_summary.json",
     }
 
 
@@ -880,8 +1218,9 @@ def _points_from_spectrum_file(job_dir: Path, input_payload: dict[str, Any]) -> 
         if not workbook:
             return None
         try:
-            from core.spectra.response_spectrum_writer import _curve_payload, _envelope_curves
+            from core.spectra.response_spectrum_writer import _curve_payload
             from core.spectra.static_coefficients import DAMPING_BY_LEVEL, _curve_at_elevation, _read_segmented_sheet, resolve_segmented_spectrum_sheet
+            from core.spectra.workbook_envelope import _envelope_curves
 
             workbook_path = Path(workbook)
             project = input_payload.get("project") or {}
@@ -889,7 +1228,7 @@ def _points_from_spectrum_file(job_dir: Path, input_payload: dict[str, Any]) -> 
             building = project.get("building") or project.get("area") or ""
             project_code = str(project.get("project_code") or "")
             elevation = float(project.get("elevation") or 0.0)
-            static_elevations = [
+            static_elevations = _static_report_spectrum_elevations(input_payload) or [
                 float(item)
                 for item in (metadata.get("static_elevation_candidates") or [])
                 if isinstance(item, int | float) or re.match(r"^[-+]?\d+(?:\.\d+)?$", str(item).strip())
@@ -967,12 +1306,13 @@ def _fill_spectrum_table(document: Document, input_payload: dict[str, Any], job_
     elevation = project.get("elevation")
     caption_index = _find_caption_index(document, "表3-1")
     if caption_index is not None:
-        static_elevations = []
-        for item in metadata.get("static_elevation_candidates") or []:
-            try:
-                static_elevations.append(float(item))
-            except (TypeError, ValueError):
-                continue
+        static_elevations = _static_report_spectrum_elevations(input_payload)
+        if not static_elevations:
+            for item in metadata.get("static_elevation_candidates") or []:
+                try:
+                    static_elevations.append(float(item))
+                except (TypeError, ValueError):
+                    continue
         if static_elevations:
             elevations = sorted(set(static_elevations))
             elevation_text = "、".join(f"{_fmt_num(item, 2).rstrip('0').rstrip('.')}m" for item in elevations)
@@ -981,6 +1321,7 @@ def _fill_spectrum_table(document: Document, input_payload: dict[str, Any], job_
         else:
             elevation_text = _fmt_num(elevation, 2).rstrip("0").rstrip(".") if elevation is not None else ""
             _replace_paragraph_text(document.paragraphs[caption_index], f"表3-1 {building}{elevation_text}m楼层反应谱")
+        _mark_paragraph_red(document.paragraphs[caption_index])
 
     curves = _points_from_spectrum_file(job_dir, input_payload)
     if not curves:
@@ -1037,6 +1378,7 @@ def build_report_from_template(job_dir: Path | str, *, template_dir: Path | str 
     replacements.append(_replace_report_identity(document, input_payload, report_id))
     replacements.append(_fill_spectrum_table(document, input_payload, job_dir))
     replacements.extend(_fill_support_tables(document, result, evaluation, selection["mode"], scope))
+    replacements.append(_adapt_equivalent_weld_section(document, scope, evaluation))
     replacements.append(_adapt_appendix_c(document, scope))
     replacements.extend(_replace_figures(document, job_dir, figures, selection["mode"], scope))
     replacements.append(
@@ -1049,6 +1391,17 @@ def build_report_from_template(job_dir: Path | str, *, template_dir: Path | str 
             ),
         )
     )
+    replacements.append(_remove_empty_page_breaks_inside_appendices(document))
+    marked_titles = _mark_titles_red(document, _replacement_title_prefixes(replacements))
+    if marked_titles:
+        replacements.append(
+            {
+                "target": "修改/注入内容标题标红",
+                "status": "pass",
+                "marked_titles": sorted(set(marked_titles)),
+                "message": "Only section titles, table titles and figure captions touched by template injection are marked red; body text and table values are not colored.",
+            }
+        )
 
     output = Path(output_path) if output_path else job_dir / f"{report_id}.docx"
     document.save(output)

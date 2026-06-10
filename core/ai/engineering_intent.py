@@ -110,7 +110,7 @@ def deterministic_intake_intent(input_path_or_payload: Path | str | dict[str, An
             "status": "provided" if square_section else "auto_select_required",
             "selected_or_candidate": square_section,
             "selection_rule": metadata.get("square_section_selection_rule")
-            or "Select a local SECT candidate with controlling ratio < 1.0 and closest to 1.0.",
+            or "Select a local SECT candidate within 0.60 <= controlling ratio <= 0.9999 when possible, using no more than two fresh ANSYS candidate trials.",
         },
         "material_policy": {
             "policy": metadata.get("material_policy") or metadata.get("material_strategy"),

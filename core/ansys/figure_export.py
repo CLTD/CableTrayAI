@@ -4,9 +4,10 @@ import json
 import re
 import shutil
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from core.ansys.config import AnsysLocalConfig, load_ansys_config
 from core.ansys.command_builder import DEFAULT_HIGH_MODAL_NPROC_CAP_THRESHOLD
@@ -20,10 +21,46 @@ from core.validation.result_requirements import classify_job_requirements
 FIGURE_EXPORT_MACRO = "export_figures.mac"
 FIGURE_EXPORT_AUDIT = "figure_export_audit.json"
 FIGURE_POST_MACRO = "generated_post_figure_export.mac"
+FIGURE_EXPORT_LIVE_STATUS = "figure_export_live_status.json"
 
 
 def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _figure_export_activity(job_dir: Path, started_monotonic: float, started: datetime) -> dict[str, Any]:
+    watched = [
+        job_dir / "export_figures.out",
+        job_dir / "figure_export_stdout.log",
+        job_dir / "figure_export_stderr.log",
+        job_dir / "figure_export_names.txt",
+    ]
+    watched.extend(list(job_dir.glob("*.PNG")))
+    watched.extend(list(job_dir.glob("*.png")))
+    existing = [path for path in watched if path.exists()]
+    total_bytes = sum(path.stat().st_size for path in existing if path.is_file())
+    latest_mtime = max((path.stat().st_mtime for path in existing if path.is_file()), default=started.timestamp())
+    latest_files = sorted(
+        (
+            {
+                "name": path.name,
+                "size_bytes": path.stat().st_size,
+                "updated_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(),
+            }
+            for path in existing
+            if path.is_file()
+        ),
+        key=lambda item: item["updated_at"],
+        reverse=True,
+    )[:12]
+    return {
+        "elapsed_seconds": round(time.monotonic() - started_monotonic, 1),
+        "total_output_bytes": total_bytes,
+        "total_output_mb": round(total_bytes / (1024 * 1024), 3),
+        "no_output_seconds": round(max(0.0, time.time() - latest_mtime), 1),
+        "png_count": len(list(job_dir.glob("*.PNG"))) + len(list(job_dir.glob("*.png"))),
+        "latest_files": latest_files,
+    }
 
 
 def _quote_apdl(value: str) -> str:
@@ -667,6 +704,7 @@ def run_figure_export(
     config: AnsysLocalConfig | None = None,
     *,
     timeout_minutes: int | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run ANSYS in post-only mode to generate BMP/PNG cloud figures."""
 
@@ -702,26 +740,67 @@ def run_figure_export(
         return audit
 
     removed_generic_pngs = _cleanup_previous_generic_pngs(job_dir, command["ansys_job_name"])
-    timeout_seconds = max(1, int((timeout_minutes or config.ansys.timeout_minutes) * 60))
+    soft_timeout_seconds = max(1, int((timeout_minutes or config.ansys.timeout_minutes) * 60))
     stdout_path = job_dir / "figure_export_stdout.log"
     stderr_path = job_dir / "figure_export_stderr.log"
+    started_monotonic = time.monotonic()
+    running_audit = {
+        "status": "running",
+        "mode": "figure_export",
+        "executed": True,
+        "started_at": started.isoformat(),
+        "soft_timeout_seconds": soft_timeout_seconds,
+        "hard_timeout_policy": "disabled",
+        "command_file": "figure_export_command.json",
+        "stdout_path": stdout_path.name,
+        "stderr_path": stderr_path.name,
+        "notes": [
+            "Figure export writes live status while ANSYS is running.",
+            "timeout_minutes is a soft monitoring threshold here; CableTrayAI does not kill MAPDL during figure export.",
+        ],
+    }
+    _write_json(job_dir / FIGURE_EXPORT_AUDIT, running_audit)
     try:
         with stdout_path.open("w", encoding="utf-8", errors="replace") as stdout_handle, stderr_path.open(
             "w", encoding="utf-8", errors="replace"
         ) as stderr_handle:
-            completed = subprocess.run(
+            process = subprocess.Popen(
                 command["command"],
                 cwd=str(job_dir),
                 stdout=stdout_handle,
                 stderr=stderr_handle,
                 text=True,
-                timeout=timeout_seconds,
-                check=False,
             )
-    except subprocess.TimeoutExpired:
+            soft_timeout_reported = False
+            while True:
+                returncode = process.poll()
+                activity = _figure_export_activity(job_dir, started_monotonic, started)
+                live_status = {
+                    "stage": "exporting_figures",
+                    "status": "running" if returncode is None else "finished",
+                    "process_running": returncode is None,
+                    "ansys_pid": process.pid,
+                    "returncode": returncode,
+                    "soft_timeout_seconds": soft_timeout_seconds,
+                    "hard_timeout_policy": "disabled",
+                    **activity,
+                }
+                if returncode is None and activity["elapsed_seconds"] > soft_timeout_seconds:
+                    live_status["status"] = "running_over_soft_timeout"
+                    live_status["message"] = (
+                        "Figure export exceeded the soft monitoring threshold; "
+                        "CableTrayAI keeps MAPDL running and continues writing live status."
+                    )
+                    soft_timeout_reported = True
+                _write_json(job_dir / FIGURE_EXPORT_LIVE_STATUS, live_status)
+                if progress_callback:
+                    progress_callback(live_status)
+                if returncode is not None:
+                    break
+                time.sleep(5.0)
+            completed_returncode = int(process.returncode or 0)
+    except Exception as exc:
         finished = datetime.now(timezone.utc)
-        with stderr_path.open("a", encoding="utf-8", errors="replace") as stderr_handle:
-            stderr_handle.write(f"\nFigure export exceeded timeout_seconds={timeout_seconds}.\n")
         audit = {
             "status": "failed",
             "mode": "figure_export",
@@ -730,16 +809,13 @@ def run_figure_export(
             "finished_at": finished.isoformat(),
             "duration_seconds": (finished - started).total_seconds(),
             "returncode": None,
-            "reason": f"Figure export exceeded timeout_seconds={timeout_seconds}.",
-            "timeout_seconds": timeout_seconds,
+            "reason": str(exc),
+            "soft_timeout_seconds": soft_timeout_seconds,
+            "hard_timeout_policy": "disabled",
             "command_file": "figure_export_command.json",
             "stdout_path": stdout_path.name,
             "stderr_path": stderr_path.name,
             "figure_count": 0,
-            "notes": [
-                "Post-only ANSYS figure export timed out and was blocked.",
-                "The main result must not be published with missing or stale cloud figures.",
-            ],
         }
         _write_json(job_dir / FIGURE_EXPORT_AUDIT, audit)
         return audit
@@ -752,13 +828,16 @@ def run_figure_export(
     present = {str(item.get("source_file") or "").upper() for item in figures}
     missing_required = sorted(required - present)
     audit = {
-        "status": "success" if completed.returncode == 0 and figures and not missing_required else "failed",
+        "status": "success" if completed_returncode == 0 and figures and not missing_required else "failed",
         "mode": "figure_export",
         "executed": True,
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "duration_seconds": (finished - started).total_seconds(),
-        "returncode": completed.returncode,
+        "returncode": completed_returncode,
+        "soft_timeout_seconds": soft_timeout_seconds,
+        "hard_timeout_policy": "disabled",
+        "soft_timeout_reported": soft_timeout_reported,
         "naming": naming,
         "removed_stale_generic_pngs": removed_generic_pngs,
         "command_file": "figure_export_command.json",

@@ -96,10 +96,15 @@ function Ensure-AuthLocal {
     } else {
         @("duxyb", "jianghl", "wanggangb")
     }
-    if (Test-Path -LiteralPath $authLocal) {
+    $passwordChoice = Resolve-InitialPassword -Root $Root
+    if ((Test-Path -LiteralPath $authLocal) -and -not $passwordChoice.fixed_by_deployment) {
         return [ordered]@{ created = $false; path = $authLocal; users = $users }
     }
-    $initialPassword = if ($env:CABLETRAYAI_INITIAL_PASSWORD) { $env:CABLETRAYAI_INITIAL_PASSWORD } else { [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(18)).TrimEnd("=") }
+    if ((Test-Path -LiteralPath $authLocal) -and $passwordChoice.fixed_by_deployment) {
+        $backup = "$authLocal.bak_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+        Copy-Item -LiteralPath $authLocal -Destination $backup -Force
+    }
+    $initialPassword = $passwordChoice.password
     $payload = [ordered]@{
         enabled = $true
         session_ttl_seconds = 43200
@@ -108,7 +113,55 @@ function Ensure-AuthLocal {
         })
     }
     $payload | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 -Path $authLocal
-    return [ordered]@{ created = $true; path = $authLocal; users = $users; initial_password = $initialPassword }
+    return [ordered]@{ created = $true; path = $authLocal; users = $users; initial_password = $initialPassword; password_source = $passwordChoice.source }
+}
+
+function Resolve-InitialPassword {
+    param([string]$Root)
+    if ($env:CABLETRAYAI_INITIAL_PASSWORD) {
+        return [ordered]@{ password = $env:CABLETRAYAI_INITIAL_PASSWORD.Trim(); source = "environment CABLETRAYAI_INITIAL_PASSWORD"; fixed_by_deployment = $true }
+    }
+    $packagedPassword = Join-Path $Root "config\initial_password.txt"
+    if (Test-Path -LiteralPath $packagedPassword) {
+        $value = (Get-Content -LiteralPath $packagedPassword -Raw).Trim()
+        if ($value) {
+            return [ordered]@{ password = $value; source = "deployment package config/initial_password.txt"; fixed_by_deployment = $true }
+        }
+    }
+    return [ordered]@{ password = [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(18)).TrimEnd("="); source = "generated random first-install password"; fixed_by_deployment = $false }
+}
+
+function Ensure-LoginInfo {
+    param(
+        [string]$Root,
+        [object]$AuthSetup
+    )
+    $path = Join-Path $Root "CableTrayAI_LOGIN_INFO.txt"
+    $AuthSetup["login_info_path"] = $path
+    if (-not $AuthSetup["created"] -and (Test-Path -LiteralPath $path)) {
+        return $path
+    }
+
+    $lines = @(
+        "CableTrayAI Login Information",
+        "================================",
+        "Install folder: $Root",
+        "Login URL: http://127.0.0.1:8000/",
+        "Users: $($AuthSetup["users"] -join ', ')"
+    )
+    if ($AuthSetup["created"]) {
+        $lines += "Initial password: $($AuthSetup["initial_password"])"
+        $lines += "Password status: $($AuthSetup["password_source"])."
+    }
+    else {
+        $lines += "Password status: existing local auth was preserved; reinstall cannot recover the password."
+    }
+    $lines += "Auth config: $($AuthSetup["path"])"
+    $lines += "ANSYS config: $(Join-Path $Root 'config\ansys.local.toml')"
+    $lines += ""
+    $lines += "Keep this file inside the unit machine. Do not publish, upload, or commit it."
+    $lines | Set-Content -Encoding UTF8 -Path $path
+    return $path
 }
 
 function New-DesktopShortcut {
@@ -145,9 +198,11 @@ Write-InstallLog "Install dir : $target"
 Stop-ExistingCableTrayAI
 Copy-Package -Destination $target
 $authSetup = Ensure-AuthLocal -Root $target
+$loginInfoPath = Ensure-LoginInfo -Root $target -AuthSetup $authSetup
 
 $shortcutPath = New-DesktopShortcut -InstallPath $target
 Write-InstallLog "Desktop shortcut: $shortcutPath"
+Write-InstallLog "Login info: $loginInfoPath"
 
 $manifest = [ordered]@{
     status = "pass"
@@ -157,6 +212,7 @@ $manifest = [ordered]@{
     shortcut = $shortcutPath
     auth_policy = "account_login_only"
     auth_local_path = $authSetup.path
+    login_info_path = $authSetup.login_info_path
     auth_local_created = $authSetup.created
     login_users = $authSetup.users
 }

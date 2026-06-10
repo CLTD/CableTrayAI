@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from core.apdl.intake_standard_family_renderer import _modal_policy_source_bundle, _render_model_from_family, _render_solve_from_source
+from core.apdl.intake_standard_family_renderer import (
+    _apply_post_keypoint_numbering,
+    _modal_policy_source_bundle,
+    _render_model_from_family,
+    _render_solve_from_source,
+    _standard_family_keypoint_numbering,
+)
 from core.apdl.modal_policy import parse_source_modal_mode_count
 from core.apdl.intake_template_context import build_standard_s2_template_context
 
@@ -81,6 +87,80 @@ def _single_two_layer_600_payload() -> dict:
         ],
         "tray_layers": tray_layers,
     }
+
+
+def _double_layer_payload(layer_count: int) -> dict:
+    payload = _double_three_by_three_500_payload()
+    tray_layers = []
+    for side in ("front", "back"):
+        for index in range(1, layer_count + 1):
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": 0.5,
+                    "tray_density_kg_m3": 56704.260652,
+                    "tray_section_id": "tray-500",
+                    "arm_a_length_m": 0.35,
+                    "arm_b_length_m": 0.20,
+                }
+            )
+    payload["tray_layers"] = tray_layers
+    payload["support"]["layers_front"] = layer_count
+    payload["support"]["layers_back"] = layer_count
+    payload["support"]["support_height_m"] = 2.8
+    return payload
+
+
+def _high_layer_source_text() -> str:
+    return "\n".join(
+        [
+            "H1=0.16",
+            "H2=2.8",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.15",
+            "L4=2.0",
+            "senum=5",
+            "senum1=2",
+            "*DO,J,1,3",
+            "K,500+100*(J-1),0,0+L4*(J-1),0",
+            "*DO,I,1,senum",
+            "K,500+I+100*(J-1),0,0+L4*(J-1),0.1+0.2*(I-1)",
+            "*ENDDO",
+            "K,500+senum+1+100*(J-1),0,0+L4*(J-1),H2",
+            "*DO,I,1,senum+1",
+            "L,500+(I-1)+100*(J-1),500+I+100*(J-1)",
+            "*ENDDO",
+            "*DO,I,1,senum",
+            "K,501+10*I+100*(J-1),H1/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,501+10*I+100*(J-1),509+10*I+100*(J-1)",
+            "*ENDDO",
+            "*DO,I,1,senum1",
+            "K,1501+10*I+100*(J-1),-(H1/2),0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,1509+10*I+100*(J-1),-(H1/2+L1-L2/2),0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,1501+10*I+100*(J-1),1509+10*I+100*(J-1)",
+            "*ENDDO",
+            "*ENDDO",
+            "LSEL,S,LOC,X,KX(516)",
+            "LSEL,A,LOC,X,KX(1516)",
+            "LSEL,U,LOC,Y,KY(519)",
+            "LSEL,U,LOC,Y,KY(619)",
+            "LSEL,U,LOC,Y,KY(719)",
+            "LSEL,U,LOC,Y,KY(1519)",
+            "LSEL,U,LOC,Y,KY(1619)",
+            "LSEL,U,LOC,Y,KY(1719)",
+            "KSEL,S,KP,,500+senum+1,700+senum+1,100",
+            "NKMS01=NODE(KX(501+senum),KY(501+senum),KZ(501+senum))",
+            "NKMS02=NODE(KX(601+senum),KY(601+senum),KZ(601+senum))",
+            "NKMS03=NODE(KX(701+senum),KY(701+senum),KZ(701+senum))",
+            "SECREAD,'100-100-8'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'CAOGANG42DAN'",
+        ]
+    )
 
 
 def test_standard_family_rewrites_source_tray_widths_from_current_intake() -> None:
@@ -202,6 +282,68 @@ def test_standard_family_keeps_500_tray_slots_when_source_places_trays_before_ar
     assert audit["section_role_map"]["tray_equivalent_sections"][0]["section"] == "500-75-2mm"
 
 
+def test_standard_family_expands_keypoint_numbering_for_twelve_layers() -> None:
+    rendered, audit = _render_model_from_family(_high_layer_source_text(), _double_layer_payload(12))
+
+    numbering = audit["keypoint_numbering"]
+    assert numbering["status"] == "expanded_for_high_layer_count"
+    assert numbering["keypoint_offset"] == 20
+    assert numbering["frame_step"] == 200
+    assert "KPOFF=20" in rendered
+    assert "KPFSTEP=200" in rendered
+    assert "K,501+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
+    assert "K,501+10*I+100*(J-1)" not in rendered
+    assert "K,500+I+KPFSTEP*(J-1)" in rendered
+    assert "KSEL,S,KP,,500+senum+1,500+2*KPFSTEP+senum+1,KPFSTEP" in rendered
+    assert "KX(500+KPOFF+10+6)" in rendered
+    assert "KY(500+2*KPFSTEP+KPOFF+10+9)" in rendered
+    assert "KY(KPBKBASE+2*KPFSTEP+KPOFF+10+9)" in rendered
+    assert (
+        "NKMS02=NODE(KX(500+KPFSTEP+1+senum),KY(500+KPFSTEP+1+senum),"
+        "KZ(500+KPFSTEP+1+senum))"
+    ) in rendered
+
+    vertical_keypoints = {500 + layer for layer in range(0, 14)}
+    first_frame_arm_keypoints = {
+        500 + numbering["keypoint_offset"] + 10 * layer + suffix
+        for layer in range(1, 13)
+        for suffix in (1, 2, 3, 4, 6, 7, 8, 9)
+    }
+    assert not (vertical_keypoints & first_frame_arm_keypoints)
+    assert max(first_frame_arm_keypoints) < 500 + numbering["frame_step"]
+
+
+def test_post_keypoint_numbering_tracks_high_layer_model_numbering() -> None:
+    numbering = _standard_family_keypoint_numbering(12, 12)
+    post_text = "\n".join(
+        [
+            "senum=12",
+            "senum1=12",
+            "KXALS%3*(I-1)+1%=501+I*10",
+            "KXALS%3*(I-1)+2%=601+I*10",
+            "KXALS%3*(I-1)+3%=701+I*10",
+            "KYALS%3*senum+3*(J-1)+1%=1501+J*10",
+            "KYALS%3*senum+3*(J-1)+2%=1601+J*10",
+            "KYALS%3*senum+3*(J-1)+3%=1701+J*10",
+            "NKMS02=NODE(KX(601+senum),KY(601+senum),KZ(601+senum))",
+        ]
+    )
+
+    rendered, audit = _apply_post_keypoint_numbering(post_text, numbering)
+
+    assert audit["status"] == "expanded_for_high_layer_count"
+    assert "KXALS%3*(I-1)+1%=501+KPOFF+I*10" in rendered
+    assert "KXALS%3*(I-1)+2%=500+KPFSTEP+1+KPOFF+I*10" in rendered
+    assert "KXALS%3*(I-1)+3%=500+2*KPFSTEP+1+KPOFF+I*10" in rendered
+    assert "KYALS%3*senum+3*(J-1)+1%=KPBKBASE+1+KPOFF+J*10" in rendered
+    assert "KYALS%3*senum+3*(J-1)+2%=KPBKBASE+KPFSTEP+1+KPOFF+J*10" in rendered
+    assert "KYALS%3*senum+3*(J-1)+3%=KPBKBASE+2*KPFSTEP+1+KPOFF+J*10" in rendered
+    assert (
+        "NKMS02=NODE(KX(500+KPFSTEP+1+senum),KY(500+KPFSTEP+1+senum),"
+        "KZ(500+KPFSTEP+1+senum))"
+    ) in rendered
+
+
 def test_standard_family_inserts_zero_secondary_layer_count_for_single_side_source() -> None:
     source_text = "\n".join(
         [
@@ -228,6 +370,39 @@ def test_standard_family_inserts_zero_secondary_layer_count_for_single_side_sour
     assert "SECREAD,'600-75-2mm'" in rendered
     assert audit["assigned"]["senum"] == 2
     assert audit["assigned"]["senum1"] == 0
+
+
+def test_standard_family_yixing_rewrite_removes_channel_secondary_offset() -> None:
+    payload = _double_three_by_three_500_payload()
+    payload["support"]["square_tube_width_m"] = 0.14
+    payload["sections"][0]["sect_file"] = "140-140-8.SECT"
+    source_text = "\n".join(
+        [
+            "H1=0.1",
+            "H2=2.0",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=3",
+            "senum1=3",
+            "SECREAD,'100-100-6'",
+            "SECOFFSET,cent,",
+            "SECREAD,'50-42'",
+            "SECOFFSET,user,,-0.03249",
+            "SECREAD,'CAOGANG42DAN'",
+            "SECREAD,'500-75-2mm'",
+            "MP,DENS,2,7850",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "SECREAD,'YIXINGGANG150'" in rendered
+    assert "SECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in rendered
+    assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in rendered
+    assert audit["yixing_secoffset_replacements"] == 1
 
 
 def test_standard_family_rewrites_single_width_source_l2_without_overwriting_arm_tail() -> None:

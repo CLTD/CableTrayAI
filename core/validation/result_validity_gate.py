@@ -123,7 +123,9 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
     For a perfectly symmetric S2 double-side tray layout, self-weight produces
     vertical support reaction while horizontal resultants and root moments can
     cancel in the JCZH support component.  This allowance is deliberately narrow:
-    it requires explicit parsed topology and matching front/back tray stacks.
+    it requires explicit parsed topology.  When detailed layer rows exist,
+    front/back stacks must match; otherwise the support-level layer counts must
+    be symmetric and third-side layers must be absent.
     """
 
     payload = _read_job_input(job_dir)
@@ -137,12 +139,14 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
     front = [item for item in layers if isinstance(item, dict) and str(item.get("side") or "").lower() == "front"]
     back = [item for item in layers if isinstance(item, dict) and str(item.get("side") or "").lower() == "back"]
     tray_text = str(metadata.get("tray_load_description") or payload.get("project", {}).get("description") or "")
+    has_explicit_layer_stack = bool(front or back)
+    stack_is_symmetric = _same_layer_stack(front, back) if has_explicit_layer_stack else True
     symmetric = (
         side_count == 2
         and third_layers == 0
         and front_layers > 0
         and front_layers == back_layers
-        and _same_layer_stack(front, back)
+        and stack_is_symmetric
     )
     if symmetric:
         return {
@@ -151,8 +155,9 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
             "side_count": side_count,
             "front_layers": front_layers,
             "back_layers": back_layers,
+            "layer_stack_evidence": "explicit_stack_match" if has_explicit_layer_stack else "symmetric_layer_counts",
             "tray_load_description": tray_text,
-            "source_ref": "input.json:metadata.tray_load_mapping",
+            "source_ref": "input.json:metadata.tray_load_mapping or input.json:support.layers_front/layers_back",
         }
     return {
         "status": "fail",

@@ -16,6 +16,7 @@ from core.ansys.figure_export import run_figure_export
 from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
 from core.ansys.preflight import run_preflight
 from core.ansys.real_run_guard import evaluate_real_run_guard, write_rejected_real_run_audit
+from core.apdl.numeric_post import NUMERIC_POST_MACRO, build_numeric_post_macro
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -68,6 +69,77 @@ _ANSYS_BLOCKING_OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 
 _LIVE_OUTPUT_SUFFIXES = {".out", ".err", ".rst", ".db", ".lis", ".oup", ".bmp", ".png", ".log"}
+
+MIN_REAL_RUN_TIMEOUT_MINUTES = 120
+MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS = 90
+MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS = 300
+
+
+def _positive_int(value: Any, default: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number > 0 else default
+
+
+def _nonnegative_int(value: Any, default: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number >= 0 else default
+
+
+def _effective_real_run_timeout_policy(config: AnsysLocalConfig) -> dict[str, Any]:
+    """Return code-level minimum ANSYS watchdog settings for production runs.
+
+    Update packages intentionally preserve unit-site ``ansys.local.toml`` files.
+    That means stale local timeout settings can otherwise kill a valid ANSYS
+    solve before APDL/PIP post-processing writes result JSON.  The configured
+    values are still recorded for traceability, but real production runs use a
+    hard minimum that matches the acceptance runs.
+    """
+
+    configured_timeout_minutes = _positive_int(
+        getattr(config.ansys, "timeout_minutes", None),
+        MIN_REAL_RUN_TIMEOUT_MINUTES,
+    )
+    configured_startup = _positive_int(
+        getattr(config.ansys, "startup_no_output_timeout_seconds", None),
+        MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+    )
+    configured_stall = _nonnegative_int(
+        getattr(config.ansys, "output_stall_timeout_seconds", None),
+        MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+    )
+    effective_timeout_minutes = max(configured_timeout_minutes, MIN_REAL_RUN_TIMEOUT_MINUTES)
+    effective_startup = max(configured_startup, MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS)
+    effective_stall = 0 if configured_stall == 0 else max(configured_stall, MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS)
+    return {
+        "status": "clamped" if (
+            effective_timeout_minutes != configured_timeout_minutes
+            or effective_startup != configured_startup
+            or effective_stall != configured_stall
+        ) else "unchanged",
+        "configured_timeout_minutes": configured_timeout_minutes,
+        "configured_timeout_seconds": configured_timeout_minutes * 60,
+        "timeout_minutes": effective_timeout_minutes,
+        "timeout_seconds": effective_timeout_minutes * 60,
+        "minimum_timeout_minutes": MIN_REAL_RUN_TIMEOUT_MINUTES,
+        "minimum_timeout_seconds": MIN_REAL_RUN_TIMEOUT_MINUTES * 60,
+        "configured_startup_no_output_timeout_seconds": configured_startup,
+        "startup_no_output_timeout_seconds": effective_startup,
+        "minimum_startup_no_output_timeout_seconds": MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+        "configured_output_stall_timeout_seconds": configured_stall,
+        "output_stall_timeout_seconds": effective_stall,
+        "output_stall_hard_kill_enabled": effective_stall > 0,
+        "minimum_output_stall_timeout_seconds": MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+        "policy": (
+            "Real ANSYS production runs use code-level minimum watchdogs so "
+            "unit-site preserved local configs cannot terminate a valid solve before results are produced."
+        ),
+    }
 
 _IGNORED_SELECTION_WARNING_RE = re.compile(
     r"\b(?:Entity\s+\d+\s+is\s+undefined\.\s+)?(?:The\s+)?"
@@ -162,9 +234,15 @@ def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> 
     figures. ERROR/FATAL contexts remain blocking.
     """
 
-    if category != "command_stream_error":
-        return False
     if "*** ERROR ***" in context.upper() or "*** FATAL ***" in context.upper():
+        return False
+    if category == "file_or_permission_error":
+        # MAPDL sometimes emits WARNING-level file probes while checking optional
+        # scratch, graphics, or export targets.  Do not fail the real run at this
+        # text-scan layer for warnings only; required files, blank tables, and
+        # figures remain blocked by the deterministic result validation gate.
+        return "*** WARNING ***" in context.upper()
+    if category != "command_stream_error":
         return False
     if _MPI_CWD_IGNORED_RE.search(message) or _MPI_CWD_IGNORED_RE.search(context):
         return True
@@ -307,6 +385,7 @@ def _write_final_live_status(
     failure_reason: str | None,
     failure_category: str | None,
     figure_count: int | None,
+    timeout_policy: dict[str, Any] | None = None,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     stage = "ansys_finished" if status == "success" else "ansys_failed"
@@ -319,6 +398,9 @@ def _write_final_live_status(
         "failure_reason": failure_reason,
         "failure_category": failure_category,
         "figure_count": figure_count,
+        "timeout_seconds": (timeout_policy or {}).get("timeout_seconds"),
+        "configured_timeout_seconds": (timeout_policy or {}).get("configured_timeout_seconds"),
+        "timeout_policy": timeout_policy,
         "nproc": command.get("resources", {}).get("nproc"),
         "nproc_source": command.get("resources", {}).get("nproc_source"),
         "command_line": command.get("command_line"),
@@ -612,7 +694,13 @@ def run_real_ansys(
 ) -> dict:
     job_dir = Path(job_dir)
     config = config or load_ansys_config()
-    command = build_ansys_command(config, job_dir)
+    numeric_post_audit = build_numeric_post_macro(job_dir)
+    post_macro_name = (
+        str(numeric_post_audit.get("target") or NUMERIC_POST_MACRO)
+        if numeric_post_audit.get("status") == "pass"
+        else "generated_post.mac"
+    )
+    command = build_ansys_command(config, job_dir, post_macro_name=post_macro_name)
     write_run_script(command, job_dir)
     preflight = run_preflight(job_dir, config=config)
     guard = evaluate_real_run_guard(
@@ -628,7 +716,10 @@ def run_real_ansys(
 
     lock_cleanup = cleanup_stale_ansys_locks(job_dir)
     started = datetime.now(timezone.utc)
-    timeout_seconds = max(1, int(config.ansys.timeout_minutes * 60))
+    timeout_policy = _effective_real_run_timeout_policy(config)
+    timeout_seconds = int(timeout_policy["timeout_seconds"])
+    startup_timeout = int(timeout_policy["startup_no_output_timeout_seconds"])
+    stall_timeout = int(timeout_policy["output_stall_timeout_seconds"])
     creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     stdout_path = job_dir / "ansys_stdout.log"
     stderr_path = job_dir / "ansys_stderr.log"
@@ -661,6 +752,8 @@ def run_real_ansys(
                     "ansys_pid": process.pid,
                     "elapsed_seconds": round(elapsed, 1),
                     "timeout_seconds": timeout_seconds,
+                    "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                    "timeout_policy": timeout_policy,
                     "nproc": command.get("resources", {}).get("nproc"),
                     "nproc_source": command.get("resources", {}).get("nproc_source"),
                     "command_line": command.get("command_line"),
@@ -672,7 +765,6 @@ def run_real_ansys(
                 last_progress = elapsed
             if returncode is not None:
                 break
-            startup_timeout = int(getattr(config.ansys, "startup_no_output_timeout_seconds", 0) or 0)
             if startup_timeout > 0 and elapsed > startup_timeout:
                 activity = _job_output_activity(job_dir, command, started_monotonic)
                 if int(activity.get("total_output_bytes") or 0) <= 0:
@@ -690,6 +782,8 @@ def run_real_ansys(
                         "elapsed_seconds": round(elapsed, 1),
                         "timeout_seconds": timeout_seconds,
                         "startup_no_output_timeout_seconds": startup_timeout,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
                         "nproc": command.get("resources", {}).get("nproc"),
                         "nproc_source": command.get("resources", {}).get("nproc_source"),
                         "message": "ANSYS process produced no output bytes during startup window and was stopped for safe retry.",
@@ -699,7 +793,6 @@ def run_real_ansys(
                     if progress_callback:
                         progress_callback(live_status)
                     break
-            stall_timeout = int(getattr(config.ansys, "output_stall_timeout_seconds", 0) or 0)
             if stall_timeout > 0:
                 activity = _job_output_activity(job_dir, command, started_monotonic)
                 quiet_seconds = float(activity.get("no_output_seconds") or 0.0)
@@ -719,6 +812,8 @@ def run_real_ansys(
                         "elapsed_seconds": round(elapsed, 1),
                         "timeout_seconds": timeout_seconds,
                         "output_stall_timeout_seconds": stall_timeout,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
                         "nproc": command.get("resources", {}).get("nproc"),
                         "nproc_source": command.get("resources", {}).get("nproc_source"),
                         "message": "ANSYS output files stopped changing during the stall window and the process was stopped for safe retry.",
@@ -769,7 +864,12 @@ def run_real_ansys(
             )
         try:
             post_timeout_minutes = max(1, min(int(config.ansys.timeout_minutes or 120), 20))
-            figure_export_audit = run_figure_export(job_dir, config, timeout_minutes=post_timeout_minutes)
+            figure_export_audit = run_figure_export(
+                job_dir,
+                config,
+                timeout_minutes=post_timeout_minutes,
+                progress_callback=progress_callback,
+            )
         except Exception as exc:  # pragma: no cover - defensive guard for external ANSYS subprocess failures
             figure_export_audit = _failed_post_export_audit("figure_export", exc)
             _write_json(job_dir / "figure_export_audit.json", figure_export_audit)
@@ -839,11 +939,19 @@ def run_real_ansys(
         "duration_seconds": (finished - started).total_seconds(),
         "returncode": returncode,
         "timeout_seconds": timeout_seconds,
-        "startup_no_output_timeout_seconds": getattr(config.ansys, "startup_no_output_timeout_seconds", None),
-        "output_stall_timeout_seconds": getattr(config.ansys, "output_stall_timeout_seconds", None),
+        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+        "configured_timeout_minutes": timeout_policy["configured_timeout_minutes"],
+        "startup_no_output_timeout_seconds": startup_timeout,
+        "configured_startup_no_output_timeout_seconds": timeout_policy[
+            "configured_startup_no_output_timeout_seconds"
+        ],
+        "output_stall_timeout_seconds": stall_timeout,
+        "configured_output_stall_timeout_seconds": timeout_policy["configured_output_stall_timeout_seconds"],
+        "timeout_policy": timeout_policy,
         "failure_reason": failure_reason,
         "failure_category": failure_category,
         "fatal_output_detection": fatal_detection,
+        "numeric_post_macro_audit": numeric_post_audit,
         "post_export_failure": post_export_failure,
         "command_file": "ansys_command.json",
         "command_line": command.get("command_line"),
@@ -879,6 +987,7 @@ def run_real_ansys(
         failure_reason=failure_reason,
         failure_category=failure_category,
         figure_count=(figure_export_audit or {}).get("figure_count"),
+        timeout_policy=timeout_policy,
         progress_callback=progress_callback,
     )
     return audit

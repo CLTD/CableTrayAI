@@ -1,4 +1,179 @@
-# CableTrayAI 当前工作状态
+﻿# CableTrayAI 当前工作状态
+## 2026-06-10 单位4211/4212导图卡住与候选试算提速 closeout
+
+Current latest source/runtime/package target:
+
+1. 单位 4212 保留目录 `C:/Users/duxy/Desktop/18185NI-LXSJ4212/20260610T095741698491Z/120-120-6` 已复核。失败根因不是建模/计算/评定公式，而是方钢候选试算的主 `run_all.mac` 仍执行完整 `generated_post.mac` 中的 `/IMAGE,SAVE` 图形命令，ANSYS18.2 批处理下大量报 `/IMAGE requires /MENU,ON or /MENU,GRPH`，随后触发 `output_stall_timeout`，导致没有 `evaluation_summary.json`。
+2. 新增内部数值后处理宏 `generated_post_numeric.mac`：真实 ANSYS 主流程只跑 LIS/OUP/载荷等数值提取，跳过 `/IMAGE`、`PLLS`、`EPLOT` 等图形命令；原始 `generated_post.mac` 仍保留用于人工审查和 post-only 导图宏转换。
+3. `run_all.mac` 现在可调用内部 numeric post 宏；`generated_model.mac / generated_solve.mac / generated_post.mac` 三份审查命令仍按原规则保留和发布。
+4. 方钢候选试算禁用“输出停滞硬杀” watchdog，避免再把单位慢机上的 ANSYS 后处理误判为截面失败；提速依靠跳过候选阶段图片命令，不靠缩短超时。
+5. `run_figure_export` 已改为启动即写 `figure_export_audit.json` 和 `figure_export_live_status.json`，`timeout_minutes` 只作为软监控阈值，不再硬杀 MAPDL；正式导图仍由独立 `export_figures.mac` 完成。
+6. 使用单位拷回的 4212 失败 job 真实 ANSYS18.2 重跑通过：`jobs/verify_4212_numeric_post_20260610_194331/18185NI-LXSJ4212_120-120-6`，主数值流程 `50.1s` 成功，`generated_post_numeric_audit.json` 记录跳过 `267` 条图形命令，`assemble_result` 得到 `36` 条梁应力和 `3` 条基础载荷。
+7. 同一 job 的 post-only 导图验证通过：`figure_export_audit.json` 状态 `success`，耗时 `20.1s`，`figure_count=22`，`missing_required_figures=[]`，`hard_timeout_policy=disabled`。
+8. 验证已通过：`D:/miniconda3/python.exe -m pytest tests/unit -q`，以及 targeted numeric-post/runtime/导图/截面选型测试。
+9. 部署包已刷新到 `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`，SHA256 `1BDBF15E04942FF850E8C355C3B7B3AE143C1671DC772BCB4492E1AF9838D0C7`；更新包已刷新到 `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`，SHA256 `262273C60ABE0399F8FA06711BE92D920C3B40AA61C571437927E6F8824D38D3`。
+10. 本机 `D:/CableTrayAI` 已用该更新包更新，`/health=ok`，`duxyb/cnpe123` 登录 `pass`，关键运行文件 source/package/installed SHA256 一致。
+
+## 2026-06-10 异型钢 SECOFFSET 修正 closeout
+
+Current latest source/package target:
+
+1. 用户确认异型钢建模命令流中不能继续使用槽钢专用偏置 `SECOFFSET,user,,-0.03249`，异型钢分支应输出 `SECOFFSET,user`。
+2. 新增 `core/apdl/section_offsets.py`：只在 `SECOFFSET,user,,-0.03249` 后续对应的 `SECREAD` 已经是 `YIXINGGANG*` 时归一化为 `SECOFFSET,user`；后续仍是 `CAOGANG42DAN` 的槽钢分支保持原命令不变。
+3. 标准族建模渲染和方钢截面试算/正式替换入口均已接入该规则，并在审计字段 `yixing_secoffset_replacements` 中记录修正次数。
+4. 验证已通过：`D:/miniconda3/python.exe -m pytest tests/unit/test_yixing_secoffset_policy.py tests/unit/test_square_section_workflow_policy.py tests/unit/test_intake_standard_family_tray_widths.py -q` 和 `D:/miniconda3/python.exe -m pytest tests/unit/test_square_section_selector.py tests/unit/test_square_section_workflow_policy.py tests/unit/test_yixing_secoffset_policy.py -q`。
+5. `source_materials` 未修改，槽钢原始资料和槽钢分支输出仍保留 `-0.03249`。
+6. 部署包已刷新到 `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`，更新包已刷新到 `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`；使用同目录 `.sha256.txt` 旁路文件作为传输校验依据。
+7. 本机 `D:/CableTrayAI` 已用该更新包更新，`/health` 为 `ok`，`duxyb/cnpe123` 登录返回 `pass`，关键运行文件 source/package/installed SHA256 一致。
+
+## 2026-06-09 4211 economy downshift strategy closeout
+
+Current latest source/validation state:
+
+1. User requested a less conservative square-section strategy: when a passing candidate lands in `0.60 <= ratio <= 0.75`, run the immediately lower intake-allowed square section once before final selection. Example intent: if `160-160-8` is around `0.61`, verify `140-140-8` instead of accepting the larger section immediately.
+2. `core/optimizer/square_section_selector.py` now records `ECONOMIC_DOWNSHIFT_RATIO_MAX = 0.75` and `ECONOMY_DOWNSHIFT_SECTION_TRIALS = 1`. The normal two-candidate economy strategy remains; this is a single bounded economy check, not a full downward sweep.
+3. The downshift is allowed only in production auto-stop mode. Manual/diagnostic searches with `stop_after_first_feasible=False` keep their original search trace.
+4. If the lower candidate passes, the normal deterministic selector picks the more economical passing section. If the lower candidate fails, the already passing larger section remains selected. Already evaluated candidates are skipped so a downshift failure cannot rerun the same larger section again.
+5. Regression tests were added for both branches: `160-160-8` low-ratio downshifts to passing `140-140-8`, and `160-160-8` remains selected when `140-140-8` fails.
+6. Verification passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_square_section_selector.py -q`, targeted workflow/postprocessor/result-validity tests, `py_compile`, and full `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+7. Real ANSYS18.2 validation passed at `jobs/verify_4211_economy_downshift_20260609_202204/18185NI-LXSJ4211`. The selector did the requested downshift: `160-160-8` ratio `0.6125191042609882`, then `140-140-8` ratio `1.1132861849732167`.
+8. Because the fresh ANSYS result for `140-140-8` is still over limit, the formal selected section correctly remains `160-160-8`; `result_validation.json` status is `pass`, `result_publishable=true`, and `ansys_run_audit.json` status is `success` with `figure_count=14`.
+9. Deployment/update closeout completed after this fix. Send-folder outputs are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+10. Package gates passed: deployment package gate, update package self verification, outer and nested zip forbidden-path scan, local `D:/CableTrayAI` update apply, `/health` ok, `duxyb/cnpe123` login pass, and source/package/installed hashes match for the touched selector/docs.
+
+## 2026-06-09 unit 4211 overlimit recovery and H1 geometry closeout
+
+Current latest source/validation state:
+
+1. Unit 4211 copied evidence under `C:/Users/duxy/Desktop/18185NI-LXSJ4211/20260609T074104184351Z` was reviewed. The failure was a real two-candidate over-limit case, not missing-output or timeout evidence: `100-100-6` ratio was `1.3581785618588114`, and `120-120-10` ratio was `1.6479509969960606`.
+2. The same evidence exposed a modeling defect in candidate trials: `120-120-10` had `input.json` support width `0.12` and post H1 `0.120000`, but `generated_model.mac` still had `H1=0.1`. That means the trial model geometry did not follow the square-tube outer side length.
+3. `core/optimizer/square_section_selector.py` now synchronizes `generated_model.mac` H1 from the square section outer width for every trial and formal selected section. Thickness does not affect H1, so `120-120-6`, `120-120-8`, and `120-120-10` all write H1 as `0.120000`.
+4. The normal economy policy is still two candidate trials. If both normal trials finish successfully and both are deterministic over-limit (`ratio > 1.0`), the selector now extends by at most two larger intake-allowed square sections instead of failing immediately.
+5. The over-limit extension is audit-traceable in `square_section_selection.json` through `overlimit_recovery_extensions`, `effective_evaluated_candidate_budget`, and the preserved base `max_evaluated_candidates=2`.
+6. Regression tests were added for H1 outer-width synchronization and the two-overlimit-plus-two-larger recovery policy.
+7. Verification passed: `pytest tests/unit/test_square_section_selector.py -q`, targeted selector/workflow/postprocessor/result-validity tests, and full `pytest tests/unit -q`.
+8. Real ANSYS18.2 validation passed at `jobs/verify_4211_h1_overlimit_recovery_20260609_172633/18185NI-LXSJ4211`: the selector evaluated `100-100-6`, `120-120-10`, then recovered to `160-160-8`; selected ratio was `0.6132882273722775`, formal `result_validation.json` status was `pass`, and `ansys_run_audit.json` recorded `figure_count=14`.
+9. Deployment/update packages were refreshed after this fix. The transfer authority is the `.sha256.txt` sidecar files in `C:/Users/duxy/Desktop/duxyb-cnpe`, not an embedded hash inside this document.
+
+## 2026-06-09 unit 4210 ANSYS timeout false section-failure closeout
+
+Current latest source/runtime/package state:
+
+1. Unit-copied evidence under `C:/Users/duxy/Desktop/_square_section_trials` was reviewed. The current 4210 failures were not deterministic section over-ratio failures: candidate `140-140-8` was killed by ANSYS total timeout before `evaluation_summary.json`/result outputs were produced.
+2. The unit 4210 audit `C:/Users/duxy/Desktop/_square_section_trials/18185NI-LXSJ4210/20260609T032119173447Z/140-140-8/ansys_run_audit.json` recorded `status=timeout`, `duration_seconds=723.0`, `timeout_seconds=720`. The command-stream hashes for model/solve/post/spectrum matched the locally passing 4210 run, so this was runtime watchdog policy, not modeling/spectrum/solve logic.
+3. Root cause fixed in `core/optimizer/square_section_workflow.py`: candidate trials no longer force `timeout_minutes <= 12`. They now use production-safe watchdogs, because a candidate trial still must produce deterministic APDL/PIP outputs before a section decision is valid.
+4. Runtime hardening added in `core/ansys/runner.py`: every real ANSYS production run records configured watchdog values but applies code-level minimums of `timeout_minutes=120`, `startup_no_output_timeout_seconds=90`, and `output_stall_timeout_seconds=300`. This prevents unit-site preserved `config/ansys.local.toml` values from killing valid solves after an update package preserves local config.
+5. `core/optimizer/square_section_selector.py` now reports ANSYS timeouts as runtime timeout failures, not square-section over-limit decisions. The old generic `missing/UNKNOWN/all-zero/stalled` line is no longer used for ANSYS timeout without a computed ratio.
+6. Regression coverage added in `tests/unit/test_ansys_runtime_timeout_policy.py` for stale unit `timeout_minutes=12`, safer timeout preservation, and square-section trial config watchdogs.
+7. Verification passed: targeted ANSYS/runtime and square-section tests passed; full `pytest tests/unit -q` passed with `115 passed`.
+8. Real ANSYS18.2 validation reproduced the unit old-config condition by running 4210 with script `-TimeoutMinutes 12` at `jobs/verify_unit_4210_timeout_clamp_20260609_123539/18185NI-LXSJ4210`. The job passed, selected `140-140-8`, controlling ratio `0.9052401909300667`, `result_validation.json` status `pass`, `figure_count=14`.
+9. The validation `ansys_run_audit.json` proves the clamp: `configured_timeout_seconds=720`, `configured_timeout_minutes=12`, effective `timeout_seconds=7200`, `timeout_policy.status=clamped`, ANSYS `status=success`, duration about `133.5s`.
+10. Local `config/ansys.local.toml` was restored to `timeout_minutes = 120` after the deliberate 12-minute reproduction.
+
+## 2026-06-09 unit 4210 candidate-output fallback closeout
+
+Current latest source/runtime/package state:
+
+1. Unit 4210 reported `140*8` candidate blocked as `required ansys/pip source outputs are missing ... all-zero or stalled`, even though `140-140-8` is the correct satisfying section.
+2. Root cause class fixed in `core/optimizer/square_section_selector.py`: a candidate with fresh deterministic ratio `<= 1.0` is no longer reported as a section-capacity failure when the only blocker is candidate-trial source output completeness such as `Mode.oup`, `JCZH.LIS`, `LS-FORCE.LIS`, `HF-FORCE.LIS`, `MAXBEAMSTRESS.LIS`, or `TMAXBEAMSTRESS.LIS`.
+3. New policy: do not keep enlarging the square tube for candidate-only source-output defects. Apply the feasible candidate to the formal job and run the full ANSYS/PIP calculation once; final publication still requires the formal `result_validation.json` to pass.
+4. `core/pipeline/one_click.py` failure messages now include candidate section, ratio, run status, failed checks, domains, and `trial_dir`, so a unit-site failure can be diagnosed from the retained job directory instead of a generic `unknown/all-zero` line.
+5. Formal validation mode is written to `input.json` metadata as `square_section_selection_validation_mode`; formal-fallback candidates are traceable through `square_section_selection_requires_formal_validation`.
+6. Verification passed: full `tests/unit` (`112 passed`), targeted result-validity/package/auth tests, and `py_compile` for the touched modules.
+7. Real ANSYS18.2 verification passed for the unit-uploaded 4210 intake row at `jobs/verify_unit_4210_candidate_fallback_20260609_091048/18185NI-LXSJ4210`: selected `140-140-8`, controlling ratio `0.9052401909300667`, formal `result_validation.json` status `pass`, 14/14 checks pass.
+8. Runtime/package refreshed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `78976672`, SHA256 `83E499A079FD148468A5E9BB4958F106751902CD63D2A86ECFBFAB29AAC9C6F3`; `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`, size `78540520`, SHA256 `E00426429D18887ECD983D601A8653EC0426D6071E942CC35F418977FE661E50`.
+9. Local installed deployment updated through the mail-safe update package; backup `D:/CableTrayAI/_update_backups/20260609_091931`, `/health` returned `{"status":"ok"}`, and source/package/installed hashes match for the selector, workflow, and one-click pipeline.
+10. Latest full deployment zip was copied to `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` with `CableTrayAI.zip.sha256.txt`.
+
+## 2026-06-08 two-trial square-section economy strategy closeout
+
+Current latest source/runtime target:
+
+1. 方钢自动选型生产策略已改为“最多两次候选试算”：第一次来自相似提资学习或确定性工程估算；若第一次不在经济区间，再按截面模量做一次修正候选。
+2. 经济区间固定为 `0.60 <= ratio <= 0.9999`。候选控制比落入该区间即认为经济性满足并停止；`ratio > 1.0` 仍必须失败。
+3. 提资“计算说明”允许截面仍是硬边界；学习和估算只能在允许列表内移动起算截面，不能新增未列截面，不能复用历史结果替代当前真实 ANSYS。
+4. 网页进度候选总数已按本轮策略上限显示， bounded 选型显示 `0/2`、`1/2`，不再把全量允许列表显示成 `0/6` 造成误解；审查 JSON 仍保留 `available_candidate_count`。
+5. 真实 ANSYS18.2 三行验证通过，且 `exact_result_reuse_enabled=false`：`4210 -> 140-140-8, ratio 0.9052401909300667`；`4213 static -> 120-120-10, ratio 0.8025890143573237`；`4215/raw-6 -> 160-160-8, ratio 0.9131067176524903`。
+6. 三个正式 job 的 `result_validation.json` 均为 `pass`，选型实际候选次数分别为 `1/2`、`1/2`、`1/2`，输出目录为 `E:/CODEX/tray_platform/ANSYS Output/verify_two_trial_section_strategy_20260608_173006`。
+7. 验证通过：`py_compile`、`tests/unit/test_square_section_selector.py tests/unit/test_square_section_workflow_policy.py`、全量 `tests/unit`。
+8. 部署收尾完成：服务器运行时已重建，全量部署包和 `更新包.zip` 已重新生成，更新包已应用到 `D:/CableTrayAI`，`/health` 与 `duxyb/cnpe123` 登录通过，包洁净核查通过。
+
+## 2026-06-08 raw-6 / 18185NI-LXSJ4215 unit-run hotfix closeout
+
+Current latest runtime/package state:
+
+1. Unit reported the last intake row (`raw-6`, `18185NI-LXSJ4215`) returned `Square section auto-selection failed...` even though the corresponding section should satisfy the check with a ratio around `0.99`.
+2. Root cause class fixed: candidate section acceptance now uses the freshly generated `evaluation_summary.json` maximum deterministic Chapter 6 ratio as the controlling ratio. `result_validation.json:evaluation_ratio_limit` evidence is retained for audit only and cannot make a fresh `0.99` candidate fail because of stale validation evidence.
+3. Candidate section pass/fail boundary is now consistent with the project rule: only ratios `> 1.0` fail; `<= 1.0` passes and stops the section search. The summary/report-side selection acceptance was aligned to the same rule.
+4. The one-click failure message now includes candidate section, ratio, status, and non-ratio failed checks so a future site failure immediately shows whether the blocker is over-ratio or missing/blank source output.
+5. ANSYS output scanning was tightened for the second unit error: WARNING-level `file_or_permission_error` file probes no longer block a real run at the text-scan layer, while ERROR/FATAL file/permission messages still block. Missing required LIS/OUP/figures remain blocked by deterministic result validation.
+6. Verification passed: targeted square-section and ANSYS warning-gate tests; full `tests/unit`; row6 historical real result readback shows selected `160-160-8`, maximum ratio `0.9131955968601544`, `selection_status=pass`.
+7. Runtime rebuilt: `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` was rebuilt with PyInstaller, and desktop/installer runtimes were regenerated so the package is not missing startup/install files.
+8. Full deployment package rebuilt and gated at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`; use the generated package file and final closeout hash as the transfer authority.
+9. Mail-safe update package rebuilt and verified at `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`; the extracted `manifest/update_manifest.json` records the payload SHA256 and payload file count.
+10. Local installed deployment updated from the new update package; `/health` returned `{"status":"ok"}`, package cleanliness scan passed, and source/package/installed hashes match for the selector, ANSYS runner, one-click pipeline, square-section summary/workflow, and server runtime exe.
+
+## 2026-06-08 deployment package fixed-password closeout
+
+Current latest deployment-package state:
+
+1. User requested the deployment package to keep the login password as `cnpe123` and to be directly sendable to the unit.
+2. `scripts/package_duxyb_intranet_release.ps1` now defaults `InitialPassword` to `cnpe123` and writes `config/initial_password.txt` into the deployment package.
+3. `scripts/CableTrayAIInstaller.cs` reads `config/initial_password.txt` from the package. On install it writes local `config/auth.local.json` for users `duxyb`, `jianghl`, and `wanggangb` using that password.
+4. If target `config/auth.local.json` already exists, the installer backs it up as `auth.local.json.bak_<timestamp>` and rewrites local auth to the deployment package password, so old random-password installs are corrected.
+5. Fallback installers `scripts/install_desktop_app.py` and `scripts/install_desktop_app.ps1` follow the same packaged-password and auth-backup policy.
+6. Installer cleanup now removes stale target-root `CableTrayAI_Installer.exe`, so old installer exes do not remain in the installed folder after an upgrade/install.
+7. Final deployment package: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `78960185` bytes, SHA256 `CE94EACF784DD7C8F1F7151DDFA22E099D7165DF1A231C0B26FF5FDAA0CD5EEE`; package gate passed and zip contains no top-level `jobs/uploads/outputs/logs`, no local configs, no runtime auth sessions, no `__pycache__`, and no `*.pyc`.
+8. Local installer smoke passed using the rebuilt package against `D:/CableTrayAI`: `install_manifest.json` records `initial_password=cnpe123`, `CableTrayAI_LOGIN_INFO.txt` shows `cnpe123`, old auth was backed up, root `D:/CableTrayAI/CableTrayAI_Installer.exe` is absent, and installed hashes match the final package for checked runtime/source files.
+9. Web smoke passed after install: `/health` returned `{"status":"ok"}`, `duxyb/cnpe123` login returned pass, and a wrong password returned 401.
+9. Verification passed: native installer/package auth policy tests, fallback installer py_compile, PowerShell parser checks, deployment package gate, and full unit tests.
+
+## 2026-06-08 mail update package closeout
+
+Current latest update-package state:
+
+1. Future unit upgrades should use the mail-safe update package, not manual full-folder copy.
+2. Output package is `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`; the extracted folder is `C:/Users/duxy/Desktop/duxyb-update/更新包`.
+3. `scripts/package_internal_update.ps1` builds the clean deployment payload, wraps it as `payload/CableTrayAI_payload.zip`, writes `manifest/update_manifest.json` and `manifest/payload_file_manifest.json`, and names the final outer zip `更新包.zip`.
+4. `scripts/install_update_package.ps1` verifies the payload zip SHA256 and every expanded payload file before applying anything to the target install. It rejects payloads containing top-level `jobs/uploads/outputs/logs`, `config/*.local.*`, `runtime/auth_sessions.json`, `__pycache__`, or `*.pyc`.
+5. Unit operator flow: unzip `更新包.zip`, double-click `Install_Update.cmd`, or run `powershell -NoProfile -ExecutionPolicy Bypass -File .\install_update.ps1`; use `-TargetRoot <install dir>` only if auto-detection does not find the installed folder.
+6. Update policy preserves target-machine `jobs/uploads/outputs/logs`, `config/auth.local.json`, `config/ansys.local.toml`, and local sessions/configs. It backs up replaced files under `<install>/_update_backups/<timestamp>`.
+7. Health policy: after applying, the updater starts `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` and checks `http://127.0.0.1:8000/health`; if health fails it attempts a backup overlay rollback and restart.
+8. Verification passed: full unit tests `103 passed`, package gate pass with runtime XML/no-expat spectrum smoke, update package `-VerifyOnly` pass, top-level forbidden-path scan pass, no `__pycache__`/`.pyc` in final zips, local `D:/CableTrayAI` update pass with `/health {"status":"ok"}`.
+9. Final update package details: outer zip `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`, size `78513666` bytes, SHA256 prefix `173D981DA479526508`; payload SHA256 `265dde3d6bb0d82192bdab1720f0e8959946b564743f804e6d9432cd9e4bd5d0`, payload file count `1774`.
+10. Local installed final apply record: `D:/CableTrayAI/docs/last_mail_update_apply.json`, backup `D:/CableTrayAI/_update_backups/20260608_135840`, health `pass`.
+
+## 2026-06-08 unit deployment login installer fix
+
+Current latest deployment-login state:
+
+1. Unit deployment reported that login `duxyb / cnpe123` failed after using `CableTrayAI_Installer.exe`.
+2. Root cause found: the native WinForms installer copied the package but did not create local `config/auth.local.json` on first install, while `core/security/auth.py` intentionally has no committed default credentials.
+3. `scripts/CableTrayAIInstaller.cs` now creates local `config/auth.local.json` during first install, preserving an existing local auth config if present.
+4. Default first-install users are `duxyb`, `jianghl`, and `wanggangb`. The password is generated locally unless `CABLETRAYAI_INITIAL_PASSWORD` is set before running the installer.
+5. The installer writes `auth_local_created`, `login_users`, `login_info_path`, and first-install `initial_password` to `install_manifest.json`; it also shows the initial password and creates `CableTrayAI_LOGIN_INFO.txt` in the target install folder when a new auth file is created.
+6. The login info file records the local URL, users, first-install password, auth config path, and local ANSYS config path. Existing local auth configs are preserved on reinstall; if no login info file exists, reinstall writes a no-password-recovery notice instead of inventing a password.
+7. Packaging hardening: `scripts/package_duxyb_intranet_release.ps1` now avoids LibreOffice's bundled Python when running `deployment_package_gate.py`, preferring `CABLETRAYAI_PACKAGE_PYTHON`, `.venv`, `D:/miniconda3/python.exe`, or a non-LibreOffice `python`.
+8. Layer-count validation for leadership: per-side `12+12` is now parameterized and real-ANSYS verified. Root cause of the old >9 layer failure was source-family APDL keypoint-number collision such as `511`; `core/apdl/intake_standard_family_renderer.py` now expands `KPOFF/KPFSTEP/KPBKBASE` only when layer count exceeds 9, and the post/connection export follows the same numbering.
+9. Real ANSYS18.2 validation job: `jobs/verify_12x12_high_layer_static_20260608_124204/S2_12x12_160x8_static_overload`. Main solve status `success`, connection-node export `success`, figure export `success` with 14 required figures, modal frequency rows parsed from `Mode.oup`.
+10. Engineering conclusion for the 12+12 stress demo: it can be modeled and calculated, but the synthetic 12+12 high-load/160x8 case is not publishable because deterministic evaluation ratios exceed 1.0. Top ratios include bolt combined `527.778`, bolt combined upset `156.392`, and support tension+bending `4.312`.
+11. Static-method modal appendix fix: `core/results/lis_parser.py` now parses ANSYS18.2 participation-factor modal frequency tables and keeps positive low-frequency rows when all rows are below 1 Hz, so static jobs can still output modal figures plus frequency table without a main MT gate.
+12. Native installer safety fix: it no longer cleans a different registered install directory unless `CABLETRAYAI_CLEAN_PREVIOUS_REGISTERED_INSTALL=1`, and it preserves target-machine `jobs/uploads/outputs/logs` unless `CABLETRAYAI_RESET_RUNTIME_DATA=1`.
+13. Final deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` (about `75.48 MB`). Package gate passed; package and zip contain no root `jobs/uploads/outputs/logs`, no `runtime/auth_sessions.json`, and no local `config/ansys.local.toml` or `config/auth.local.json`.
+14. Local installed deployment `D:/CableTrayAI` was restored from the final package. Service is running from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, PID `9256`; `/health` returns `{"status":"ok"}`, root page returns 200 with `no-store, no-cache`.
+15. Installed/package/source hashes match for high-layer APDL, connection export, postprocessor alignment, modal parser, result validity gate, installer scripts, packaging script, and handoff docs. Installed `duxyb/cnpe123` login succeeds and wrong password is rejected.
+
+## 2026-06-07 report-generation injection closeout
+
+Current latest report-generation state:
+
+1. `core/report/template_injector.py` now handles the <=120 mm square-tube cantilever-root weld branch correctly: the report no longer leaves the root-load table as `待确认` when `HF-FORCE.LIS` is not required; it removes that not-applicable table from the generated copy and fills `表6-2 托臂根部焊缝评定结果（应力比）` from `evaluation_summary.json`.
+2. The equivalent weld table is normalized to six columns: `工况 / 应力类型 / 计算值(MPa) / 等效应力(MPa) / 许用值(MPa) / 应力比`; equivalent stress is calculated from the recorded TMAX value divided by coefficient `0.526`.
+3. Generated reports mark only touched section titles, table titles and figure captions red. Body text and table values are not colored.
+4. Appendix cleanup removes only empty page-break-only paragraphs inside real appendices and skips TOC paragraphs, preventing blank appendix pages without touching the source template file.
+5. Verified sample report generated from installed real job `D:/CableTrayAI/jobs/18185NI-LXSJ4212`: `C:/Users/duxy/Desktop/report_review_18185NI-LXSJ4212_20260607_180115.docx`. Its `template_report_audit.json` status is `pass`; the equivalent weld table has 8 data rows and no warnings.
+6. Verification passed: `python -m pytest tests/unit/test_template_report_injector.py -q`, `python -m pytest tests/integration/test_report_template_upgrade.py tests/unit/test_template_report_injector.py -q`, `python -m pytest tests/unit -q`, and `py_compile` for the touched report module/test.
+7. Deployment completed: refreshed `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` (`79122877` bytes), package gate passed, applied to `D:/CableTrayAI` with backup `D:/CableTrayAI/_update_backups/20260607_180517`, service restarted as PID `21176`, `/health` ok, root no-cache headers ok, and installed/package/source hashes match for `core/report/template_injector.py`.
 
 更新时间：2026-06-07 16:06
 
@@ -52,7 +227,7 @@
 2. 托盘截面必须来自提资载荷/宽度，例如 500 mm 托盘应在模型中保留 `500-75-2mm`，不能误认为 `50-42`。
 3. `50-42` 是托臂/异形钢相关截面，不是托盘截面；模型中允许同时出现 `50-42` 和 `500-75-2mm`，但两者用途必须明确。
 4. 方钢候选截面必须来自提资 Excel 的“计算说明”；未列出的截面不得试算。
-5. 方钢选型应使用完整评定后的控制应力比，满足 `< 1` 并尽量接近 1；若最小截面已远小于 1，则选最小可用截面；若全部不满足，明确报“提资允许截面不足”。
+5. 方钢选型应使用完整评定后的控制应力比，满足 `<= 1.0`；经济区间为 `0.60 <= ratio <= 0.9999`，正常最多两次候选试算；若允许截面内无法满足，明确报“提资允许截面不足”或可审查的非截面阻断原因。
 6. 旧 `jobs/uploads/outputs/logs` 和旧浏览器恢复状态不得污染新提资计算。
 7. 用真实 ANSYS 路径做受控验证，不允许静默切换 mock。
 8. 最终更新网页端和部署包：`C:\Users\duxy\Desktop\duxyb\CableTrayAI` 与 `C:\Users\duxy\Desktop\duxyb\CableTrayAI.zip`。
@@ -523,3 +698,22 @@ This section supersedes the 2026-06-06 static modal gate note immediately above.
 6. Removed the stale static `recommended_modal_mode_count=497` cache entry; static jobs are skipped by modal MT learning.
 7. Real ANSYS18.2 validation job `jobs/verify_4213_static_no_mt_20260607_140551` passed: main solve duration about `20.04s`, figure export success, `figure_count=14`, `result_validation.status=pass`, `fail_count=0`, `modal_rows=4`, `modal_frequency_table=pass`, `required_file_Mode.oup=pass`, `required_figures=pass`, and no `modal_mt_cutoff` check.
 8. Deployment completed after this correction: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` rebuilt with package gate pass, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_141510`; service restarted as PID `14620`, `/health` ok. Installed static-policy smoke returns `modal_analysis=false`, `modal_figures=true`, `modal_frequency_table=true`, and `modal_mode_count=null`.
+
+## 2026-06-07 report render QA and appendix caption fix
+
+1. LibreOffice system install via winget left `C:/Program Files/LibreOffice/program/bootstrap.ini` missing `URE_BOOTSTRAP`; the current user cannot patch Program Files. A user-writable extracted copy was created at `C:/Users/duxy/AppData/Local/LibreOfficePortableExtracted`, its `bootstrap.ini` was fixed, the user PATH registry now starts with `C:/Users/duxy/AppData/Local/LibreOfficePortableExtracted/program`, and explicit `soffice.com --headless --version` plus DOCX/PDF conversion work for QA. Existing Codex shells may need restart to see bare `soffice` from PATH.
+2. Visual QA found a real appendix layout defect in the generated sample report: the final stress figure caption `图C-8` was isolated on the last page while the image stayed on the previous page.
+3. `core/report/template_injector.py` now sets inserted image paragraphs to `keep_together=true` and `keep_with_next=true`, and sets caption paragraphs to `keep_together=true`, so figure and caption paginate as a unit.
+4. New verified sample report: `C:/Users/duxy/Desktop/report_review_18185NI-LXSJ4212_20260607_190600.docx`.
+5. The sample converted to PDF with portable LibreOffice: `C:/Users/duxy/Desktop/report_review_18185NI-LXSJ4212_lo_render_20260607_190600/report_review_18185NI-LXSJ4212_20260607_190600.pdf`.
+6. Selected pages were rendered to PNG for inspection. Verified pages include equivalent weld section pages 20-22, appendix A start page 25, appendix B start page 29, and final page 44. Final page now contains both Figure C-8 and its caption; PDF blank-page scan found no suspects.
+7. Report verification passed: `python -m pytest tests/integration/test_report_template_upgrade.py tests/unit/test_template_report_injector.py -q` returned 6 passed.
+8. Deployment completed: refreshed `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` (`79126078` bytes before final doc sync), applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_191437`, service restarted as PID `18604`, `/health` ok, root no-cache headers ok, installed/package/source hashes matched for `core/report/template_injector.py` and updated handoff docs.
+
+## 2026-06-07 pre-deployment known-issue audit
+
+1. Rechecked all known deployment failure classes before unit deployment: no-expat workbook parsing, runtime XML files, package contents, old-code/cache risk, active-M spectrum path, static-method MT policy, square-section candidate gate, JCZH zero extraction, ANSYS output buffer streaming, command-stream warning gate, BOM input parsing, frontend stale-run restore, report title coloring, appendix blank pages, and figure-caption pagination.
+2. Found and fixed one report-only issue during this audit: static-method reports were still trying to build table 3-1 from the intake elevation `7.5m`, while the equivalent-static spectrum selection had chosen `13.09m`. `core/report/template_injector.py` now uses `metadata.static_acceleration_source.selected_elevation/elevations` for static report spectrum curves.
+3. Regression test added: `test_static_report_spectrum_uses_selected_static_elevation`.
+4. Verification passed after the fix: full `tests/unit` passed, report integration/unit tests passed, targeted known-failure tests passed, hardcode scan over `core apps templates` had no hits, package gate passed, and recent installed real jobs `18185NI-LXSJ4211` through `18185NI-LXSJ4214` all regenerated template reports with audit `pass`.
+5. Final deployment completed after this audit: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` size `79128372` bytes, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_202131`, service PID `20688`, `/health` ok, root no-cache headers ok, checked runtime hashes match source/package/install.

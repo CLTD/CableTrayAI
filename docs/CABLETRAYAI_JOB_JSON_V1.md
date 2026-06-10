@@ -23,7 +23,7 @@ data/schemas/cabletray_job_v1.example.json
 1. JSON is an engineering input contract, not a place to hide corrections.
 2. Report numbers may be absent in first intake. Use `intake_id` / `calculation_batch` until the formal report number is added.
 3. Spectrum configuration must be confirmed before real ANSYS execution.
-4. If square tube size is not supplied, the section must be selected by candidate calculation: ratio `< 1.0` and closest to `1.0`.
+4. If square tube size is not supplied, the section must be selected by candidate calculation inside the intake allowed list: ratio `<= 1.0`, with production economy target `0.60 <= ratio <= 0.9999`, normally at most two candidate trials, and one immediately lower-section check when a passing candidate lands in `0.60 <= ratio <= 0.75`.
 5. Steel-platform rows use static method; non-steel-platform rows use response spectrum unless discipline review explicitly overrides.
 6. Source references must be present. A JSON record without traceability cannot be released to ANSYS.
 7. Report comparison may find historical conflicts, but must not rewrite JSON facts.

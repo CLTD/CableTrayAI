@@ -41,6 +41,50 @@ from core.spectra.response_spectrum_writer import write_segmented_response_spect
 MODAL_RETRY_MAX_FORMAL_RERUNS = 4
 
 
+def _square_section_selection_failure_message(selection: dict[str, Any]) -> str:
+    reason = str(selection.get("reason") or "未找到通过完整门禁的候选方钢截面。")
+    early_stop = selection.get("early_stop") if isinstance(selection.get("early_stop"), dict) else {}
+    candidate_rows = selection.get("candidate_results") or []
+    summaries: list[str] = []
+    if isinstance(candidate_rows, list):
+        for row in candidate_rows[:8]:
+            if not isinstance(row, dict):
+                continue
+            section_name = row.get("section_name") or row.get("candidate_section") or "unknown"
+            ratio = row.get("controlling_ratio")
+            if ratio is None:
+                ratio_text = "未取得"
+            else:
+                try:
+                    ratio_text = f"{float(ratio):.3f}"
+                except (TypeError, ValueError):
+                    ratio_text = str(ratio)
+            status = row.get("status") or row.get("result_gate_status") or row.get("run_status") or "unknown"
+            diagnosis = row.get("diagnosis") if isinstance(row.get("diagnosis"), dict) else {}
+            failed_checks = row.get("failed_non_ratio_checks") or diagnosis.get("failed_checks") or []
+            failed_text = ""
+            if failed_checks:
+                failed_text = f", failed_checks={','.join(str(item) for item in failed_checks[:5])}"
+            trial_dir = row.get("trial_dir")
+            trial_text = f", trial_dir={trial_dir}" if trial_dir else ""
+            summaries.append(f"{section_name}: ratio={ratio_text}, status={status}{failed_text}{trial_text}")
+    summary_text = "；".join(summaries) if summaries else "无候选摘要"
+    early_detail = ""
+    if early_stop:
+        early_detail = (
+            f" early_stop candidate={early_stop.get('candidate_section') or 'unknown'}, "
+            f"run_status={early_stop.get('run_status') or 'unknown'}, "
+            f"domains={','.join(str(item) for item in early_stop.get('domains') or []) or 'none'}, "
+            f"failed_checks={','.join(str(item) for item in early_stop.get('failed_checks') or []) or 'none'}, "
+            f"trial_dir={early_stop.get('trial_dir') or 'unknown'}."
+        )
+    return (
+        f"方钢截面自动选型未通过：{reason}。候选概要：{summary_text}。{early_detail}"
+        "正式计算已阻断并保留 job 目录；请检查 result_validation.json、ansys_run_audit.json、"
+        "ansys_stdout.log/ansys_stderr.log 和上面列出的 trial_dir。"
+    )
+
+
 def _progress_stage_cap(stage: str) -> int:
     """Keep active stages below final completion in the operator UI."""
 
@@ -697,9 +741,7 @@ def run_operator_one_click(
                         row_result["square_section_selected"] = selected.get("section_name")
                         row_result["square_section_selected_ratio"] = selected.get("controlling_ratio")
                     if selection.get("status") != "pass":
-                        raise RuntimeError(
-                            "Square section auto-selection failed; formal calculation is blocked until a section with ratio <= 1.0 is found."
-                        )
+                        raise RuntimeError(_square_section_selection_failure_message(selection))
                 progress("running_ansys", f"{item['job_id']}：正在运行 ANSYS，耗时取决于模型规模和机器核数", base_progress + 45, job_id=item["job_id"])
                 cache_hit: dict[str, Any] = {
                     "status": "disabled",

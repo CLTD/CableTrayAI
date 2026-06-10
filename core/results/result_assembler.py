@@ -218,10 +218,11 @@ def _connection_nodes_to_bolt_rows(rows: list[dict]) -> list[dict]:
 def _select_connection_node_rows_for_bolt_envelope(rows: list[dict]) -> tuple[list[dict], dict[str, Any]]:
     """Choose the source-command bolt keypoint family before enveloping.
 
-    The standard LS-FORCE block builds KYALS as 509 + I*10, 609 + I*10,
-    709 + I*10 and back-side equivalents, then falls back to -3 if the suffix-9
-    keypoint is absent.  Runtime fallback must follow that topology, not the
-    numerically largest support-column nodes.
+    The standard LS-FORCE block builds the tray-arm bolt surrogate family with
+    suffix-9 keypoints, then falls back to -3 if that keypoint is absent.
+    High-layer generated models may expand frame spacing and add a multiple-of-10
+    offset, so selection follows the suffix topology instead of fixed
+    500-800/1500-1800 numeric windows.
     """
 
     usable = [row for row in rows if _metric_number(row.get("fx")) is not None]
@@ -240,7 +241,7 @@ def _select_connection_node_rows_for_bolt_envelope(rows: list[dict]) -> tuple[li
                 continue
             if keypoint % 10 not in suffixes:
                 continue
-            if 500 <= keypoint < 800 or 1500 <= keypoint < 1800:
+            if 500 <= keypoint < 10000:
                 selected.append(row)
         return selected
 

@@ -46,6 +46,9 @@ def _keypoints_from_model(job_dir: Path) -> list[int]:
     houcengshu = max(0, _int_parameter("houcengshu"))
     senum = max(0, _int_parameter("senum"))
     senum1 = max(0, _int_parameter("senum1"))
+    kp_offset = max(0, _int_parameter("KPOFF"))
+    frame_step = max(1, _int_parameter("KPFSTEP", 100))
+    back_base0 = max(1500, _int_parameter("KPBKBASE", 1500))
     # Template-rendered models define qiancengshu/houcengshu.  Standard-family
     # source models often keep their original senum1/senum3 naming, where
     # senum1 is the rendered front-side layer count.  If qiancengshu/houcengshu
@@ -65,17 +68,19 @@ def _keypoints_from_model(job_dir: Path) -> list[int]:
     # exist for the rendered front/back layer counts; broad numeric guessing
     # creates thousands of "undefined keypoint" warnings and can mask topology
     # mistakes with all-zero rows.
-    for base in (500, 600, 700):
+    front_bases = [500 + frame_step * frame for frame in range(3)]
+    back_bases = [back_base0 + frame_step * frame for frame in range(3)]
+    for base in front_bases:
         for layer in range(0, max_layers + 2):
             keypoints.add(base + layer)
         for layer in range(1, front_layers + 1):
             for suffix in (1, 2, 3, 4, 6, 7, 8, 9):
-                keypoints.add(base + layer * 10 + suffix)
+                keypoints.add(base + kp_offset + layer * 10 + suffix)
     if back_layers:
-        for base in (1500, 1600, 1700):
+        for base in back_bases:
             for layer in range(1, back_layers + 1):
                 for suffix in (1, 2, 3, 4, 6, 7, 8, 9):
-                    keypoints.add(base + layer * 10 + suffix)
+                    keypoints.add(base + kp_offset + layer * 10 + suffix)
     return sorted(keypoints)
 
 

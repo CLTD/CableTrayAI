@@ -21,6 +21,7 @@ from core.apdl.modal_policy import (
     rewrite_modal_mode_count,
 )
 from core.apdl.section_specific_export import augment_square_support_export
+from core.apdl.section_offsets import normalize_yixing_arm_secoffset
 from core.apdl.source_diff import read_text_with_encoding
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.apdl.standard_command_renderer import _copy_required_sections, _prepend_command_headers, _sha256
@@ -514,6 +515,203 @@ def _density_by_width(payload: dict[str, Any]) -> dict[int, float]:
     return result
 
 
+def _standard_family_keypoint_numbering(front_layers: int, back_layers: int) -> dict[str, Any]:
+    """Return keypoint-numbering expansion for source families above 9 layers.
+
+    The reviewed standard command stream reserves keypoint IDs by a 10-per-layer
+    tray-arm family inside a 100-ID frame.  That is safe through 9 layers only:
+    at 10+ layers the arm keypoints overlap the support-column keypoints.  Keep
+    the legacy numbering for calibrated low-layer jobs, and expand only when the
+    current intake needs more room.
+    """
+
+    max_layers = max(int(front_layers or 0), int(back_layers or 0))
+    if max_layers <= 9:
+        return {
+            "status": "legacy_source_numbering",
+            "enabled": False,
+            "max_layers": max_layers,
+            "safe_legacy_layer_limit": 9,
+            "keypoint_offset": 0,
+            "frame_step": 100,
+            "back_base": 1500,
+        }
+
+    # Preserve the standard suffix convention (*2, *6, *9, etc.) by shifting
+    # tray-arm keypoints by a whole multiple of ten, then enlarge the inter-frame
+    # spacing enough that frame 1/2/3 cannot collide.
+    keypoint_offset = max(20, ((max_layers + 10) // 10) * 10)
+    frame_span = keypoint_offset + 10 * max_layers + 9
+    frame_step = max(200, ((frame_span // 100) + 1) * 100)
+    front_third_frame_max = 500 + 2 * frame_step + frame_span
+    back_base = 1500 if front_third_frame_max < 1500 else ((front_third_frame_max // 100) + 2) * 100
+    return {
+        "status": "expanded_for_high_layer_count",
+        "enabled": True,
+        "max_layers": max_layers,
+        "safe_legacy_layer_limit": 9,
+        "keypoint_offset": keypoint_offset,
+        "frame_step": frame_step,
+        "back_base": back_base,
+        "front_third_frame_max_keypoint": front_third_frame_max,
+        "policy": (
+            "For >9 layer standard-family models, CableTrayAI preserves the reviewed APDL topology "
+            "but expands tray-arm keypoint IDs by KPOFF and frame spacing by KPFSTEP so ANSYS does "
+            "not reject duplicate keypoints such as 511."
+        ),
+    }
+
+
+def _apdl_numbering_assignments(numbering: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "! CableTrayAI high-layer keypoint numbering parameters.",
+            f"KPOFF={int(numbering['keypoint_offset'])}",
+            f"KPFSTEP={int(numbering['frame_step'])}",
+            f"KPBKBASE={int(numbering['back_base'])}",
+        ]
+    )
+
+
+def _insert_keypoint_numbering_assignments(text: str, numbering: dict[str, Any]) -> str:
+    if not numbering.get("enabled"):
+        return text
+    assignment_block = _apdl_numbering_assignments(numbering)
+    if re.search(r"(?im)^\s*KPOFF\s*=", text):
+        text = re.sub(r"(?im)^\s*KPOFF\s*=.*$", f"KPOFF={int(numbering['keypoint_offset'])}", text)
+        text = re.sub(r"(?im)^\s*KPFSTEP\s*=.*$", f"KPFSTEP={int(numbering['frame_step'])}", text)
+        text = re.sub(r"(?im)^\s*KPBKBASE\s*=.*$", f"KPBKBASE={int(numbering['back_base'])}", text)
+        return text
+    match = re.search(r"(?im)^\s*senum1\s*=.*$", text)
+    if match:
+        return text[: match.end()] + "\n" + assignment_block + text[match.end() :]
+    return assignment_block + "\n" + text
+
+
+def _kp_base_expr(side: str, frame_index: int) -> str:
+    if side == "front":
+        if frame_index == 0:
+            return "500"
+        if frame_index == 1:
+            return "500+KPFSTEP"
+        return f"500+{frame_index}*KPFSTEP"
+    if frame_index == 0:
+        return "KPBKBASE"
+    if frame_index == 1:
+        return "KPBKBASE+KPFSTEP"
+    return f"KPBKBASE+{frame_index}*KPFSTEP"
+
+
+def _join_apdl_terms(*terms: Any) -> str:
+    result: list[str] = []
+    for term in terms:
+        text = str(term)
+        if not text or text == "0":
+            continue
+        result.append(text)
+    return "+".join(result) if result else "0"
+
+
+def _renumber_literal_keypoint_expr(keypoint: int, numbering: dict[str, Any]) -> str | None:
+    max_layers = int(numbering.get("max_layers") or 0)
+    for side, base0 in (("front", 500), ("back", 1500)):
+        for frame_index in range(3):
+            old_base = base0 + 100 * frame_index
+            remainder = keypoint - old_base
+            if remainder < 0 or remainder >= 100:
+                continue
+            base_expr = _kp_base_expr(side, frame_index)
+            if remainder == 0:
+                return base_expr
+            if side == "front" and 1 <= remainder <= max_layers + 1:
+                return _join_apdl_terms(base_expr, remainder)
+            layer = remainder // 10
+            suffix = remainder % 10
+            if layer >= 1 and 1 <= suffix <= 9:
+                return _join_apdl_terms(base_expr, "KPOFF", f"{layer * 10}", suffix)
+    return None
+
+
+def _renumber_k_function_literals(text: str, numbering: dict[str, Any]) -> str:
+    def repl(match: re.Match[str]) -> str:
+        expr = _renumber_literal_keypoint_expr(int(match.group(2)), numbering)
+        if expr is None:
+            return match.group(0)
+        return f"{match.group(1)}({expr})"
+
+    lines = []
+    for line in text.splitlines(keepends=True):
+        if line.lstrip().startswith("!"):
+            lines.append(line)
+        else:
+            lines.append(re.sub(r"\b(K[XYZ])\(\s*(\d+)\s*\)", repl, line, flags=re.IGNORECASE))
+    return "".join(lines)
+
+
+def _replace_support_root_expressions(text: str) -> str:
+    replacements = {
+        "601+senum": "500+KPFSTEP+1+senum",
+        "701+senum": "500+2*KPFSTEP+1+senum",
+        "1601+senum1": "KPBKBASE+KPFSTEP+1+senum1",
+        "1701+senum1": "KPBKBASE+2*KPFSTEP+1+senum1",
+    }
+    lines = []
+    for line in text.splitlines(keepends=True):
+        if line.lstrip().startswith("!"):
+            lines.append(line)
+            continue
+        updated = line
+        for old, new in replacements.items():
+            updated = re.sub(re.escape(old), new, updated, flags=re.IGNORECASE)
+        lines.append(updated)
+    return "".join(lines)
+
+
+def _apply_model_keypoint_numbering(text: str, numbering: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    if not numbering.get("enabled"):
+        return text, numbering
+    updated = _insert_keypoint_numbering_assignments(text, numbering)
+    updated = re.sub(r"100\s*\*\s*\(\s*J\s*-\s*1\s*\)", "KPFSTEP*(J-1)", updated, flags=re.IGNORECASE)
+    updated = re.sub(r"(?<![\w.])((?:50|150)[1-9])\s*\+\s*10\s*\*\s*I", r"\1+KPOFF+10*I", updated)
+    updated = re.sub(r"(?<![\w.])150([1-9])\s*\+\s*KPOFF\s*\+\s*10\s*\*\s*I", r"KPBKBASE+\1+KPOFF+10*I", updated)
+    updated = re.sub(
+        r"KSEL\s*,\s*S\s*,\s*KP\s*,\s*,\s*500\s*\+\s*senum\s*\+\s*1\s*,\s*700\s*\+\s*senum\s*\+\s*1\s*,\s*100",
+        "KSEL,S,KP,,500+senum+1,500+2*KPFSTEP+senum+1,KPFSTEP",
+        updated,
+        flags=re.IGNORECASE,
+    )
+    updated = _renumber_k_function_literals(updated, numbering)
+    updated = _replace_support_root_expressions(updated)
+    return updated, numbering
+
+
+def _replace_post_keypoint_formula(text: str, old_base: int, new_expr: str) -> str:
+    return re.sub(
+        rf"(?<![\w.]){old_base}\s*\+\s*([IJ])\s*\*\s*10",
+        rf"{new_expr}+KPOFF+\1*10",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+
+def _apply_post_keypoint_numbering(text: str, numbering: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    if not numbering.get("enabled"):
+        return text, {"status": "legacy_source_numbering", "enabled": False}
+    updated = _insert_keypoint_numbering_assignments(text, numbering)
+    for old_base, new_expr in (
+        (501, "501"),
+        (601, "500+KPFSTEP+1"),
+        (701, "500+2*KPFSTEP+1"),
+        (1501, "KPBKBASE+1"),
+        (1601, "KPBKBASE+KPFSTEP+1"),
+        (1701, "KPBKBASE+2*KPFSTEP+1"),
+    ):
+        updated = _replace_post_keypoint_formula(updated, old_base, new_expr)
+    updated = _renumber_k_function_literals(updated, numbering)
+    updated = _replace_support_root_expressions(updated)
+    return updated, numbering
+
+
 def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     support = payload.get("support") or {}
     sections = {str(item.get("section_id")): item for item in payload.get("sections") or []}
@@ -560,6 +758,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     rendered = _replace_nth_secread(rendered, 0, support_section)
     rendered, tray_secread_replacements = _replace_tray_secreads_from_intake(rendered, material_slot_widths)
     rendered, primary_arm_replacements, secondary_arm_replacements = _replace_arm_secreads_by_name(rendered, primary_arm, secondary_arm)
+    rendered, yixing_secoffset_replacements = normalize_yixing_arm_secoffset(rendered)
     required_tray_sections = _required_tray_sections_from_payload(payload)
     missing_required_tray_sections = _missing_required_sections_in_text(rendered, required_tray_sections)
     assigned_h1 = round(float(support.get("square_tube_width_m") or source_assignments.get("H1") or 0.1), 4)
@@ -609,6 +808,8 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
+    keypoint_numbering = _standard_family_keypoint_numbering(front, back)
+    rendered, keypoint_numbering = _apply_model_keypoint_numbering(rendered, keypoint_numbering)
 
     audit = {
         "support_section": support_section,
@@ -650,6 +851,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "tray_secread_replacements": tray_secread_replacements,
         "primary_arm_secread_replacements": primary_arm_replacements,
         "secondary_arm_secread_replacements": secondary_arm_replacements,
+        "yixing_secoffset_replacements": yixing_secoffset_replacements,
         "assigned": {
             "H1": assigned_h1,
             "H2": assigned_h2,
@@ -662,6 +864,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             "senum": assigned_senum,
             "senum1": assigned_senum1,
         },
+        "keypoint_numbering": keypoint_numbering,
         "policy": "The reviewed source command family supplies topology and command structure only. Tray width, tray SECREAD names, tray material densities, span-width L parameters, and layer-count parameters are rewritten from the current intake so a 500 mm tray is modeled as the 500 tray section even when the historical source family used another width.",
     }
     return rendered, audit
@@ -1234,6 +1437,13 @@ def render_intake_standard_family_commands(
     (job_dir / "generated_solve.mac").write_text(rendered_solve, encoding="utf-8", newline="\n")
 
     rendered_post = environment.get_template("post_extract_s2.mac.j2").render(**render_context)
+    rendered_post, post_keypoint_numbering_audit = _apply_post_keypoint_numbering(
+        rendered_post,
+        parameter_audit.get("keypoint_numbering") or _standard_family_keypoint_numbering(
+            int((render_context.get("support") or {}).get("layers_front") or 0),
+            int((render_context.get("support") or {}).get("layers_back") or 0),
+        ),
+    )
     (job_dir / "generated_post.mac").write_text(rendered_post, encoding="utf-8", newline="\n")
 
     command_header_audit = _prepend_command_headers(job_dir)
@@ -1262,6 +1472,7 @@ def render_intake_standard_family_commands(
         "sections": sections,
         "command_headers": command_header_audit,
         "postprocessor_alignment": post_alignment_audit,
+        "post_keypoint_numbering": post_keypoint_numbering_audit,
         "section_specific_export": section_export_audit,
         "command_aliases": alias_audit,
         "master_macro_audit": master_macro_audit,

@@ -105,7 +105,7 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
     if controlling_ratio is None:
         acceptance = "unknown"
     else:
-        acceptance = "pass" if float(controlling_ratio) < 1.0 else "fail"
+        acceptance = "pass" if float(controlling_ratio) <= 1.0 else "fail"
     if ratio_consistency_status == "fail":
         status = "fail"
         acceptance = "fail"
@@ -130,7 +130,7 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "selection_status": metadata.get("square_section_selection_status") or previous_selection.get("status") or "reported_or_source_command",
         "selection_policy": (
             previous_selection.get("policy")
-            or "If intake column I is empty, try candidate square SECT files and select ratio < 1.0 closest to 1.0; never select ratio == 1.0."
+            or "If intake column I is empty, use no more than two fresh ANSYS candidate trials to target 0.60 <= ratio <= 0.9999 inside the allowed square SECT list."
         ),
         "source_ref": "generated_model.mac SECREAD / input.json metadata / square_section_selection.json",
     }

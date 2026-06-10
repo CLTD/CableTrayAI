@@ -44,6 +44,44 @@ def test_parallel_mpi_cwd_warning_does_not_block_real_run(tmp_path: Path) -> Non
     assert detection["warnings"]
 
 
+def test_warning_level_file_probe_does_not_block_real_run(tmp_path: Path) -> None:
+    (tmp_path / "ansys.out").write_text(
+        "\n".join(
+            [
+                " *** WARNING ***                         CP =      88.000   TIME= 13:21:16",
+                " Unable to open file optional_preview.tmp.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    detection = _detect_ansys_fatal_outputs(tmp_path)
+
+    assert detection["status"] == "pass"
+    assert detection["evidence"] == []
+    assert detection["warnings"]
+    assert detection["warnings"][0]["category"] == "file_or_permission_error"
+
+
+def test_error_level_file_message_still_blocks_real_run(tmp_path: Path) -> None:
+    (tmp_path / "ansys.out").write_text(
+        "\n".join(
+            [
+                " *** ERROR ***",
+                " Unable to open file generated_model.mac.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    detection = _detect_ansys_fatal_outputs(tmp_path)
+
+    assert detection["status"] == "failed"
+    assert detection["evidence"]
+
+
 def test_mapdl_error_context_still_blocks_real_run(tmp_path: Path) -> None:
     (tmp_path / "ansys.out").write_text(
         "\n".join(
