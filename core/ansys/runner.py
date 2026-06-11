@@ -68,11 +68,12 @@ _ANSYS_BLOCKING_OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
 ]
 
-_LIVE_OUTPUT_SUFFIXES = {".out", ".err", ".rst", ".db", ".lis", ".oup", ".bmp", ".png", ".log"}
+_LIVE_OUTPUT_SUFFIXES = {".out", ".err", ".rst", ".db", ".lis", ".oup", ".bmp", ".png", ".log", ".txt"}
 
 MIN_REAL_RUN_TIMEOUT_MINUTES = 120
 MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS = 90
 MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS = 300
+POST_COMPLETION_EXIT_GRACE_SECONDS = 15
 
 
 def _positive_int(value: Any, default: int) -> int:
@@ -221,6 +222,100 @@ def _read_text_tail(path: Path, max_chars: int = 12000) -> str:
             return handle.read().decode("utf-8", errors="replace")
     except OSError:
         return ""
+
+
+_ANSYS_COMPLETION_MARKERS = (
+    re.compile(r"\*{5}\s+ROUTINE\s+COMPLETED\s+\*{5}", re.IGNORECASE),
+    re.compile(r"\bEXIT\s+ANSYS\s+WITHOUT\s+SAVING\s+DATABASE\b", re.IGNORECASE),
+)
+_ANSYS_ERROR_COUNT_RE = re.compile(r"NUMBER\s+OF\s+ERROR\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+_ANSYS_WARNING_COUNT_RE = re.compile(r"NUMBER\s+OF\s+WARNING\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+
+
+def _ansys_completion_candidate_paths(job_dir: Path, command: dict[str, Any]) -> list[Path]:
+    output_file = Path(command.get("output_file") or job_dir / "ansys.out")
+    candidates: list[Path] = [
+        output_file,
+        job_dir / "ansys.out",
+        job_dir / "ansys_stdout.log",
+        job_dir / "ansys_stderr.log",
+    ]
+    candidates.extend(sorted(job_dir.glob("*.out")))
+    candidates.extend(sorted(job_dir.glob("*.err")))
+    candidates.extend(sorted(job_dir.glob("*.log")))
+    candidates.extend(sorted(job_dir.glob("*.txt")))
+    candidates.extend(sorted(job_dir.glob("*.TXT")))
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            resolved = candidate
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique.append(candidate)
+    return unique
+
+
+def _detect_ansys_completion_marker(job_dir: Path, command: dict[str, Any]) -> dict[str, Any]:
+    """Detect a completed MAPDL command stream even when the launcher code is nonzero.
+
+    ANSYS 18.2 on some unit machines can leave the process with return code
+    ``4294967295`` after the APDL stream has already written ``ROUTINE
+    COMPLETED`` and ``EXIT ANSYS WITHOUT SAVING DATABASE`` to a redirected
+    ``*.TXT`` output.  Treating that as a hard run failure makes satisfying
+    square-section candidates appear stuck or failed.  This detector is only a
+    positive completion signal; missing LIS/OUP/result files are still blocked
+    by the deterministic downstream gates.
+    """
+
+    checked: list[str] = []
+    matches: list[dict[str, Any]] = []
+    partial_matches: list[dict[str, Any]] = []
+    for path in _ansys_completion_candidate_paths(job_dir, command):
+        if not path.exists() or not path.is_file():
+            continue
+        checked.append(str(path))
+        text = _read_text_tail(path, max_chars=40000)
+        if not text:
+            continue
+        marker_names = [
+            pattern.pattern
+            for pattern in _ANSYS_COMPLETION_MARKERS
+            if pattern.search(text)
+        ]
+        if not marker_names:
+            continue
+        error_counts = [int(value) for value in _ANSYS_ERROR_COUNT_RE.findall(text)]
+        warning_counts = [int(value) for value in _ANSYS_WARNING_COUNT_RE.findall(text)]
+        payload = {
+            "file": str(path),
+            "markers": marker_names,
+            "error_count": error_counts[-1] if error_counts else None,
+            "warning_count": warning_counts[-1] if warning_counts else None,
+        }
+        if error_counts and error_counts[-1] == 0:
+            matches.append(payload)
+        else:
+            partial_matches.append(payload)
+
+    return {
+        "status": "pass" if matches else "not_detected",
+        "matches": matches,
+        "partial_matches": partial_matches,
+        "checked_files": checked,
+        "policy": (
+            "A nonzero ANSYS launcher return code can be accepted only when a real MAPDL "
+            "completion marker and zero MAPDL error count are present. Downstream result "
+            "validation still controls publishability."
+        ),
+    }
+
+
+def _ansys_main_stream_succeeded(returncode: int | None, completion_detection: dict[str, Any] | None) -> bool:
+    return returncode == 0 or (completion_detection or {}).get("status") == "pass"
 
 
 def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> bool:
@@ -728,6 +823,10 @@ def run_real_ansys(
     output_stall_timeout = False
     timeout_cleanup: dict[str, Any] | None = None
     job_cleanup: dict[str, Any] | None = None
+    completion_marker_detection: dict[str, Any] | None = None
+    completion_marker_seen_at: float | None = None
+    completion_marker_cleanup: dict[str, Any] | None = None
+    completed_by_marker_cleanup = False
     started_monotonic = time.monotonic()
     last_progress = 0.0
     with stdout_path.open("w", encoding="utf-8", errors="replace") as stdout_handle, stderr_path.open(
@@ -765,6 +864,69 @@ def run_real_ansys(
                 last_progress = elapsed
             if returncode is not None:
                 break
+            marker_probe = _detect_ansys_completion_marker(job_dir, command)
+            if marker_probe.get("status") == "pass":
+                completion_marker_detection = marker_probe
+                if completion_marker_seen_at is None:
+                    completion_marker_seen_at = time.monotonic()
+                    marker_status = {
+                        "stage": "ansys_completion_marker_seen",
+                        "process_running": True,
+                        "ansys_pid": process.pid,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "timeout_seconds": timeout_seconds,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
+                        "nproc": command.get("resources", {}).get("nproc"),
+                        "nproc_source": command.get("resources", {}).get("nproc_source"),
+                        "command_line": command.get("command_line"),
+                        "completion_marker_detection": completion_marker_detection,
+                        "message": (
+                            "ANSYS APDL completion marker was detected; waiting briefly for the "
+                            "launcher to exit before cleanup."
+                        ),
+                        **_job_output_activity(job_dir, command, started_monotonic),
+                    }
+                    _write_json(job_dir / "ansys_live_status.json", marker_status)
+                    if progress_callback:
+                        progress_callback(marker_status)
+                elif time.monotonic() - completion_marker_seen_at >= POST_COMPLETION_EXIT_GRACE_SECONDS:
+                    completion_marker_cleanup = {
+                        "status": "completed_marker_cleanup",
+                        "reason": (
+                            "MAPDL completion marker and zero MAPDL error count were written, "
+                            "but the launcher did not exit during the post-completion grace window."
+                        ),
+                        "grace_seconds": POST_COMPLETION_EXIT_GRACE_SECONDS,
+                        "process_tree_cleanup": _kill_process_tree(process.pid),
+                    }
+                    job_cleanup = _kill_ansys_processes_for_job(job_dir)
+                    completion_marker_cleanup["job_process_cleanup"] = job_cleanup
+                    try:
+                        process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        pass
+                    completed_by_marker_cleanup = True
+                    cleanup_status = {
+                        "stage": "ansys_completion_marker_cleanup",
+                        "process_running": False,
+                        "ansys_pid": process.pid,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "timeout_seconds": timeout_seconds,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
+                        "nproc": command.get("resources", {}).get("nproc"),
+                        "nproc_source": command.get("resources", {}).get("nproc_source"),
+                        "command_line": command.get("command_line"),
+                        "completion_marker_detection": completion_marker_detection,
+                        "completion_marker_cleanup": completion_marker_cleanup,
+                        "message": "ANSYS APDL stream completed; lingering launcher process was cleaned up for this job.",
+                        **_job_output_activity(job_dir, command, started_monotonic),
+                    }
+                    _write_json(job_dir / "ansys_live_status.json", cleanup_status)
+                    if progress_callback:
+                        progress_callback(cleanup_status)
+                    break
             if startup_timeout > 0 and elapsed > startup_timeout:
                 activity = _job_output_activity(job_dir, command, started_monotonic)
                 if int(activity.get("total_output_bytes") or 0) <= 0:
@@ -838,9 +1000,18 @@ def run_real_ansys(
     connection_export_audit = None
     post_export_failure = None
     returncode = process.returncode
+    if completion_marker_detection is None:
+        completion_marker_detection = _detect_ansys_completion_marker(job_dir, command)
     fatal_detection = _detect_ansys_fatal_outputs(job_dir, [stdout_path, stderr_path])
     fatal_found = fatal_detection["status"] == "failed"
-    if not timed_out and returncode == 0 and not fatal_found and run_post_exports:
+    main_stream_success = (
+        not timed_out
+        and not startup_no_output_timeout
+        and not output_stall_timeout
+        and not fatal_found
+        and _ansys_main_stream_succeeded(returncode, completion_marker_detection)
+    )
+    if main_stream_success and run_post_exports:
         if progress_callback:
             progress_callback(
                 {
@@ -911,7 +1082,7 @@ def run_real_ansys(
     elif post_export_failure:
         status = "failed"
         failure_reason = f"ANSYS post-export failed: {post_export_failure['name']} {post_export_failure['status']} - {post_export_failure['reason']}"
-    elif returncode == 0:
+    elif main_stream_success:
         status = "success"
         failure_reason = None
     else:
@@ -951,6 +1122,12 @@ def run_real_ansys(
         "failure_reason": failure_reason,
         "failure_category": failure_category,
         "fatal_output_detection": fatal_detection,
+        "completion_marker_detection": completion_marker_detection,
+        "completion_marker_cleanup": completion_marker_cleanup,
+        "completed_by_marker_cleanup": completed_by_marker_cleanup,
+        "returncode_accepted_by_completion_marker": bool(
+            returncode != 0 and (completion_marker_detection or {}).get("status") == "pass"
+        ),
         "numeric_post_macro_audit": numeric_post_audit,
         "post_export_failure": post_export_failure,
         "command_file": "ansys_command.json",

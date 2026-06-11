@@ -724,6 +724,13 @@ def run_operator_one_click(
                             candidate_section=event.get("candidate_section"),
                             candidate_index=candidate_index,
                             candidate_count=candidate_count,
+                            trial_dir=event.get("trial_dir"),
+                            trial_status_file=event.get("trial_status_file"),
+                            elapsed_seconds=event.get("elapsed_seconds"),
+                            no_output_seconds=event.get("no_output_seconds"),
+                            total_output_bytes=event.get("total_output_bytes"),
+                            process_running=event.get("process_running"),
+                            ansys_pid=event.get("ansys_pid"),
                         )
 
                     selection = select_and_apply_square_section(

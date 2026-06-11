@@ -1,9 +1,14 @@
 {
   "schema": "cabletrayai_codex_recovery_state_v1",
-  "updated_at": "2026-06-10T19:48:35+08:00",
+  "updated_at": "2026-06-11T09:15:51+08:00",
   "purpose": "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
   "project_root": "E:/CODEX/tray_platform/CableTrayAI",
   "current_objective": [
+    "2026-06-11 completion-marker package closeout: refreshed C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip and C:/Users/duxy/Desktop/duxyb-cnpe/???.zip; use external .sha256.txt sidecars as transfer authority because hashes embedded inside packaged docs are self-referential. Package and nested payload scans found 0 forbidden generated/runtime-local paths; D:/CableTrayAI update applied with /health ok and duxyb/cnpe123 login pass.",
+    "2026-06-11 unit 4211/4212 candidate-trial hang root cause is fixed: unit evidence under C:/Users/duxy/Desktop/_square_section_trials had completed MAPDL output in 8TEG009010.TXT with ROUTINE COMPLETED, EXIT ANSYS WITHOUT SAVING DATABASE and ERROR=0, but ANSYS18.2 returned 4294967295 so the old runner marked the trial failed.",
+    "2026-06-11 core/ansys/runner.py now treats a nonzero ANSYS launcher return code as successful only when a real MAPDL completion marker and zero MAPDL error count are found; downstream LIS/OUP/result/figure gates still control publication.",
+    "2026-06-11 completion-marker cleanup is job-scoped: after a completion marker is seen, ANSYS gets a 15s normal exit grace; if the launcher lingers, only processes whose command line references that job_dir are cleaned and completion_marker_cleanup is recorded.",
+    "2026-06-11 square-section trial observability is improved: candidate progress carries trial_dir, trial_status_file, elapsed_seconds, no_output_seconds, total_output_bytes, process_running and ansys_pid to the API/web progress panel, and successful trial roots are retained as lightweight evidence.",
     "2026-06-10 numeric-post package closeout: refreshed send-folder packages are C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip and C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip; use their external .sha256.txt sidecars as transfer authority.",
     "2026-06-10 unit 4211/4212 figure-export stall fix is complete in source: real ANSYS main runs now generate and call generated_post_numeric.mac for numeric LIS/OUP/load extraction, while generated_post.mac remains the reviewed post stream and source for separate post-only export_figures.mac image generation.",
     "2026-06-10 square-section candidate trials disable the output-stall hard-kill watchdog and skip graphics commands via numeric post; speedup comes from not running image plots during candidate selection, not from shortening timeouts.",
@@ -41,6 +46,11 @@
     "AGENTS.md"
   ],
   "known_verified": [
+    "2026-06-11 completion-marker package closeout: refreshed C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip and C:/Users/duxy/Desktop/duxyb-cnpe/???.zip; use external .sha256.txt sidecars as transfer authority because hashes embedded inside packaged docs are self-referential. Package and nested payload scans found 0 forbidden generated/runtime-local paths; D:/CableTrayAI update applied with /health ok and duxyb/cnpe123 login pass.",
+    "2026-06-11 unit evidence check: C:/Users/duxy/Desktop/_square_section_trials/18185NI-LXSJ4211/.../160-160-8 and 18185NI-LXSJ4212/.../120-120-6 both detect completion_marker status pass and accept_4294967295=True from 8TEG009010.TXT ERROR=0.",
+    "2026-06-11 isolated result assembly from unit evidence passed at jobs/verify_unit_completion_marker_20260611: 4211 160-160-8 controlling ratio 0.6125688698630086 satisfies; 4212 120-120-6 assembles but is over ratio, so it should continue to a larger candidate instead of stalling.",
+    "2026-06-11 real ANSYS18.2 verification passed at jobs/verify_unit_completion_marker_real_20260611/18185NI-LXSJ4212_120-120-6: run_real_ansys status success, returncode 0, duration 47.9s, post_exports_enabled=false, assemble_result succeeded.",
+    "2026-06-11 verification after completion-marker fix: py_compile passed for runner/workflow/one_click/API, targeted runtime/workflow tests passed, and full D:/miniconda3/python.exe -m pytest tests/unit -q passed.",
     "2026-06-10 numeric-post packaging: full deployment package SHA256 sidecar records 1BDBF15E04942FF850E8C355C3B7B3AE143C1671DC772BCB4492E1AF9838D0C7; update package SHA256 sidecar records 262273C60ABE0399F8FA06711BE92D920C3B40AA61C571437927E6F8824D38D3; update self verification passed, local D:/CableTrayAI health ok, duxyb/cnpe123 login pass, forbidden-path scan found 0, and source/package/installed hashes match for touched runtime files.",
     "2026-06-10 unit 4212 copied-failure real ANSYS verification passed after numeric post fix: jobs/verify_4212_numeric_post_20260610_194331/18185NI-LXSJ4212_120-120-6 completed main numeric run in 50.1s with ansys_run_audit status success; generated_post_numeric_audit skipped 267 graphics commands; assemble_result produced 36 beam rows and 3 foundation rows.",
     "2026-06-10 unit 4212 post-only figure export verification passed on the same job: figure_export_audit status success, duration 20.1s, figure_count=22, missing_required_figures=[], hard_timeout_policy=disabled.",

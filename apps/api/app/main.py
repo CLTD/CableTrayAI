@@ -2226,6 +2226,22 @@ def _run_one_click_background(run_id: str, payload: dict) -> None:
     def progress(event: dict) -> None:
         if _run_cancel_requested(run_id):
             raise RunCancelled("run_cancelled_by_operator")
+        diagnostic_fields = {
+            key: event.get(key)
+            for key in (
+                "candidate_section",
+                "candidate_index",
+                "candidate_count",
+                "trial_dir",
+                "trial_status_file",
+                "elapsed_seconds",
+                "no_output_seconds",
+                "total_output_bytes",
+                "process_running",
+                "ansys_pid",
+            )
+            if key in event
+        }
         _set_run(
             run_id,
             status="running",
@@ -2233,6 +2249,7 @@ def _run_one_click_background(run_id: str, payload: dict) -> None:
             message=event.get("message", ""),
             progress=int(event.get("progress", 0)),
             active_job_id=event.get("job_id"),
+            **diagnostic_fields,
         )
 
     try:

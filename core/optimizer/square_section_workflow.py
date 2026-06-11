@@ -762,9 +762,27 @@ def real_ansys_section_trial_runner(
     config: AnsysLocalConfig,
     config_path: Path | str,
     confirm_user: str,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     cleanup_stale_ansys_locks(trial_dir)
     trial_config = _section_trial_config(config)
+
+    def trial_progress(event: dict[str, Any]) -> None:
+        if not progress_callback:
+            return
+        payload = dict(event)
+        payload.setdefault("stage", "select_square_section")
+        payload["candidate_section"] = trial_dir.name
+        payload["trial_dir"] = str(trial_dir)
+        payload["trial_status_file"] = str(trial_dir / "ansys_live_status.json")
+        if "elapsed_seconds" in payload:
+            payload["message"] = (
+                f"Candidate {trial_dir.name} ANSYS running: "
+                f"{float(payload.get('elapsed_seconds') or 0.0) / 60.0:.1f} min elapsed, "
+                f"{float(payload.get('total_output_bytes') or 0.0) / (1024 * 1024):.1f} MB output."
+            )
+        progress_callback(payload)
+
     audit = run_real_ansys(
         trial_dir,
         config=trial_config,
@@ -772,6 +790,7 @@ def real_ansys_section_trial_runner(
         confirm_real_run=True,
         confirm_user=confirm_user,
         run_post_exports=False,
+        progress_callback=trial_progress,
     )
     if audit.get("status") != "success":
         cleanup_heavy_solver_artifacts(trial_dir)
@@ -941,6 +960,7 @@ def select_and_apply_square_section(
             config=config,
             config_path=config_path,
             confirm_user=confirm_user,
+            progress_callback=progress_callback,
         )
 
     similar_hint = (
@@ -1161,13 +1181,12 @@ def select_and_apply_square_section(
     _write_json(job_dir / "square_section_selection.json", final_payload)
     if using_default_runner:
         _write_cached_selection(job_dir, final_payload, cache_path=resolved_cache_path)
-    if trials.exists():
-        shutil.rmtree(trials)
-        trial_summary["trial_root_removed"] = True
-        trial_summary["trial_root_removal_policy"] = (
-            "Candidate ANSYS workspaces are regenerable and are removed after recording section ratios. "
-            "The final selected production job retains the official APDL/LIS/OUP/figures."
-        )
+    trial_summary["trial_root_removed"] = False
+    trial_summary["trial_root_retention_policy"] = (
+        "Candidate ANSYS workspaces are retained after selection so unit-site stalls or ratio decisions can be audited. "
+        "Heavy solver artifacts are cleaned inside each trial, but command streams, live status, out/err logs, LIS/OUP, "
+        "result JSON and evaluation summaries remain available under trial_root."
+    )
     _write_json(job_dir / "square_section_trial_summary.json", trial_summary)
     return final_payload
 
@@ -1262,6 +1281,7 @@ def upgrade_square_section_after_ratio_fail(
             config=config,
             config_path=config_path,
             confirm_user=confirm_user,
+            progress_callback=None,
         )
     trials = job_dir.parent / "_square_section_upgrade_trials" / job_dir.name / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     selection = run_square_section_search(
@@ -1323,21 +1343,22 @@ def upgrade_square_section_after_ratio_fail(
         )
     if selection.get("status") != "pass":
         selection["trial_root_removed"] = False
-        if trials.exists():
-            shutil.rmtree(trials)
-            selection["trial_root_removed"] = True
-            selection["trial_root_removal_policy"] = (
-                "Failed square-section upgrade trial workspaces are regenerable. "
-                "The JSON summary keeps every candidate ratio and failure reason, while heavy ANSYS artifacts are removed."
-            )
+        selection["trial_root_retention_policy"] = (
+            "Failed square-section upgrade trial workspaces are retained so unit-site runtime failures can be diagnosed "
+            "from command streams, live status, out/err logs and LIS/OUP files. Heavy solver artifacts are cleaned inside "
+            "each trial by the ANSYS trial runner."
+        )
         _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", selection)
         return selection
 
     apply_audit = apply_selected_square_section(job_dir, selection, source_root=source_root)
     final_payload = {**selection, "apply_audit": apply_audit}
+    final_payload["trial_root_removed"] = False
+    final_payload["trial_root_retention_policy"] = (
+        "Successful square-section upgrade trial workspaces are retained as lightweight audit evidence. "
+        "The formal selected job remains the publishable result, while trial logs explain the section decision."
+    )
     _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", final_payload)
-    if trials.exists():
-        shutil.rmtree(trials)
     return final_payload
 
 

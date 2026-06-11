@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from core.optimizer import square_section_workflow as workflow
 from core.optimizer.square_section_selector import SquareSectionCandidate, replace_square_and_arm_sections_in_model
@@ -278,6 +279,92 @@ def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sect
     assert captured["limit"] is None
     assert captured["max_evaluated_candidates"] == 2
     assert captured["overwrite_trials"] is True
+
+
+def test_successful_square_section_selection_retains_trial_root(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["140-140-8"])
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+
+    def fake_search(base_job_dir, trial_root, *args, **kwargs):
+        trial_root = Path(trial_root)
+        trial_dir = trial_root / "140-140-8"
+        trial_dir.mkdir(parents=True)
+        (trial_dir / "ansys_live_status.json").write_text('{"stage":"finished"}', encoding="utf-8")
+        return {
+            "status": "pass",
+            "selected": {
+                "section_name": "140-140-8",
+                "controlling_ratio": 0.91,
+                "trial_dir": str(trial_dir),
+            },
+            "candidate_results": [
+                {
+                    "section_name": "140-140-8",
+                    "status": "pass",
+                    "controlling_ratio": 0.91,
+                    "trial_dir": str(trial_dir),
+                }
+            ],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        runner=lambda trial_dir: {"status": "pass"},
+    )
+    summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
+    trial_root = Path(result["trial_root"])
+
+    assert result["status"] == "pass"
+    assert trial_root.exists()
+    assert (trial_root / "140-140-8" / "ansys_live_status.json").exists()
+    assert summary["trial_root_removed"] is False
+    assert "retained" in summary["trial_root_retention_policy"]
+
+
+def test_real_ansys_section_trial_runner_forwards_live_progress(tmp_path: Path, monkeypatch) -> None:
+    trial_dir = tmp_path / "160-160-8"
+    trial_dir.mkdir()
+    events: list[dict] = []
+
+    monkeypatch.setattr(workflow, "cleanup_stale_ansys_locks", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "_section_trial_config", lambda config: config)
+    monkeypatch.setattr(workflow, "assemble_result", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "cleanup_heavy_solver_artifacts", lambda *args, **kwargs: {"status": "pass"})
+
+    def fake_run_real_ansys(*args, **kwargs):
+        kwargs["progress_callback"](
+            {
+                "stage": "running_ansys",
+                "elapsed_seconds": 125.0,
+                "total_output_bytes": 2 * 1024 * 1024,
+            }
+        )
+        return {"status": "success"}
+
+    monkeypatch.setattr(workflow, "run_real_ansys", fake_run_real_ansys)
+
+    result = workflow.real_ansys_section_trial_runner(
+        trial_dir,
+        config=SimpleNamespace(),
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        progress_callback=events.append,
+    )
+
+    assert result["status"] == "pass"
+    assert events
+    assert events[0]["candidate_section"] == "160-160-8"
+    assert events[0]["trial_dir"] == str(trial_dir)
+    assert events[0]["trial_status_file"].endswith("ansys_live_status.json")
 
 
 def test_allowed_square_sections_ignore_similar_cache_window_and_keep_smaller_candidates(tmp_path: Path, monkeypatch) -> None:

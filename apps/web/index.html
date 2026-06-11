@@ -2530,6 +2530,17 @@
         $("progressStage").textContent = payload.stage || payload.status || "运行中";
         $("progressMessage").textContent = payload.message || "后台计算运行中。";
         renderOutputSnapshot(payload.output_snapshot);
+        if (payload.trial_dir && $("progressOutput")) {
+          const trialLines = [
+            `Candidate trial: ${payload.candidate_section || "-"}`,
+            `Trial dir: ${payload.trial_dir}`,
+            payload.trial_status_file ? `Live status: ${payload.trial_status_file}` : "",
+            payload.elapsed_seconds ? `Elapsed: ${formatDuration(payload.elapsed_seconds)}` : "",
+            payload.total_output_bytes ? `Trial output: ${formatBytes(payload.total_output_bytes)}` : "",
+            payload.no_output_seconds ? `No new output: ${formatDuration(payload.no_output_seconds)}` : "",
+          ].filter(Boolean).join("\n");
+          $("progressOutput").textContent = [$("progressOutput").textContent, trialLines].filter(Boolean).join("\n");
+        }
         const done = ["pass", "dry_run", "fail", "cancelled"].includes(payload.status);
         $("jobBadge").textContent = payload.active_job_id || payload.run_id || payload.status || "运行中";
         $("jobBadge").className = `pill ${payload.status === "fail" ? "bad" : done ? "ok" : "warn"}`;
