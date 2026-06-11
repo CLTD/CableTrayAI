@@ -1,4 +1,16 @@
 # CableTrayAI ??????
+## 2026-06-11 unit 4211 connection-node export timeout closeout
+
+Current latest source/validation state:
+
+1. Unit copied folder `C:/Users/duxy/Desktop/18185NI-LXSJ4211` failed with `ANSYS post-export failed: connection_node_export failed - connection node export exceeded timeout_seconds=300`.
+2. The retained evidence proves this was not a model, spectrum, section, or evaluation failure: main MAPDL had `ROUTINE COMPLETED` and `ERROR=0`; `LS-FORCE-NODES.LIS` existed; `connection_node_export.out` also ended with `ROUTINE COMPLETED`, `ERROR=0`, and 141 warnings only. The old code still marked it failed because `subprocess.run(timeout=300)` fired first.
+3. `core/ansys/connection_export.py` now uses a soft monitor instead of a hard 300s timeout, writes `/EXIT,NOSAV` into `export_connection_nodes.mac`, accepts completed MAPDL output only when `LS-FORCE-NODES.LIS` exists and `ROUTINE COMPLETED` plus zero MAPDL errors are present, and clears stale `LS-FORCE-NODES.LIS` / `connection_node_export.out` before reruns.
+4. The copied failed unit output was reassembled without rerunning ANSYS at `jobs/verify_unit_4211_connection_export_outputs_20260611_174956/18185NI-LXSJ4211`: `result.json` generated, `result_validation.status=pass`, `result_publishable=true`, and `connection_node_force_results` has 262 rows.
+5. Real ANSYS18.2 validation passed at `jobs/verify_unit_4211_connection_export_fix_20260611_175038/18185NI-LXSJ4211`: `ansys_run_audit.status=success`, main duration `119.420748s`, `connection_node_export_status=success`, `figure_export_status=success`, `figure_count=14`, `result_validation.status=pass`, `result_publishable=true`, and total wall time about `167.8s`.
+6. Verification passed after the fix: `D:/miniconda3/python.exe -m pytest tests/unit -q`, plus targeted post-export stream/completion tests.
+7. Deployment closeout after this fix: refresh `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, apply the update locally to `D:/CableTrayAI`, verify `/health`, `duxyb/cnpe123` login, key source/package/installed hashes, and package cleanliness. Use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
 ## 2026-06-11 unit 4211 50-minute stall root-cause closeout
 
 Current latest source/validation state:

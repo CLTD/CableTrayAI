@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from core.ansys.config import AnsysExecutableConfig, AnsysLocalConfig
+from core.ansys import connection_export
 from core.ansys import figure_export
 
 
@@ -29,6 +30,69 @@ def test_figure_export_macro_exits_without_saving_database(tmp_path: Path) -> No
     macro_text = (job_dir / "export_figures.mac").read_text(encoding="utf-8")
 
     assert "/EXIT,NOSAV" in macro_text
+
+
+def test_connection_node_export_macro_exits_without_saving_database(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "CableTrayAI_Run.db").write_text("placeholder", encoding="utf-8")
+    (job_dir / "generated_model.mac").write_text("K,500,0,0,0\n", encoding="utf-8")
+
+    audit = connection_export.write_connection_node_export_macro(job_dir)
+    macro_text = (job_dir / "export_connection_nodes.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "macro_written"
+    assert "/EXIT,NOSAV" in macro_text
+
+
+def test_connection_node_export_accepts_completion_marker_with_nonzero_launcher_return(
+    tmp_path: Path, monkeypatch
+) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    exe = tmp_path / "ANSYS182.exe"
+    exe.write_text("placeholder", encoding="utf-8")
+    (job_dir / "CableTrayAI_Run.db").write_text("placeholder", encoding="utf-8")
+    (job_dir / "generated_model.mac").write_text("K,500,0,0,0\n", encoding="utf-8")
+    (job_dir / "LS-FORCE-NODES.LIS").write_text("stale output must be removed\n", encoding="utf-8")
+    (job_dir / "connection_node_export.out").write_text("stale completion marker must be removed\n", encoding="utf-8")
+
+    class FakeProcess:
+        pid = 12345
+        returncode = 1
+
+        def poll(self):
+            return self.returncode
+
+    def fake_popen(*args, **kwargs):
+        (job_dir / "LS-FORCE-NODES.LIS").write_text(
+            "KP CASEID FX FY FZ MX MY MZ\n500 2 1 2 3 4 5 6\n",
+            encoding="utf-8",
+        )
+        (job_dir / "connection_node_export.out").write_text(
+            "\n".join(
+                [
+                    "***** ROUTINE COMPLETED *****",
+                    "NUMBER OF WARNING MESSAGES ENCOUNTERED=        141",
+                    "NUMBER OF ERROR   MESSAGES ENCOUNTERED=          0",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return FakeProcess()
+
+    monkeypatch.setattr(connection_export.subprocess, "Popen", fake_popen)
+
+    audit = connection_export.run_connection_node_export(
+        job_dir,
+        config=AnsysLocalConfig(ansys=AnsysExecutableConfig(executable=str(exe), timeout_minutes=1)),
+    )
+
+    assert audit["status"] == "success"
+    assert audit["returncode"] == 1
+    assert audit["returncode_accepted_by_completion_marker"] is True
+    assert audit["completion_marker_detection"]["status"] == "pass"
+    assert audit["stale_connection_output_cleanup"]["removed_count"] == 2
 
 
 def test_figure_export_accepts_completion_marker_with_nonzero_launcher_return(tmp_path: Path, monkeypatch) -> None:

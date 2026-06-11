@@ -1,4 +1,19 @@
 # CableTrayAI ??????
+## 2026-06-11 unit 4211 connection-node export timeout closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4211 failed because `connection_node_export` used a fixed hard `timeout=300`, while the unit machine produced `LS-FORCE-NODES.LIS` and `connection_node_export.out` completion evidence slightly after the timeout path had already marked the post-export failed.
+2. The failure evidence is deterministic: main ANSYS completed with `ERROR=0`; connection-node export output existed; `connection_node_export.out` ended with `ROUTINE COMPLETED`, zero MAPDL errors, and warnings only.
+3. `core/ansys/connection_export.py` now disables hard timeout killing, records a soft timeout warning only, adds `/EXIT,NOSAV`, accepts only current-run completion markers with a non-empty `LS-FORCE-NODES.LIS`, and removes stale connection export outputs before reruns.
+4. Copied unit outputs reassembled successfully at `jobs/verify_unit_4211_connection_export_outputs_20260611_174956/18185NI-LXSJ4211`: `result_validation.status=pass`, `result_publishable=true`, and 262 connection-node rows.
+5. Real ANSYS18.2 validation passed at `jobs/verify_unit_4211_connection_export_fix_20260611_175038/18185NI-LXSJ4211`: `connection_node_export_status=success`, `figure_export_status=success`, `figure_count=14`, `result_validation.status=pass`, total wall time about `167.8s`.
+6. Full unit suite passed with `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4211 connection-node export timeout fix. The refreshed transfer files are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
 ## 2026-06-11 unit 4211 50-minute stall root-cause closeout
 
 Resolved in source and verified with real ANSYS:

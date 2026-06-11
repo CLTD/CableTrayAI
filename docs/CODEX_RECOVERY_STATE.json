@@ -1,9 +1,14 @@
 {
   "schema": "cabletrayai_codex_recovery_state_v1",
-  "updated_at": "2026-06-11T11:50:29+08:00",
+  "updated_at": "2026-06-11T17:53:38+08:00",
   "purpose": "Persistent recovery state for Codex context compaction or a new high-reasoning thread.",
   "project_root": "E:/CODEX/tray_platform/CableTrayAI",
   "current_objective": [
+    "2026-06-11 unit 4211 connection-node export timeout fixed: copied folder C:/Users/duxy/Desktop/18185NI-LXSJ4211 failed because connection_node_export used a fixed subprocess timeout=300 even though LS-FORCE-NODES.LIS existed and connection_node_export.out ended with ROUTINE COMPLETED and ERROR=0.",
+    "2026-06-11 core/ansys/connection_export.py now uses soft timeout monitoring only, writes /EXIT,NOSAV in export_connection_nodes.mac, accepts completed MAPDL output only when LS-FORCE-NODES.LIS exists and ROUTINE COMPLETED plus zero MAPDL errors are present, and removes stale connection export outputs before reruns.",
+    "2026-06-11 copied unit outputs reassembled successfully at jobs/verify_unit_4211_connection_export_outputs_20260611_174956/18185NI-LXSJ4211: result.json generated, result_validation pass, result_publishable true, connection_node_force_results rows=262.",
+    "2026-06-11 real ANSYS18.2 validation passed at jobs/verify_unit_4211_connection_export_fix_20260611_175038/18185NI-LXSJ4211: ansys_run_audit success, duration 119.420748s, connection_node_export_status success, figure_export_status success, figure_count=14, result_validation pass, result_publishable true, total wall time about 167.8s.",
+    "2026-06-11 unit 4211 connection export package closeout: refreshed C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip and C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip; use external .sha256.txt sidecars as transfer authority. Local D:/CableTrayAI update apply, /health, duxyb/cnpe123 login, key installed-source hashes, and package cleanliness scans passed.",
     "2026-06-11 unit 4211 50-minute stall root cause fixed: copied unit evidence showed repeated 160/140 economy candidate trials plus a formal post-only figure export that completed inside MAPDL but could linger at ANSYS18.2 launcher/DB-save exit.",
     "2026-06-11 economy rule remains active: a fresh passing square-section candidate in 0.60 <= ratio <= 0.75 normally triggers exactly one immediately lower intake-allowed real ANSYS trial; the duplicate lower trial is skipped only when a high-similarity learned cache hit (score >= 0.95) already proves that exact immediately lower section completed and failed with ratio > 1.0.",
     "2026-06-11 learned formal validation never publishes historical results: it only selects the current section for formal validation, and the current job's result_validation/evaluation gates remain authoritative. If the current final ratio exceeds 1.0, the existing upgrade/reselection path still blocks and recovers.",
@@ -53,6 +58,10 @@
     "AGENTS.md"
   ],
   "known_verified": [
+    "2026-06-11 unit 4211 connection export fix verification: copied unit outputs at jobs/verify_unit_4211_connection_export_outputs_20260611_174956/18185NI-LXSJ4211 assembled to result_validation pass and result_publishable true with 262 connection-node rows.",
+    "2026-06-11 unit 4211 connection export real ANSYS18.2 verification: jobs/verify_unit_4211_connection_export_fix_20260611_175038/18185NI-LXSJ4211 completed with connection_node_export_status success, figure_export_status success, figure_count=14, result_validation pass, result_publishable true.",
+    "2026-06-11 tests after connection export timeout fix: targeted tests/unit/test_ansys_post_exports_stream_output.py passed and full D:/miniconda3/python.exe -m pytest tests/unit -q passed.",
+    "2026-06-11 unit 4211 connection export package verification: package gate passed, update package self verification passed, update applied to D:/CableTrayAI, /health ok, duxyb/cnpe123 login pass, and package plus nested payload forbidden generated/runtime-local path scans found 0.",
     "2026-06-11 unit 4211 stall verification: jobs/verify_4211_unit_hang_fix_20260611_114124/18185NI-LXSJ4211 completed real ANSYS18.2 with ansys_run_audit status success, returncode 0, duration 116.635979s, figure_export_status success, figure_count=14, result_validation.status pass, and result_publishable true.",
     "2026-06-11 verification after unit 4211 stall fix: D:/miniconda3/python.exe -m pytest tests/unit -q passed; targeted coverage includes figure-export completion markers, stale completion cleanup, learned formal validation, and result-validity formal-validation mode.",
     "2026-06-11 unit 4211 stall package verification: C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip and 更新包.zip rebuilt; package gate passed; update package self verification passed; update applied to D:/CableTrayAI with the updater-created backup recorded in console output; /health ok; duxyb/cnpe123 login pass; package and nested payload forbidden generated/runtime-local path scans found 0.",
