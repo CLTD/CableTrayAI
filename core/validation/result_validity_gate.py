@@ -314,6 +314,25 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
     )
     if not auto_selected:
         return None
+    validation_mode = str(
+        metadata.get("square_section_selection_validation_mode")
+        or selection.get("selection_validation_mode")
+        or ""
+    )
+    if validation_mode == "learned_formal_validation":
+        return {
+            "check_id": "square_section_formal_validation_mode",
+            "status": "pass",
+            "message": "Square section came from a learned high-similarity hint; current formal ANSYS/evaluation results are used directly instead of comparing against a historical trial ratio.",
+            "evidence": {
+                "section_name": selected.get("section_name") or metadata.get("square_section_selected"),
+                "validation_mode": validation_mode,
+                "historical_ratio": selected.get("historical_controlling_ratio")
+                or selected.get("controlling_ratio")
+                or metadata.get("square_section_selected_ratio"),
+                "source_ref": "square_section_selection.json:learned_formal_validation",
+            },
+        }
     final_ratio = _max_evaluation_ratio(evaluation_rows)
     trial_ratio = _metric_value(
         selected.get("trial_controlling_ratio")

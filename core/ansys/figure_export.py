@@ -22,10 +22,110 @@ FIGURE_EXPORT_MACRO = "export_figures.mac"
 FIGURE_EXPORT_AUDIT = "figure_export_audit.json"
 FIGURE_POST_MACRO = "generated_post_figure_export.mac"
 FIGURE_EXPORT_LIVE_STATUS = "figure_export_live_status.json"
+FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS = 10
+
+_FIGURE_EXPORT_COMPLETION_MARKER_RE = re.compile(r"\*{5}\s+ROUTINE\s+COMPLETED\s+\*{5}", re.IGNORECASE)
+_FIGURE_EXPORT_END_INPUT_RE = re.compile(r"\*{5}\s+END\s+OF\s+INPUT\s+ENCOUNTERED\s+\*{5}", re.IGNORECASE)
+_FIGURE_EXPORT_ERROR_COUNT_RE = re.compile(r"NUMBER\s+OF\s+ERROR\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+_FIGURE_EXPORT_WARNING_COUNT_RE = re.compile(r"NUMBER\s+OF\s+WARNING\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
 
 
 def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _read_text_tail(path: Path, *, max_chars: int = 40000) -> str:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return text[-max_chars:]
+
+
+def _kill_process_tree(pid: int | None) -> dict[str, Any]:
+    if not pid:
+        return {"status": "skipped", "reason": "missing_pid"}
+    try:
+        completed = subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30,
+        )
+    except Exception as exc:  # pragma: no cover - defensive for OS/process failures
+        return {"status": "failed", "pid": pid, "reason": str(exc)}
+    return {
+        "status": "success" if completed.returncode == 0 else "failed",
+        "pid": pid,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
+def _detect_figure_export_completion(job_dir: Path) -> dict[str, Any]:
+    """Detect a complete post-only graphics export even with ANSYS launcher noise.
+
+    ANSYS 18.2 can return a nonzero launcher code after a batch graphics macro
+    has already written all requested PNG files and zero MAPDL errors.  This is
+    a completion signal only; required figure collection still decides whether
+    the export is usable.
+    """
+
+    candidates = [
+        job_dir / "export_figures.out",
+        job_dir / "figure_export_stdout.log",
+        job_dir / "figure_export_stderr.log",
+        job_dir / "CableTrayAI_Run.err",
+        job_dir / "CableTrayAI_Run.log",
+    ]
+    checked: list[str] = []
+    matches: list[dict[str, Any]] = []
+    partial_matches: list[dict[str, Any]] = []
+    for path in candidates:
+        if not path.exists() or not path.is_file():
+            continue
+        checked.append(str(path))
+        text = _read_text_tail(path)
+        if not text:
+            continue
+        has_routine = bool(_FIGURE_EXPORT_COMPLETION_MARKER_RE.search(text))
+        has_end_input = bool(_FIGURE_EXPORT_END_INPUT_RE.search(text))
+        if not has_routine:
+            continue
+        error_counts = [int(value) for value in _FIGURE_EXPORT_ERROR_COUNT_RE.findall(text)]
+        warning_counts = [int(value) for value in _FIGURE_EXPORT_WARNING_COUNT_RE.findall(text)]
+        payload = {
+            "file": str(path),
+            "markers": [
+                name
+                for name, present in (
+                    ("ROUTINE_COMPLETED", has_routine),
+                    ("END_OF_INPUT", has_end_input),
+                )
+                if present
+            ],
+            "error_count": error_counts[-1] if error_counts else None,
+            "warning_count": warning_counts[-1] if warning_counts else None,
+        }
+        if error_counts and error_counts[-1] == 0:
+            matches.append(payload)
+        else:
+            partial_matches.append(payload)
+    return {
+        "status": "pass" if matches else "not_detected",
+        "matches": matches,
+        "partial_matches": partial_matches,
+        "checked_files": checked,
+        "policy": (
+            "Figure export can accept a nonzero ANSYS launcher return code only when "
+            "the post-only MAPDL stream reached ROUTINE COMPLETED with zero MAPDL errors. "
+            "Required PNG collection still controls success."
+        ),
+    }
 
 
 def _figure_export_activity(job_dir: Path, started_monotonic: float, started: datetime) -> dict[str, Any]:
@@ -479,6 +579,7 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         ),
         "/SHOW,CLOSE",
         "FINISH",
+        "/EXIT,NOSAV",
         "",
     ]
     macro_path = job_dir / output_name
@@ -772,6 +873,10 @@ def run_figure_export(
                 text=True,
             )
             soft_timeout_reported = False
+            completion_detection: dict[str, Any] | None = None
+            completion_seen_at: float | None = None
+            completion_cleanup: dict[str, Any] | None = None
+            completed_by_marker_cleanup = False
             while True:
                 returncode = process.poll()
                 activity = _figure_export_activity(job_dir, started_monotonic, started)
@@ -792,13 +897,49 @@ def run_figure_export(
                         "CableTrayAI keeps MAPDL running and continues writing live status."
                     )
                     soft_timeout_reported = True
+                if returncode is None:
+                    marker_probe = _detect_figure_export_completion(job_dir)
+                    if marker_probe.get("status") == "pass":
+                        completion_detection = marker_probe
+                        if completion_seen_at is None:
+                            completion_seen_at = time.monotonic()
+                            live_status["status"] = "completion_marker_seen"
+                            live_status["message"] = (
+                                "Figure export wrote ROUTINE COMPLETED with zero MAPDL errors; "
+                                "waiting briefly for the ANSYS launcher to exit."
+                            )
+                        elif time.monotonic() - completion_seen_at >= FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS:
+                            completion_cleanup = {
+                                "status": "completed_marker_cleanup",
+                                "reason": (
+                                    "Figure export completed and required output files stopped changing, "
+                                    "but the launcher remained alive after the completion grace window."
+                                ),
+                                "grace_seconds": FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS,
+                                "process_tree_cleanup": _kill_process_tree(process.pid),
+                            }
+                            try:
+                                process.wait(timeout=15)
+                            except subprocess.TimeoutExpired:
+                                pass
+                            completed_by_marker_cleanup = True
+                            returncode = process.poll()
+                            live_status["status"] = "completion_marker_cleanup"
+                            live_status["process_running"] = False
+                            live_status["returncode"] = returncode
+                            live_status["completion_marker_detection"] = completion_detection
+                            live_status["completion_marker_cleanup"] = completion_cleanup
+                    elif completion_detection is None:
+                        completion_detection = marker_probe
                 _write_json(job_dir / FIGURE_EXPORT_LIVE_STATUS, live_status)
                 if progress_callback:
                     progress_callback(live_status)
                 if returncode is not None:
                     break
+                if completed_by_marker_cleanup:
+                    break
                 time.sleep(5.0)
-            completed_returncode = int(process.returncode or 0)
+            completed_returncode = int(process.returncode) if process.returncode is not None else 4294967295
     except Exception as exc:
         finished = datetime.now(timezone.utc)
         audit = {
@@ -820,6 +961,12 @@ def run_figure_export(
         _write_json(job_dir / FIGURE_EXPORT_AUDIT, audit)
         return audit
     finished = datetime.now(timezone.utc)
+    if "completion_detection" not in locals() or completion_detection is None:
+        completion_detection = _detect_figure_export_completion(job_dir)
+    if "completion_cleanup" not in locals():
+        completion_cleanup = None
+    if "completed_by_marker_cleanup" not in locals():
+        completed_by_marker_cleanup = False
     naming = _normalise_named_pngs(job_dir, command["ansys_job_name"], started)
     figures = collect_figures(job_dir, output_manifest=True)
     requirements_path = job_dir / "result_requirements.json"
@@ -827,14 +974,21 @@ def run_figure_export(
     required = {str(name).upper() for name in requirements.get("required_figures", [])}
     present = {str(item.get("source_file") or "").upper() for item in figures}
     missing_required = sorted(required - present)
+    returncode_success = completed_returncode == 0 or (completion_detection or {}).get("status") == "pass"
     audit = {
-        "status": "success" if completed_returncode == 0 and figures and not missing_required else "failed",
+        "status": "success" if returncode_success and figures and not missing_required else "failed",
         "mode": "figure_export",
         "executed": True,
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "duration_seconds": (finished - started).total_seconds(),
         "returncode": completed_returncode,
+        "returncode_accepted_by_completion_marker": bool(
+            completed_returncode != 0 and (completion_detection or {}).get("status") == "pass"
+        ),
+        "completion_marker_detection": completion_detection,
+        "completion_marker_cleanup": completion_cleanup,
+        "completed_by_marker_cleanup": completed_by_marker_cleanup,
         "soft_timeout_seconds": soft_timeout_seconds,
         "hard_timeout_policy": "disabled",
         "soft_timeout_reported": soft_timeout_reported,

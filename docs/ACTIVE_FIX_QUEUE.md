@@ -1,4 +1,20 @@
 # CableTrayAI ??????
+## 2026-06-11 unit 4211 50-minute stall root-cause closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4211 was not a formula/material/spectrum error. The copied job showed candidate trials and formal solve could complete, but the old flow wasted time by repeating a known 160/140 economy downshift and then could stall at post-only figure export after MAPDL had already completed graphics output.
+2. The selector still honors the economy requirement: `0.60 <= ratio <= 0.75` normally triggers one immediately lower intake-allowed trial. The duplicate lower trial is skipped only when a high-similarity learned record already proves that exact immediately lower section completed under real ANSYS and failed with ratio `> 1.0`.
+3. The learned skip is not result reuse. The current formal ANSYS run and current deterministic `result_validation.json` remain the publication authority.
+4. Figure export now ends with `/EXIT,NOSAV`, detects `ROUTINE COMPLETED` plus zero MAPDL errors, and performs job-scoped cleanup only after a short completion grace. Required figures remain mandatory.
+5. Fresh real ANSYS runs delete stale completion-marker outputs before launch, preventing old `8TEG009010.TXT` files from making a new run look complete.
+6. Real ANSYS18.2 validation passed at `jobs/verify_4211_unit_hang_fix_20260611_114124/18185NI-LXSJ4211`: main run `116.635979s`, figure export `success`, `figure_count=14`, `result_validation.status=pass`, `result_publishable=true`, total wall time about `162.2s`.
+7. Full unit suite passed with `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4211 stall fix. The refreshed transfer files are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
 ## 2026-06-11 ??4211/4212?????????????? closeout
 
 Resolved in source and verified:

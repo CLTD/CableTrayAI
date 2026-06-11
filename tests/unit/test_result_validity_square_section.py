@@ -243,3 +243,73 @@ def test_result_gate_blocks_legacy_flat_square_section_ratio_mismatch(tmp_path: 
     assert mismatch
     assert mismatch[0]["status"] == "fail"
     assert payload["status"] == "fail"
+
+
+def test_result_gate_allows_learned_formal_validation_without_trial_ratio_compare(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "learned-formal"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        json.dumps(
+            {
+                "support": {"support_type": "S2"},
+                "metadata": {
+                    "square_section_selection_status": "auto_selected_by_real_ansys",
+                    "square_section_selection_validation_mode": "learned_formal_validation",
+                    "square_section_selected": "160-160-8",
+                    "square_section_selected_ratio": 0.6125,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "square_section_selection.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "selection_validation_mode": "learned_formal_validation",
+                "selected": {
+                    "section_name": "160-160-8",
+                    "controlling_ratio": 0.6125,
+                    "historical_controlling_ratio": 0.6125,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS"):
+        (job_dir / file_name).write_text("placeholder", encoding="utf-8")
+    monkeypatch.setattr(
+        gate,
+        "classify_job_requirements",
+        lambda _job_dir: {
+            "status": "pass",
+            "support_type": "S2",
+            "requires": {
+                "modal_analysis": False,
+                "modal_frequency_table": False,
+                "foundation_loads": True,
+                "tray_arm_connection_loads": False,
+                "bolt_stress_eval": False,
+            },
+            "required_figures": [],
+        },
+    )
+
+    result = {
+        "beam_stress_results": [{"value_mpa": 1.0}],
+        "foundation_loads": [
+            {"load_case": "DW", "node": "N1", "fx": 1.0, "fy": 0.0, "fz": 1.0, "mx": 0.0, "my": 1.0, "mz": 0.0}
+        ],
+        "evaluation_summary": [
+            {"check_id": "mixed_beam_type_1.support_bending", "ratio": 0.86, "allowable_value": 234.3},
+        ],
+    }
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)
+
+    learned = [item for item in payload["checks"] if item["check_id"] == "square_section_formal_validation_mode"]
+    mismatch = [item for item in payload["checks"] if item["check_id"] == "square_section_trial_final_ratio_mismatch"]
+    assert learned
+    assert learned[0]["status"] == "pass"
+    assert not mismatch
+    assert payload["status"] == "pass"

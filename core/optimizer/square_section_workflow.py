@@ -31,6 +31,7 @@ from core.results.result_assembler import assemble_result
 SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v6-learned-allowed-start"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
+LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
 
 
 def _arm_sections_for_square_outer(square_outer_mm: float | None) -> tuple[str, str, str]:
@@ -459,6 +460,129 @@ def _learned_allowed_candidate_start(
             "intake-allowed section list, while keeping lower economic guard candidates before the learned section. "
             "It cannot add unlisted sections and cannot accept a section without a fresh ANSYS trial and deterministic "
             "ratio gate for the current job."
+        ),
+    }
+
+
+def _historical_immediate_lower_failed(
+    candidates: list[SquareSectionCandidate],
+    selected_section: str,
+    historical_results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    selected_index = next((idx for idx, item in enumerate(candidates) if item.section_name == selected_section), None)
+    if selected_index is None:
+        return {"status": "not_applicable", "reason": "selected_section_not_in_allowed_list"}
+    if selected_index <= 0:
+        return {"status": "not_applicable", "reason": "selected_section_is_minimum_allowed"}
+    lower = candidates[selected_index - 1]
+    for item in historical_results:
+        if not isinstance(item, dict) or str(item.get("section_name") or "") != lower.section_name:
+            continue
+        ratio = _as_float(item.get("controlling_ratio"))
+        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass":
+            return {
+                "status": "pass",
+                "lower_section": lower.section_name,
+                "historical_ratio": ratio,
+                "historical_status": item.get("status"),
+                "historical_run_status": item.get("run_status"),
+                "source_ref": "square_section_selection_cache.json:historical_candidate_results",
+            }
+        return {
+            "status": "fail",
+            "lower_section": lower.section_name,
+            "historical_ratio": ratio,
+            "historical_status": item.get("status"),
+            "historical_run_status": item.get("run_status"),
+            "reason": "immediate lower section was not proven over limit by a successful historical ANSYS trial",
+        }
+    return {
+        "status": "missing",
+        "lower_section": lower.section_name,
+        "reason": "no historical result for the immediate lower allowed section",
+    }
+
+
+def _learned_formal_validation_selection(
+    *,
+    candidates: list[SquareSectionCandidate],
+    similar_hint: dict[str, Any] | None,
+    allowed_square_section_filter: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Use learned section ordering to skip duplicate candidate trials.
+
+    This never reuses a result.  It only applies a high-confidence section hint
+    to the formal job so the one real ANSYS run for the current intake becomes
+    the deterministic validation.  If the formal result fails, the existing
+    square-section upgrade/reselection gates still run.
+    """
+
+    if allowed_square_section_filter.get("status") != "applied" or not similar_hint:
+        return None
+    similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
+    score = _as_float(similarity.get("score"))
+    if score is None or score < LEARNED_FORMAL_VALIDATION_THRESHOLD:
+        return None
+    selected_section = str(similar_hint.get("selected_section_hint") or "")
+    selected_candidate = next((item for item in candidates if item.section_name == selected_section), None)
+    if selected_candidate is None:
+        return None
+    historical_results = [
+        item for item in (similar_hint.get("historical_candidate_results") or []) if isinstance(item, dict)
+    ]
+    selected_history = next((item for item in historical_results if item.get("section_name") == selected_section), {})
+    selected_ratio = _as_float(selected_history.get("controlling_ratio"))
+    if selected_ratio is None or not (0.60 <= selected_ratio <= 0.9999):
+        return None
+    if str(selected_history.get("run_status") or "") != "pass":
+        return None
+    lower_failure_audit: dict[str, Any] = {"status": "not_required", "reason": "selected ratio is already above 0.75"}
+    if selected_ratio <= 0.75:
+        lower_failure_audit = _historical_immediate_lower_failed(candidates, selected_section, historical_results)
+        if lower_failure_audit.get("status") != "pass":
+            return None
+    selected_payload = {
+        "section_name": selected_candidate.section_name,
+        "estimated_area_mm2": selected_candidate.estimated_area_mm2,
+        "estimated_bending_section_modulus_mm3": selected_candidate.estimated_bending_section_modulus_mm3,
+        "source_kind": selected_candidate.source_kind,
+        "controlling_ratio": selected_ratio,
+        "historical_controlling_ratio": selected_ratio,
+        "status": "pass",
+        "run_status": "formal_validation_pending",
+        "result_gate_status": "formal_validation_pending",
+        "validation_status": "formal_validation_pending",
+        "failed_non_ratio_checks": [],
+        "dominant_check_id": selected_history.get("dominant_check_id"),
+        "source_ref": "square_section_selection_cache.json:selected_section_hint",
+        "formal_validation_required": True,
+    }
+    return {
+        "status": "pass",
+        "selected": selected_payload,
+        "candidate_results": [selected_payload],
+        "selection_validation_mode": "learned_formal_validation",
+        "learned_formal_validation": {
+            "status": "applied",
+            "similarity_score": score,
+            "similarity_threshold": LEARNED_FORMAL_VALIDATION_THRESHOLD,
+            "selected_section_hint": selected_section,
+            "historical_selected_ratio": selected_ratio,
+            "lower_economy_check": lower_failure_audit,
+            "source_job_dir": similar_hint.get("source_job_dir"),
+            "cache_key": similar_hint.get("cache_key"),
+            "policy": (
+                "High-similarity learned evidence may apply the section directly to the formal job, but it never "
+                "reuses historical results. The current formal ANSYS run and deterministic Chapter 6 evaluation "
+                "remain the only publishable result. When the learned ratio is 0.60-0.75, the immediate lower "
+                "allowed section must already have a successful historical ANSYS over-limit result; otherwise the "
+                "normal one-step economy downshift trial is still run."
+            ),
+        },
+        "policy": (
+            "Use a high-similarity learned section only as the current formal validation section. "
+            "No historical result is reused; if the formal run exceeds ratio 1.0, the normal upgrade/reselection "
+            "workflow remains mandatory."
         ),
     }
 
@@ -1005,6 +1129,60 @@ def select_and_apply_square_section(
         "status": "skipped",
         "reason": "allowed-list learning not evaluated",
     }
+    learned_formal_selection = (
+        _learned_formal_validation_selection(
+            candidates=full_candidates,
+            similar_hint=similar_hint,
+            allowed_square_section_filter=allowed_square_section_filter,
+        )
+        if using_default_runner and not force_reselect
+        else None
+    )
+    if learned_formal_selection is not None:
+        learned_formal_selection["allowed_square_section_filter"] = allowed_square_section_filter
+        learned_formal_selection["similar_cache_order_hint"] = similar_hint
+        learned_formal_selection["trial_root"] = None
+        learned_formal_selection["trial_root_removed"] = True
+        learned_formal_selection["production_policy"] = (
+            "High-similarity learned section hints can skip duplicate candidate trial ANSYS runs only when they stay "
+            "inside the current intake allowed-section list. The current formal ANSYS run is still mandatory and is "
+            "the only publishable result; final Chapter 6 ratios, figures and LIS/OUP gates remain unchanged."
+        )
+        apply_audit = apply_selected_square_section(job_dir, learned_formal_selection, source_root=source_root)
+        final_payload = {**learned_formal_selection, "apply_audit": apply_audit}
+        _write_json(job_dir / "square_section_selection.json", final_payload)
+        _write_json(
+            job_dir / "square_section_trial_summary.json",
+            {
+                "status": "pass",
+                "selected": final_payload.get("selected"),
+                "policy": final_payload.get("policy"),
+                "production_policy": final_payload.get("production_policy"),
+                "allowed_square_section_filter": allowed_square_section_filter,
+                "similar_cache_order_hint": similar_hint,
+                "learned_formal_validation": final_payload.get("learned_formal_validation"),
+                "candidate_results": final_payload.get("candidate_results"),
+                "trial_root_removed": True,
+                "trial_root_retention_policy": (
+                    "No candidate trial workspace was created because a high-similarity learned section was applied "
+                    "only for the current formal ANSYS validation run."
+                ),
+            },
+        )
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "select_square_section",
+                    "message": (
+                        f"Using learned section {final_payload['selected']['section_name']} for formal ANSYS validation; "
+                        "current formal run will still decide pass/fail."
+                    ),
+                    "candidate_section": final_payload["selected"]["section_name"],
+                    "candidate_index": 1,
+                    "candidate_count": 1,
+                }
+            )
+        return final_payload
     similarity_score = None
     if similar_hint is not None:
         try:

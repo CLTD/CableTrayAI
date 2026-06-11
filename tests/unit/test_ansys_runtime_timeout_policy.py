@@ -4,6 +4,7 @@ from core.ansys.config import AnsysLocalConfig
 from core.ansys.runner import (
     _LIVE_OUTPUT_SUFFIXES,
     _ansys_main_stream_succeeded,
+    _cleanup_stale_completion_outputs,
     _detect_ansys_completion_marker,
     _effective_real_run_timeout_policy,
 )
@@ -108,3 +109,28 @@ def test_completion_marker_does_not_accept_nonzero_mapdl_error_count(tmp_path) -
     assert detection["status"] == "not_detected"
     assert detection["partial_matches"][0]["error_count"] == 1
     assert _ansys_main_stream_succeeded(4294967295, detection) is False
+
+
+def test_stale_completion_outputs_are_removed_before_real_rerun(tmp_path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    stale = job_dir / "8TEG009010.TXT"
+    stale.write_text(
+        "\n".join(
+            [
+                " ***** ROUTINE COMPLETED *****",
+                " EXIT ANSYS WITHOUT SAVING DATABASE",
+                " NUMBER OF ERROR   MESSAGES ENCOUNTERED=          0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "ansys.out").write_text("old output", encoding="utf-8")
+
+    audit = _cleanup_stale_completion_outputs(job_dir, {"output_file": str(job_dir / "ansys.out")})
+
+    assert audit["status"] == "pass"
+    assert audit["removed_count"] == 2
+    assert not stale.exists()
+    assert not (job_dir / "ansys.out").exists()
+    assert _detect_ansys_completion_marker(job_dir, {"output_file": str(job_dir / "ansys.out")})["status"] == "not_detected"

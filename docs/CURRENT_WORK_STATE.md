@@ -1,4 +1,17 @@
 # CableTrayAI ??????
+## 2026-06-11 unit 4211 50-minute stall root-cause closeout
+
+Current latest source/validation state:
+
+1. Unit copied evidence from `C:/Users/duxy/Desktop/18185NI-LXSJ4211` and `_square_section_trials-18185NI-LXSJ4211` shows two separate causes for the apparent stall: candidate selection re-ran expensive 160/140 trials even though the learned 4211 evidence already proved `160-160-8` passes and the immediately lower `140-140-8` fails, and the formal post-only figure export finished inside MAPDL but the old macro did not force a no-save exit, so ANSYS18.2 could linger at launcher/DB-save exit.
+2. The economy rule is still active: when a fresh passing candidate has `0.60 <= ratio <= 0.75`, the selector normally runs exactly one immediately lower intake-allowed section. It skips that duplicate lower trial only when a high-similarity learned cache hit (`score >= 0.95`) already contains real ANSYS evidence that the immediately lower section completed and failed with ratio `> 1.0`.
+3. Learned formal validation never publishes a historical result. It only chooses the current formal section and requires the current job's full ANSYS/result-validation run to pass. If the final deterministic ratio exceeds 1.0, the existing upgrade/reselection gates still block and recover.
+4. `core/ansys/figure_export.py` now writes `/EXIT,NOSAV` in `export_figures.mac` and can accept a completed MAPDL graphics export with `ROUTINE COMPLETED` and `ERROR=0` even if the ANSYS launcher return is nonzero or lingers. Required named figures still gate success; missing figures still fail publication.
+5. `core/ansys/runner.py` now removes stale completion-marker files before every new real ANSYS run, so old `8TEG009010.TXT` or `ansys.out` cannot validate a new calculation before fresh output is produced.
+6. Real ANSYS18.2 validation passed at `jobs/verify_4211_unit_hang_fix_20260611_114124/18185NI-LXSJ4211`: `run_real_ansys` status `success`, main duration `116.635979s`, figure export status `success`, `figure_count=14`, `result_validation.status=pass`, `result_publishable=true`, total wall time about `162.2s`.
+7. Verification passed after the fix: `D:/miniconda3/python.exe -m pytest tests/unit -q`, plus targeted tests for figure-export completion markers, stale completion cleanup, learned formal validation, and result-validity handling.
+8. Deployment closeout after this fix: refresh `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, apply the update locally to `D:/CableTrayAI`, verify `/health`, `duxyb/cnpe123` login, key source/package/installed hashes, and package cleanliness. Use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
 ## 2026-06-11 ??4211/4212?????????????? closeout
 
 Current latest source/validation state:

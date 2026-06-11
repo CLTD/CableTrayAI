@@ -259,6 +259,53 @@ def _ansys_completion_candidate_paths(job_dir: Path, command: dict[str, Any]) ->
     return unique
 
 
+def _path_is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _cleanup_stale_completion_outputs(job_dir: Path, command: dict[str, Any]) -> dict[str, Any]:
+    """Remove stale ANSYS text/log outputs before a new real run.
+
+    Completion-marker detection is intentionally tolerant of ANSYS 18.2
+    launcher return codes.  That tolerance must only read files produced by the
+    current run, so reruns in the same job directory clear old completion
+    marker candidates first.
+    """
+
+    root = job_dir.resolve()
+    removed: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for path in _ansys_completion_candidate_paths(job_dir, command):
+        if not path.exists() or not path.is_file():
+            continue
+        if not _path_is_relative_to(path, root):
+            skipped.append({"file": str(path), "reason": "outside_job_dir"})
+            continue
+        try:
+            size = path.stat().st_size
+            path.unlink()
+            removed.append({"file": str(path.relative_to(root)), "size": size})
+        except OSError as exc:
+            skipped.append({"file": str(path), "reason": str(exc)})
+    audit = {
+        "status": "pass" if not skipped else "warning",
+        "removed_count": len(removed),
+        "removed_bytes": sum(int(item["size"]) for item in removed),
+        "removed": removed,
+        "skipped": skipped,
+        "policy": (
+            "Before a real ANSYS rerun, stale output/log/TXT files that can contain old completion markers are "
+            "removed so the current run cannot be accepted based on a previous ROUTINE COMPLETED message."
+        ),
+    }
+    _write_json(job_dir / "ansys_stale_completion_cleanup.json", audit)
+    return audit
+
+
 def _detect_ansys_completion_marker(job_dir: Path, command: dict[str, Any]) -> dict[str, Any]:
     """Detect a completed MAPDL command stream even when the launcher code is nonzero.
 
@@ -809,6 +856,7 @@ def run_real_ansys(
     if not guard["accepted"]:
         return write_rejected_real_run_audit(job_dir, guard, preflight_status=preflight["status"])
 
+    stale_completion_cleanup = _cleanup_stale_completion_outputs(job_dir, command)
     lock_cleanup = cleanup_stale_ansys_locks(job_dir)
     started = datetime.now(timezone.utc)
     timeout_policy = _effective_real_run_timeout_policy(config)
@@ -1129,6 +1177,7 @@ def run_real_ansys(
             returncode != 0 and (completion_marker_detection or {}).get("status") == "pass"
         ),
         "numeric_post_macro_audit": numeric_post_audit,
+        "stale_completion_cleanup": stale_completion_cleanup,
         "post_export_failure": post_export_failure,
         "command_file": "ansys_command.json",
         "command_line": command.get("command_line"),

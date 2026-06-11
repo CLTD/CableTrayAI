@@ -483,6 +483,119 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
     assert captured["smart_order"] is True
 
 
+def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    applied: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "160-160-8",
+            "source_job_dir": "jobs/history/4211",
+            "cache_key": "similar-cache-key",
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {
+                    "section_name": "160-160-8",
+                    "status": "pass",
+                    "run_status": "pass",
+                    "controlling_ratio": 0.6125,
+                    "dominant_check_id": "weld_force_raw_faulted_weld_equivalent",
+                },
+                {
+                    "section_name": "140-140-8",
+                    "status": "fail",
+                    "run_status": "pass",
+                    "controlling_ratio": 1.113,
+                    "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                },
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        workflow,
+        "run_square_section_search",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("duplicate candidate trials should be skipped")),
+    )
+
+    def fake_apply(job_dir_arg, selection, **kwargs):
+        applied.update(selection)
+        return {"status": "pass"}
+
+    monkeypatch.setattr(workflow, "apply_selected_square_section", fake_apply)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert result["selection_validation_mode"] == "learned_formal_validation"
+    assert result["selected"]["section_name"] == "160-160-8"
+    assert result["learned_formal_validation"]["lower_economy_check"]["status"] == "pass"
+    assert applied["selected"]["section_name"] == "160-160-8"
+    summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
+    assert summary["trial_root_removed"] is True
+
+
+def test_learned_low_ratio_selection_without_lower_failure_runs_normal_downshift(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "160-160-8",
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {"section_name": "160-160-8", "status": "pass", "run_status": "pass", "controlling_ratio": 0.6125}
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.6125},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.6125}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert captured["max_evaluated_candidates"] == 2
+    assert captured["stop_after_first_feasible"] is True
+
+
 def test_similar_selection_cache_prefers_current_newer_entry_on_tie(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     _write_job(
