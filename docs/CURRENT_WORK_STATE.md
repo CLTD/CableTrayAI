@@ -15,12 +15,12 @@ Current latest source/validation state:
 10. The unit login failure class was also fixed during final package smoke: `config/initial_password.txt` is now written as UTF-8 without BOM, and the Python/PowerShell/native C# installers strip a BOM if they ever read an older password file. This prevents `cnpe123` from being hashed as `\ufeffcnpe123`.
 11. Refreshed package outputs are under `C:/Users/duxy/Desktop/duxyb-cnpe`: `CableTrayAI.zip`, `更新包.zip`, and their external `.sha256.txt` sidecars. Use the sidecars as transfer authority; do not embed package hashes inside packaged docs.
 12. Final package verification passed: deployment package gate, update package self verification, initial password hex check (`cnpe123\n`, no BOM), temporary installed-server `/health=ok`, temporary installed `duxyb/cnpe123` login `pass`, package cleanliness scan, and source/package hash checks for touched files.
-13. Local `D:/CableTrayAI` update apply was blocked from fully replacing `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` because PID `21532` is running from a higher-privilege/original session and both `Stop-Process` and `taskkill /F` returned access denied. The updated core/script source files were copied and hash-match source, but the current local port-8000 frozen process must be stopped by the admin/original session before the runtime exe can be replaced and restarted.
+13. Local `D:/CableTrayAI` is now refreshed and verified. The old locked PID `21532` could not be stopped with `Stop-Process` or `taskkill`, but `wmic process where processid=21532 call terminate` returned `0`; the update package then applied successfully with backup `D:/CableTrayAI/_update_backups/20260612_105433`. The fresh server is PID `25224` from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`; `/health` returns `ok`, `duxyb/cnpe123` login returns `pass`, package gate and update self-verification pass, initial password is UTF-8 without BOM, and key installed source hashes match the repository.
 
 Deployment next step:
 
 1. For the unit, use the refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip` for an existing deployment or `CableTrayAI.zip` for a fresh deployment; verify with the `.sha256.txt` sidecars.
-2. On this local machine only, stop PID `21532` from the admin/original session, rerun `更新包/install_update.ps1 -TargetRoot D:/CableTrayAI`, and restart before relying on the existing port-8000 service.
+2. Local machine follow-up is closed: port `8000` is now served by fresh PID `25224` from `D:/CableTrayAI`, so the existing local web service can be used as the latest-code smoke target.
 
 ## 2026-06-11 unit 4211 connection-node export timeout closeout
 

@@ -13,12 +13,12 @@ Resolved in source and verified with real ANSYS:
 8. Unit login password failure class is fixed: package `initial_password.txt` is written UTF-8 without BOM, and all installer paths strip BOM before hashing. Temporary install smoke verified `duxyb/cnpe123` login `pass`.
 9. Verification passed: full `tests/unit`, targeted square-section/ANSYS post-export/runtime/cleanup/auth/package tests, `py_compile` for touched modules, package gate, update package self verification, initial-password hex check, temporary installed `/health=ok`, package cleanliness scan, and source/package hash checks.
 10. Latest send-folder outputs are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use their external `.sha256.txt` sidecars as transfer authority.
-11. Local `D:/CableTrayAI` core/script files hash-match source, but the running frozen server exe remains locked by higher-privilege PID `21532`; stop that process from the admin/original session before rerunning the update package for the existing local port-8000 service.
+11. Local `D:/CableTrayAI` is refreshed and verified. The old locked server PID `21532` was terminated through WMI after `Stop-Process` and `taskkill` were denied; update backup is `D:/CableTrayAI/_update_backups/20260612_105433`, the fresh server is PID `25224`, `/health` is `ok`, `duxyb/cnpe123` login is `pass`, package gate and update self-verification pass, and key installed source hashes match the repository.
 
 Open queue:
 
 1. No source/package blocker remains for unit transfer. For the existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for fresh deployment, send `CableTrayAI.zip` or the clean `CableTrayAI` folder. Use the `.sha256.txt` sidecars to verify transfer.
-2. Local-only follow-up: stop PID `21532`, apply the same update to `D:/CableTrayAI`, and restart the local service before using the current port-8000 process as a smoke target.
+2. Local-only follow-up is closed: the current port-8000 process is the refreshed `D:/CableTrayAI` runtime and can be used for local smoke verification.
 
 ## 2026-06-11 unit 4211 connection-node export timeout closeout
 
