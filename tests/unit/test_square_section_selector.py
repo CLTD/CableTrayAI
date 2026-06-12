@@ -634,6 +634,148 @@ def test_overlimit_pair_extends_to_two_larger_allowed_sections(tmp_path: Path) -
     assert 4 in {event["candidate_count"] for event in progress_events}
 
 
+def test_final_failure_exhaustion_runs_untried_allowed_sections(tmp_path: Path) -> None:
+    base_job = tmp_path / "base"
+    _write_minimal_job(base_job)
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in (
+        "100-100-6",
+        "100-100-8",
+        "120-120-6",
+        "140-140-8",
+        "160-160-8",
+        "50-42",
+        "CAOGANG42DAN",
+        "YIXINGGANG150",
+        "YIXINGGANG150DAN",
+    ):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    ratios = {
+        "120-120-6": 2.00,
+        "160-160-8": 1.05,
+        "100-100-6": 1.80,
+        "100-100-8": 1.70,
+        "140-140-8": 0.96,
+    }
+    run_sections: list[str] = []
+
+    def runner(trial_dir: Path) -> dict[str, str]:
+        run_sections.append(trial_dir.name)
+        ratio = ratios[trial_dir.name]
+        (trial_dir / "evaluation_summary.json").write_text(
+            json.dumps([{"check_id": "square_support.fresh", "ratio": ratio}]),
+            encoding="utf-8",
+        )
+        status = "fail" if ratio > 1.0 else "pass"
+        check = {"check_id": "evaluation_ratio_limit", "status": status}
+        if ratio > 1.0:
+            check["evidence"] = [{"check_id": "square_support.fresh", "ratio": ratio}]
+        (trial_dir / "result_validation.json").write_text(
+            json.dumps({"status": status, "checks": [check]}),
+            encoding="utf-8",
+        )
+        return {"status": "success"}
+
+    selection = run_square_section_search(
+        base_job,
+        tmp_path / "trials",
+        candidates=[
+            SquareSectionCandidate(section_name="100-100-6", outer_mm=100, thickness_mm=6, source_file=str(source_root / "100-100-6.SECT")),
+            SquareSectionCandidate(section_name="100-100-8", outer_mm=100, thickness_mm=8, source_file=str(source_root / "100-100-8.SECT")),
+            SquareSectionCandidate(section_name="120-120-6", outer_mm=120, thickness_mm=6, source_file=str(source_root / "120-120-6.SECT")),
+            SquareSectionCandidate(section_name="140-140-8", outer_mm=140, thickness_mm=8, source_file=str(source_root / "140-140-8.SECT")),
+            SquareSectionCandidate(section_name="160-160-8", outer_mm=160, thickness_mm=8, source_file=str(source_root / "160-160-8.SECT")),
+        ],
+        runner=runner,
+        source_root=source_root,
+        preferred_section="120-120-6",
+        preferred_section_source="engineering_estimate_allowed_list",
+        max_evaluated_candidates=2,
+    )
+
+    assert run_sections == ["120-120-6", "160-160-8", "100-100-6", "100-100-8", "140-140-8"]
+    assert selection["failure_exhaustion_active"] is True
+    assert selection["failure_exhaustion_extensions"]
+    assert selection["status"] == "pass"
+    assert selection["selected"]["section_name"] == "140-140-8"
+    assert selection["selected"]["controlling_ratio"] == 0.96
+
+
+def test_final_failure_exhaustion_proves_all_allowed_failed_before_blocking(tmp_path: Path) -> None:
+    base_job = tmp_path / "base"
+    _write_minimal_job(base_job)
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in (
+        "100-100-6",
+        "100-100-8",
+        "120-120-6",
+        "140-140-8",
+        "160-160-8",
+        "50-42",
+        "CAOGANG42DAN",
+        "YIXINGGANG150",
+        "YIXINGGANG150DAN",
+    ):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    run_sections: list[str] = []
+
+    def runner(trial_dir: Path) -> dict[str, str]:
+        run_sections.append(trial_dir.name)
+        ratio = 1.1
+        (trial_dir / "evaluation_summary.json").write_text(
+            json.dumps([{"check_id": "square_support.fresh", "ratio": ratio}]),
+            encoding="utf-8",
+        )
+        (trial_dir / "result_validation.json").write_text(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "checks": [
+                        {
+                            "check_id": "evaluation_ratio_limit",
+                            "status": "fail",
+                            "evidence": [{"check_id": "square_support.fresh", "ratio": ratio}],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return {"status": "success"}
+
+    selection = run_square_section_search(
+        base_job,
+        tmp_path / "trials",
+        candidates=[
+            SquareSectionCandidate(section_name="100-100-6", outer_mm=100, thickness_mm=6, source_file=str(source_root / "100-100-6.SECT")),
+            SquareSectionCandidate(section_name="100-100-8", outer_mm=100, thickness_mm=8, source_file=str(source_root / "100-100-8.SECT")),
+            SquareSectionCandidate(section_name="120-120-6", outer_mm=120, thickness_mm=6, source_file=str(source_root / "120-120-6.SECT")),
+            SquareSectionCandidate(section_name="140-140-8", outer_mm=140, thickness_mm=8, source_file=str(source_root / "140-140-8.SECT")),
+            SquareSectionCandidate(section_name="160-160-8", outer_mm=160, thickness_mm=8, source_file=str(source_root / "160-160-8.SECT")),
+        ],
+        runner=runner,
+        source_root=source_root,
+        preferred_section="120-120-6",
+        preferred_section_source="engineering_estimate_allowed_list",
+        max_evaluated_candidates=2,
+    )
+
+    assert run_sections == ["120-120-6", "140-140-8", "160-160-8", "100-100-6", "100-100-8"]
+    assert selection["failure_exhaustion_active"] is True
+    assert selection["status"] == "fail"
+    assert {item["section_name"] for item in selection["candidate_results"]} == {
+        "100-100-6",
+        "100-100-8",
+        "120-120-6",
+        "140-140-8",
+        "160-160-8",
+    }
+
+
 def test_low_ratio_recovery_candidate_downshifts_one_allowed_section(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     _write_minimal_job(base_job)

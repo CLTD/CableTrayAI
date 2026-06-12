@@ -1593,13 +1593,17 @@ def run_square_section_search(
     economy_corrections: list[dict[str, Any]] = []
     overlimit_recovery_extensions: list[dict[str, Any]] = []
     economic_downshift_extensions: list[dict[str, Any]] = []
+    failure_exhaustion_extensions: list[dict[str, Any]] = []
     feasible_confirmation_hits = 0
     diagnostic_stop: dict[str, Any] | None = None
     base_candidate_budget = max(1, int(max_evaluated_candidates)) if max_evaluated_candidates is not None else None
     overlimit_recovery_budget = 0
     economic_downshift_budget = 0
+    failure_exhaustion_active = False
 
     def _effective_candidate_budget() -> int | None:
+        if failure_exhaustion_active:
+            return None
         if base_candidate_budget is None:
             return None
         return base_candidate_budget + overlimit_recovery_budget + economic_downshift_budget
@@ -1664,6 +1668,43 @@ def run_square_section_search(
         )
         return True
 
+    def _maybe_enable_failure_exhaustion(reason: str) -> bool:
+        nonlocal failure_exhaustion_active
+        if failure_exhaustion_active:
+            return False
+        if limit is not None:
+            return False
+        if diagnostic_stop or _has_feasible_result() or not results:
+            return False
+        if any(not _deterministic_overlimit_result(item) for item in results if isinstance(item, dict)):
+            return False
+        evaluated_names = {str(item.get("section_name")) for item in results if isinstance(item, dict)}
+        remaining = [
+            candidate
+            for candidate in catalog_candidate_list
+            if candidate.section_name not in evaluated_names
+        ]
+        if not remaining:
+            return False
+        candidate_list.extend(remaining)
+        failure_exhaustion_active = True
+        failure_exhaustion_extensions.append(
+            {
+                "status": "applied",
+                "reason": reason,
+                "added_candidate_count": len(remaining),
+                "added_sections": [candidate.section_name for candidate in remaining],
+                "evaluated_sections_before_exhaustion": sorted(evaluated_names),
+                "policy": (
+                    "The two-trial smart search is an efficiency path only. Before reporting that the intake-allowed "
+                    "square sections are insufficient, run every remaining allowed section that has not been proven by "
+                    "a fresh ANSYS deterministic ratio. This avoids declaring all allowed sections failed after a "
+                    "non-monotonic dynamic response skips an intermediate section."
+                ),
+            }
+        )
+        return True
+
     def _maybe_extend_economic_downshift_budget(
         candidate: SquareSectionCandidate,
         correction: dict[str, Any],
@@ -1705,11 +1746,17 @@ def run_square_section_search(
         return max(1, min(len(candidate_list), max(1, effective_budget)))
 
     index = 0
-    while index < len(candidate_list):
+    while True:
+        if index >= len(candidate_list):
+            if _maybe_enable_failure_exhaustion("candidate_list_exhausted_without_feasible"):
+                continue
+            break
         effective_budget = _effective_candidate_budget()
         if effective_budget is not None and len(results) >= effective_budget:
             if _maybe_extend_overlimit_budget("base_budget_exhausted_before_next_candidate"):
                 effective_budget = _effective_candidate_budget()
+            elif _maybe_enable_failure_exhaustion("candidate_budget_exhausted_without_feasible"):
+                continue
             else:
                 break
         if effective_budget is not None and len(results) >= effective_budget:
@@ -1873,7 +1920,7 @@ def run_square_section_search(
                     result_item,
                     {str(item.get("section_name")) for item in results},
                 )
-                if stop_after_first_feasible
+                if stop_after_first_feasible and not failure_exhaustion_active
                 else None
             )
             if downshift and _maybe_extend_economic_downshift_budget(candidate, downshift):
@@ -1903,7 +1950,8 @@ def run_square_section_search(
                     result_item,
                     {str(item.get("section_name")) for item in results},
                 )
-                if _effective_candidate_budget() is None or len(results) < int(_effective_candidate_budget() or 0)
+                if not failure_exhaustion_active
+                and (_effective_candidate_budget() is None or len(results) < int(_effective_candidate_budget() or 0))
                 else None
             )
             if correction:
@@ -1932,7 +1980,8 @@ def run_square_section_search(
                     result_item,
                     {str(item.get("section_name")) for item in results},
                 )
-                if _effective_candidate_budget() is None or len(results) < int(_effective_candidate_budget() or 0)
+                if not failure_exhaustion_active
+                and (_effective_candidate_budget() is None or len(results) < int(_effective_candidate_budget() or 0))
                 else None
             )
             if correction:
@@ -1954,7 +2003,7 @@ def run_square_section_search(
             break
         jump = (
             _smart_jump_after_square_ratio_failure(candidate_list, index, results[-1])
-            if smart_jumps_enabled
+            if smart_jumps_enabled and not failure_exhaustion_active
             else None
         )
         if jump:
@@ -1991,8 +2040,10 @@ def run_square_section_search(
     selection["economy_corrections"] = economy_corrections
     selection["overlimit_recovery_extensions"] = overlimit_recovery_extensions
     selection["economic_downshift_extensions"] = economic_downshift_extensions
+    selection["failure_exhaustion_extensions"] = failure_exhaustion_extensions
     selection["overlimit_recovery_candidate_count"] = overlimit_recovery_candidate_count
     selection["economic_downshift_candidate_count"] = ECONOMY_DOWNSHIFT_SECTION_TRIALS
+    selection["failure_exhaustion_active"] = failure_exhaustion_active
     selection["smart_jumps_enabled"] = smart_jumps_enabled
     selection["smart_skipped_candidate_count"] = sum(int(item.get("skipped_count") or 0) for item in smart_jumps)
     selection["stop_after_first_feasible"] = stop_after_first_feasible

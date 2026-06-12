@@ -750,3 +750,21 @@ Deployment queue status: completed.
 2. Applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260607_202131`.
 3. Restarted service as PID `20688`.
 4. `/health` returned ok, root no-cache headers are present, package contains runtime XML support files, and installed/package/source hashes matched for all checked runtime files.
+
+## 2026-06-12 real ANSYS variant validation closeout
+
+Resolved:
+
+1. User requested real ANSYS validation with changed intake references. A job-local validation workbook was created with double-side 2+2 layers at 600 mm, single-side 5 layers at 600 mm, and double-side 3+3 layers at 600 mm. No uploaded/source workbook was modified.
+2. True ANSYS18.2 validation found one real selector defect: the two-trial/economic search path could report square-section failure before proving every remaining intake-allowed square tube. This was visible in `18185NI-LXSJ9101`, where `140-140-8` and smaller skipped candidates were not evaluated in the first run.
+3. `core/optimizer/square_section_selector.py` now enables a final failure-exhaustion pass before blocking: when all tested candidates are deterministic over-limit and no feasible result exists, all untested allowed sections are appended and run with fresh ANSYS/deterministic evaluation. Smart jumps and economic downshift are disabled during this exhaustion pass.
+4. Regression coverage was added in `tests/unit/test_square_section_selector.py` for both cases: a skipped allowed section later passes, and all allowed sections fail after exhaustive proof.
+5. Verification passed: full `pytest` returned `154 passed`; real ANSYS rerun for `18185NI-LXSJ9101` evaluated `120-120-6`, `120-120-10`, `160-160-8`, `100-100-6`, `100-100-8`, and `140-140-8`, all over 1.0, so final failure is a proven engineering capacity result.
+6. Real ANSYS variant outcomes: `18185NI-LXSJ9103` double-side 3+3 layers, 600 mm passed with `160-160-8` and controlling ratio `0.8582242170469485`; `18185NI-LXSJ9102` single-side 5 layers, 600 mm completed ANSYS but failed deterministic weld equivalent ratio `1.2479863056049951`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260612_175308`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; installed source hash matches repository source for the selector fix.
