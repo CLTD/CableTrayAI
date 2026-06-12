@@ -173,7 +173,7 @@
           </div>
           <div class="panel-body">
             <label for="message">提资内容</label>
-            <textarea id="message">18185NI-LXSJ9001，项目1818，NR厂房，标高8.5m，双侧2+2层600，支架间距2m，方钢长度1.8m，允许100x8、120x10、140x8</textarea>
+            <textarea id="message">项目1818，NR厂房，标高8.5m，双侧2+2层600，支架间距2m，方钢长度1.8m，允许100x8、120x10、140x8</textarea>
             <label for="spectrumFile">反应谱文件</label>
             <div class="row">
               <input id="spectrumFile" placeholder="uploads/spectrum/楼层谱...xlsm 或 D:\...\楼层谱.xlsm" />
@@ -185,15 +185,12 @@
               <input id="outputRoot" placeholder="留空使用平台默认 ANSYS Output" />
               <button type="button" id="chooseOutput">选择</button>
             </div>
-            <div class="check-row">
-              <input id="standardSections" type="checkbox" />
-              <label for="standardSections" style="margin:0">采用单位默认候选方钢清单</label>
-            </div>
             <div class="actions">
               <button type="button" id="previewBtn">预检提资</button>
               <button type="button" id="startBtn" class="primary">启动真实计算</button>
+              <button type="button" id="useStandardSectionsBtn" hidden>使用单位候选库补截面</button>
             </div>
-            <div class="hint">缺少项目、厂房、标高、布置、间距、方钢长度、候选截面或反应谱时不会启动 ANSYS。</div>
+            <div class="hint">候选截面优先读取提资文字，例如“允许100x8、120x10、140x8”。只有提资未说明可用截面时，才需要使用单位候选库补截面。</div>
           </div>
         </section>
 
@@ -245,7 +242,33 @@
 
     <script>
       const $ = (id) => document.getElementById(id);
-      const state = { draft: null, runId: "", timer: null };
+      const state = { draft: null, runId: "", timer: null, useStandardSections: false };
+      const hiddenIntakeFields = new Set([
+        "report_number",
+        "calculation_batch",
+        "intake_order_id",
+        "provisional_intake_id",
+        "intake_identity_status",
+        "raw_intake_row",
+        "elevation_raw",
+        "allowed_square_section_source_ref",
+        "allowed_square_section_status",
+      ]);
+      const fieldLabels = {
+        project_code: "项目号",
+        building: "厂房/区域",
+        area: "谱表区域",
+        elevation: "标高(m)",
+        damping_ratio: "阻尼比",
+        material: "材料",
+        support_type: "支架类型",
+        support_spacing_m: "支架间距(m)",
+        support_height_m: "方钢长度(m)",
+        description: "桥架布置",
+        support_id: "支架号",
+        analysis_method: "计算方法",
+        allowed_square_section_ids: "候选方钢截面",
+      };
 
       async function requestJson(url, options = {}) {
         const response = await fetch(url, options);
@@ -265,7 +288,7 @@
           message: $("message").value.trim(),
           spectrum_file: $("spectrumFile").value.trim(),
           output_root: $("outputRoot").value.trim(),
-          use_standard_square_sections: $("standardSections").checked,
+          use_standard_square_sections: state.useStandardSections,
           execute_real: true,
         };
       }
@@ -274,14 +297,16 @@
         state.draft = draft;
         const fields = draft.intake_payload || {};
         const missing = draft.missing_fields || [];
+        const shownEntries = Object.entries(fields).filter(([key]) => !hiddenIntakeFields.has(key));
         $("draftBadge").textContent = draft.status === "pass" ? "可计算" : "需补全";
         $("draftBadge").className = `pill ${draft.status === "pass" ? "ok" : "warn"}`;
-        $("fieldBadge").textContent = `${Object.keys(fields).length} 项`;
-        $("fieldTable").innerHTML = Object.entries(fields).map(([key, value]) => {
-          const shown = Array.isArray(value) ? value.join("，") : typeof value === "object" ? JSON.stringify(value) : value;
-          return `<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(shown)}</td></tr>`;
+        $("fieldBadge").textContent = `${shownEntries.length} 项`;
+        $("fieldTable").innerHTML = shownEntries.map(([key, value]) => {
+          const shown = Array.isArray(value) ? value.join("、") : typeof value === "object" ? JSON.stringify(value) : value;
+          return `<tr><th>${escapeHtml(fieldLabels[key] || key)}</th><td>${escapeHtml(shown)}</td></tr>`;
         }).join("");
         const prompts = draft.prompts || [];
+        $("useStandardSectionsBtn").hidden = !missing.includes("allowed_square_section_ids");
         $("missingList").innerHTML = missing.length
           ? prompts.map((item) => `<div class="notice"><span class="pill warn">缺项</span> ${escapeHtml(item)}</div>`).join("")
           : `<div class="notice"><span class="pill ok">通过</span> 字段完整，可以启动真实计算。</div>`;
@@ -377,6 +402,13 @@
 
       $("previewBtn").addEventListener("click", previewDraft);
       $("startBtn").addEventListener("click", startRun);
+      $("useStandardSectionsBtn").addEventListener("click", async () => {
+        state.useStandardSections = true;
+        await previewDraft();
+      });
+      $("message").addEventListener("input", () => {
+        state.useStandardSections = false;
+      });
       $("refreshRun").addEventListener("click", pollRun);
       $("openDashboard").addEventListener("click", () => { location.href = "/dashboard"; });
       $("uploadSpectrum").addEventListener("click", () => $("fileInput").click());

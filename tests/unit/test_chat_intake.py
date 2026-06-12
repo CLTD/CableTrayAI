@@ -23,6 +23,9 @@ def test_chat_intake_parses_double_side_600_with_explicit_sections() -> None:
     assert payload["building"] == "NR"
     assert payload["elevation"] == 8.5
     assert payload["description"] == "双侧2+2层600"
+    assert payload["report_number"].startswith("CHAT-")
+    assert payload["intake_identity_status"] == "chat_generated_request_id"
+    assert payload["raw_intake_row"]["detected_reference_number"] == "18185NI-LXSJ9001"
     assert payload["support_spacing_m"] == 2.0
     assert payload["support_height_m"] == 1.8
     assert payload["allowed_square_section_ids"] == ["100-100-8", "120-120-8", "140-140-8"]

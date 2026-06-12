@@ -792,3 +792,24 @@ Deployment queue status: completed.
 2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
 3. Update applied to `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
 4. Active service `/health` is ok; `duxyb/cnpe123` login passes; `/ai-intake` returns 200; installed hashes match source for `core/intake/chat_intake.py`, `apps/web/ai_intake.html`, and `apps/api/app/main.py`.
+
+## 2026-06-12 conversational intake UX cleanup
+
+Resolved in source:
+
+1. Other disciplines no longer need to provide or see a formal mechanics report number in the chat intake UI.
+2. A report-like token pasted in chat is retained only as a raw detected reference number; the calculation still uses an internal `CHAT-...` id unless a backend caller explicitly allows a formal report number.
+3. The default candidate square-section checkbox was removed. Explicit candidate sections in the message are used directly; if no section is supplied, the page exposes a one-click fallback `使用单位候选库补截面`.
+4. Internal tracking fields are hidden from the structured preview table and replaced with user-facing labels.
+
+Verification:
+
+1. Full `pytest` returned `158 passed`.
+2. Python compile passed for the parser and API.
+3. Node/VM script checks passed for the modified pages.
+4. Unicode parse smoke passed: `18185NI-LXSJ9001` remains trace evidence while the job id is `CHAT-...`.
+
+Deployment queue status: completed.
+
+1. Full package and update package are refreshed in `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. Local `D:/CableTrayAI` update is applied; exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.

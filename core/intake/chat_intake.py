@@ -227,11 +227,17 @@ def parse_chat_intake(payload: dict[str, Any]) -> dict[str, Any]:
         return {
             "status": "blocked",
             "missing_fields": ["message"],
-            "prompts": ["请输入支架提资描述，例如：18185NI-LXSJ9001，NR厂房，标高8.5m，双侧2+2层600，间距2m，方钢长度1.8m。"],
+            "prompts": ["请输入支架提资描述，例如：项目1818，NR厂房，标高8.5m，双侧2+2层600，间距2m，方钢长度1.8m。"],
         }
     text = _normalise_layer_text(message)
-    report_number = str(payload.get("report_number") or _report_number(text) or "").strip() or None
-    project_code = str(payload.get("project_code") or _project_code(text, report_number) or "").strip() or None
+    detected_reference_number = _report_number(text)
+    explicit_formal_report_number = (
+        str(payload.get("report_number") or "").strip()
+        if bool(payload.get("allow_formal_report_number"))
+        else ""
+    ) or None
+    report_number = explicit_formal_report_number
+    project_code = str(payload.get("project_code") or _project_code(text, detected_reference_number) or "").strip() or None
     building = str(payload.get("building") or _building(text) or "").strip() or None
     area = str(payload.get("area") or building or "").strip() or None
     elevation = payload.get("elevation")
@@ -285,6 +291,9 @@ def parse_chat_intake(payload: dict[str, Any]) -> dict[str, Any]:
     stable_hash = hashlib.sha1(message.encode("utf-8")).hexdigest()[:10]
     if not report_number:
         report_number = f"CHAT-{datetime.now().strftime('%Y%m%d')}-{stable_hash}"
+    raw_intake_row = {"chat_message": message}
+    if detected_reference_number:
+        raw_intake_row["detected_reference_number"] = detected_reference_number
     intake_payload: dict[str, Any] = {
         "project_code": project_code,
         "building": building,
@@ -301,13 +310,13 @@ def parse_chat_intake(payload: dict[str, Any]) -> dict[str, Any]:
         "calculation_batch": report_number,
         "intake_order_id": report_number,
         "provisional_intake_id": f"chat_{stable_hash}",
-        "intake_identity_status": "chat_generated_report_number" if report_number.startswith("CHAT-") else "formal_report_number_provided",
+        "intake_identity_status": "formal_report_number_provided" if explicit_formal_report_number else "chat_generated_request_id",
         "support_id": payload.get("support_id"),
         "analysis_method": analysis_method,
         "allowed_square_section_ids": allowed_sections,
         "allowed_square_section_source_ref": allowed_source_ref,
         "allowed_square_section_status": allowed_status,
-        "raw_intake_row": {"chat_message": message},
+        "raw_intake_row": raw_intake_row,
     }
     missing = [field for field in REQUIRED_CHAT_FIELDS if intake_payload.get(field) in (None, "", [])]
     if analysis_method != "static" and not spectrum_file:
