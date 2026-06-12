@@ -500,6 +500,7 @@ def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tm
             "selected_section_hint": "160-160-8",
             "source_job_dir": "jobs/history/4211",
             "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
             "similarity": {"score": 1.0},
             "historical_candidate_results": [
                 {
@@ -546,6 +547,56 @@ def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tm
     assert applied["selected"]["section_name"] == "160-160-8"
     summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
     assert summary["trial_root_removed"] is True
+
+
+def test_old_cache_version_cannot_skip_candidate_trials(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "120-120-6",
+            "source_job_dir": "jobs/history/4212",
+            "cache_key": "old-cache-key",
+            "entry_cache_version": "square-section-cache-v5-final-ratio-economy-proof",
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {"section_name": "120-120-6", "status": "pass", "run_status": "pass", "controlling_ratio": 0.9828}
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "120-120-10", "controlling_ratio": 0.86},
+            "candidate_results": [{"section_name": "120-120-10", "status": "pass", "controlling_ratio": 0.86}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert captured["max_evaluated_candidates"] == 2
 
 
 def test_learned_low_ratio_selection_without_lower_failure_runs_normal_downshift(tmp_path: Path, monkeypatch) -> None:
@@ -750,6 +801,137 @@ def test_square_support_ratio_over_limit_triggers_upgrade_not_clean_reselection(
 
     assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+
+
+def test_auto_selected_any_final_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "120-120-6"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.46},
+                            {"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+
+
+def test_auto_selected_final_ratio_over_limit_without_larger_allowed_section_blocks(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["100-100-6", "120-120-6"])
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [{"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+
+
+def test_square_section_upgrade_resets_failed_job_state_for_formal_rerun(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["120-120-6", "160-160-8"])
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"] = [{"section_id": "square", "sect_file": "120-120-6"}]
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "job_state.json").write_text(
+        json.dumps({"job_id": "job", "status": "failed", "failure_reason": "previous ratio limit", "history": []}),
+        encoding="utf-8",
+    )
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [{"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.9}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "run_square_section_search",
+        lambda *args, **kwargs: {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.84},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.84}],
+        },
+    )
+
+    result = workflow.upgrade_square_section_after_ratio_fail(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        runner=lambda trial_dir: {"status": "pass"},
+    )
+
+    state = json.loads((job_dir / "job_state.json").read_text(encoding="utf-8"))
+    selection = json.loads((job_dir / "square_section_selection.json").read_text(encoding="utf-8"))
+    assert result["status"] == "pass"
+    assert selection["selection_validation_mode"] == "upgrade_after_final_ratio_fail"
+    assert selection["selected"]["section_name"] == "160-160-8"
+    assert state["status"] == "apdl_rendered"
+    assert state["failure_reason"] is None
+    assert "formal ANSYS rerun is allowed" in state["history"][-1]["message"]
 
 
 def test_force_reselect_resets_previous_auto_selected_state(tmp_path: Path, monkeypatch) -> None:

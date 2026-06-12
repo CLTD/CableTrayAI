@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from core.ansys.config import AnsysLocalConfig
 from core.ansys.runner import (
     _LIVE_OUTPUT_SUFFIXES,
@@ -134,3 +136,24 @@ def test_stale_completion_outputs_are_removed_before_real_rerun(tmp_path) -> Non
     assert not stale.exists()
     assert not (job_dir / "ansys.out").exists()
     assert _detect_ansys_completion_marker(job_dir, {"output_file": str(job_dir / "ansys.out")})["status"] == "not_detected"
+
+
+def test_stale_completion_cleanup_accepts_relative_trial_job_dir(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    job_dir = Path("job")
+    job_dir.mkdir()
+    (job_dir / "8TEG009010.TXT").write_text(
+        "\n".join(
+            [
+                " ***** ROUTINE COMPLETED *****",
+                " EXIT ANSYS WITHOUT SAVING DATABASE",
+                " NUMBER OF ERROR   MESSAGES ENCOUNTERED=          0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = _cleanup_stale_completion_outputs(job_dir, {"output_file": str(job_dir / "ansys.out")})
+
+    assert audit["status"] == "pass"
+    assert audit["removed"][0]["file"] == "8TEG009010.TXT"

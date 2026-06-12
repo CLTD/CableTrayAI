@@ -123,7 +123,7 @@ function Resolve-InitialPassword {
     }
     $packagedPassword = Join-Path $Root "config\initial_password.txt"
     if (Test-Path -LiteralPath $packagedPassword) {
-        $value = (Get-Content -LiteralPath $packagedPassword -Raw).Trim()
+        $value = (Get-Content -LiteralPath $packagedPassword -Raw).TrimStart([char]0xFEFF).Trim()
         if ($value) {
             return [ordered]@{ password = $value; source = "deployment package config/initial_password.txt"; fixed_by_deployment = $true }
         }

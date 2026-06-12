@@ -74,6 +74,7 @@ MIN_REAL_RUN_TIMEOUT_MINUTES = 120
 MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS = 90
 MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS = 300
 POST_COMPLETION_EXIT_GRACE_SECONDS = 15
+FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
 
 
 def _positive_int(value: Any, default: int) -> int:
@@ -288,7 +289,7 @@ def _cleanup_stale_completion_outputs(job_dir: Path, command: dict[str, Any]) ->
         try:
             size = path.stat().st_size
             path.unlink()
-            removed.append({"file": str(path.relative_to(root)), "size": size})
+            removed.append({"file": str(path.resolve().relative_to(root)), "size": size})
         except OSError as exc:
             skipped.append({"file": str(path), "reason": str(exc)})
     audit = {
@@ -514,6 +515,101 @@ def _failed_post_export_audit(name: str, exc: BaseException) -> dict[str, Any]:
         "reason": f"{type(exc).__name__}: {exc}",
         "exception_type": type(exc).__name__,
     }
+
+
+def _tail_text(path: Path, limit: int = 8000) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    return text[-limit:]
+
+
+def _figure_export_license_unavailable(job_dir: Path, audit: dict[str, Any] | None) -> bool:
+    if not audit or audit.get("status") == "success":
+        return False
+    evidence = json.dumps(audit, ensure_ascii=False)
+    for name in (
+        "export_figures.out",
+        "figure_export_stdout.log",
+        "figure_export_stderr.log",
+        "CableTrayAI_Run.err",
+    ):
+        evidence += "\n" + _tail_text(job_dir / name)
+    lower = evidence.lower()
+    return any(
+        token in lower
+        for token in (
+            "ansys license manager error",
+            "ansys license not available",
+            "ansysli exited",
+            "could not read server port ansysli",
+        )
+    )
+
+
+def _run_figure_export_with_license_retries(
+    job_dir: Path,
+    config: AnsysLocalConfig,
+    *,
+    timeout_minutes: int,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    attempts: list[dict[str, Any]] = []
+    retry_delays = list(FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS)
+    attempt_index = 0
+    while True:
+        attempt_index += 1
+        audit = run_figure_export(
+            job_dir,
+            config,
+            timeout_minutes=timeout_minutes,
+            progress_callback=progress_callback,
+        )
+        license_busy = _figure_export_license_unavailable(job_dir, audit)
+        attempts.append(
+            {
+                "attempt": attempt_index,
+                "status": audit.get("status"),
+                "returncode": audit.get("returncode"),
+                "figure_count": audit.get("figure_count"),
+                "missing_required_figures": audit.get("missing_required_figures"),
+                "license_unavailable": license_busy,
+            }
+        )
+        if audit.get("status") == "success" or not license_busy or not retry_delays:
+            break
+        delay = int(retry_delays.pop(0))
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "exporting_figures",
+                    "message": (
+                        "ANSYS figure export license was temporarily unavailable; "
+                        f"waiting {delay}s before retry {attempt_index + 1}."
+                    ),
+                    "figure_export_retry_attempt": attempt_index + 1,
+                    "license_retry_delay_seconds": delay,
+                }
+            )
+        cleanup_stale_ansys_locks(job_dir)
+        time.sleep(max(0, delay))
+    if len(attempts) > 1:
+        audit = dict(audit)
+        audit["license_retry_policy"] = {
+            "status": "applied",
+            "retry_delays_seconds": list(FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS),
+            "reason": "post-only ANSYS figure export reported a temporary license-manager failure",
+            "policy": (
+                "The main solve is not rerun for a post-only license miss. "
+                "CableTrayAI retries the figure export after short waits, then keeps the retained job evidence if the license remains unavailable."
+            ),
+        }
+        audit["license_retry_attempts"] = attempts
+        _write_json(job_dir / "figure_export_audit.json", audit)
+    return audit
 
 
 def _write_final_live_status(
@@ -1083,7 +1179,7 @@ def run_real_ansys(
             )
         try:
             post_timeout_minutes = max(1, min(int(config.ansys.timeout_minutes or 120), 20))
-            figure_export_audit = run_figure_export(
+            figure_export_audit = _run_figure_export_with_license_retries(
                 job_dir,
                 config,
                 timeout_minutes=post_timeout_minutes,
@@ -1102,7 +1198,8 @@ def run_real_ansys(
             job_dir / "export_figures.out",
         ]
         post_export_detection = _detect_ansys_fatal_outputs(job_dir, post_export_paths)
-        if post_export_detection["status"] == "failed":
+        post_export_license_unavailable = _figure_export_license_unavailable(job_dir, figure_export_audit)
+        if post_export_detection["status"] == "failed" and not post_export_license_unavailable:
             fatal_detection = post_export_detection
             fatal_found = True
         if progress_callback:
@@ -1179,6 +1276,9 @@ def run_real_ansys(
         "numeric_post_macro_audit": numeric_post_audit,
         "stale_completion_cleanup": stale_completion_cleanup,
         "post_export_failure": post_export_failure,
+        "post_export_license_unavailable": (
+            _figure_export_license_unavailable(job_dir, figure_export_audit) if figure_export_audit else False
+        ),
         "command_file": "ansys_command.json",
         "command_line": command.get("command_line"),
         "resources": command.get("resources", {}),

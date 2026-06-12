@@ -4,6 +4,7 @@ from pathlib import Path
 from core.ansys.config import AnsysExecutableConfig, AnsysLocalConfig
 from core.ansys import connection_export
 from core.ansys import figure_export
+from core.ansys import runner as ansys_runner
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -152,3 +153,60 @@ def test_figure_export_accepts_completion_marker_with_nonzero_launcher_return(tm
     assert audit["returncode"] == 4294967295
     assert audit["returncode_accepted_by_completion_marker"] is True
     assert audit["completion_marker_detection"]["status"] == "pass"
+
+
+def test_figure_export_license_busy_is_retried(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    calls: list[int] = []
+
+    def fake_run_figure_export(job_dir_arg, config, **kwargs):
+        calls.append(len(calls) + 1)
+        if len(calls) == 1:
+            (job_dir / "export_figures.out").write_text(
+                "\n".join(
+                    [
+                        "ANSYS LICENSE MANAGER ERROR:",
+                        "ANSYSLI exited or could not read server port ANSYSLI_DEMO_PORT.",
+                        "*** ERROR - ANSYS license not available.",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            return {
+                "status": "failed",
+                "mode": "figure_export",
+                "returncode": 7,
+                "figure_count": 0,
+                "missing_required_figures": ["SHITI.PNG"],
+            }
+        (job_dir / "export_figures.out").write_text(
+            "\n".join(
+                [
+                    "***** ROUTINE COMPLETED *****",
+                    "NUMBER OF ERROR   MESSAGES ENCOUNTERED=          0",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        return {
+            "status": "success",
+            "mode": "figure_export",
+            "returncode": 0,
+            "figure_count": 1,
+            "missing_required_figures": [],
+        }
+
+    monkeypatch.setattr(ansys_runner, "run_figure_export", fake_run_figure_export)
+    monkeypatch.setattr(ansys_runner, "FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS", (0,))
+
+    audit = ansys_runner._run_figure_export_with_license_retries(
+        job_dir,
+        AnsysLocalConfig(),
+        timeout_minutes=1,
+    )
+
+    assert calls == [1, 2]
+    assert audit["status"] == "success"
+    assert audit["license_retry_attempts"][0]["license_unavailable"] is True
+    assert audit["license_retry_attempts"][1]["status"] == "success"

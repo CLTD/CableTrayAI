@@ -586,6 +586,61 @@ def _ensure_publishable_result(job_dir: Path) -> None:
     raise RuntimeError(f"Result validation failed; production publication is blocked: {detail}")
 
 
+def _last_ansys_audit(job_dir: Path) -> dict[str, Any]:
+    path = job_dir / "ansys_run_audit.json"
+    if not path.exists():
+        return {}
+    try:
+        return _read_json(path)
+    except Exception:
+        return {}
+
+
+def _post_export_figure_failure_after_main_success(audit: dict[str, Any]) -> bool:
+    failure = audit.get("post_export_failure") if isinstance(audit.get("post_export_failure"), dict) else {}
+    return (
+        audit.get("status") == "failed"
+        and (audit.get("completion_marker_detection") or {}).get("status") == "pass"
+        and str(failure.get("name") or "") == "figure_export"
+    )
+
+
+def _job_text_contains_license_failure(job_dir: Path) -> bool:
+    text = ""
+    for name in ("export_figures.out", "figure_export_stdout.log", "figure_export_stderr.log", "CableTrayAI_Run.err"):
+        path = job_dir / name
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            text += "\n" + path.read_text(encoding="utf-8", errors="replace")[-8000:]
+        except OSError:
+            continue
+    lower = text.lower()
+    return any(
+        token in lower
+        for token in (
+            "ansys license manager error",
+            "ansys license not available",
+            "ansysli exited",
+            "could not read server port ansysli",
+        )
+    )
+
+
+def _retain_solver_artifacts_after_failure(job_dir: Path) -> bool:
+    audit = _last_ansys_audit(job_dir)
+    return bool(
+        audit.get("post_export_license_unavailable")
+        or (
+            _post_export_figure_failure_after_main_success(audit)
+            and (
+                "license" in json.dumps(audit.get("figure_export_audit") or {}, ensure_ascii=False).lower()
+                or _job_text_contains_license_failure(job_dir)
+            )
+        )
+    )
+
+
 def run_operator_one_click(
     *,
     intake_path: Path | str,
@@ -895,6 +950,17 @@ def run_operator_one_click(
                         row_result["ansys_run_attempts"] = attempts
                         row_result["ansys_run_status"] = audit_payload.get("status")
                         if audit_payload.get("status") != "success":
+                            if _post_export_figure_failure_after_main_success(audit_payload):
+                                try:
+                                    assemble_result(job_dir)
+                                    row_result["partial_result_assembly_status"] = "pass"
+                                    row_result["partial_result_assembly_policy"] = (
+                                        "Main ANSYS solve completed, but post-only figure export failed. "
+                                        "Numeric LIS/OUP results are assembled for diagnosis; publication still requires the figure gate to pass."
+                                    )
+                                except Exception as partial_exc:
+                                    row_result["partial_result_assembly_status"] = "failed"
+                                    row_result["partial_result_assembly_reason"] = str(partial_exc)
                             reason = audit_payload.get("failure_reason") or audit_payload.get("failure_category") or "see ansys_run_audit.json"
                             raise RuntimeError(f"ANSYS real run did not finish successfully: {audit_payload.get('status')} - {reason}")
                         progress(
@@ -1110,9 +1176,16 @@ def run_operator_one_click(
             row_result["status"] = "pass" if execute_real else "dry_run"
         except Exception as exc:
             if execute_real and job_dir.exists():
-                artifact_cleanup = cleanup_heavy_solver_artifacts(job_dir)
-                row_result["solver_artifact_cleanup_status"] = artifact_cleanup.get("status")
-                row_result["solver_artifact_removed_gb"] = artifact_cleanup.get("removed_gb")
+                if _retain_solver_artifacts_after_failure(job_dir):
+                    row_result["solver_artifact_cleanup_status"] = "skipped_post_export_license_failure"
+                    row_result["solver_artifact_cleanup_policy"] = (
+                        "Main ANSYS results are retained because the failure happened in post-only figure export "
+                        "after a license-manager error. Keeping DB/RST allows a later figure-export retry without rerunning the solve."
+                    )
+                else:
+                    artifact_cleanup = cleanup_heavy_solver_artifacts(job_dir)
+                    row_result["solver_artifact_cleanup_status"] = artifact_cleanup.get("status")
+                    row_result["solver_artifact_removed_gb"] = artifact_cleanup.get("removed_gb")
             fail_job_state(job_dir, str(exc))
             row_result["status"] = "fail"
             row_result["failure_reason"] = str(exc)

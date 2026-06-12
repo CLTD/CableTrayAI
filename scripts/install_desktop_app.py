@@ -283,7 +283,7 @@ def resolve_initial_password(root: Path) -> tuple[str, str, bool]:
         return env_password.strip(), "environment CABLETRAYAI_INITIAL_PASSWORD", True
     packaged_password = root / "config" / "initial_password.txt"
     if packaged_password.exists():
-        value = packaged_password.read_text(encoding="utf-8").strip()
+        value = packaged_password.read_text(encoding="utf-8-sig").strip()
         if value:
             return value, "deployment package config/initial_password.txt", True
     return secrets.token_urlsafe(12), "generated random first-install password", False

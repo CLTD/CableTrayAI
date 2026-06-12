@@ -183,7 +183,8 @@ Copy-Item -LiteralPath $installerExe -Destination (Join-Path $PackageDir "CableT
 if ($InitialPassword -and $InitialPassword.Trim()) {
     $initialPasswordPath = Join-Path $PackageDir "config\initial_password.txt"
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $initialPasswordPath) | Out-Null
-    $InitialPassword.Trim() | Set-Content -Encoding UTF8 -Path $initialPasswordPath
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($initialPasswordPath, "$($InitialPassword.Trim())`n", $utf8NoBom)
 }
 
 $readmeLines = @(

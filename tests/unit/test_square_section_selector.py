@@ -41,6 +41,9 @@ def _write_minimal_job(job_dir: Path) -> None:
         encoding="utf-8",
     )
     (job_dir / "result.json").write_text('{"stale": true}', encoding="utf-8")
+    (job_dir / "job_state.json").write_text('{"status": "failed", "failure_reason": "stale"}', encoding="utf-8")
+    (job_dir / "ansys_live_status.json").write_text('{"stage": "failed"}', encoding="utf-8")
+    (job_dir / "figure_export_live_status.json").write_text('{"status": "failed"}', encoding="utf-8")
     (job_dir / "MAXBEAMSTRESS.LIS").write_text("stale lis", encoding="utf-8")
     (job_dir / "MOTAI-1.PNG").write_bytes(b"stale image")
     raw = job_dir / "raw_results"
@@ -58,6 +61,9 @@ def test_run_square_section_search_does_not_copy_stale_outputs_into_trials(tmp_p
 
     def runner(trial_dir: Path) -> dict[str, str]:
         assert not (trial_dir / "result.json").exists()
+        assert not (trial_dir / "job_state.json").exists()
+        assert not (trial_dir / "ansys_live_status.json").exists()
+        assert not (trial_dir / "figure_export_live_status.json").exists()
         assert not (trial_dir / "evaluation_summary.json").exists()
         assert not (trial_dir / "MAXBEAMSTRESS.LIS").exists()
         assert not (trial_dir / "MOTAI-1.PNG").exists()

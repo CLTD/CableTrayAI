@@ -1,4 +1,25 @@
 # CableTrayAI ??????
+## 2026-06-12 unit jobs self-recovery closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit copied `C:/Users/duxy/Desktop/jobs/18185NI-LXSJ4212` stopped after final deterministic over-limit instead of recovering. The job had been auto-selected to `120-120-6` from old learned evidence, but the final formal run failed weld/bolt/cantilever/mixed-beam ratio gates.
+2. Old learned cache entries can no longer direct-skip candidate trials unless their `entry_cache_version` equals the current `SQUARE_SECTION_CACHE_VERSION`. Old cache can still order candidates, but not decide a publishable section.
+3. Any final deterministic `evaluation_ratio_limit` failure now triggers larger-section recovery when the square section was auto-selected and the intake allowed list still contains larger candidates. This covers non-square-support controlling checks such as weld or bolt ratios.
+4. Candidate trial directories no longer copy inherited `job_state.json` or live status files, so a previous failed parent task cannot make preflight reject a fresh candidate before ANSYS starts.
+5. Successful square-section upgrade now writes the new selection to `square_section_selection.json` and resets the job state to `apdl_rendered`, allowing the formal rerun to pass real-run guards while retaining history.
+6. Real ANSYS18.2 validation on copied unit `4212` passed: auto-recovery tried `120-120-10` (`ratio=1.4624074146092667`, fail), then selected `160-160-8` (`ratio=0.8480306526316335`, pass), formal rerun succeeded, and `result_validation.status=pass`.
+7. Unit copied `4215` class is hardened: if main ANSYS succeeds but post-only figure export hits a transient ANSYS license-manager failure, numeric results are assembled for diagnosis, DB/RST are retained for retry, and figure export itself performs bounded license retries.
+8. Unit login password failure class is fixed: package `initial_password.txt` is written UTF-8 without BOM, and all installer paths strip BOM before hashing. Temporary install smoke verified `duxyb/cnpe123` login `pass`.
+9. Verification passed: full `tests/unit`, targeted square-section/ANSYS post-export/runtime/cleanup/auth/package tests, `py_compile` for touched modules, package gate, update package self verification, initial-password hex check, temporary installed `/health=ok`, package cleanliness scan, and source/package hash checks.
+10. Latest send-folder outputs are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use their external `.sha256.txt` sidecars as transfer authority.
+11. Local `D:/CableTrayAI` core/script files hash-match source, but the running frozen server exe remains locked by higher-privilege PID `21532`; stop that process from the admin/original session before rerunning the update package for the existing local port-8000 service.
+
+Open queue:
+
+1. No source/package blocker remains for unit transfer. For the existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for fresh deployment, send `CableTrayAI.zip` or the clean `CableTrayAI` folder. Use the `.sha256.txt` sidecars to verify transfer.
+2. Local-only follow-up: stop PID `21532`, apply the same update to `D:/CableTrayAI`, and restart the local service before using the current port-8000 process as a smoke target.
+
 ## 2026-06-11 unit 4211 connection-node export timeout closeout
 
 Resolved in source and verified with real ANSYS:

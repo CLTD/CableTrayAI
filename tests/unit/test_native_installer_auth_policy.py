@@ -39,15 +39,37 @@ def test_release_packager_avoids_libreoffice_python_for_gate() -> None:
     assert "__pycache__" in source
     assert '".pyc"' in source
     assert "Remove-GeneratedPythonCaches -Path $PackageDir" in source
+    assert "UTF8Encoding($false)" in source
+    assert "[System.IO.File]::WriteAllText($initialPasswordPath" in source
 
 
 def test_fallback_installers_honor_packaged_initial_password() -> None:
     python_source = (ROOT / "scripts" / "install_desktop_app.py").read_text(encoding="utf-8")
     ps_source = (ROOT / "scripts" / "install_desktop_app.ps1").read_text(encoding="utf-8")
+    native_source = (ROOT / "scripts" / "CableTrayAIInstaller.cs").read_text(encoding="utf-8")
 
     assert "resolve_initial_password" in python_source
     assert "initial_password.txt" in python_source
+    assert "utf-8-sig" in python_source
     assert ".bak_" in python_source
     assert "Resolve-InitialPassword" in ps_source
     assert "initial_password.txt" in ps_source
+    assert "TrimStart([char]0xFEFF)" in ps_source
     assert ".bak_" in ps_source
+    assert "TrimStart('\\uFEFF')" in native_source
+
+
+def test_python_installer_strips_bom_from_packaged_initial_password(tmp_path, monkeypatch) -> None:
+    from scripts.install_desktop_app import password_hash, resolve_initial_password
+
+    monkeypatch.delenv("CABLETRAYAI_INITIAL_PASSWORD", raising=False)
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "initial_password.txt").write_bytes(b"\xef\xbb\xbfcnpe123\r\n")
+
+    password, source, fixed = resolve_initial_password(tmp_path)
+
+    assert password == "cnpe123"
+    assert fixed is True
+    assert source == "deployment package config/initial_password.txt"
+    assert password_hash("duxyb", password) == "45b2c902176b6064c5867523cb86a781337a2433b51d884aa6d8850a249b79a4"

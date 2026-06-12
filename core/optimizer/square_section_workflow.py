@@ -18,6 +18,7 @@ from core.ansys.runner import (
     run_real_ansys,
 )
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
+from core.audit.job_state import update_job_state
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
     discover_square_section_candidates,
@@ -519,6 +520,8 @@ def _learned_formal_validation_selection(
 
     if allowed_square_section_filter.get("status") != "applied" or not similar_hint:
         return None
+    if str(similar_hint.get("entry_cache_version") or "") != SQUARE_SECTION_CACHE_VERSION:
+        return None
     similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
     score = _as_float(similarity.get("score"))
     if score is None or score < LEARNED_FORMAL_VALIDATION_THRESHOLD:
@@ -648,7 +651,8 @@ def reset_square_section_selection_for_reselection(
 
 
 def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
-    validation_path = Path(job_dir) / "result_validation.json"
+    job_path = Path(job_dir)
+    validation_path = job_path / "result_validation.json"
     if not validation_path.exists():
         return False
     try:
@@ -657,10 +661,32 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
         return False
     if validation.get("status") == "pass":
         return False
+    try:
+        input_payload = _read_json(job_path / "input.json")
+    except (FileNotFoundError, json.JSONDecodeError):
+        input_payload = {}
+    metadata = input_payload.get("metadata") if isinstance(input_payload.get("metadata"), dict) else {}
+    section_rows = input_payload.get("sections") if isinstance(input_payload.get("sections"), list) else []
+    current_name = (
+        metadata.get("square_section_selected")
+        or metadata.get("square_section_spec")
+        or ((section_rows[0].get("sect_file") or section_rows[0].get("section_id")) if section_rows and isinstance(section_rows[0], dict) else None)
+    )
+    current = parse_square_section_name(str(current_name or ""))
+    auto_square_section = str(metadata.get("square_section_selection_status") or "") == "auto_selected_by_real_ansys"
+    larger_allowed_exists = False
+    if auto_square_section and current is not None:
+        for section_name in _allowed_square_section_ids_from_payload(input_payload):
+            parsed = parse_square_section_name(str(section_name))
+            if parsed and parsed.estimated_bending_section_modulus_mm3 > current.estimated_bending_section_modulus_mm3:
+                larger_allowed_exists = True
+                break
     for check in validation.get("checks") or []:
         if check.get("check_id") == "evaluation_ratio_limit" and check.get("status") == "fail":
             evidence = check.get("evidence") or []
             if any("square_support" in str(item.get("check_id") or "") for item in evidence if isinstance(item, dict)):
+                return True
+            if auto_square_section and larger_allowed_exists:
                 return True
     return False
 
@@ -694,7 +720,7 @@ def result_validation_needs_square_section_clean_reselection(job_dir: Path | str
     return False
 
 
-def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
+def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool = False) -> float | None:
     validation_path = Path(job_dir) / "result_validation.json"
     if not validation_path.exists():
         return None
@@ -707,13 +733,19 @@ def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
         if check.get("check_id") != "evaluation_ratio_limit" or check.get("status") != "fail":
             continue
         for item in check.get("evidence") or []:
-            if not isinstance(item, dict) or "square_support" not in str(item.get("check_id") or ""):
+            if not isinstance(item, dict):
+                continue
+            if square_support_only and "square_support" not in str(item.get("check_id") or ""):
                 continue
             try:
                 ratios.append(float(item.get("ratio")))
             except (TypeError, ValueError):
                 continue
     return max(ratios) if ratios else None
+
+
+def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
+    return _failed_evaluation_ratio(job_dir, square_support_only=True)
 
 
 def _trial_root(job_dir: Path) -> Path:
@@ -1408,7 +1440,7 @@ def upgrade_square_section_after_ratio_fail(
     ]
     candidates, allowed_square_section_filter = _filter_allowed_square_candidates(candidates, input_payload)
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
-    failed_ratio = _failed_square_support_ratio(job_dir)
+    failed_ratio = _failed_square_support_ratio(job_dir) or _failed_evaluation_ratio(job_dir)
     estimated_required_modulus = None
     skipped_by_estimate = 0
     if not allowed_filter_applied and failed_ratio and failed_ratio > 1.0 and current_modulus > 0:
@@ -1480,7 +1512,7 @@ def upgrade_square_section_after_ratio_fail(
     selection["allowed_square_section_filter"] = allowed_square_section_filter
     selection["candidate_prefilter"] = {
         "status": "applied" if estimated_required_modulus else "skipped",
-        "failed_square_support_ratio": failed_ratio,
+        "failed_ratio": failed_ratio,
         "current_estimated_bending_section_modulus_mm3": current_modulus,
         "estimated_required_bending_section_modulus_mm3": estimated_required_modulus,
         "skipped_candidate_count": skipped_by_estimate,
@@ -1536,6 +1568,13 @@ def upgrade_square_section_after_ratio_fail(
         "Successful square-section upgrade trial workspaces are retained as lightweight audit evidence. "
         "The formal selected job remains the publishable result, while trial logs explain the section decision."
     )
+    final_payload["selection_validation_mode"] = "upgrade_after_final_ratio_fail"
+    final_payload["job_state_after_upgrade"] = update_job_state(
+        job_dir,
+        "apdl_rendered",
+        "square-section upgrade applied; formal ANSYS rerun is allowed",
+    )
+    _write_json(job_dir / "square_section_selection.json", final_payload)
     _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", final_payload)
     return final_payload
 

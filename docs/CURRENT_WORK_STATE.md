@@ -1,4 +1,27 @@
 # CableTrayAI ??????
+## 2026-06-12 unit jobs self-recovery closeout
+
+Current latest source/validation state:
+
+1. Unit copied evidence under `C:/Users/duxy/Desktop/jobs` was reviewed. `18185NI-LXSJ4211` was already publishable (`result_validation.status=pass`, selected `160-160-8`, ratio about `0.6125`). `18185NI-LXSJ4212` had completed ANSYS but failed final deterministic ratio gates after an old learned `120-120-6` choice. `18185NI-LXSJ4215` completed the main MAPDL stream but failed only in post-only figure export because the ANSYS license manager was temporarily unavailable.
+2. Root cause for the 4212 “over-limit stops” class: old v5 learned cache evidence could still direct-select a section, and the post-formal upgrade trigger only recognized square-support evidence. The failed 4212 controlling rows were weld/bolt/cantilever/mixed-beam ratios, so the job stopped instead of automatically trying the next larger allowed sections.
+3. `core/optimizer/square_section_workflow.py` now permits direct learned-formal skip only from the current cache version, treats any final deterministic `evaluation_ratio_limit` failure as an upgrade trigger when the square section was auto-selected and larger intake-allowed sections exist, resets failed job state to `apdl_rendered` after a successful upgrade, and writes the upgraded choice back to `square_section_selection.json`.
+4. `core/optimizer/square_section_selector.py` now keeps candidate trial directories clean by excluding inherited `job_state.json`, `ansys_live_status.json`, and `figure_export_live_status.json`. Candidate trials no longer inherit a previous failed parent state that would make ANSYS preflight reject the trial before it runs.
+5. `core/ansys/runner.py` now handles relative trial job paths during stale completion cleanup, retries post-only figure export when ANSYS license-manager output indicates a transient license unavailable state, and records `post_export_license_unavailable` in the audit.
+6. `core/pipeline/one_click.py` now assembles numeric LIS/OUP results for diagnosis when main ANSYS succeeds but post-only figure export fails, and preserves DB/RST artifacts for later figure retry instead of cleaning them immediately.
+7. Real ANSYS18.2 validation using the copied unit `18185NI-LXSJ4212` failure reproduced and fixed the intended AI-like recovery path: before fix it needed upgrade; after fix it ran `120-120-10` (failed, ratio `1.4624074146092667`), then `160-160-8` (passed, ratio `0.8480306526316335`), rewrote `square_section_selection.json` to `160-160-8`, formal ANSYS rerun succeeded, and final `result_validation.status=pass` with no fail checks.
+8. Verification passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`, targeted square-section workflow/selector, ANSYS runtime, post-export retry, and one-click cleanup tests, plus `py_compile` for touched modules.
+9. Temporary local validation job folders named `jobs/verify_unit_4212_self_recovery_*` were removed after recording the results, keeping the source tree/package clean.
+10. The unit login failure class was also fixed during final package smoke: `config/initial_password.txt` is now written as UTF-8 without BOM, and the Python/PowerShell/native C# installers strip a BOM if they ever read an older password file. This prevents `cnpe123` from being hashed as `\ufeffcnpe123`.
+11. Refreshed package outputs are under `C:/Users/duxy/Desktop/duxyb-cnpe`: `CableTrayAI.zip`, `更新包.zip`, and their external `.sha256.txt` sidecars. Use the sidecars as transfer authority; do not embed package hashes inside packaged docs.
+12. Final package verification passed: deployment package gate, update package self verification, initial password hex check (`cnpe123\n`, no BOM), temporary installed-server `/health=ok`, temporary installed `duxyb/cnpe123` login `pass`, package cleanliness scan, and source/package hash checks for touched files.
+13. Local `D:/CableTrayAI` update apply was blocked from fully replacing `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` because PID `21532` is running from a higher-privilege/original session and both `Stop-Process` and `taskkill /F` returned access denied. The updated core/script source files were copied and hash-match source, but the current local port-8000 frozen process must be stopped by the admin/original session before the runtime exe can be replaced and restarted.
+
+Deployment next step:
+
+1. For the unit, use the refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip` for an existing deployment or `CableTrayAI.zip` for a fresh deployment; verify with the `.sha256.txt` sidecars.
+2. On this local machine only, stop PID `21532` from the admin/original session, rerun `更新包/install_update.ps1 -TargetRoot D:/CableTrayAI`, and restart before relying on the existing port-8000 service.
+
 ## 2026-06-11 unit 4211 connection-node export timeout closeout
 
 Current latest source/validation state:

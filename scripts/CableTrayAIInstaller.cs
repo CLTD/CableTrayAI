@@ -584,7 +584,7 @@ namespace CableTrayAIInstaller
             string packagedPasswordPath = Path.Combine(packageRoot, "config", "initial_password.txt");
             if (File.Exists(packagedPasswordPath))
             {
-                string packagedPassword = File.ReadAllText(packagedPasswordPath, Encoding.UTF8).Trim();
+                string packagedPassword = File.ReadAllText(packagedPasswordPath, Encoding.UTF8).TrimStart('\uFEFF').Trim();
                 if (!string.IsNullOrWhiteSpace(packagedPassword))
                 {
                     return new InitialPasswordChoice
