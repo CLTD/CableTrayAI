@@ -768,3 +768,27 @@ Deployment queue status: completed.
 2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
 3. Update applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260612_175308`.
 4. Active service `/health` is ok; `duxyb/cnpe123` login passes; installed source hash matches repository source for the selector fix.
+
+## 2026-06-12 conversational intake calculation closeout
+
+Resolved in source:
+
+1. Added a conversation-to-intake workflow for departments that do not use the mechanics Excel batch sheet. Operators can describe requirements such as single/double side, layer count, tray width, spacing, support height, project/factory/elevation, and candidate square sections.
+2. The workflow is conservative by design: it returns missing-field prompts instead of starting ANSYS when the conversation lacks spectrum file, allowed square sections, geometry, or project/factory/elevation information.
+3. `apps/api/app/main.py` now exposes `/ai/intake/preview` and `/ai/intake/start-run`. The start endpoint writes a traceable chat intake workbook and then reuses the existing `/runs/start` production path rather than creating a separate calculation engine.
+4. `apps/web/ai_intake.html` provides the web UI; `apps/web/ai_tools.html` links to it.
+5. `docs/ONLINE_REFERENCE_POLICY.md` records the OpenAI structured-output/function-calling references used as tooling guidance only. Mechanical authority remains local APDL/PIP/MAC/SECT, real ANSYS, deterministic formulas, and source refs.
+
+Verification:
+
+1. Full `pytest` returned `158 passed`.
+2. Python compile passed for the new parser and API module.
+3. Inline JavaScript syntax checks passed for the new page and modified AI tools page.
+4. Temporary source-service HTTP checks passed: complete conversational intake previews as pass; missing or nonexistent spectrum files block with `spectrum_file`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; `/ai-intake` returns 200; installed hashes match source for `core/intake/chat_intake.py`, `apps/web/ai_intake.html`, and `apps/api/app/main.py`.

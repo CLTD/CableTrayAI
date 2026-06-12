@@ -101,6 +101,7 @@ from core.audit.job_state import fail_job_state, read_job_state, update_job_stat
 from core.audit.feedback_store import read_feedback, record_feedback
 from core.ai.model_client import ai_runtime_policy, audit_job_with_model, chat_with_model, model_presets, model_recommendations, model_task_routes, probe_model_endpoint, public_model_config, write_model_config
 from core.evaluators.excel_authoritative import run_excel_authoritative_evaluation
+from core.intake.chat_intake import parse_chat_intake, write_chat_intake_workbook
 from core.intake.intake_excel_reader import read_tabular_intake_rows
 from core.intake.job_input_builder import create_job_from_intake
 from core.intake.report_number_reconcile import reconcile_report_numbers_from_intake
@@ -1660,6 +1661,87 @@ def ai_chat(payload: dict) -> dict:
     )
 
 
+def _validate_chat_intake_file_inputs(draft: dict) -> dict:
+    """Keep chat-intake preview aligned with the real run path checks."""
+
+    payload = draft.get("intake_payload") if isinstance(draft.get("intake_payload"), dict) else {}
+    analysis_method = str(payload.get("analysis_method") or "").strip().lower()
+    if analysis_method == "static":
+        return draft
+    spectrum_file = str(draft.get("spectrum_file") or "").strip()
+    if not spectrum_file:
+        return draft
+    try:
+        resolved = _project_path_from_client(spectrum_file, require_existing=True, label="spectrum_file")
+    except HTTPException:
+        missing = list(draft.get("missing_fields") or [])
+        if "spectrum_file" not in missing:
+            missing.append("spectrum_file")
+        prompts = list(draft.get("prompts") or [])
+        prompts.append(f"反应谱文件不存在或当前电脑无法访问：{spectrum_file}")
+        warnings = list(draft.get("warnings") or [])
+        warnings.append("反应谱文件路径未通过存在性检查，已阻断 ANSYS 启动。")
+        draft["status"] = "blocked"
+        draft["missing_fields"] = missing
+        draft["prompts"] = prompts
+        draft["warnings"] = warnings
+    else:
+        draft["spectrum_file"] = str(resolved)
+    return draft
+
+
+@app.post("/ai/intake/preview")
+def ai_intake_preview(payload: dict) -> dict:
+    draft = _validate_chat_intake_file_inputs(parse_chat_intake(payload))
+    return {
+        "status": draft.get("status"),
+        "draft": draft,
+        "policy": (
+            "对话只生成可审查提资行；正式结论仍由现有 APDL/PIP/MAC、真实 ANSYS、"
+            "结果提取和确定性评定门禁给出。"
+        ),
+    }
+
+
+@app.post("/ai/intake/start-run")
+def ai_intake_start_run(payload: dict) -> dict:
+    draft = _validate_chat_intake_file_inputs(parse_chat_intake(payload))
+    if draft.get("status") != "pass":
+        return {
+            "status": "blocked",
+            "draft": draft,
+            "missing_fields": draft.get("missing_fields") or [],
+            "prompts": draft.get("prompts") or [],
+            "policy": "缺少关键提资字段时不启动 ANSYS；请先补全字段或确认候选方钢清单。",
+        }
+    written = write_chat_intake_workbook(
+        draft,
+        output_dir=APP_ROOT / "jobs" / "chat_intakes",
+    )
+    run_payload = {
+        "intake_path": written["intake_path"],
+        "spectrum_file": draft.get("spectrum_file"),
+        "output_root": payload.get("output_root") or DEFAULT_OUTPUT_ROOT,
+        "execute_real": bool(payload.get("execute_real", True)),
+        "confirm_user": payload.get("confirm_user") or "chat_intake",
+        "source_package_id": "chat_intake",
+        "selected_row_numbers": [written["row_number"]],
+        "square_section_candidate_limit": payload.get("square_section_candidate_limit"),
+        "allow_exact_result_reuse": bool(payload.get("allow_exact_result_reuse", False)),
+    }
+    run = start_one_click_run(run_payload)
+    return {
+        "status": "queued",
+        "draft": draft,
+        "intake_workbook": written,
+        "run": run,
+        "run_payload": {
+            key: str(value) if isinstance(value, Path) else value
+            for key, value in run_payload.items()
+        },
+    }
+
+
 @app.get("/ai/run-monitor")
 def ai_run_monitor() -> dict:
     active_runs = []
@@ -1926,6 +2008,14 @@ def ai_tools() -> FileResponse:
     if not ai_tools_path.exists():
         raise HTTPException(status_code=404, detail="AI tools page not found")
     return _html_file_response(ai_tools_path)
+
+
+@app.get("/ai-intake")
+def ai_intake_page() -> FileResponse:
+    ai_intake_path = APP_ROOT / "apps" / "web" / "ai_intake.html"
+    if not ai_intake_path.exists():
+        raise HTTPException(status_code=404, detail="AI intake page not found")
+    return _html_file_response(ai_intake_path)
 
 
 @app.get("/review")
