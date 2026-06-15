@@ -431,6 +431,7 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
             "selected_section_hint": "140-140-8",
             "source_job_dir": "jobs/history/similar_row",
             "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
             "similarity": {"score": 0.97},
             "historical_candidate_results": [
                 {"section_name": "100-100-8", "status": "fail", "controlling_ratio": 1.07},
@@ -600,6 +601,8 @@ def test_old_cache_version_cannot_skip_candidate_trials(tmp_path: Path, monkeypa
 
     assert result["status"] == "pass"
     assert "learned_formal_validation" not in result
+    assert result["learned_allowed_section_start"]["status"] == "skipped"
+    assert result["learned_allowed_section_start"]["reason"] == "stale_cache_version_not_allowed_for_candidate_start"
     assert captured["max_evaluated_candidates"] == 2
 
 
@@ -690,6 +693,47 @@ def test_similar_selection_cache_prefers_current_newer_entry_on_tie(tmp_path: Pa
     assert hit["cache_key"] == "new"
     assert hit["selected_section_hint"] == "140-140-8"
     assert hit["entry_cache_version"] == workflow.SQUARE_SECTION_CACHE_VERSION
+
+
+def test_similar_cache_missing_width_and_load_is_not_high_similarity(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    current_features = workflow._selection_similarity_features(payload)
+    legacy_features = {
+        key: value
+        for key, value in current_features.items()
+        if key not in {"tray_widths_mm", "tray_load_sum_kg_m"}
+    }
+    cache_path = tmp_path / "square_section_selection_cache.json"
+    cache_path.write_text(
+        json.dumps(
+            {
+                "cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
+                "entries": {
+                    "legacy-no-load-width": {
+                        "status": "pass",
+                        "selected": {"section_name": "160-160-8"},
+                        "similarity_features": legacy_features,
+                        "cache_version": "square-section-cache-v6-learned-allowed-start",
+                        "updated_at": "2026-06-08T00:00:00+00:00",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    hit = workflow._read_similar_cached_selection(job_dir, cache_path=cache_path, threshold=0.82)
+    score = workflow._selection_similarity_score(current_features, legacy_features)
+
+    assert hit is None
+    assert score["score"] < 0.82
+    assert "tray_widths_mm" in score["mismatched"]
+    assert "tray_load_sum_kg_m" in score["mismatched"]
 
 
 def test_allowed_square_sections_keep_modulus_jump_inside_allowed_list(tmp_path: Path, monkeypatch) -> None:
@@ -807,7 +851,7 @@ def test_square_support_ratio_over_limit_triggers_upgrade_not_clean_reselection(
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
 
 
-def test_auto_selected_weld_or_bolt_ratio_over_limit_does_not_trigger_square_upgrade(tmp_path: Path) -> None:
+def test_auto_selected_weld_or_bolt_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     _write_job(
         job_dir,
@@ -834,6 +878,44 @@ def test_auto_selected_weld_or_bolt_ratio_over_limit_does_not_trigger_square_upg
                         "evidence": [
                             {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.46},
                             {"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+
+
+def test_auto_selected_weld_or_bolt_ratio_over_limit_at_max_section_uses_spacing_recovery(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "160-160-8",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "160-160-8"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.12},
                         ],
                     }
                 ],
@@ -916,6 +998,57 @@ def test_auto_selected_final_ratio_over_limit_without_larger_allowed_section_blo
     )
 
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+
+
+def test_candidate_real_ansys_trial_retries_temporary_license_failure(tmp_path: Path, monkeypatch) -> None:
+    trial_dir = tmp_path / "trial"
+    trial_dir.mkdir()
+    calls: list[int] = []
+    sleeps: list[int] = []
+
+    class Config(SimpleNamespace):
+        def model_copy(self, deep: bool = False) -> "Config":
+            return self
+
+    config = Config(
+        ansys=SimpleNamespace(
+            timeout_minutes=120,
+            startup_no_output_timeout_seconds=120,
+            output_stall_timeout_seconds=0,
+        )
+    )
+
+    def fake_run_real_ansys(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            (trial_dir / "CableTrayAI_Run.err").write_text(
+                "ANSYSLI exited or could not read server port ANSYSLI_DEMO_PORT.\n"
+                "*** ERROR - ANSYS license not available.",
+                encoding="utf-8",
+            )
+            return {"status": "failed", "failure_reason": "ANSYS license not available"}
+        return {"status": "success"}
+
+    monkeypatch.setattr(workflow, "run_real_ansys", fake_run_real_ansys)
+    monkeypatch.setattr(workflow, "assemble_result", lambda *args, **kwargs: None)
+    monkeypatch.setattr(workflow, "cleanup_heavy_solver_artifacts", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "cleanup_stale_ansys_locks", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow.time, "sleep", lambda seconds: sleeps.append(int(seconds)))
+
+    result = workflow.real_ansys_section_trial_runner(
+        trial_dir,
+        config=config,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+    )
+
+    audit = json.loads((trial_dir / "ansys_run_audit.json").read_text(encoding="utf-8"))
+    assert result["status"] == "pass"
+    assert len(calls) == 2
+    assert sleeps == [20]
+    assert audit["license_retry_policy"]["status"] == "applied"
+    assert audit["license_retry_attempts"][0]["license_unavailable"] is True
+    assert audit["license_retry_attempts"][1]["status"] == "success"
 
 
 def test_square_section_upgrade_resets_failed_job_state_for_formal_rerun(tmp_path: Path, monkeypatch) -> None:

@@ -1,4 +1,24 @@
 # CableTrayAI ??????
+## 2026-06-16 4215 smart section-selection and deployment closeout
+
+Current latest source/validation state:
+
+1. Root cause for `18185NI-LXSJ4215` starting at `160-160-8` on a 300 mm tray was stale square-section learning. Old cache evidence did not include tray width/load and could order a new small-tray job from unrelated larger-tray history.
+2. The learned square-section path now accepts only the current v7 cache for direct learned decisions, includes tray-width/load similarity, and still requires a fresh real ANSYS/formal deterministic gate before publication.
+3. Real ANSYS18.2 validation used a job-local six-row workbook with deliberately changed intakes: response-spectrum 300 single-side, response-spectrum 300 double-side, response-spectrum mixed 300/500 double-side, response-spectrum 600, static 300, and static 600.
+4. Representative results: 300 single-side selected `100-100-6` with ratio `0.6334551866714465`; 300 double-side tried `100-100-6` first, failed it, then selected `120-120-10`; mixed 300/500 selected `140-140-8` with ratio about `0.905`; 600 response/static variants completed after larger-section recovery.
+5. Candidate-trial/formal ratio differences are now handled correctly. The formal ANSYS deterministic Chapter 6.1 section-selection ratio is authoritative. If formal ratio is `<= 1.0`, the mismatch is recorded as `formal_override`; if formal ratio is `> 1.0`, the larger-section or support-spacing recovery path still runs.
+6. ANSYS license-manager transient failures now retry the same candidate/formal calculation instead of marking a section as failed. LATT/already-meshed warnings are nonblocking; true MAPDL errors, missing deterministic outputs, and formal over-limit gates still block.
+7. Verification passed: full `D:/miniconda3/python.exe -m pytest tests/unit -q`, targeted square-section/result-validity/renderer/runner tests, real ANSYS validation under `jobs/validation_4215_smart_selection_real_fix3_20260615_234758` and `jobs/validation_4215_smart_selection_real_fix5_DF_20260616_002328`.
+
+Deployment closeout:
+
+1. Full package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail-safe update package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Package gate passed, including runtime XML/expat files and no-expat spectrum smoke.
+4. Local `D:/CableTrayAI` was updated from the new update package. The exact latest backup path is recorded by the installer in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+5. Local deployment smoke passed: `/health` returned `{"status":"ok"}`, initial password remains `cnpe123`, and source/package/installed hashes match for touched source and calibration files.
+
 ## 2026-06-15 support-spacing recovery and representative real-ANSYS closeout
 
 Current latest source/validation state:

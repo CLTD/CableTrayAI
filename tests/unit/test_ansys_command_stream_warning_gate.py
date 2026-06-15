@@ -44,6 +44,29 @@ def test_parallel_mpi_cwd_warning_does_not_block_real_run(tmp_path: Path) -> Non
     assert detection["warnings"]
 
 
+def test_already_meshed_latt_warning_does_not_block_real_run(tmp_path: Path) -> None:
+    (tmp_path / "ansys.out").write_text(
+        "\n".join(
+            [
+                " *** WARNING ***                         CP =       0.141   TIME= 23:14:50",
+                " There are no selected unmeshed lines.  The LATT command is ignored.",
+                "",
+                " *** WARNING ***                         CP =       0.141   TIME= 23:14:50",
+                " All of the selected lines in the set named on the LMESH command were",
+                " already meshed.  Clear associated elements before remeshing.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    detection = _detect_ansys_fatal_outputs(tmp_path)
+
+    assert detection["status"] == "pass"
+    assert detection["evidence"] == []
+    assert detection["warnings"]
+    assert detection["warnings"][0]["category"] == "command_stream_error"
+
+
 def test_warning_level_file_probe_does_not_block_real_run(tmp_path: Path) -> None:
     (tmp_path / "ansys.out").write_text(
         "\n".join(

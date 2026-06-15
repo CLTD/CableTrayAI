@@ -49,16 +49,16 @@ def test_square_section_summary_prefers_formal_section_6_1_ratio(tmp_path: Path)
     assert summary["final_square_support_ratio"] == 0.15
     assert summary["trial_controlling_ratio"] == 0.98
     assert summary["ratio_source"] == "evaluation_summary.json:Chapter 6.1 structural member ratios"
-    assert summary["ratio_consistency_status"] == "fail"
-    assert summary["status"] == "fail"
-    assert summary["selection_acceptance"] == "fail"
-    assert summary["is_design_acceptable"] is False
+    assert summary["ratio_consistency_status"] == "formal_override"
+    assert summary["status"] == "pass"
+    assert summary["selection_acceptance"] == "pass"
+    assert summary["is_design_acceptable"] is True
     assert (job_dir / "square_section_selection_summary.json").exists()
     original = json.loads((job_dir / "square_section_selection.json").read_text(encoding="utf-8"))
     assert original["selected"]["section_name"] == "120-120-6"
 
 
-def test_square_section_summary_blocks_legacy_flat_ratio_mismatch(tmp_path: Path) -> None:
+def test_square_section_summary_uses_formal_ratio_for_legacy_flat_ratio_mismatch(tmp_path: Path) -> None:
     job_dir = tmp_path / "legacy-job"
     job_dir.mkdir()
     (job_dir / "generated_model.mac").write_text("SECREAD,120-120-6,SECT\n", encoding="utf-8")
@@ -82,7 +82,7 @@ def test_square_section_summary_blocks_legacy_flat_ratio_mismatch(tmp_path: Path
 
     summary = write_square_section_selection_summary(job_dir)
 
-    assert summary["ratio_consistency_status"] == "fail"
-    assert summary["status"] == "fail"
-    assert summary["selection_acceptance"] == "fail"
-    assert summary["is_design_acceptable"] is False
+    assert summary["ratio_consistency_status"] == "formal_override"
+    assert summary["status"] == "pass"
+    assert summary["selection_acceptance"] == "pass"
+    assert summary["is_design_acceptable"] is True

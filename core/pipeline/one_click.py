@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import math
 import shutil
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
 
 from core.ansys.artifact_cleanup import cleanup_heavy_solver_artifacts
 from core.ansys.auto_config import ensure_ansys_config
+from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
 from core.ansys.runner import run_real_ansys
 from core.apdl.modal_policy import (
     MODAL_RETRY_SEQUENCE,
@@ -45,6 +47,13 @@ from core.spectra.config_wizard import confirm_spectrum_config
 from core.spectra.response_spectrum_writer import write_segmented_response_spectrum_mac
 
 MODAL_RETRY_MAX_FORMAL_RERUNS = 4
+ANSYS_FORMAL_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
+ANSYS_LICENSE_FAILURE_TOKENS = (
+    "ansys license manager error",
+    "ansys license not available",
+    "ansysli exited",
+    "could not read server port ansysli",
+)
 
 
 def _square_section_selection_failure_message(selection: dict[str, Any]) -> str:
@@ -108,6 +117,7 @@ def _progress_stage_cap(stage: str) -> int:
         "running_ansys": 82,
         "ansys_startup_retry": 82,
         "ansys_resource_retry": 82,
+        "ansys_license_retry": 82,
         "rerunning_ansys_after_modal_retry": 84,
         "rerunning_ansys_after_section_reselection": 84,
         "rerunning_ansys_after_section_upgrade": 84,
@@ -594,6 +604,29 @@ def _ensure_publishable_result(job_dir: Path) -> None:
     raise RuntimeError(f"Result validation failed; production publication is blocked: {detail}")
 
 
+def _sync_square_section_row_result_from_summary(row_result: dict[str, Any], job_dir: Path) -> None:
+    summary_path = job_dir / "square_section_selection_summary.json"
+    if not summary_path.exists():
+        return
+    try:
+        summary = _read_json(summary_path)
+    except Exception:
+        return
+    section_name = summary.get("section_name")
+    final_ratio = summary.get("final_section_selection_ratio")
+    controlling_ratio = summary.get("controlling_ratio")
+    trial_ratio = summary.get("trial_controlling_ratio")
+    if section_name:
+        row_result["square_section_selected"] = section_name
+    if controlling_ratio is not None:
+        row_result["square_section_selected_ratio"] = controlling_ratio
+    if final_ratio is not None:
+        row_result["square_section_final_section_selection_ratio"] = final_ratio
+    if trial_ratio is not None:
+        row_result["square_section_trial_controlling_ratio"] = trial_ratio
+    row_result["square_section_ratio_consistency_status"] = summary.get("ratio_consistency_status")
+
+
 def _last_ansys_audit(job_dir: Path) -> dict[str, Any]:
     path = job_dir / "ansys_run_audit.json"
     if not path.exists():
@@ -624,15 +657,22 @@ def _job_text_contains_license_failure(job_dir: Path) -> bool:
         except OSError:
             continue
     lower = text.lower()
-    return any(
-        token in lower
-        for token in (
-            "ansys license manager error",
-            "ansys license not available",
-            "ansysli exited",
-            "could not read server port ansysli",
-        )
-    )
+    return any(token in lower for token in ANSYS_LICENSE_FAILURE_TOKENS)
+
+
+def _ansys_license_failure(audit: dict[str, Any], job_dir: Path) -> bool:
+    if audit.get("status") in {"success", "pass"}:
+        return False
+    payload = {
+        "status": audit.get("status"),
+        "failure_reason": audit.get("failure_reason"),
+        "failure_category": audit.get("failure_category"),
+        "fatal_output_detection": audit.get("fatal_output_detection"),
+        "stderr_tail": audit.get("stderr_tail"),
+        "stdout_tail": audit.get("stdout_tail"),
+    }
+    text = json.dumps(payload, ensure_ascii=False).lower()
+    return any(token in text for token in ANSYS_LICENSE_FAILURE_TOKENS) or _job_text_contains_license_failure(job_dir)
 
 
 def _retain_solver_artifacts_after_failure(job_dir: Path) -> bool:
@@ -922,6 +962,7 @@ def run_operator_one_click(
                     copy_exact_cached_outputs(Path(str(cache_hit["source_job_dir"])), job_dir)
                     assemble_result(job_dir)
                     _ensure_publishable_result(job_dir)
+                    _sync_square_section_row_result_from_summary(row_result, job_dir)
                     update_job_state(job_dir, "evaluated", "exact-input real ANSYS outputs reused and parsed")
                 else:
 
@@ -1002,6 +1043,23 @@ def run_operator_one_click(
                             return audit
 
                         audit_payload = run_attempt(config, "primary")
+                        if _ansys_license_failure(audit_payload, job_dir):
+                            for retry_index, delay in enumerate(ANSYS_FORMAL_LICENSE_RETRY_DELAYS_SECONDS, start=1):
+                                progress(
+                                    "ansys_license_retry",
+                                    (
+                                        f"{item['job_id']}: ANSYS license is temporarily unavailable; "
+                                        f"waiting {int(delay)}s before retry {retry_index}."
+                                    ),
+                                    min(base_progress + 69, base_progress + 70),
+                                    job_id=item["job_id"],
+                                )
+                                _clean_regenerable_outputs_for_rerun(job_dir)
+                                cleanup_stale_ansys_locks(job_dir)
+                                time.sleep(max(0, int(delay)))
+                                audit_payload = run_attempt(config, f"license_retry_{retry_index}")
+                                if not _ansys_license_failure(audit_payload, job_dir):
+                                    break
                         retryable_startup_statuses = {"startup_no_output_timeout", "output_stall_timeout"}
                         if (
                             audit_payload.get("status") in retryable_startup_statuses
@@ -1357,6 +1415,7 @@ def run_operator_one_click(
                     if final_ratio_spacing_attempts:
                         row_result["support_spacing_final_ratio_attempts"] = final_ratio_spacing_attempts
                     _ensure_publishable_result(job_dir)
+                    _sync_square_section_row_result_from_summary(row_result, job_dir)
                     modal_learning = record_modal_mode_count_learning(job_dir)
                     row_result["modal_learning_status"] = modal_learning.get("status")
                     row_result["modal_learning_recommended_mt"] = modal_learning.get("recommended_modal_mode_count")

@@ -373,6 +373,39 @@ def test_single_width_family_connection_offset_tracks_l3_when_square_controls_l3
     assert audit["single_width_connection_offset"]["replacement_count"] == 4
 
 
+def test_single_width_family_l3_rewrite_does_not_collapse_intermediate_arm_segment() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.6",
+            "L3=0.15",
+            "L4=2.0",
+            "L5=0.074",
+            "senum=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'600-75-2mm'",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _single_two_layer_600_payload())
+
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,503+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "NSEL,S,LOC,X,H1/2+L1-L3,H1/2+L1-L3" in rendered
+    assert audit["single_width_connection_offset"]["status"] == "rewritten"
+    assert audit["single_width_connection_offset"]["skipped_structural_keypoints"] == 1
+
+
 def test_multi_width_family_keeps_l2_half_connection_offset() -> None:
     source_text = "\n".join(
         [
@@ -401,7 +434,7 @@ def test_multi_width_family_keeps_l2_half_connection_offset() -> None:
     assert audit["single_width_connection_offset"]["status"] == "not_required"
 
 
-def test_double_side_single_width_family_keeps_l2_half_connection_offset() -> None:
+def test_double_side_single_width_family_tracks_l3_for_tray_connection_offset() -> None:
     source_text = "\n".join(
         [
             "H1=0.10",
@@ -414,6 +447,9 @@ def test_double_side_single_width_family_keeps_l2_half_connection_offset() -> No
             "senum1=2",
             "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
             "K,1502+10*I+100*(J-1),-(H1/2+L1-L2/2),0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,1509+10*I+100*(J-1),-(H1/2+L1-L2/2),0+L4*(J-1),0.15+0.2*(I-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "NSEL,A,LOC,X,-(H1/2+L1-L2/2),-(H1/2+L1-L2/2)",
             "SECREAD,'100-100-6'",
             "SECREAD,'500-75-2mm'",
             "SECREAD,'500-75-2mm'",
@@ -422,10 +458,12 @@ def test_double_side_single_width_family_keeps_l2_half_connection_offset() -> No
 
     rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
 
-    assert "H1/2+L1-L2/2" in rendered
-    assert "-(H1/2+L1-L2/2)" in rendered
-    assert "H1/2+L1-L3" not in rendered
-    assert audit["single_width_connection_offset"]["status"] == "not_required"
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,1502+10*I+100*(J-1),-(H1/2+L1-L3)" in rendered
+    assert "K,1509+10*I+100*(J-1),-(H1/2+L1-L3)" in rendered
+    assert "NSEL,S,LOC,X,H1/2+L1-L3,H1/2+L1-L3" in rendered
+    assert "NSEL,A,LOC,X,-(H1/2+L1-L3),-(H1/2+L1-L3)" in rendered
+    assert audit["single_width_connection_offset"]["status"] == "rewritten"
 
 
 def test_standard_family_expands_keypoint_numbering_for_twelve_layers() -> None:

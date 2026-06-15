@@ -193,6 +193,21 @@ def _default_project_code(path: Path) -> str:
     return first_token or path.stem
 
 
+def _project_code_from_report_number(report_number: Any) -> str | None:
+    match = re.match(r"\s*(\d{4})", str(report_number or ""))
+    return match.group(1) if match else None
+
+
+def _resolve_project_code(row: dict[str, Any], source_file: Path, report_number: Any) -> str:
+    explicit = _alias_lookup(row, "project_code")
+    if explicit not in (None, ""):
+        return str(explicit)
+    from_report_number = _project_code_from_report_number(report_number)
+    if from_report_number:
+        return from_report_number
+    return _default_project_code(source_file)
+
+
 def _fallback_report_number(support_type: Any, serial: Any, row_number: int) -> str:
     left = str(support_type or "JOB").strip() or "JOB"
     right = str(serial or row_number).strip() or str(row_number)
@@ -337,7 +352,7 @@ def _normalise_table_row(row: dict[str, Any], *, source_file: Path, sheet_name: 
     square_section_spec = _normalise_square_section(_alias_lookup(row, "square_section_spec"))
     cantilever_evaluation_mode = _alias_lookup(row, "cantilever_evaluation_mode")
     payload = {
-        "project_code": _alias_lookup(row, "project_code") or _default_project_code(source_file),
+        "project_code": _resolve_project_code(row, source_file, report_number),
         "building": str(building),
         "area": str(area),
         "elevation": elevation if elevation is not None else 0.0,

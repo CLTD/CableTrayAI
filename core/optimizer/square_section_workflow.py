@@ -4,6 +4,7 @@ import json
 import shutil
 import hashlib
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -21,6 +22,7 @@ from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.audit.job_state import update_job_state
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
+    _clean_trial_runtime_outputs,
     is_section_selection_evaluation_row,
     discover_square_section_candidates,
     parse_square_section_name,
@@ -34,6 +36,13 @@ SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v7-section-6-1-ratio"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
+CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
+ANSYS_LICENSE_FAILURE_TOKENS = (
+    "ansys license manager error",
+    "ansys license not available",
+    "ansysli exited",
+    "could not read server port ansysli",
+)
 
 
 def _arm_sections_for_square_outer(square_outer_mm: float | None) -> tuple[str, str, str]:
@@ -48,6 +57,15 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _tail_text(path: Path, limit: int = 8000) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")[-limit:]
+    except OSError:
+        return ""
 
 
 def _selection_cache_path(path: Path | str | None = None) -> Path:
@@ -186,6 +204,41 @@ def _section_allowed_by_payload(section_name: Any, payload: dict[str, Any]) -> b
     return section_id in set(allowed)
 
 
+def _current_square_section_id_from_payload(payload: dict[str, Any]) -> str | None:
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
+    candidates: list[Any] = [
+        metadata.get("square_section_selected"),
+        metadata.get("square_section_spec"),
+        metadata.get("square_section_current_model_spec"),
+        support.get("support_section_id"),
+    ]
+    for section in payload.get("sections") or []:
+        if not isinstance(section, dict):
+            continue
+        candidates.append(section.get("sect_file"))
+        candidates.append(section.get("section_id"))
+    for value in candidates:
+        section_id = _normalised_section_id(value)
+        if section_id:
+            return section_id
+    return None
+
+
+def _has_larger_allowed_square_section(payload: dict[str, Any]) -> bool:
+    current_id = _current_square_section_id_from_payload(payload)
+    current = parse_square_section_name(current_id or "")
+    current_modulus = current.estimated_bending_section_modulus_mm3 if current else -1.0
+    allowed = [
+        parse_square_section_name(section_id)
+        for section_id in _allowed_square_section_ids_from_payload(payload)
+    ]
+    return any(
+        candidate is not None and candidate.estimated_bending_section_modulus_mm3 > current_modulus
+        for candidate in allowed
+    )
+
+
 def _filter_allowed_square_candidates(
     candidates: list[SquareSectionCandidate],
     payload: dict[str, Any],
@@ -317,10 +370,23 @@ def _selection_similarity_score(current: dict[str, Any], cached: dict[str, Any])
     add_close("support_spacing_m", 1.0, 0.10)
     add_close("support_height_m", 1.0, 0.10)
     add_close("tray_load_sum_kg_m", 1.0, 0.12)
-    if current.get("tray_widths_mm") and cached.get("tray_widths_mm"):
-        weight += 1.0
-        if current["tray_widths_mm"] == cached["tray_widths_mm"]:
-            score += 1.0
+
+    # Tray width and total tray load are load-path features.  Legacy cache
+    # entries that do not record them must not look "perfectly similar" to a
+    # light-duty 300 mm intake just because project, elevation and layer count
+    # match.
+    if current.get("tray_load_sum_kg_m") is not None or cached.get("tray_load_sum_kg_m") is not None:
+        weight += 2.0
+        if _relative_close(current.get("tray_load_sum_kg_m"), cached.get("tray_load_sum_kg_m"), tolerance=0.12):
+            score += 2.0
+            if "tray_load_sum_kg_m" not in matched:
+                matched.append("tray_load_sum_kg_m")
+        elif "tray_load_sum_kg_m" not in mismatched:
+            mismatched.append("tray_load_sum_kg_m")
+    if current.get("tray_widths_mm") or cached.get("tray_widths_mm"):
+        weight += 3.0
+        if current.get("tray_widths_mm") and cached.get("tray_widths_mm") and current["tray_widths_mm"] == cached["tray_widths_mm"]:
+            score += 3.0
             matched.append("tray_widths_mm")
         else:
             mismatched.append("tray_widths_mm")
@@ -454,6 +520,20 @@ def _learned_allowed_candidate_start(
         return candidates, {"status": "skipped", "reason": "empty_candidate_list"}
     if not similar_hint:
         return candidates, {"status": "skipped", "reason": "no_similar_successful_selection"}
+    if str(similar_hint.get("entry_cache_version") or "") != SQUARE_SECTION_CACHE_VERSION:
+        return candidates, {
+            "status": "skipped",
+            "reason": "stale_cache_version_not_allowed_for_candidate_start",
+            "entry_cache_version": similar_hint.get("entry_cache_version"),
+            "required_cache_version": SQUARE_SECTION_CACHE_VERSION,
+            "selected_section_hint": similar_hint.get("selected_section_hint"),
+            "source_ref": "square_section_selection_cache.json:cache_version",
+            "policy": (
+                "Only current-version learned records may move the first candidate inside the intake-allowed list. "
+                "Older cache entries can remain as trace history, but they may have stale ratio bases or missing "
+                "tray width/load features and therefore cannot anchor section selection."
+            ),
+        }
     similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
     score = _as_float(similarity.get("score"))
     if score is None or score < threshold:
@@ -707,14 +787,29 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
         return False
     if validation.get("status") == "pass":
         return False
+    failed_ratio_evidence: list[dict[str, Any]] = []
     for check in validation.get("checks") or []:
         if check.get("check_id") == "evaluation_ratio_limit" and check.get("status") == "fail":
             evidence = check.get("evidence") or []
-            section_ratio_failed = any(
-                is_section_selection_evaluation_row(item) for item in evidence if isinstance(item, dict)
-            )
-            if section_ratio_failed:
-                return True
+            for item in evidence:
+                if not isinstance(item, dict):
+                    continue
+                try:
+                    ratio = float(item.get("ratio"))
+                except (TypeError, ValueError):
+                    continue
+                if ratio > 1.0:
+                    failed_ratio_evidence.append(item)
+    if not failed_ratio_evidence:
+        return False
+    input_path = job_path / "input.json"
+    if not input_path.exists():
+        return any(is_section_selection_evaluation_row(item) for item in failed_ratio_evidence)
+    try:
+        payload = _read_json(input_path)
+    except json.JSONDecodeError:
+        return any(is_section_selection_evaluation_row(item) for item in failed_ratio_evidence)
+    return _has_larger_allowed_square_section(payload)
     return False
 
 
@@ -806,6 +901,23 @@ def _section_trial_config(config: AnsysLocalConfig) -> AnsysLocalConfig:
     )
     cloned.ansys.output_stall_timeout_seconds = 0
     return cloned
+
+
+def _ansys_license_unavailable(job_dir: Path, audit: dict[str, Any] | None) -> bool:
+    if not audit or audit.get("status") in {"success", "pass"}:
+        return False
+    evidence = json.dumps(audit, ensure_ascii=False)
+    for name in (
+        "CableTrayAI_Run.err",
+        "CableTrayAI_Run.out",
+        "ansys_stdout.log",
+        "ansys_stderr.log",
+        "run_stdout.log",
+        "run_stderr.log",
+    ):
+        evidence += "\n" + _tail_text(job_dir / name)
+    lower = evidence.lower()
+    return any(token in lower for token in ANSYS_LICENSE_FAILURE_TOKENS)
 
 
 def _candidate_window_around_preferred(
@@ -970,21 +1082,73 @@ def real_ansys_section_trial_runner(
             )
         progress_callback(payload)
 
-    audit = run_real_ansys(
-        trial_dir,
-        config=trial_config,
-        config_path=config_path,
-        confirm_real_run=True,
-        confirm_user=confirm_user,
-        run_post_exports=False,
-        progress_callback=trial_progress,
-    )
+    retry_delays = list(CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS)
+    attempts: list[dict[str, Any]] = []
+    attempt_index = 0
+    while True:
+        attempt_index += 1
+        audit = run_real_ansys(
+            trial_dir,
+            config=trial_config,
+            config_path=config_path,
+            confirm_real_run=True,
+            confirm_user=confirm_user,
+            run_post_exports=False,
+            progress_callback=trial_progress,
+        )
+        license_busy = _ansys_license_unavailable(trial_dir, audit)
+        attempts.append(
+            {
+                "attempt": attempt_index,
+                "status": audit.get("status"),
+                "failure_reason": audit.get("failure_reason"),
+                "failure_category": audit.get("failure_category"),
+                "license_unavailable": license_busy,
+            }
+        )
+        if audit.get("status") == "success" or not license_busy or not retry_delays:
+            break
+        delay = int(retry_delays.pop(0))
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "select_square_section",
+                    "candidate_section": trial_dir.name,
+                    "trial_dir": str(trial_dir),
+                    "trial_status_file": str(trial_dir / "ansys_live_status.json"),
+                    "message": (
+                        f"Candidate {trial_dir.name} ANSYS license temporarily unavailable; "
+                        f"waiting {delay}s before retry {attempt_index + 1}."
+                    ),
+                    "license_retry_attempt": attempt_index + 1,
+                    "license_retry_delay_seconds": delay,
+                }
+            )
+        _clean_trial_runtime_outputs(trial_dir)
+        cleanup_stale_ansys_locks(trial_dir)
+        time.sleep(max(0, delay))
+    if len(attempts) > 1:
+        audit = dict(audit)
+        audit["license_retry_policy"] = {
+            "status": "applied",
+            "retry_delays_seconds": list(CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS),
+            "reason": "candidate ANSYS trial reported a temporary license-manager failure",
+            "policy": (
+                "A candidate square-section trial is retried on temporary ANSYS license-manager failures before "
+                "the section search is allowed to classify the trial as missing or failed."
+            ),
+        }
+        audit["license_retry_attempts"] = attempts
+        _write_json(trial_dir / "ansys_run_audit.json", audit)
     if audit.get("status") != "success":
         cleanup_heavy_solver_artifacts(trial_dir)
         return audit
     assemble_result(trial_dir)
     artifact_cleanup = cleanup_heavy_solver_artifacts(trial_dir)
-    return {"status": "pass", "ansys_run_audit": audit, "solver_artifact_cleanup": artifact_cleanup}
+    result = {"status": "pass", "ansys_run_audit": audit, "solver_artifact_cleanup": artifact_cleanup}
+    if len(attempts) > 1:
+        result["candidate_license_retry_attempts"] = attempts
+    return result
 
 
 def apply_selected_square_section(

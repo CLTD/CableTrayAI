@@ -154,6 +154,12 @@ _IGNORED_GRAPHICS_WARNING_RE = re.compile(
     re.IGNORECASE,
 )
 
+_IGNORED_ALREADY_MESHED_LINE_WARNING_RE = re.compile(
+    r"There\s+are\s+no\s+selected\s+unmeshed\s+lines\.\s+The\s+LATT\s+command\s+is\s+ignored\b|"
+    r"All\s+of\s+the\s+selected\s+lines\b.*\balready\s+meshed\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
 _MPI_CWD_IGNORED_RE = re.compile(
     r"/CWD\s+command\s+is\s+ignored\s+on\s+MPI\s+process\s+with\s+rank\b",
     re.IGNORECASE,
@@ -396,6 +402,7 @@ def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> 
         for pattern in (
             _IGNORED_SELECTION_WARNING_RE,
             _IGNORED_GRAPHICS_WARNING_RE,
+            _IGNORED_ALREADY_MESHED_LINE_WARNING_RE,
         )
     )
 

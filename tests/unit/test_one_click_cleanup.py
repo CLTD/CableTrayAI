@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from core.pipeline.one_click import _clean_regenerable_outputs_for_rerun, _retain_solver_artifacts_after_failure
+from core.pipeline.one_click import (
+    _ansys_license_failure,
+    _clean_regenerable_outputs_for_rerun,
+    _retain_solver_artifacts_after_failure,
+)
 
 
 def test_one_click_cleanup_removes_square_section_state_and_trials(tmp_path: Path) -> None:
@@ -54,3 +58,15 @@ def test_post_figure_license_failure_retains_solver_artifacts_for_retry(tmp_path
     )
 
     assert _retain_solver_artifacts_after_failure(job_dir) is True
+
+
+def test_formal_ansys_license_failure_is_retryable_resource_issue(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    audit = {
+        "status": "failed",
+        "failure_reason": "ANSYSLI exited or could not read server port ANSYSLI_DEMO_PORT.",
+    }
+
+    assert _ansys_license_failure(audit, job_dir) is True
+    assert _ansys_license_failure({"status": "failed", "failure_reason": "model pivot error"}, job_dir) is False

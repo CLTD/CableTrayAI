@@ -78,3 +78,25 @@ def test_allowed_square_sections_are_extracted_from_calculation_note_without_unl
         "160-160-8",
     ]
     assert "120-120-8" not in found["allowed_square_section_ids"]
+
+
+def test_project_code_falls_back_to_formal_report_number_before_workbook_name(tmp_path) -> None:
+    row = {
+        "序号": 1,
+        "支架形式": "S2",
+        "支架间距": "2m",
+        "方钢长度": "1.8m",
+        "托盘载荷": "单侧2层600",
+        "厂房": "NR",
+        "标高": 8.5,
+        "报告号": "18185NI-LXSJ4215",
+    }
+
+    payload = reader._normalise_table_row(
+        row,
+        source_file=tmp_path / "intake_renamed_by_user.xlsx",
+        sheet_name="S2",
+        row_number=2,
+    )
+
+    assert payload["project_code"] == "1818"

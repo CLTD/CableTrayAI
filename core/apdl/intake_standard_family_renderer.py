@@ -766,24 +766,86 @@ def _rewrite_single_width_connection_offset_to_l3(text: str, *, enabled: bool) -
     if not enabled:
         return text, {
             "status": "not_required",
-            "reason": "not_single_side_single_width_source_family",
+            "reason": "not_single_width_no_l6_offset_mismatch",
         }
-    pattern = r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2"
+    positive_pattern = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2", flags=re.IGNORECASE)
+    negative_pattern = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2\s*\)", flags=re.IGNORECASE)
     replacement = "H1/2+L1-L3"
-    updated, count = re.subn(pattern, replacement, text, flags=re.IGNORECASE)
+    negative_replacement = "-(H1/2+L1-L3)"
+    positive_target_pattern = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\b", flags=re.IGNORECASE)
+    negative_target_pattern = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\s*\)", flags=re.IGNORECASE)
+    tray_or_coupling_keypoints = {506, 507, 508, 509, 1506, 1507, 1508, 1509}
+    connection_keypoints = {502, 1502}
+
+    def keypoint_base(line: str) -> int | None:
+        match = re.match(r"\s*K\s*,\s*(\d+)", line, flags=re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def replace_offset(line: str) -> tuple[str, int]:
+        updated_line, negative_count = negative_pattern.subn(negative_replacement, line)
+        updated_line, positive_count = positive_pattern.subn(replacement, updated_line)
+        return updated_line, negative_count + positive_count
+
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    connection_keypoints_with_adjacent_l3_endpoint: set[int] = set()
+    for line in lines:
+        base = keypoint_base(line)
+        if base == 503 and positive_target_pattern.search(line):
+            connection_keypoints_with_adjacent_l3_endpoint.add(502)
+        if base == 1503 and negative_target_pattern.search(line):
+            connection_keypoints_with_adjacent_l3_endpoint.add(1502)
+
+    updated_lines: list[str] = []
+    replacement_count = 0
+    keypoint_replacements = 0
+    selector_replacements = 0
+    skipped_structural_keypoints = 0
+    for line in lines:
+        stripped = line.lstrip()
+        base = keypoint_base(line)
+        command = stripped.split(",", 1)[0].strip().upper() if stripped else ""
+        should_rewrite = False
+        if base in tray_or_coupling_keypoints:
+            should_rewrite = True
+        elif base in connection_keypoints:
+            if base in connection_keypoints_with_adjacent_l3_endpoint:
+                skipped_structural_keypoints += 1
+            else:
+                should_rewrite = True
+        elif command in {"LSEL", "NSEL"}:
+            should_rewrite = True
+
+        if should_rewrite:
+            updated_line, count = replace_offset(line)
+            replacement_count += count
+            if base is not None:
+                keypoint_replacements += count
+            else:
+                selector_replacements += count
+            updated_lines.append(updated_line)
+            continue
+
+        if base in {503, 1503} and (positive_pattern.search(line) or negative_pattern.search(line)):
+            skipped_structural_keypoints += 1
+        updated_lines.append(line)
+
+    updated = "\n".join(updated_lines)
     return updated, {
-        "status": "rewritten" if count else "unchanged",
-        "replacement_count": count,
+        "status": "rewritten" if replacement_count else "unchanged",
+        "replacement_count": replacement_count,
+        "keypoint_replacements": keypoint_replacements,
+        "selector_replacements": selector_replacements,
+        "skipped_structural_keypoints": skipped_structural_keypoints,
         "source_expression": "H1/2+L1-L2/2",
         "target_expression": replacement,
         "source_ref": "single_width_standard_family:L3_square_section_spacing_policy",
         "policy": (
-            "For single-side single-width/no-L6 standard S2 families, L3 is the square-section-controlled "
-            "tray support/connection offset. When L3 differs from L2/2, leaving connection and CPCYC X "
-            "selectors at H1/2+L1-L2/2 disconnects the tray transverse beam from the connection point "
-            "and can cause small-pivot failures. Generated APDL therefore rewrites the same connection-"
-            "offset expression to H1/2+L1-L3 together with the L3 assignment. Double-side families keep "
-            "their reviewed source offset topology."
+            "For single-width/no-L6 standard S2 families, L3 is the square-section-controlled tray "
+            "support/connection offset. When L3 differs from L2/2, tray transverse keypoints, connector "
+            "keypoints and coupling selectors must follow H1/2+L1-L3, otherwise light 300 mm cases can "
+            "leave tray nodes under-constrained. Structural intermediate keypoints 503/1503 are not "
+            "rewritten because some reviewed single-side families intentionally use the L2/2-to-L3 short "
+            "arm segment; rewriting those endpoints would create zero-length APDL lines."
         ),
     }
 
@@ -885,7 +947,11 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             rendered = _replace_density(rendered, material_id, density_map[width])
     rendered, connection_offset_audit = _rewrite_single_width_connection_offset_to_l3(
         rendered,
-        enabled=(not has_source_span_l6 and assigned_senum > 0 and assigned_senum1 == 0),
+        enabled=(
+            not has_source_span_l6
+            and assigned_senum > 0
+            and abs(float(assigned_l3) - float(assigned_l2) / 2.0) > 1e-9
+        ),
     )
     rendered, beam188_warping_keyopts = _ensure_standard_beam188_warping_keyopts(rendered)
     keypoint_numbering = _standard_family_keypoint_numbering(front, back)

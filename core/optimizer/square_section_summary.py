@@ -98,12 +98,21 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
     ratio_consistency_message = "No formal Chapter 6.1 section-selection ratio was available."
     if final_section_selection_ratio is not None and trial_controlling_ratio is not None:
         delta = abs(float(final_section_selection_ratio) - float(trial_controlling_ratio))
-        ratio_consistency_status = "pass" if delta <= TRIAL_FINAL_RATIO_TOLERANCE else "fail"
-        ratio_consistency_message = (
-            "Formal Chapter 6.1 section-selection ratio matches the section-search trial ratio."
-            if ratio_consistency_status == "pass"
-            else "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio by more than 0.01; section economy is not reliable until clean trial workspaces are rerun."
-        )
+        if delta <= TRIAL_FINAL_RATIO_TOLERANCE:
+            ratio_consistency_status = "pass"
+            ratio_consistency_message = "Formal Chapter 6.1 section-selection ratio matches the section-search trial ratio."
+        elif float(final_section_selection_ratio) <= 1.0:
+            ratio_consistency_status = "formal_override"
+            ratio_consistency_message = (
+                "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio, "
+                "but the current formal ANSYS/evaluation ratio is <= 1.0 and is used for publication and learning."
+            )
+        else:
+            ratio_consistency_status = "fail"
+            ratio_consistency_message = (
+                "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio and the formal ratio is over limit; "
+                "section economy is not reliable until clean trial workspaces are rerun."
+            )
     status = "pass" if candidate else "warning"
     if controlling_ratio is None:
         acceptance = "unknown"

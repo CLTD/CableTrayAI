@@ -1,4 +1,20 @@
 # CableTrayAI ??????
+## 2026-06-16 4215 smart section-selection and deployment closeout
+
+Resolved in source and verified:
+
+1. Fixed the stale-learning cause of 300 mm jobs starting at `160-160-8`. Similarity and cache acceptance now include tray width/load and require current v7 evidence for direct learned decisions.
+2. Preserved the intended AI-like behavior: learned history can order candidates, but the current job's real ANSYS and deterministic evaluation decide publication.
+3. Formal Section 6.1 ratio is authoritative after the final ANSYS run. Trial/formal mismatch no longer blocks when the formal Section 6.1 ratio is `<= 1.0`; over-limit formal results still trigger larger-section or spacing recovery.
+4. Candidate and formal ANSYS license-manager unavailable messages now retry the same section/run instead of falsely failing the section.
+5. Real ANSYS18.2 validation passed on changed 300/500/600 response-spectrum and static intakes. The 300 single-side representative selected `100-100-6`; the double-side 300 representative failed `100-100-6` then selected `120-120-10`; 600 variants passed after automatic larger-section recovery.
+6. Full unit tests passed, deployment package gate passed, and local `D:/CableTrayAI` is updated and healthy.
+
+Open queue:
+
+1. No current source/package blocker remains for unit transfer. For an existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for a fresh deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Use the refreshed `.sha256.txt` sidecars in the same folder for transfer verification.
+2. If a future unit run fails after this package, retain the full job folder and compare the current formal `evaluation_summary.json`, `result_validation.json`, and `square_section_selection_summary.json` before changing formulas or material policy.
+
 ## 2026-06-15 support-spacing recovery and modeling robustness closeout
 
 Resolved in source and verified:

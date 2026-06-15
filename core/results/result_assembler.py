@@ -28,6 +28,7 @@ from core.schemas.result_models import (
     ResultJson,
     model_to_dict,
 )
+from core.optimizer.square_section_summary import write_square_section_selection_summary
 from core.validation.result_requirements import classify_job_requirements
 from core.validation.result_validity_gate import validate_result_outputs
 
@@ -396,6 +397,13 @@ def assemble_result(job_dir: Path | str) -> dict:
     result_dict["result_status"] = "blocked" if result_validation["status"] == "fail" else "usable"
     _write_json(job_dir / "evaluation_summary.json", evaluation_summary)
     _write_json(job_dir / "audit_comments.json", build_audit_comments(evaluation_summary))
+    try:
+        result_dict["square_section_selection_summary"] = write_square_section_selection_summary(job_dir)
+    except Exception as exc:
+        result_dict["square_section_selection_summary"] = {
+            "status": "warning",
+            "reason": str(exc),
+        }
     _write_json(job_dir / "result.json", result_dict)
     try:
         from core.ai.model_client import audit_postprocess_with_model
