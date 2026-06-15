@@ -1,4 +1,22 @@
 # CableTrayAI ??????
+## 2026-06-15 support-spacing recovery and modeling robustness closeout
+
+Resolved in source and verified:
+
+1. Added support-spacing recovery for final deterministic over-limit cases where the current square tube is already the largest intake-allowed section. This includes weld/connection over-limit evidence, so the workflow can keep reducing spacing when section enlargement is exhausted.
+2. The user-reported 600 mm static case is now handled by continuing spacing reduction in 0.1 m steps. If `160-160-8` at 1.8 m still has weld ratio above 1.0, the next recovery run will try a smaller spacing instead of returning a terminal software failure.
+3. Fixed single-side 300 mm source-family modeling by applying the `L3` offset to single-width/no-L6 connection and CPCYC selectors. This removed the low-layer small-pivot failure without changing double-side reviewed source topology.
+4. Added BEAM188 warping KEYOPT restoration and empty line-mesh guarding to harden generated APDL for new intake variants.
+5. Real ANSYS18.2 representative regression passed for 300/500/600 response-spectrum and 300/500/600 static rows. The 600 static row reduced spacing from 2.0 m to 1.7 m and then passed.
+6. Full `tests/unit` passed.
+
+Deployment closeout:
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+2. Deployment package gate and update VerifyOnly both passed.
+3. Local `D:/CableTrayAI` was updated; `/health` and `duxyb/cnpe123` login passed. The exact backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. External SHA256 sidecars were refreshed beside the full package and update package; use those sidecars as transfer authority.
+
 ## 2026-06-15 unit jobs square-section and bolt-width policy closeout
 
 Resolved:

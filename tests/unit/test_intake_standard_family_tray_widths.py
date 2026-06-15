@@ -338,6 +338,96 @@ def test_single_width_family_l3_tracks_square_width_gt_120() -> None:
     assert audit["l3_policy"]["status"] == "square_outer_width_gt_120_l3_0p15m"
 
 
+def test_single_width_family_connection_offset_tracks_l3_when_square_controls_l3() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.3",
+            "L3=0.15",
+            "L4=2.0",
+            "senum=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'300-75-2mm'",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    payload["support"]["square_tube_width_m"] = 0.1
+    payload["sections"][0]["sect_file"] = "100-100-6.SECT"
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.3
+        layer["tray_section_id"] = "tray-300"
+    payload["sections"][1]["section_id"] = "tray-300"
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L3=0.2" in rendered
+    assert "H1/2+L1-L2/2" not in rendered
+    assert rendered.count("H1/2+L1-L3") == 4
+    assert audit["single_width_connection_offset"]["status"] == "rewritten"
+    assert audit["single_width_connection_offset"]["replacement_count"] == 4
+
+
+def test_multi_width_family_keeps_l2_half_connection_offset() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.14",
+            "H2=2.0",
+            "L1=0.75",
+            "L2=0.6",
+            "L3=0.6",
+            "L4=0.3",
+            "L5=0.2",
+            "L6=2.0",
+            "senum=4",
+            "senum1=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L6*(J-1),0.1+0.2*(I-1)",
+            "SECREAD,'140-140-8'",
+            "SECREAD,'YIXINGGANG150'",
+            "SECREAD,'YIXINGGANG150DAN'",
+            "SECREAD,'600-75-2mm'",
+            "SECREAD,'300-75-2mm'",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
+
+    assert "H1/2+L1-L2/2" in rendered
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
+
+
+def test_double_side_single_width_family_keeps_l2_half_connection_offset() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.15",
+            "L4=2.0",
+            "senum=2",
+            "senum1=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,1502+10*I+100*(J-1),-(H1/2+L1-L2/2),0+L4*(J-1),0.1+0.2*(I-1)",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'500-75-2mm'",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
+
+    assert "H1/2+L1-L2/2" in rendered
+    assert "-(H1/2+L1-L2/2)" in rendered
+    assert "H1/2+L1-L3" not in rendered
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
+
+
 def test_standard_family_expands_keypoint_numbering_for_twelve_layers() -> None:
     rendered, audit = _render_model_from_family(_high_layer_source_text(), _double_layer_payload(12))
 
@@ -426,6 +516,74 @@ def test_standard_family_inserts_zero_secondary_layer_count_for_single_side_sour
     assert "SECREAD,'600-75-2mm'" in rendered
     assert audit["assigned"]["senum"] == 2
     assert audit["assigned"]["senum1"] == 0
+
+
+def test_standard_family_restores_standard_beam188_warping_keyopts_when_source_omits_them() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.1",
+            "H2=2.1",
+            "L1=0.55",
+            "L2=0.3",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=2",
+            "ET,1,188",
+            "KEYOPT,1,4,2",
+            "ET,2,188",
+            "KEYOPT,2,4,2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'300-75-2mm'",
+            "ALLSEL",
+            "NSEL,S,LOC,X,0,H1/2",
+            "CPCYC,ALL,,,H1/2",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    payload["tray_layers"][0]["tray_width_m"] = 0.3
+    payload["tray_layers"][1]["tray_width_m"] = 0.3
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "KEYOPT,1,1,1" in rendered
+    assert "KEYOPT,2,1,1" in rendered
+    assert rendered.index("KEYOPT,1,4,2") < rendered.index("KEYOPT,1,1,1")
+    assert rendered.index("KEYOPT,2,4,2") < rendered.index("KEYOPT,2,1,1")
+    assert audit["beam188_warping_keyopts"]["status"] == "inserted"
+    assert audit["beam188_warping_keyopts"]["inserted_element_types"] == [1, 2]
+
+
+def test_standard_family_does_not_duplicate_existing_beam188_warping_keyopts() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.1",
+            "H2=2.1",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=3",
+            "senum1=3",
+            "ET,1,188",
+            "KEYOPT,1,4,2",
+            "KEYOPT,1,1,1",
+            "ET,2,188",
+            "KEYOPT,2,4,2",
+            "KEYOPT,2,1,1",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+            "ALLSEL",
+            "NSEL,S,LOC,X,0,H1/2",
+            "CPCYC,ALL,,,H1/2",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
+
+    assert rendered.count("KEYOPT,1,1,1") == 1
+    assert rendered.count("KEYOPT,2,1,1") == 1
+    assert audit["beam188_warping_keyopts"]["status"] == "already_present"
 
 
 def test_standard_family_yixing_rewrite_removes_channel_secondary_offset() -> None:

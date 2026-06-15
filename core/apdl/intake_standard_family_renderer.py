@@ -718,6 +718,76 @@ def _apply_post_keypoint_numbering(text: str, numbering: dict[str, Any]) -> tupl
     return updated, numbering
 
 
+def _ensure_standard_beam188_warping_keyopts(text: str) -> tuple[str, dict[str, Any]]:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    target_types = (1, 2)
+    existing = {
+        element_type
+        for element_type in target_types
+        if re.search(rf"(?im)^\s*KEYOPT\s*,\s*{element_type}\s*,\s*1\s*,\s*1\b", text)
+    }
+    available = {
+        element_type
+        for element_type in target_types
+        if re.search(rf"(?im)^\s*ET\s*,\s*{element_type}\s*,\s*188\b", text)
+    }
+    inserted: list[int] = []
+    for element_type in target_types:
+        if element_type in existing or element_type not in available:
+            continue
+        insert_after = None
+        keyopt4_pattern = re.compile(rf"^\s*KEYOPT\s*,\s*{element_type}\s*,\s*4\s*,", re.IGNORECASE)
+        et_pattern = re.compile(rf"^\s*ET\s*,\s*{element_type}\s*,\s*188\b", re.IGNORECASE)
+        for index, line in enumerate(lines):
+            if keyopt4_pattern.search(line):
+                insert_after = index
+                break
+            if insert_after is None and et_pattern.search(line):
+                insert_after = index
+        if insert_after is None:
+            continue
+        lines.insert(insert_after + 1, f"KEYOPT,{element_type},1,1")
+        inserted.append(element_type)
+    return "\n".join(lines), {
+        "status": "inserted" if inserted else "already_present" if existing else "not_required",
+        "inserted_element_types": inserted,
+        "existing_element_types": sorted(existing),
+        "available_element_types": sorted(available),
+        "source_ref": "standard_model_command_family:BEAM188_KEYOPT_1_1",
+        "policy": (
+            "Most reviewed S2 standard command streams define BEAM188 KEYOPT(1)=1 for "
+            "element types 1 and 2. Some otherwise matching historical families omit it; "
+            "generated APDL restores this standard setting instead of changing CP/CPCYC topology."
+        ),
+    }
+
+
+def _rewrite_single_width_connection_offset_to_l3(text: str, *, enabled: bool) -> tuple[str, dict[str, Any]]:
+    if not enabled:
+        return text, {
+            "status": "not_required",
+            "reason": "not_single_side_single_width_source_family",
+        }
+    pattern = r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2"
+    replacement = "H1/2+L1-L3"
+    updated, count = re.subn(pattern, replacement, text, flags=re.IGNORECASE)
+    return updated, {
+        "status": "rewritten" if count else "unchanged",
+        "replacement_count": count,
+        "source_expression": "H1/2+L1-L2/2",
+        "target_expression": replacement,
+        "source_ref": "single_width_standard_family:L3_square_section_spacing_policy",
+        "policy": (
+            "For single-side single-width/no-L6 standard S2 families, L3 is the square-section-controlled "
+            "tray support/connection offset. When L3 differs from L2/2, leaving connection and CPCYC X "
+            "selectors at H1/2+L1-L2/2 disconnects the tray transverse beam from the connection point "
+            "and can cause small-pivot failures. Generated APDL therefore rewrites the same connection-"
+            "offset expression to H1/2+L1-L3 together with the L3 assignment. Double-side families keep "
+            "their reviewed source offset topology."
+        ),
+    }
+
+
 def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     support = payload.get("support") or {}
     sections = {str(item.get("section_id")): item for item in payload.get("sections") or []}
@@ -813,6 +883,11 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
+    rendered, connection_offset_audit = _rewrite_single_width_connection_offset_to_l3(
+        rendered,
+        enabled=(not has_source_span_l6 and assigned_senum > 0 and assigned_senum1 == 0),
+    )
+    rendered, beam188_warping_keyopts = _ensure_standard_beam188_warping_keyopts(rendered)
     keypoint_numbering = _standard_family_keypoint_numbering(front, back)
     rendered, keypoint_numbering = _apply_model_keypoint_numbering(rendered, keypoint_numbering)
 
@@ -857,6 +932,8 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "primary_arm_secread_replacements": primary_arm_replacements,
         "secondary_arm_secread_replacements": secondary_arm_replacements,
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
+        "single_width_connection_offset": connection_offset_audit,
+        "beam188_warping_keyopts": beam188_warping_keyopts,
         "assigned": {
             "H1": assigned_h1,
             "H2": assigned_h2,

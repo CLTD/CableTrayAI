@@ -1,4 +1,25 @@
 # CableTrayAI ??????
+## 2026-06-15 support-spacing recovery and representative real-ANSYS closeout
+
+Current latest source/validation state:
+
+1. Final over-limit recovery now covers the case where the selected square tube is already the largest intake-allowed section. If deterministic final gates still fail, the workflow reduces `support_spacing_m`, rerenders APDL, reruns section selection, and reruns formal real ANSYS instead of stopping.
+2. The recovery evidence is not limited to Section 6.1 square-support rows. Weld/connection final ratio failures also trigger spacing reduction when the square tube can no longer be enlarged, which covers the user-reported 600 mm static case.
+3. Spacing recovery continues in 0.1 m steps. Therefore a 600 mm static job with `160-160-8` and 1.8 m spacing still over weld limit will try the next smaller spacing rather than fail as a software error.
+4. The 300 mm single-side modeling root cause was fixed separately: single-width/no-L6 standard-family connection/CPCYC selectors now use `H1/2+L1-L3`, matching the square-section-controlled `L3` policy. Double-side and multi-width families keep the reviewed source `L2/2` topology.
+5. BEAM188 warping KEYOPTs are restored when source-family snippets omit them, and empty line-mesh blocks are guarded so low-layer/new-intake variants do not abort on empty `LSEL` groups.
+6. Real ANSYS18.2 regression passed on a job-local workbook covering 300/500/600 response spectrum and 300/500/600 static. All six rows reached `result_validation.status=pass`.
+7. The 600 static representative case selected `160-160-8`, detected over-limit weld/structural evidence, reduced spacing `2.0 m -> 1.7 m`, and then passed with final max weld ratio about `0.9821` and square/support ratio about `0.8647`.
+8. Verification passed: full `D:/miniconda3/python.exe -m pytest tests/unit -q` and real ANSYS result `jobs/validation_spacing_recovery_20260615_175157/real_ansys_result_full_regression2_20260615_185147.json`.
+
+Deployment closeout:
+
+1. Rebuilt `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` and refreshed the full package `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Refreshed the mail-safe update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; update VerifyOnly passed.
+3. Refreshed external SHA256 sidecars beside both zip files. Use those sidecars as transfer authority; do not embed zip hashes inside packaged docs because that is self-referential.
+4. Applied the update to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+5. Local deployment smoke passed: `/health` returned `ok`, `duxyb/cnpe123` login returned `pass`, and source/package/installed hashes match for the touched source, docs, and calibration files.
+
 ## 2026-06-15 unit jobs square-section and bolt-width policy closeout
 
 Current latest source/validation state:

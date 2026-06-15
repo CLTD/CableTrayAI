@@ -13,6 +13,8 @@ _DO_RE = re.compile(r"^\s*\*DO\s*,\s*([A-Za-z]\w*)\s*,\s*([^,]+)\s*,\s*([^,]+)(?
 _ENDDO_RE = re.compile(r"^\s*\*ENDDO\b", re.IGNORECASE)
 _KEYPOINT_RE = re.compile(r"^\s*K\s*,\s*([^,]+)", re.IGNORECASE)
 _COORD_REF_RE = re.compile(r"\bK[XYZ]\s*\(\s*(\d+)\s*\)", re.IGNORECASE)
+_LATT_RE = re.compile(r"^\s*LATT\s*,", re.IGNORECASE)
+_LMESH_RE = re.compile(r"^\s*LMESH\s*,", re.IGNORECASE)
 
 
 class _ExpressionError(ValueError):
@@ -128,6 +130,74 @@ def collect_defined_keypoint_ids(lines: list[str]) -> set[int]:
     return keypoints
 
 
+def _line_mesh_block_is_already_guarded(guarded_lines: list[str]) -> bool:
+    recent = "\n".join(guarded_lines[-5:]).upper()
+    return "CTAILCNT" in recent or "CABLETRAYAI LINE-MESH GUARD" in recent
+
+
+def guard_empty_line_mesh_blocks(lines: list[str]) -> tuple[list[str], list[dict[str, Any]]]:
+    """Wrap LATT/LESIZE/LMESH blocks so optional empty line sets cannot abort ANSYS.
+
+    Some reviewed source families contain mesh blocks for optional rail lines.
+    When a new intake has fewer layers, the preceding LSEL sequence can
+    legitimately select zero lines.  MAPDL treats LMESH,ALL on that empty set as
+    a fatal error, so the generated command stream must skip only that optional
+    mesh block while leaving all non-empty selections untouched.
+    """
+
+    guarded: list[str] = []
+    inserted: list[dict[str, Any]] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if not _LATT_RE.match(_strip_comment(line)) or _line_mesh_block_is_already_guarded(guarded):
+            guarded.append(line)
+            index += 1
+            continue
+
+        block: list[str] = []
+        cursor = index
+        has_lmesh = False
+        while cursor < len(lines):
+            block.append(lines[cursor])
+            if _LMESH_RE.match(_strip_comment(lines[cursor])):
+                has_lmesh = True
+                cursor += 1
+                break
+            cursor += 1
+            if cursor - index > 8:
+                break
+
+        if not has_lmesh:
+            guarded.append(line)
+            index += 1
+            continue
+
+        guarded.extend(
+            [
+                "! CableTrayAI line-mesh guard: skip optional mesh block when the current LSEL contains no lines.",
+                "*GET,CTAILCNT,LINE,0,COUNT",
+                "*IF,CTAILCNT,GT,0,THEN",
+                *block,
+                "*ELSE",
+                "! CableTrayAI guard: selected line count is zero; skipped this LATT/LESIZE/LMESH block.",
+                "*ENDIF",
+            ]
+        )
+        inserted.append(
+            {
+                "line": index + 1,
+                "block_line_count": len(block),
+                "first_command": block[0].strip(),
+                "last_command": block[-1].strip(),
+                "reason": "The preceding LSEL block may be empty for lower-layer/new-intake variants; MAPDL otherwise aborts at LMESH.",
+            }
+        )
+        index = cursor
+
+    return guarded, inserted
+
+
 def guard_undefined_keypoint_coordinate_refs(model_path: Path | str) -> dict[str, Any]:
     model_path = Path(model_path)
     original_text = model_path.read_text(encoding="utf-8", errors="replace")
@@ -157,15 +227,24 @@ def guard_undefined_keypoint_coordinate_refs(model_path: Path | str) -> dict[str
         else:
             guarded_lines.append(line)
 
-    if disabled:
+    guarded_lines, mesh_blocks = guard_empty_line_mesh_blocks(guarded_lines)
+
+    if disabled or mesh_blocks:
         model_path.write_text("\n".join(guarded_lines) + "\n", encoding="utf-8", newline="\n")
 
     audit = {
-        "status": "applied" if disabled else "pass",
+        "status": "applied" if disabled or mesh_blocks else "pass",
         "model_file": model_path.name,
         "defined_keypoint_count": len(defined_keypoints),
         "disabled_line_count": len(disabled),
         "disabled_lines": disabled,
+        "empty_line_mesh_guard": {
+            "status": "applied" if mesh_blocks else "pass",
+            "block_count": len(mesh_blocks),
+            "blocks": mesh_blocks,
+            "source_ref": "generated_model.mac:LATT/LESIZE/LMESH",
+            "policy": "Before each line-mesh block, generated APDL checks the current selected line count with *GET,CTAILCNT,LINE,0,COUNT; empty optional line sets are skipped instead of aborting the whole ANSYS run.",
+        },
         "policy": "Generated command streams may be guarded when a source PIP references an undefined keypoint. The original source is not modified; every guarded line is preserved as an APDL comment for review.",
     }
     (model_path.parent / "model_keypoint_guard_audit.json").write_text(
