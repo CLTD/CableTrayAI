@@ -7,6 +7,7 @@ from typing import Any
 
 from core.optimizer.square_section_selector import (
     controlling_evaluation_ratio,
+    controlling_section_selection_ratio,
     controlling_square_ratio,
     parse_square_section_name,
 )
@@ -72,9 +73,11 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
     candidate = parse_square_section_name(str(section_name)) if section_name else None
     evaluation_summary = _read_json(job_dir / "evaluation_summary.json", [])
     final_square_support_ratio = controlling_square_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
-    final_controlling_ratio = controlling_evaluation_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
+    final_section_selection_ratio = controlling_section_selection_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
+    final_chapter6_controlling_ratio = controlling_evaluation_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
     trial_controlling_ratio = (
         (selected or {}).get("trial_controlling_ratio")
+        or (selected or {}).get("section_selection_ratio")
         or (selected or {}).get("controlling_ratio")
         or previous_selection.get("trial_controlling_ratio")
         or metadata.get("square_section_selected_ratio")
@@ -85,21 +88,21 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         or previous_selection.get("trial_square_support_ratio")
     )
     controlling_ratio = (
-        final_controlling_ratio
-        if final_controlling_ratio is not None
+        final_section_selection_ratio
+        if final_section_selection_ratio is not None
         else final_square_support_ratio
         if final_square_support_ratio is not None
         else trial_controlling_ratio
     )
     ratio_consistency_status = "not_checked"
-    ratio_consistency_message = "No formal evaluation_summary.json ratio was available."
-    if final_controlling_ratio is not None and trial_controlling_ratio is not None:
-        delta = abs(float(final_controlling_ratio) - float(trial_controlling_ratio))
+    ratio_consistency_message = "No formal Chapter 6.1 section-selection ratio was available."
+    if final_section_selection_ratio is not None and trial_controlling_ratio is not None:
+        delta = abs(float(final_section_selection_ratio) - float(trial_controlling_ratio))
         ratio_consistency_status = "pass" if delta <= TRIAL_FINAL_RATIO_TOLERANCE else "fail"
         ratio_consistency_message = (
-            "Formal Chapter 6/evaluation_summary ratio matches the section-search trial ratio."
+            "Formal Chapter 6.1 section-selection ratio matches the section-search trial ratio."
             if ratio_consistency_status == "pass"
-            else "Formal Chapter 6/evaluation_summary ratio differs from the section-search trial ratio by more than 0.01; section economy is not reliable until clean trial workspaces are rerun."
+            else "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio by more than 0.01; section economy is not reliable until clean trial workspaces are rerun."
         )
     status = "pass" if candidate else "warning"
     if controlling_ratio is None:
@@ -117,11 +120,13 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "thickness_mm": candidate.thickness_mm if candidate else None,
         "estimated_area_mm2": candidate.estimated_area_mm2 if candidate else None,
         "controlling_ratio": controlling_ratio,
-        "final_controlling_ratio": final_controlling_ratio,
+        "final_controlling_ratio": final_section_selection_ratio,
+        "final_section_selection_ratio": final_section_selection_ratio,
+        "final_chapter6_controlling_ratio": final_chapter6_controlling_ratio,
         "final_square_support_ratio": final_square_support_ratio,
         "trial_controlling_ratio": trial_controlling_ratio,
         "trial_square_support_ratio": trial_square_support_ratio,
-        "ratio_source": "evaluation_summary.json" if final_controlling_ratio is not None else "square_section_selection_trial",
+        "ratio_source": "evaluation_summary.json:Chapter 6.1 structural member ratios" if final_section_selection_ratio is not None else "square_section_selection_trial",
         "ratio_consistency_status": ratio_consistency_status,
         "ratio_consistency_message": ratio_consistency_message,
         "ratio_consistency_tolerance": TRIAL_FINAL_RATIO_TOLERANCE,

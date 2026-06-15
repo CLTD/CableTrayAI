@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from core.optimizer.square_section_selector import controlling_section_selection_ratio
 from core.validation.result_requirements import classify_job_requirements
 
 
@@ -295,6 +296,10 @@ def _max_evaluation_ratio(evaluation_rows: list[dict[str, Any]]) -> float | None
     return max(ratios) if ratios else None
 
 
+def _square_section_selection_ratio(evaluation_rows: list[dict[str, Any]]) -> float | None:
+    return controlling_section_selection_ratio(evaluation_rows)
+
+
 SQUARE_SECTION_TRIAL_FINAL_RATIO_TOLERANCE = 0.01
 
 
@@ -333,7 +338,8 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
                 "source_ref": "square_section_selection.json:learned_formal_validation",
             },
         }
-    final_ratio = _max_evaluation_ratio(evaluation_rows)
+    final_ratio = _square_section_selection_ratio(evaluation_rows)
+    final_chapter6_ratio = _max_evaluation_ratio(evaluation_rows)
     trial_ratio = _metric_value(
         selected.get("trial_controlling_ratio")
         or selected.get("controlling_ratio")
@@ -342,7 +348,8 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
     )
     evidence = {
         "section_name": selected.get("section_name") or metadata.get("square_section_selected"),
-        "final_chapter6_controlling_ratio": final_ratio,
+        "final_section_selection_ratio": final_ratio,
+        "final_chapter6_controlling_ratio": final_chapter6_ratio,
         "trial_controlling_ratio": trial_ratio,
         "source_ref": "evaluation_summary.json + square_section_selection.json",
     }
@@ -357,7 +364,7 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
         return {
             "check_id": "square_section_final_ratio_missing",
             "status": "fail",
-            "message": "Formal Chapter 6/evaluation_summary ratio is missing; square-section trial cannot be compared with final evaluation.",
+            "message": "Formal Chapter 6.1 section-selection ratio is missing; square-section trial cannot be compared with final evaluation.",
             "evidence": evidence,
         }
     delta = abs(float(final_ratio) - float(trial_ratio))
@@ -367,13 +374,13 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
         return {
             "check_id": "square_section_trial_final_ratio_mismatch",
             "status": "fail",
-            "message": "Square-section trial ratio differs from the final Chapter 6 controlling ratio by more than 0.01; rerun clean trials before accepting the selected section.",
+            "message": "Square-section trial ratio differs from the final Chapter 6.1 section-selection ratio by more than 0.01; rerun clean trials before accepting the selected section.",
             "evidence": evidence,
         }
     return {
         "check_id": "square_section_trial_final_ratio_match",
         "status": "pass",
-        "message": "Square-section trial ratio matches the final Chapter 6 controlling ratio.",
+        "message": "Square-section trial ratio matches the final Chapter 6.1 section-selection ratio.",
         "evidence": evidence,
     }
 

@@ -508,14 +508,18 @@ def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tm
                     "status": "pass",
                     "run_status": "pass",
                     "controlling_ratio": 0.6125,
-                    "dominant_check_id": "weld_force_raw_faulted_weld_equivalent",
+                    "section_selection_ratio": 0.6125,
+                    "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
                 },
                 {
                     "section_name": "140-140-8",
                     "status": "fail",
                     "run_status": "pass",
                     "controlling_ratio": 1.113,
+                    "section_selection_ratio": 1.113,
                     "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
                 },
             ],
         },
@@ -803,7 +807,7 @@ def test_square_support_ratio_over_limit_triggers_upgrade_not_clean_reselection(
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
 
 
-def test_auto_selected_any_final_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
+def test_auto_selected_weld_or_bolt_ratio_over_limit_does_not_trigger_square_upgrade(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     _write_job(
         job_dir,
@@ -830,6 +834,48 @@ def test_auto_selected_any_final_ratio_over_limit_triggers_larger_allowed_upgrad
                         "evidence": [
                             {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.46},
                             {"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+
+
+def test_auto_selected_section_6_1_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "120-120-6"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {
+                                "check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                                "component": "mixed_beam_type_1",
+                                "ratio": 1.18,
+                            },
                         ],
                     }
                 ],
@@ -896,7 +942,13 @@ def test_square_section_upgrade_resets_failed_job_state_for_formal_rerun(tmp_pat
                     {
                         "check_id": "evaluation_ratio_limit",
                         "status": "fail",
-                        "evidence": [{"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.9}],
+                        "evidence": [
+                            {
+                                "check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                                "component": "mixed_beam_type_1",
+                                "ratio": 1.9,
+                            }
+                        ],
                     }
                 ],
             }

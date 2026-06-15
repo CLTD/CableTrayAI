@@ -1,4 +1,43 @@
 # CableTrayAI ??????
+## 2026-06-15 unit jobs square-section and bolt-width policy closeout
+
+Current latest source/validation state:
+
+1. Copied unit jobs under `C:/Users/duxy/Desktop/jobs` were reviewed. `18185NI-LXSJ4210` selected `140-140-8` with an old stored trial ratio `0.9052401909300667`, while the final Chapter 6.1 structural section ratio is `0.4466859099481754`. `18185NI-LXSJ4215` selected `160-160-8` with an old stored ratio `0.9131067176524903`, while final Chapter 6.1 structural section ratio is `0.09814480040795198` and full Chapter 6 max is weld ratio `0.17789216054697474`.
+2. Root cause fixed: square-section sizing now uses only Chapter 6.1 structural member rows (square support, cantilever arm, mixed beam/support). Weld and bolt ratios remain final publication gates, but they cannot enlarge square tubes or drive economy decisions.
+3. Learned square-section cache is now versioned as `square-section-cache-v7-section-6-1-ratio`; old entries cannot direct-skip fresh candidate trials. Learned formal validation also requires historical dominant 6.1 structural evidence.
+4. Standard S2 single-width/no-L6 modeling now assigns `L3` from selected square-tube outer width: `<=120 mm -> 0.20 m`, `>120 mm -> 0.15 m`. Multi-width source families keep `L3/L4` as tray-width parameters.
+5. Bolt evaluation now follows the manual/workbook formula family, not just area replacement. `<=200 mm` tray widths use M8 area `36.6 mm2`, force share `1`, no lever-arm division, and workbook `螺栓 200` formulas. `300/500/600 mm` use M12 area `84.3 mm2`, force share `2`, and lever arms `0.241/0.441/0.541 m`.
+6. `18185NI-LXSJ4212` in the copied unit folder has no `evaluation_summary.json` because the latest run was cancelled by operator after ANSYS/connection export completion. It should be treated as incomplete runtime/post-processing evidence, not a section over-limit result.
+7. Verification passed: `D:/miniconda3/python.exe -m py_compile core/evaluators/bolt.py core/evaluators/summary.py core/optimizer/square_section_selector.py core/optimizer/square_section_workflow.py core/optimizer/square_section_summary.py core/validation/result_validity_gate.py core/apdl/intake_standard_family_renderer.py`; targeted square-section/model/bolt tests passed; full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+
+Deployment closeout:
+
+1. Rebuilt `runtime/CableTrayAI_Server/CableTrayAI_Server.exe` at `2026-06-15T17:03:33+08:00` so the packaged web service contains the latest Section 6.1 square-section sizing, `L3`, and M8/M12 formula-family fixes.
+2. Refreshed the full deployment package under `C:/Users/duxy/Desktop/duxyb-cnpe`: `CableTrayAI/` and `CableTrayAI.zip`.
+3. Refreshed the mail-safe update package under `C:/Users/duxy/Desktop/duxyb-cnpe`: `更新包/` and `更新包.zip`; update self-verification passed.
+4. Refreshed SHA256 sidecars: `CableTrayAI.zip.sha256.txt` and `更新包.zip.sha256.txt`.
+5. Deployment package gate passed: protected runtime directories are absent, `pyexpat.pyd`/`_elementtree.pyd`/`libexpat.dll` are present, and the no-expat spectrum smoke test passed with `active_column_m_calibrated_precision_output`.
+6. Package password remains `cnpe123` via `config/initial_password.txt`.
+7. Applied the refreshed update package to local `D:/CableTrayAI`; `/health` returned `{"status":"ok"}`, `duxyb/cnpe123` login returned `pass`, and source/package/installed hashes match for the touched evaluator, selector, APDL renderer, and server runtime files.
+
+## 2026-06-12 AI PPT专题交付复核 closeout
+
+1. 已重新完成河北省军工杯汇报用 AI/智能化专题 PPT，桌面交付文件为 `C:/Users/duxy/Desktop/核电工艺所人工智能应用汇报-AI智能化专题.pptx`。
+2. PPT 为 10 页，正文、表格、流程图和指标均为可编辑对象；第 7 页嵌入完整 16:9 真实软件演示视频，不再用遮挡画面的局部截图。
+3. 独立视频备份已复制到 `C:/Users/duxy/Desktop/CableTrayAI_对话提资完整演示.mp4`，素材来自本机真实对话提资/结果核查页面和完成的真实 ANSYS 作业。
+4. Visio 可编辑流程源文件已复制到 `C:/Users/duxy/Desktop/CableTrayAI_flow_source.vsdx`，包含 `AI数据闭环`、`可学习与自恢复`、`多科室协同` 3 个页面。
+5. 交付验证通过：PowerPoint 打开桌面 PPT 成功，`slides=10`，`media_shapes=1`，`slide7_media=1`；PPT 包内包含 `ppt/media/media1.mp4`；占位符扫描通过；Visio 打开源文件页数为 3。
+
+## 2026-06-12 PPT and real demo closeout
+
+1. 河北省军工杯汇报材料已完成并复制到桌面：`C:/Users/duxy/Desktop/核电工艺所人工智能应用汇报-军工杯成稿.pptx`。
+2. PPT 共 10 页，包含电缆桥架两页：一页原理与研发步骤，一页嵌入真实软件调用演示视频。
+3. 演示视频源于本机真实运行：`CHAT-20260612-f2317f9b9b`，状态 `pass`，真实 ANSYS 成功，选定 `140-140-8`，控制比值 `0.9074547160463298`，`result_publishable=true`。
+4. 发现并修复演示阻塞问题：`/ai/intake/start-run` 返回值和 run 状态现在会将 `Path` / datetime 等对象转换为 JSON-safe 值；对话提资启动真实计算时不再把 `source_package_id="chat_intake"` 传入标准命令包匹配器。
+5. 验证：`tests/unit/test_ai_intake_api.py tests/unit/test_chat_intake.py tests/unit/test_run_progress_state.py` 通过；PPT 文本占位符扫描通过；PowerPoint 打开桌面 PPT 成功，`slides=10`，`media_shapes=1`。
+6. 同步交付：`C:/Users/duxy/Desktop/CableTrayAI_对话提资演示.mp4` 和 `C:/Users/duxy/Desktop/CableTrayAI_flow_source.vsdx`。
+
 ## 2026-06-12 unit jobs self-recovery closeout
 
 Current latest source/validation state:

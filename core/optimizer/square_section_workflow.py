@@ -21,6 +21,7 @@ from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.audit.job_state import update_job_state
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
+    is_section_selection_evaluation_row,
     discover_square_section_candidates,
     parse_square_section_name,
     replace_square_and_arm_sections_in_model,
@@ -29,7 +30,7 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v6-learned-allowed-start"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v7-section-6-1-ratio"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
@@ -104,6 +105,36 @@ def _as_float(value: Any) -> float | None:
 
 def _as_text(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def _layer_width_mm(layer: dict[str, Any]) -> float | None:
+    width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+    if width is not None:
+        return width
+    width_m = _as_float(layer.get("tray_width_m"))
+    if width_m is not None:
+        return width_m * 1000.0
+    return None
+
+
+def _layer_load_kg_m(layer: dict[str, Any]) -> float | None:
+    return _as_float(
+        layer.get("load_kg_m")
+        or layer.get("load_kg_per_m")
+        or layer.get("line_load_kg_m")
+        or layer.get("mass_per_m_kg")
+    )
+
+
+def _payload_tray_design_layers(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    mapping = metadata.get("tray_load_mapping") if isinstance(metadata.get("tray_load_mapping"), dict) else {}
+    mapped_layers = mapping.get("layers") if isinstance(mapping.get("layers"), list) else []
+    mapped = [layer for layer in mapped_layers if isinstance(layer, dict)]
+    if mapped:
+        return mapped
+    return [layer for layer in raw_layers if isinstance(layer, dict)]
 
 
 def _normalised_section_id(value: Any) -> str | None:
@@ -201,18 +232,17 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
     project = payload.get("project") if isinstance(payload.get("project"), dict) else {}
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    tray_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    design_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
-    for layer in tray_layers:
-        if not isinstance(layer, dict):
-            continue
-        width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+    for layer in design_layers:
+        width = _layer_width_mm(layer)
         if width is not None:
             widths.append(width)
-        load = _as_float(layer.get("load_kg_m") or layer.get("line_load_kg_m") or layer.get("mass_per_m_kg"))
+        load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
+    payload_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
     return {
         "support_type": _as_text(support.get("support_type")),
         "analysis_method": _as_text(metadata.get("analysis_method")),
@@ -223,7 +253,7 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
         "support_height_m": _as_float(support.get("support_height_m")),
         "layers_front": int(_as_float(support.get("layers_front")) or 0),
         "layers_back": int(_as_float(support.get("layers_back")) or 0),
-        "layer_count": len(tray_layers),
+        "layer_count": len(payload_layers) or len(design_layers),
         "tray_widths_mm": sorted(round(width, 3) for width in widths),
         "tray_load_sum_kg_m": round(sum(loads), 6) if loads else None,
     }
@@ -368,12 +398,15 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "estimated_bending_section_modulus_mm3",
         "source_kind",
         "controlling_ratio",
+        "section_selection_ratio",
+        "final_chapter6_controlling_ratio",
         "square_support_ratio",
         "result_gate_status",
         "trial_validation_status",
         "effective_validation_status",
         "validation_status",
         "dominant_check_id",
+        "dominant_component",
         "failed_non_ratio_checks",
         "status",
         "run_status",
@@ -479,8 +512,11 @@ def _historical_immediate_lower_failed(
     for item in historical_results:
         if not isinstance(item, dict) or str(item.get("section_name") or "") != lower.section_name:
             continue
-        ratio = _as_float(item.get("controlling_ratio"))
-        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass":
+        ratio = _as_float(item.get("section_selection_ratio") or item.get("controlling_ratio"))
+        section_sensitive = is_section_selection_evaluation_row(
+            {"check_id": item.get("dominant_check_id"), "component": item.get("dominant_component")}
+        )
+        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass" and section_sensitive:
             return {
                 "status": "pass",
                 "lower_section": lower.section_name,
@@ -495,7 +531,7 @@ def _historical_immediate_lower_failed(
             "historical_ratio": ratio,
             "historical_status": item.get("status"),
             "historical_run_status": item.get("run_status"),
-            "reason": "immediate lower section was not proven over limit by a successful historical ANSYS trial",
+            "reason": "immediate lower section was not proven over limit by a successful historical ANSYS Chapter 6.1 trial",
         }
     return {
         "status": "missing",
@@ -534,7 +570,14 @@ def _learned_formal_validation_selection(
         item for item in (similar_hint.get("historical_candidate_results") or []) if isinstance(item, dict)
     ]
     selected_history = next((item for item in historical_results if item.get("section_name") == selected_section), {})
-    selected_ratio = _as_float(selected_history.get("controlling_ratio"))
+    if not is_section_selection_evaluation_row(
+        {
+            "check_id": selected_history.get("dominant_check_id"),
+            "component": selected_history.get("dominant_component"),
+        }
+    ):
+        return None
+    selected_ratio = _as_float(selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio"))
     if selected_ratio is None or not (0.60 <= selected_ratio <= 0.9999):
         return None
     if str(selected_history.get("run_status") or "") != "pass":
@@ -550,6 +593,8 @@ def _learned_formal_validation_selection(
         "estimated_bending_section_modulus_mm3": selected_candidate.estimated_bending_section_modulus_mm3,
         "source_kind": selected_candidate.source_kind,
         "controlling_ratio": selected_ratio,
+        "section_selection_ratio": selected_ratio,
+        "ratio_basis": "evaluation_summary.json:Chapter 6.1 structural member ratios",
         "historical_controlling_ratio": selected_ratio,
         "status": "pass",
         "run_status": "formal_validation_pending",
@@ -557,6 +602,7 @@ def _learned_formal_validation_selection(
         "validation_status": "formal_validation_pending",
         "failed_non_ratio_checks": [],
         "dominant_check_id": selected_history.get("dominant_check_id"),
+        "dominant_component": selected_history.get("dominant_component"),
         "source_ref": "square_section_selection_cache.json:selected_section_hint",
         "formal_validation_required": True,
     }
@@ -661,32 +707,13 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
         return False
     if validation.get("status") == "pass":
         return False
-    try:
-        input_payload = _read_json(job_path / "input.json")
-    except (FileNotFoundError, json.JSONDecodeError):
-        input_payload = {}
-    metadata = input_payload.get("metadata") if isinstance(input_payload.get("metadata"), dict) else {}
-    section_rows = input_payload.get("sections") if isinstance(input_payload.get("sections"), list) else []
-    current_name = (
-        metadata.get("square_section_selected")
-        or metadata.get("square_section_spec")
-        or ((section_rows[0].get("sect_file") or section_rows[0].get("section_id")) if section_rows and isinstance(section_rows[0], dict) else None)
-    )
-    current = parse_square_section_name(str(current_name or ""))
-    auto_square_section = str(metadata.get("square_section_selection_status") or "") == "auto_selected_by_real_ansys"
-    larger_allowed_exists = False
-    if auto_square_section and current is not None:
-        for section_name in _allowed_square_section_ids_from_payload(input_payload):
-            parsed = parse_square_section_name(str(section_name))
-            if parsed and parsed.estimated_bending_section_modulus_mm3 > current.estimated_bending_section_modulus_mm3:
-                larger_allowed_exists = True
-                break
     for check in validation.get("checks") or []:
         if check.get("check_id") == "evaluation_ratio_limit" and check.get("status") == "fail":
             evidence = check.get("evidence") or []
-            if any("square_support" in str(item.get("check_id") or "") for item in evidence if isinstance(item, dict)):
-                return True
-            if auto_square_section and larger_allowed_exists:
+            section_ratio_failed = any(
+                is_section_selection_evaluation_row(item) for item in evidence if isinstance(item, dict)
+            )
+            if section_ratio_failed:
                 return True
     return False
 
@@ -720,7 +747,7 @@ def result_validation_needs_square_section_clean_reselection(job_dir: Path | str
     return False
 
 
-def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool = False) -> float | None:
+def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool = False, section_selection_only: bool = False) -> float | None:
     validation_path = Path(job_dir) / "result_validation.json"
     if not validation_path.exists():
         return None
@@ -737,6 +764,8 @@ def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool =
                 continue
             if square_support_only and "square_support" not in str(item.get("check_id") or ""):
                 continue
+            if section_selection_only and not is_section_selection_evaluation_row(item):
+                continue
             try:
                 ratios.append(float(item.get("ratio")))
             except (TypeError, ValueError):
@@ -746,6 +775,10 @@ def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool =
 
 def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
     return _failed_evaluation_ratio(job_dir, square_support_only=True)
+
+
+def _failed_section_selection_ratio(job_dir: Path | str) -> float | None:
+    return _failed_evaluation_ratio(job_dir, section_selection_only=True)
 
 
 def _trial_root(job_dir: Path) -> Path:
@@ -835,16 +868,14 @@ def _first_candidate_at_or_above(
 
 def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
-    tray_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    tray_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
     for layer in tray_layers:
-        if not isinstance(layer, dict):
-            continue
-        width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+        width = _layer_width_mm(layer)
         if width is not None:
             widths.append(width)
-        load = _as_float(layer.get("load_kg_m") or layer.get("line_load_kg_m") or layer.get("mass_per_m_kg"))
+        load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
     declared_layers = len(tray_layers) or int(_as_float(support.get("layers_front")) or 0) + int(_as_float(support.get("layers_back")) or 0)
@@ -1440,7 +1471,7 @@ def upgrade_square_section_after_ratio_fail(
     ]
     candidates, allowed_square_section_filter = _filter_allowed_square_candidates(candidates, input_payload)
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
-    failed_ratio = _failed_square_support_ratio(job_dir) or _failed_evaluation_ratio(job_dir)
+    failed_ratio = _failed_section_selection_ratio(job_dir) or _failed_square_support_ratio(job_dir)
     estimated_required_modulus = None
     skipped_by_estimate = 0
     if not allowed_filter_applied and failed_ratio and failed_ratio > 1.0 and current_modulus > 0:

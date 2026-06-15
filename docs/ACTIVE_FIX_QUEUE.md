@@ -1,4 +1,46 @@
 # CableTrayAI ??????
+## 2026-06-15 unit jobs square-section and bolt-width policy closeout
+
+Resolved:
+
+1. Fixed square-section sizing ratio basis. Candidate acceptance, selection summary, result-validity trial/final comparison, final over-limit upgrade trigger, and learned formal validation now use Chapter 6.1 structural member rows only.
+2. Weld and bolt checks remain final result gates but no longer drive square-tube enlargement/economy selection.
+3. Bumped learned square-section cache to `square-section-cache-v7-section-6-1-ratio`, so old cache evidence cannot skip fresh trials.
+4. Fixed standard S2 single-width/no-L6 `L3` geometry rule: `<=120 mm -> 0.20 m`, `>120 mm -> 0.15 m`.
+5. Fixed bolt-width policy beyond area replacement: M8 `36.6 mm2` for `<=200 mm` uses workbook `螺栓 200` single-bolt equations; M12 `84.3 mm2` for `300/500/600 mm` uses workbook two-bolt/lever-arm equations with L `0.241/0.441/0.541 m`.
+6. Verified copied unit job evidence: 4210/4215 old stored selected ratios were stale or non-section-sizing ratios; new Chapter 6.1 ratios are much lower. 4212 latest copied folder was operator-cancelled before evaluation summary and is incomplete runtime evidence.
+7. Verification passed: targeted tests and full `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No package blocker remains for the 2026-06-15 square-section/L3/M8-M12 fix. The refreshed full deployment package is `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; the refreshed update package is `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; package gate and update self-verification both passed. Local `D:/CableTrayAI` was updated from this package and passed health/login/hash smoke.
+
+## 2026-06-12 AI PPT专题交付复核 closeout
+
+Resolved:
+
+1. 重新完成 AI/智能化专题汇报 PPT，并复制到 `C:/Users/duxy/Desktop/核电工艺所人工智能应用汇报-AI智能化专题.pptx`。
+2. 第 7 页已嵌入完整 16:9 真实软件演示视频，避免遮挡、裁切和局部截图；独立视频备份为 `C:/Users/duxy/Desktop/CableTrayAI_对话提资完整演示.mp4`。
+3. 生成可编辑 Visio 流程源文件 `C:/Users/duxy/Desktop/CableTrayAI_flow_source.vsdx`，包含 AI 数据闭环、可学习/自恢复、多科室协同 3 页。
+4. 交付 QA 通过：桌面 PPT 可由 PowerPoint 打开，`slides=10`，`media_shapes=1`，`slide7_media=1`；占位符扫描通过；Visio 源文件可打开且页数为 3。
+
+Open queue:
+
+1. 本次 PPT 交付无阻塞项。若转移到其他电脑，保留独立 MP4 与 PPT 同目录作为播放兜底。
+
+## 2026-06-12 PPT/demo closeout
+
+Resolved:
+
+1. Built the 河北省军工杯汇报 deck and copied final deliverables to Desktop.
+2. Fixed two demo blockers in source and installed copy: JSON-safe `/ai/intake/start-run` responses and `source_package_id=null` for chat-intake real-run startup.
+3. Real demo job `CHAT-20260612-f2317f9b9b` completed with ANSYS success, selected `140-140-8`, controlling ratio `0.9074547160463298`, and `result_publishable=true`.
+4. PPT QA passed: PowerPoint opens the Desktop deck, 10 slides are present, one embedded media shape is present, and placeholder scan is clean.
+
+Open queue:
+
+1. No blocker remains for the PPT deliverable. If the deck is moved to another computer, keep the standalone MP4 beside it as a playback fallback even though the PPT contains an embedded media part.
+
 ## 2026-06-12 unit jobs self-recovery closeout
 
 Resolved in source and verified with real ANSYS:

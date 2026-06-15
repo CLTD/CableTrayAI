@@ -6,7 +6,7 @@ from pathlib import Path
 from core.optimizer.square_section_summary import write_square_section_selection_summary
 
 
-def test_square_section_summary_prefers_formal_chapter6_ratio(tmp_path: Path) -> None:
+def test_square_section_summary_prefers_formal_section_6_1_ratio(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     job_dir.mkdir()
     (job_dir / "generated_model.mac").write_text("SECREAD,120-120-6,SECT\n", encoding="utf-8")
@@ -42,11 +42,13 @@ def test_square_section_summary_prefers_formal_chapter6_ratio(tmp_path: Path) ->
 
     summary = write_square_section_selection_summary(job_dir)
 
-    assert summary["controlling_ratio"] == 0.22
-    assert summary["final_controlling_ratio"] == 0.22
+    assert summary["controlling_ratio"] == 0.15
+    assert summary["final_controlling_ratio"] == 0.15
+    assert summary["final_section_selection_ratio"] == 0.15
+    assert summary["final_chapter6_controlling_ratio"] == 0.22
     assert summary["final_square_support_ratio"] == 0.15
     assert summary["trial_controlling_ratio"] == 0.98
-    assert summary["ratio_source"] == "evaluation_summary.json"
+    assert summary["ratio_source"] == "evaluation_summary.json:Chapter 6.1 structural member ratios"
     assert summary["ratio_consistency_status"] == "fail"
     assert summary["status"] == "fail"
     assert summary["selection_acceptance"] == "fail"

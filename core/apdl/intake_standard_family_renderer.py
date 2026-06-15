@@ -214,6 +214,12 @@ def _arm_section_family(payload: dict[str, Any]) -> tuple[str, str, str]:
     return "50-42", "CAOGANG42DAN", "square_le_120_standard_channel_family"
 
 
+def _single_width_family_l3_from_square(square_outer_mm: float) -> tuple[float, str]:
+    if square_outer_mm > 120.0:
+        return 0.15, "square_outer_width_gt_120_l3_0p15m"
+    return 0.20, "square_outer_width_le_120_l3_0p20m"
+
+
 def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     support = payload.get("support") or {}
     front = int(support.get("layers_front") or 0)
@@ -753,6 +759,8 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     }
     has_source_span_l6 = source_assignments.get("L6") is not None
     source_has_multi_width_geometry = len(source_tray_widths) > 1
+    square_outer_mm = _square_outer_width_mm_from_payload(payload)
+    section_l3_value, section_l3_policy = _single_width_family_l3_from_square(square_outer_mm)
 
     rendered = text
     rendered = _replace_nth_secread(rendered, 0, support_section)
@@ -778,10 +786,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             float(primary_width / 1000.0),
             4,
         )
-        assigned_l3 = round(
-            float(source_assignments["L3"] if source_assignments.get("L3") is not None else (primary_arm_tail or 0.2)),
-            4,
-        )
+        assigned_l3 = round(float(section_l3_value), 4)
         assigned_l4 = round(float(support.get("support_spacing_m") or source_assignments.get("L4") or 2.0), 4)
         assigned_l5 = source_assignments.get("L5")
         assigned_l6 = source_assignments.get("L6")
@@ -863,6 +868,15 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             "L6": assigned_l6,
             "senum": assigned_senum,
             "senum1": assigned_senum1,
+        },
+        "l3_policy": {
+            "status": section_l3_policy if not has_source_span_l6 else "source_multi_width_l3_tracks_primary_tray_width",
+            "square_outer_width_mm": square_outer_mm,
+            "applied_to": "L3" if not has_source_span_l6 else None,
+            "policy": (
+                "For single-width/no-L6 standard S2 model families, L3 follows square tube outer width: "
+                "<=120 mm uses 0.20 m and >120 mm uses 0.15 m. Multi-width source families keep L3/L4 as tray-width parameters."
+            ),
         },
         "keypoint_numbering": keypoint_numbering,
         "policy": "The reviewed source command family supplies topology and command structure only. Tray width, tray SECREAD names, tray material densities, span-width L parameters, and layer-count parameters are rewritten from the current intake so a 500 mm tray is modeled as the 500 tray section even when the historical source family used another width.",

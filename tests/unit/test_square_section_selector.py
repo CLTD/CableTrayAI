@@ -406,10 +406,33 @@ def test_candidate_ratio_uses_fresh_evaluation_summary_when_validation_ratio_evi
     )
 
     assert result["status"] == "pass"
-    assert result["controlling_ratio"] == 0.99
-    assert result["dominant_check_id"] == "weld_force_raw_faulted_weld_equivalent"
+    assert result["controlling_ratio"] == 0.88
+    assert result["final_chapter6_controlling_ratio"] == 0.99
+    assert result["dominant_check_id"] == "square_support.fresh"
     assert result["validation_ratio_limit_ratio"] == 1.01
     assert result["validation_ratio_limit_status"] == "ignored_for_candidate_ratio_recomputed_from_evaluation_summary"
+
+
+def test_candidate_ratio_ignores_weld_when_sizing_square_section(tmp_path: Path) -> None:
+    trial_dir = tmp_path / "trial"
+    trial_dir.mkdir()
+    (trial_dir / "result_validation.json").write_text(
+        json.dumps({"status": "pass", "checks": [{"check_id": "evaluation_ratio_limit", "status": "pass"}]}),
+        encoding="utf-8",
+    )
+
+    result = candidate_publishable_ratio(
+        trial_dir,
+        [
+            {"check_id": "mixed_beam_type_1.support_tension_bending_combined_accident", "component": "mixed_beam_type_1", "ratio": 0.42},
+            {"check_id": "weld_force_raw_faulted_weld_equivalent", "ratio": 0.97},
+        ],
+    )
+
+    assert result["status"] == "pass"
+    assert result["controlling_ratio"] == 0.42
+    assert result["final_chapter6_controlling_ratio"] == 0.97
+    assert result["dominant_check_id"] == "mixed_beam_type_1.support_tension_bending_combined_accident"
 
 
 def test_smart_jump_skips_only_after_failed_square_support_ratio(tmp_path: Path) -> None:

@@ -135,6 +135,22 @@ def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> Non
 
 def _atomic_write_json(path: Path, payload) -> None:
     _atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _json_safe(value):
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, set):
+        return [_json_safe(item) for item in sorted(value, key=str)]
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
 from core.security.auth import (
     COOKIE_NAME,
     SESSION_TTL_SECONDS,
@@ -490,10 +506,11 @@ def _set_run(run_id: str, **updates) -> dict:
             # For the same run, progress is a state indicator and must not move backwards.
             cap = _progress_cap(incoming_stage, incoming_status)
             updates["progress"] = min(max(previous_progress, incoming_progress), cap)
-        current.update(updates)
+        current.update(_json_safe(updates))
         current["updated_at"] = _now()
-        _atomic_write_json(APP_ROOT / "docs" / "web_runs" / f"{run_id}.json", current)
-        return dict(current)
+        safe_current = _json_safe(current)
+        _atomic_write_json(APP_ROOT / "docs" / "web_runs" / f"{run_id}.json", safe_current)
+        return dict(safe_current)
 
 
 def _get_run(run_id: str) -> dict:
@@ -1724,7 +1741,7 @@ def ai_intake_start_run(payload: dict) -> dict:
         "output_root": payload.get("output_root") or DEFAULT_OUTPUT_ROOT,
         "execute_real": bool(payload.get("execute_real", True)),
         "confirm_user": payload.get("confirm_user") or "chat_intake",
-        "source_package_id": "chat_intake",
+        "source_package_id": payload.get("source_package_id"),
         "selected_row_numbers": [written["row_number"]],
         "square_section_candidate_limit": payload.get("square_section_candidate_limit"),
         "allow_exact_result_reuse": bool(payload.get("allow_exact_result_reuse", False)),
@@ -1732,13 +1749,10 @@ def ai_intake_start_run(payload: dict) -> dict:
     run = start_one_click_run(run_payload)
     return {
         "status": "queued",
-        "draft": draft,
-        "intake_workbook": written,
-        "run": run,
-        "run_payload": {
-            key: str(value) if isinstance(value, Path) else value
-            for key, value in run_payload.items()
-        },
+        "draft": _json_safe(draft),
+        "intake_workbook": _json_safe(written),
+        "run": _json_safe(run),
+        "run_payload": _json_safe(run_payload),
     }
 
 

@@ -282,6 +282,62 @@ def test_standard_family_keeps_500_tray_slots_when_source_places_trays_before_ar
     assert audit["section_role_map"]["tray_equivalent_sections"][0]["section"] == "500-75-2mm"
 
 
+def test_single_width_family_l3_tracks_square_width_le_120() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.12",
+            "H2=2.1",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.15",
+            "L4=2.0",
+            "senum=3",
+            "senum1=3",
+            "SECREAD,'120-120-8'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'CAOGANG42DAN'",
+        ]
+    )
+    payload = _double_three_by_three_500_payload()
+    payload["support"]["square_tube_width_m"] = 0.12
+    payload["sections"][0]["sect_file"] = "120-120-8.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L3=0.2" in rendered
+    assert audit["assigned"]["L3"] == 0.2
+    assert audit["l3_policy"]["status"] == "square_outer_width_le_120_l3_0p20m"
+
+
+def test_single_width_family_l3_tracks_square_width_gt_120() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.14",
+            "H2=2.1",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=3",
+            "senum1=3",
+            "SECREAD,'140-140-8'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'500-75-2mm'",
+            "SECREAD,'YIXINGGANG150DAN'",
+        ]
+    )
+    payload = _double_three_by_three_500_payload()
+    payload["support"]["square_tube_width_m"] = 0.14
+    payload["sections"][0]["sect_file"] = "140-140-8.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L3=0.15" in rendered
+    assert audit["assigned"]["L3"] == 0.15
+    assert audit["l3_policy"]["status"] == "square_outer_width_gt_120_l3_0p15m"
+
+
 def test_standard_family_expands_keypoint_numbering_for_twelve_layers() -> None:
     rendered, audit = _render_model_from_family(_high_layer_source_text(), _double_layer_payload(12))
 
