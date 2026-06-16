@@ -906,3 +906,30 @@ Deployment queue status: completed.
 
 1. Full package and update package are refreshed in `C:/Users/duxy/Desktop/duxyb-cnpe`.
 2. Local `D:/CableTrayAI` update is applied; exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
+## 2026-06-16 mixed tray-width modeling closeout
+
+Resolved in source:
+
+1. Mixed tray-width front/back layouts no longer reuse one maximum tray-width geometry for every layer. `core/apdl/mixed_tray_model.py` renders each layer independently so combinations such as single-side `300+600` preserve the correct tray width, load density, arm length split, bolt topology, and post-processing trace points.
+2. The 600 mm tray intake split is now `0.47+0.20`, so the generated model no longer carries the incorrect `0.22m` tail raised during review.
+3. `core/apdl/intake_standard_family_renderer.py` keeps standard source-family solve/post references but bypasses the old source-family model geometry when a valid mixed-width layer payload is detected.
+4. Unit regression coverage now checks `300+600` rendering, 300/600 SECT inclusion, CSOLID bolt creation, 600 mm tail geometry, and the audit marker proving shared-maximum geometry is not used.
+5. Learning caches were updated from the successful real ANSYS case so future similar NX mixed-width jobs can order square-section and MT choices from validated evidence.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/mixed_tray_model.py core/apdl/intake_standard_family_renderer.py core/intake/tray_load_parser.py` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_tray_load_parser.py tests/unit/test_intake_standard_family_tray_widths.py -q` returned `28 passed`.
+3. Real ANSYS18.2 passed for NX, `-8.8m`, single-side two layers `300+600`, support spacing `2m`, square-support height `2.2m`, response spectrum. Selected section: `100-100-6`; controlling ratio: `0.418410665203697`.
+
+Operator artifact:
+
+1. Full copied result folder: `C:/Users/duxy/Desktop/NX_-8.8m_single_300_600_results_20260616_171205`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; installed source hash matches repository source for the mixed tray-width renderer, intake renderer, and tray parser changes.

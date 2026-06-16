@@ -9,6 +9,10 @@ def test_tray_load_parser_preserves_500_and_600_widths_from_intake_text() -> Non
 
     parsed_600 = parse_tray_load_description("单侧2层600")
     assert [layer["tray_section_file"] for layer in parsed_600["layers"]] == ["600-75-2mm"] * 2
+    assert [(layer["arm_a_length_m"], layer["arm_b_length_m"]) for layer in parsed_600["layers"]] == [
+        (0.47, 0.20),
+        (0.47, 0.20),
+    ]
 
 
 def test_tray_load_parser_splits_mixed_500_and_600_slots_without_width_bleed() -> None:

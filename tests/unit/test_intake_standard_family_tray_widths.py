@@ -9,6 +9,7 @@ from core.apdl.intake_standard_family_renderer import (
     _render_solve_from_source,
     _standard_family_keypoint_numbering,
 )
+from core.apdl.mixed_tray_model import render_mixed_tray_layer_model, should_use_mixed_tray_layer_renderer
 from core.apdl.modal_policy import parse_source_modal_mode_count
 from core.apdl.intake_template_context import build_standard_s2_template_context
 
@@ -119,6 +120,44 @@ def _single_two_layer_600_payload() -> dict:
             {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
         ],
         "tray_layers": tray_layers,
+    }
+
+
+def _single_two_layer_mixed_300_600_payload() -> dict:
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 2,
+            "layers_back": 0,
+            "support_height_m": 2.2,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "100-100-6.SECT"},
+            {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+            {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+        ],
+        "tray_layers": [
+            {
+                "side": "front",
+                "layer_index": 1,
+                "tray_width_m": 0.3,
+                "tray_density_kg_m3": 44315.0,
+                "tray_section_id": "tray-300",
+                "arm_a_length_m": 0.20,
+                "arm_b_length_m": 0.15,
+            },
+            {
+                "side": "front",
+                "layer_index": 2,
+                "tray_width_m": 0.6,
+                "tray_density_kg_m3": 65423.0,
+                "tray_section_id": "tray-600",
+                "arm_a_length_m": 0.47,
+                "arm_b_length_m": 0.20,
+            },
+        ],
     }
 
 
@@ -342,6 +381,26 @@ def test_mixed_width_single_source_uses_governing_max_width_geometry_not_first_w
     assert audit["model_geometry_widths_mm"] == [500]
     assert audit["material_slot_widths_mm"] == [500]
     assert audit["shared_max_width_geometry"]["status"] == "applied"
+
+
+def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology() -> None:
+    payload = _single_two_layer_mixed_300_600_payload()
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert should_use_mixed_tray_layer_renderer(payload)
+    assert "SECREAD,'300-75-2mm'" in rendered
+    assert "SECREAD,'600-75-2mm'" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID" in rendered
+    assert "SECDATA,0.006" in rendered
+    assert "K,516" in rendered
+    assert "K,526" in rendered
+    assert "K,529" in rendered
+    assert "0.52" in rendered
+    assert audit["shared_max_width_geometry"]["status"] == "not_used"
+    assert audit["model_geometry_widths_mm"] == [300, 600]
+    layer2 = [item for item in audit["layer_geometry"] if item["layer_index"] == 2][0]
+    assert layer2["l3_tail_m"] == 0.2
 
 
 def test_single_width_family_l3_tracks_square_width_le_120() -> None:

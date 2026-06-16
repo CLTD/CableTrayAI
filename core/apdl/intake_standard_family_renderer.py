@@ -20,6 +20,10 @@ from core.apdl.modal_policy import (
     parse_source_modal_mode_count,
     rewrite_modal_mode_count,
 )
+from core.apdl.mixed_tray_model import (
+    render_mixed_tray_layer_model,
+    should_use_mixed_tray_layer_renderer,
+)
 from core.apdl.section_specific_export import augment_square_support_export
 from core.apdl.section_offsets import normalize_yixing_arm_secoffset
 from core.apdl.source_diff import read_text_with_encoding
@@ -1698,7 +1702,16 @@ def render_intake_standard_family_commands(
     source_root = Path(source_root)
     family = select_standard_model_family(payload, source_root)
     source_text, encoding = read_text_with_encoding(Path(family["source"]))
-    rendered_model, parameter_audit = _render_model_from_family(source_text, payload)
+    if should_use_mixed_tray_layer_renderer(payload):
+        rendered_model, parameter_audit = render_mixed_tray_layer_model(payload)
+        parameter_audit["source_family_model_status"] = "bypassed_for_mixed_tray_layer_renderer"
+        parameter_audit["source_family_reference"] = {
+            "source": family["source"],
+            "source_sha256": family.get("source_sha256"),
+            "policy": "Mixed tray layer geometry is generated per layer; selected source family remains the audited solve/post reference.",
+        }
+    else:
+        rendered_model, parameter_audit = _render_model_from_family(source_text, payload)
     required_tray_sections = _required_tray_sections_from_payload(payload)
     missing_required_tray_sections = _missing_required_sections_in_text(rendered_model, required_tray_sections)
     if missing_required_tray_sections:
@@ -1713,7 +1726,7 @@ def render_intake_standard_family_commands(
         parameter_audit["status"] = "fallback_template" if not fallback_missing else "fail"
         rendered_model = fallback_model
     else:
-        parameter_audit["source_family_model_status"] = "pass"
+        parameter_audit.setdefault("source_family_model_status", "pass")
         parameter_audit["status"] = "pass"
     (job_dir / "generated_model.mac").write_text(rendered_model, encoding="utf-8", newline="\n")
     keypoint_guard_audit = guard_undefined_keypoint_coordinate_refs(job_dir / "generated_model.mac")
