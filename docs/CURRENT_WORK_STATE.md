@@ -1,4 +1,34 @@
 # CableTrayAI ??????
+## 2026-06-16 mixed tray line-id standardization closeout
+
+Current latest source/validation state:
+
+1. The mixed tray-width renderer now follows the reviewed seven-layer mixed-width APDL pattern more closely.
+2. `core/apdl/mixed_tray_model.py` drives mixed geometry with per-layer arrays for tray width, total arm length, tail length, tray offset, and width code.
+3. Every generated support, arm, tray, and bolt line is captured immediately with `*GET,_LNEW,LINE,0,NUM,MAX`.
+4. Meshing now uses recorded `LS_SUP`, `LS_ARM`, `LS_TRAY`, and `LS_BOLT` line-id groups instead of geometry-location reselection. This avoids mixed-width ambiguity when 300/500/600 or other widths are combined.
+5. The 300 mm topology branch remains explicit, and the small-tray and wide-tray branches remain separate.
+6. The same mechanism applies to single-side and double-side mixed layouts; it is no longer tied to one hardcoded seven-layer example.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/mixed_tray_model.py` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q` passed.
+3. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+4. Hardcode scan over runtime core/apps/templates had no hits for the desktop review macro or validation-only job names; `source_materials` remains unchanged.
+5. Real ANSYS18.2 validation passed under `jobs/validation_mixed_lineid_real_20260616`.
+6. `18185NI-LXSJ4214` selected `100-100-8`, final Chapter 6.1 controlling ratio `0.8607844777148501`, `result_validation.status=pass`.
+7. `18185NI-LXSJ4215` selected `120-120-10`, final Chapter 6.1 controlling ratio `0.9660705625785098`, `result_validation.status=pass`.
+
+Deployment closeout:
+
+1. Server, desktop, and installer runtimes were rebuilt.
+2. Full package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+3. Update package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+4. External `.sha256.txt` sidecars were refreshed beside both zip files and are the transfer authority; exact zip hashes are intentionally not embedded in packaged docs to avoid self-referential hash churn.
+5. The update was applied to local `D:/CableTrayAI`; the exact latest backup path is recorded by the installer in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+6. Local smoke passed: `/health` returned `ok`, `duxyb/cnpe123` login returned `pass`, and source/package/installed hashes match for the mixed renderer and recovery docs.
+
 ## 2026-06-16 seven-intake layer parsing and preview closeout
 
 Current latest source/validation state:

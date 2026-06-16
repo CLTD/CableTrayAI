@@ -403,7 +403,12 @@ def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology(
     assert "K,506+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
     assert "K,516" not in rendered
     assert audit["shared_max_width_geometry"]["status"] == "not_used"
-    assert audit["command_style"]["status"] == "loop_parameterized"
+    assert audit["command_style"]["status"] == "loop_parameterized_line_id_grouped"
+    assert "*DIM,LS_ARM,ARRAY" in rendered
+    assert "*GET,_LNEW,LINE,0,NUM,MAX" in rendered
+    assert "LS_TRAY(NTRAY)=_LNEW" in rendered
+    assert "LS_BOLT(NBOLT)=_LNEW" in rendered
+    assert "LSEL,S,LINE,,LS_ARM(I)" in rendered
     assert audit["secondary_arm_offset_policy"] == "channel_secondary_arm_offset_minus_0p03249"
     assert audit["model_geometry_widths_mm"] == [300, 600]
     bottom_layer = [item for item in audit["layer_geometry"] if item["model_layer_index"] == 1][0]

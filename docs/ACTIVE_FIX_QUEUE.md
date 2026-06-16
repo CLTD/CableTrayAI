@@ -1,4 +1,21 @@
 # CableTrayAI ??????
+## 2026-06-16 mixed tray line-id standardization closeout
+
+Resolved in source and verified:
+
+1. Mixed tray-width APDL generation now uses per-layer arrays plus recorded line-id groups, matching the reviewed standardized seven-layer style while remaining generic for new single-side and double-side mixed intakes.
+2. Support, arm, tray, and bolt lines are recorded with `*GET,_LNEW,LINE,0,NUM,MAX` and later meshed through `LS_SUP`, `LS_ARM`, `LS_TRAY`, and `LS_BOLT`.
+3. This removes the old geometry-location reselection ambiguity that could miss layers or select the wrong line group in mixed 300/500/600 layouts.
+4. The explicit 300 mm topology, 200/100 small-tray branch, wider-tray branch, and channel/non-channel secondary-arm offset policies are preserved.
+5. Verification passed: py_compile, targeted mixed tray tests, full `tests/unit`, hardcode/source_materials checks, and real ANSYS18.2 validation for 4214 and 4215 under `jobs/validation_mixed_lineid_real_20260616`.
+
+Deployment queue status: completed.
+
+1. Full package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. External `.sha256.txt` sidecars beside both zip files are the transfer authority.
+4. Local `D:/CableTrayAI` was updated from the refreshed update package; `/health`, `duxyb/cnpe123` login, and source/package/installed hash checks passed.
+
 ## 2026-06-16 seven-intake layer parsing and preview closeout
 
 Resolved in source and verified:

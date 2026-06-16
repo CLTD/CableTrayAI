@@ -114,17 +114,6 @@ def _num(value: float) -> str:
     return f"{float(value):.6f}".rstrip("0").rstrip(".")
 
 
-def _mesh_selected(lines: list[str], *, material: int, etype: int, section: int, size: float) -> None:
-    lines.extend(
-        [
-            f"LATT,{material},,{etype},,,,{section}",
-            f"LESIZE,ALL,{_num(size)},,,,,,,1",
-            "LMESH,ALL",
-            "ALLSEL",
-        ]
-    )
-
-
 def _secondary_arm_secoffset(secondary_arm: str) -> tuple[str, str]:
     if str(secondary_arm or "").upper() == "CAOGANG42DAN":
         return "SECOFFSET,user,,-0.03249", "channel_secondary_arm_offset_minus_0p03249"
@@ -170,19 +159,27 @@ def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str
             f"*DIM,{prefix}W,ARRAY,{len(layers)}",
             f"*DIM,{prefix}A,ARRAY,{len(layers)}",
             f"*DIM,{prefix}B,ARRAY,{len(layers)}",
+            f"*DIM,{prefix}ALEN,ARRAY,{len(layers)}",
+            f"*DIM,{prefix}L3A,ARRAY,{len(layers)}",
             f"*DIM,{prefix}DENS,ARRAY,{len(layers)}",
             f"*DIM,{prefix}TOFF,ARRAY,{len(layers)}",
+            f"*DIM,{prefix}CODE,ARRAY,{len(layers)}",
         ]
     )
     for index, layer in enumerate(layers, start=1):
         width = _width_mm(layer)
+        arm_a = float(layer.get("arm_a_length_m") or 0.0)
+        arm_b = float(layer.get("arm_b_length_m") or 0.0)
         lines.extend(
             [
                 f"{prefix}W({index})={_num(width / 1000.0)}",
-                f"{prefix}A({index})={_num(float(layer.get('arm_a_length_m') or 0.0))}",
-                f"{prefix}B({index})={_num(float(layer.get('arm_b_length_m') or 0.0))}",
+                f"{prefix}A({index})={_num(arm_a)}",
+                f"{prefix}B({index})={_num(arm_b)}",
+                f"{prefix}ALEN({index})={_num(arm_a + arm_b)}",
+                f"{prefix}L3A({index})={_num(arm_b)}",
                 f"{prefix}DENS({index})={_num(float(layer.get('tray_density_kg_m3') or 0.0))}",
                 f"{prefix}TOFF({index})={_num(_tray_offset_m(width))}",
+                f"{prefix}CODE({index})={width}",
             ]
         )
 
@@ -193,9 +190,9 @@ def _append_side_keypoint_loop(lines: list[str], *, side: str, layer_count: int,
     front = side == "front"
     base = "500" if front else "KPBKBASE"
     x_root = "H1/2" if front else "-H1/2"
-    x_bolt = f"H1/2+{prefix}A(I)+{prefix}B(I)-{prefix}W(I)/2"
-    x_tail = f"H1/2+{prefix}A(I)"
-    x_end = f"H1/2+{prefix}A(I)+{prefix}B(I)"
+    x_bolt = f"H1/2+{prefix}ALEN(I)-{prefix}W(I)/2"
+    x_tail = f"H1/2+{prefix}ALEN(I)-{prefix}L3A(I)"
+    x_end = f"H1/2+{prefix}ALEN(I)"
     if not front:
         x_bolt = f"-({x_bolt})"
         x_tail = f"-({x_tail})"
@@ -214,12 +211,16 @@ def _append_side_keypoint_loop(lines: list[str], *, side: str, layer_count: int,
             "QZ=0.1+0.2*(I-1)",
             f"QTRAYZ=QZ+{prefix}TOFF(I)",
             "QBOLTZ=QZ+0.05",
+            f"QET={10 if front else 200}*I",
             f"QXBOLT={x_bolt}",
             f"QXTAIL={x_tail}",
             f"QXEND={x_end}",
             f"*IF,{prefix}W(I),LE,0.2,THEN",
             "QX2=QXTAIL",
             "QX3=QXBOLT",
+            f"*ELSEIF,{prefix}CODE(I),EQ,300,THEN",
+            "QX2=QXBOLT",
+            "QX3=QXEND",
             "*ELSE",
             "QX2=QXBOLT",
             "QX3=QXTAIL",
@@ -233,85 +234,69 @@ def _append_side_keypoint_loop(lines: list[str], *, side: str, layer_count: int,
             f"K,{kid(8)},QXBOLT,L4/2+L4*(J-1),QTRAYZ",
             f"K,{kid(9)},QXBOLT,L4*(J-1),QBOLTZ",
             f"L,{kid(1)},{kid(2)}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NARM=NARM+1",
+            "LS_ARM(NARM)=_LNEW",
+            "ARM_ET(NARM)=QET+2",
+            "ARM_SEC(NARM)=QET+2",
             "*IF,ABS(QX2-QX3),GT,1E-8,THEN",
             f"L,{kid(2)},{kid(3)}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NARM=NARM+1",
+            "LS_ARM(NARM)=_LNEW",
+            "ARM_ET(NARM)=QET+3",
+            "ARM_SEC(NARM)=QET+3",
             "*ENDIF",
+            "*IF,ABS(QX3-QXEND),GT,1E-8,THEN",
             f"L,{kid(3)},{kid(4)}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NARM=NARM+1",
+            "LS_ARM(NARM)=_LNEW",
+            "ARM_ET(NARM)=QET+3",
+            "ARM_SEC(NARM)=QET+3",
+            "*ENDIF",
             f"L,{kid(6)},{kid(7)}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NTRAY=NTRAY+1",
+            "LS_TRAY(NTRAY)=_LNEW",
+            "TRAY_ET(NTRAY)=QET+4",
+            "TRAY_SEC(NTRAY)=QET+4",
+            "TRAY_MAT(NTRAY)=QET+4",
             f"L,{kid(7)},{kid(8)}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NTRAY=NTRAY+1",
+            "LS_TRAY(NTRAY)=_LNEW",
+            "TRAY_ET(NTRAY)=QET+4",
+            "TRAY_SEC(NTRAY)=QET+4",
+            "TRAY_MAT(NTRAY)=QET+4",
             f"*IF,{prefix}W(I),LE,0.2,THEN",
             f"L,{kid(3)},{kid(9)}",
             "*ELSE",
             f"L,{kid(2)},{kid(9)}",
             "*ENDIF",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NBOLT=NBOLT+1",
+            "LS_BOLT(NBOLT)=_LNEW",
             "*ENDDO",
             "*ENDDO",
         ]
     )
 
 
-def _append_side_mesh_loop(lines: list[str], *, side: str, layer_count: int, prefix: str) -> None:
+def _append_side_coupling_loop(lines: list[str], *, side: str, layer_count: int, prefix: str) -> None:
     if layer_count <= 0:
         return
     front = side == "front"
-    et_expr = "10*I" if front else "200*I"
-    x_root = "H1/2" if front else "-H1/2"
-    x_bolt_unsigned = f"H1/2+{prefix}A(I)+{prefix}B(I)-{prefix}W(I)/2"
-    x_tail_unsigned = f"H1/2+{prefix}A(I)"
-    x_end_unsigned = f"H1/2+{prefix}A(I)+{prefix}B(I)"
+    x_bolt_unsigned = f"H1/2+{prefix}ALEN(I)-{prefix}W(I)/2"
     x_bolt = x_bolt_unsigned if front else f"-({x_bolt_unsigned})"
-    x_tail = x_tail_unsigned if front else f"-({x_tail_unsigned})"
-    x_end = x_end_unsigned if front else f"-({x_end_unsigned})"
 
     lines.extend(
         [
-            f"! {side} mixed tray layers: looped meshing by per-layer section/material ids.",
+            f"! {side} mixed tray layers: looped tray/bolt coupling by per-layer bolt position.",
             f"*DO,I,1,{layer_count}",
-            f"QET={et_expr}",
             "QZ=0.1+0.2*(I-1)",
             f"QTRAYZ=QZ+{prefix}TOFF(I)",
-            "QBOLTZ=QZ+0.05",
             f"QXBOLT={x_bolt}",
-            f"QXTAIL={x_tail}",
-            f"QXEND={x_end}",
-            "QXLO=MIN(QXTAIL,H1/2)",
-            "QXHI=MAX(QXTAIL,H1/2)",
-        ]
-    )
-    if not front:
-        lines[-2] = "QXLO=MIN(QXTAIL,-H1/2)"
-        lines[-1] = "QXHI=MAX(QXTAIL,-H1/2)"
-    lines.extend(
-        [
-            "ALLSEL",
-            "LSEL,S,LOC,X,QXLO,QXHI",
-            "LSEL,R,LOC,Z,QZ",
-            "LSEL,U,LOC,X,QXBOLT",
-            "LATT,1,,QET+2,,,,QET+2",
-            "LESIZE,ALL,0.02,,,,,,,1",
-            "LMESH,ALL",
-            "ALLSEL",
-            "QXLO=MIN(QXTAIL,QXEND)",
-            "QXHI=MAX(QXTAIL,QXEND)",
-            "*IF,ABS(QXTAIL-QXEND),GT,1E-8,THEN",
-            "LSEL,S,LOC,X,QXLO,QXHI",
-            "LSEL,R,LOC,Z,QZ",
-            "LATT,1,,QET+3,,,,QET+3",
-            "LESIZE,ALL,0.02,,,,,,,1",
-            "LMESH,ALL",
-            "ALLSEL",
-            "*ENDIF",
-            "LSEL,S,LOC,X,QXBOLT",
-            "LSEL,R,LOC,Z,QTRAYZ",
-            "LATT,QET+4,,QET+4,,,,QET+4",
-            "LESIZE,ALL,0.05,,,,,,,1",
-            "LMESH,ALL",
-            "ALLSEL",
-            "LSEL,S,LOC,X,QXBOLT,QXBOLT",
-            "LSEL,R,LOC,Z,QZ,QBOLTZ",
-            "LATT,1,,4,,,,10",
-            "LESIZE,ALL,0.05,,,,,,,1",
-            "LMESH,ALL",
             "ALLSEL",
             "NSEL,S,LOC,X,QXBOLT",
             "NSEL,R,LOC,Z,QZ,QTRAYZ",
@@ -320,6 +305,49 @@ def _append_side_mesh_loop(lines: list[str], *, side: str, layer_count: int, pre
             f"CPCYC,UZ,,,,,{prefix}TOFF(I)-0.05",
             f"CPCYC,ROTY,,,,,{prefix}TOFF(I)-0.05",
             f"CPCYC,ROTZ,,,,,{prefix}TOFF(I)-0.05",
+            "ALLSEL",
+            "*ENDDO",
+        ]
+    )
+
+
+def _append_line_id_mesh_loops(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "! Mesh by recorded line ids. This avoids geometry-location reselection ambiguity in mixed-width models.",
+            "ALLSEL",
+            "LSEL,NONE",
+            "*DO,I,1,NSUP",
+            "LSEL,A,LINE,,LS_SUP(I)",
+            "*ENDDO",
+            "LATT,1,,1,,,,1",
+            "LESIZE,ALL,0.05,,,,,,,1",
+            "LMESH,ALL",
+            "ALLSEL",
+            "*DO,I,1,NARM",
+            "LSEL,S,LINE,,LS_ARM(I)",
+            "_ET=ARM_ET(I)",
+            "_SEC=ARM_SEC(I)",
+            "LATT,1,,_ET,,,,_SEC",
+            "LESIZE,ALL,0.02,,,,,,,1",
+            "LMESH,ALL",
+            "ALLSEL",
+            "*ENDDO",
+            "*DO,I,1,NTRAY",
+            "LSEL,S,LINE,,LS_TRAY(I)",
+            "_MAT=TRAY_MAT(I)",
+            "_ET=TRAY_ET(I)",
+            "_SEC=TRAY_SEC(I)",
+            "LATT,_MAT,,_ET,,,,_SEC",
+            "LESIZE,ALL,0.05,,,,,,,1",
+            "LMESH,ALL",
+            "ALLSEL",
+            "*ENDDO",
+            "*DO,I,1,NBOLT",
+            "LSEL,S,LINE,,LS_BOLT(I)",
+            "LATT,1,,4,,,,10",
+            "LESIZE,ALL,0.05,,,,,,,1",
+            "LMESH,ALL",
             "ALLSEL",
             "*ENDDO",
         ]
@@ -335,6 +363,11 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
     h2 = float(support.get("support_height_m") or 2.0)
     span = float(support.get("support_spacing_m") or 2.0)
     max_layers = max(len(front_layers), len(back_layers), 1)
+    total_side_layers = len(front_layers) + len(back_layers)
+    support_line_capacity = max(1, 3 * (max_layers + 1))
+    arm_line_capacity = max(1, 9 * total_side_layers)
+    tray_line_capacity = max(1, 6 * total_side_layers)
+    bolt_line_capacity = max(1, 3 * total_side_layers)
     numbering = {
         "keypoint_offset": 0 if max_layers <= 9 else max(20, ((max_layers + 10) // 10) * 10),
         "frame_step": 100 if max_layers <= 9 else 200,
@@ -384,6 +417,23 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
 
     _append_layer_arrays(lines, prefix="Q", layers=front_layers)
     _append_layer_arrays(lines, prefix="H", layers=back_layers)
+    lines.extend(
+        [
+            f"*DIM,LS_SUP,ARRAY,{support_line_capacity}",
+            f"*DIM,LS_ARM,ARRAY,{arm_line_capacity}",
+            f"*DIM,ARM_ET,ARRAY,{arm_line_capacity}",
+            f"*DIM,ARM_SEC,ARRAY,{arm_line_capacity}",
+            f"*DIM,LS_TRAY,ARRAY,{tray_line_capacity}",
+            f"*DIM,TRAY_MAT,ARRAY,{tray_line_capacity}",
+            f"*DIM,TRAY_ET,ARRAY,{tray_line_capacity}",
+            f"*DIM,TRAY_SEC,ARRAY,{tray_line_capacity}",
+            f"*DIM,LS_BOLT,ARRAY,{bolt_line_capacity}",
+            "NSUP=0",
+            "NARM=0",
+            "NTRAY=0",
+            "NBOLT=0",
+        ]
+    )
 
     secondary_offset_line, secondary_offset_policy = _secondary_arm_secoffset(secondary_arm)
     for side, layers in (("front", front_layers), ("back", back_layers)):
@@ -436,6 +486,9 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
             "K,500+senum+1+KPFSTEP*(J-1),0,L4*(J-1),H2",
             "*DO,I,1,senum+1",
             "L,500+(I-1)+KPFSTEP*(J-1),500+I+KPFSTEP*(J-1)",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+            "NSUP=NSUP+1",
+            "LS_SUP(NSUP)=_LNEW",
             "*ENDDO",
             "*ENDDO",
         ]
@@ -446,14 +499,11 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
     lines.extend(
         [
             "NUMMRG,KP",
-            "ALLSEL",
-            "LSEL,S,LOC,X,0",
         ]
     )
-    _mesh_selected(lines, material=1, etype=1, section=1, size=0.05)
-
-    _append_side_mesh_loop(lines, side="front", layer_count=len(front_layers), prefix="Q")
-    _append_side_mesh_loop(lines, side="back", layer_count=len(back_layers), prefix="H")
+    _append_line_id_mesh_loops(lines)
+    _append_side_coupling_loop(lines, side="front", layer_count=len(front_layers), prefix="Q")
+    _append_side_coupling_loop(lines, side="back", layer_count=len(back_layers), prefix="H")
 
     lines.extend(
         [
@@ -555,8 +605,8 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
             "policy": "For each side, mixed tray widths are modeled from wider lower layers to narrower upper layers; original layer indices are retained in layer_geometry.",
         },
         "command_style": {
-            "status": "loop_parameterized",
-            "policy": "K/L geometry, support-column lines, meshing selections, root coupling and per-layer coordinates are generated with APDL arrays and *DO loops; section/material definitions remain explicit for review.",
+            "status": "loop_parameterized_line_id_grouped",
+            "policy": "K/L geometry, support-column lines, line-id capture, meshing, root coupling and per-layer coordinates are generated with APDL arrays and *DO loops; line ids are recorded with *GET and meshed by recorded groups instead of geometry-location guesses.",
         },
         "shared_max_width_geometry": {
             "status": "not_used",
