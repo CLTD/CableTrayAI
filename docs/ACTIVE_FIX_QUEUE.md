@@ -8,6 +8,7 @@ Resolved in source and verified:
 3. Web 3D command-stream preview now evaluates APDL array variables and `ABS(...)`, so mixed-loop `generated_model.mac` files no longer preview as only two layers.
 4. 4211 ratio `0.0530209796187918` was checked as a light two-layer 100 mm double-side job with `100-100-6`; current deterministic outputs support the small ratio and do not indicate zero extraction.
 5. Real ANSYS18.2 validation passed for seven rows at `jobs/validation_layer_fix_real_20260616`: 4210, 4211, 4212, 4213, 4214, 4215, and 4220 all have `result_validation=pass`.
+6. 4215 economy follow-up is resolved: after `140-140-8` passed with ratio `0.509069498978923`, the tightened policy downshifted to `120-120-10`; real ANSYS rerun `jobs/validation_economic_downshift_real_20260616/18185NI-LXSJ4215` passed with ratio `0.9673673573968273`.
 
 Deployment queue status: completed.
 

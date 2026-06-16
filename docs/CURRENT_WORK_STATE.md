@@ -17,8 +17,9 @@ Verification:
 2. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
 3. Node syntax check for `apps/web/index.html` passed.
 4. Real ANSYS18.2 validation passed for seven rows under `jobs/validation_layer_fix_real_20260616`.
-5. Real validation summary: 4210 `120-120-6`, ratio `0.9123861426715882`; 4211 `100-100-6`, ratio `0.0530209796187918`; 4212 `100-100-6`, ratio `0.5616030578647903`; 4213 static `140-140-8`, ratio `0.779440071051453`; 4214 `100-100-8`, ratio `0.8629901759670398`; 4215 `140-140-8`, ratio `0.509069498978923`; 4220 `100-100-6`, ratio `0.1465742343488118`.
-6. All seven validation jobs have `result_validation.status=pass`.
+5. Real validation summary: 4210 `120-120-6`, ratio `0.9123861426715882`; 4211 `100-100-6`, ratio `0.0530209796187918`; 4212 `100-100-6`, ratio `0.5616030578647903`; 4213 static `140-140-8`, ratio `0.779440071051453`; 4214 `100-100-8`, ratio `0.8629901759670398`; 4220 `100-100-6`, ratio `0.1465742343488118`.
+6. 4215 was rerun after tightening the economy policy. Real ANSYS job `jobs/validation_economic_downshift_real_20260616/18185NI-LXSJ4215` first found `140-140-8` ratio `0.509069498978923`, treated it as too conservative, downshifted to `120-120-10`, and passed with ratio `0.9673673573968273`.
+7. All seven validation jobs have `result_validation.status=pass`; the latest 4215 result also has `result_validation.status=pass`.
 
 Deployment closeout:
 

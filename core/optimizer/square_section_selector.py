@@ -57,8 +57,9 @@ SECTION_RATIO_POLICY = (
     "Production economy search targets 0.60 <= ratio <= 0.9999 and must normally "
     "finish within two fresh ANSYS candidate trials; if those two fresh trials are both "
     "deterministic over-limit, the search may run up to two larger intake-allowed sections "
-    "before reporting failure. If a passed larger candidate lands in 0.60 <= ratio <= 0.75, "
-    "run one immediately lower intake-allowed section once to avoid an overly conservative selection."
+    "before reporting failure. If a passed larger candidate lands at ratio <= 0.75, "
+    "run one immediately lower intake-allowed section once to avoid an overly conservative selection; "
+    "if that lower section fails, keep the already passing larger section."
 )
 SECTION_RATIO_BASIS = (
     "evaluation_summary.json:Chapter 6.1 structural member ratios + "
@@ -72,7 +73,7 @@ def _section_ratio_audit_fields() -> dict[str, str]:
         "ratio_basis": SECTION_RATIO_BASIS,
         "chapter6_ratio_basis": "same_source_as_final_chapter6_evaluation",
         "economic_ratio_range": f"{ECONOMIC_RATIO_MIN:.2f} <= ratio <= {ECONOMIC_RATIO_MAX:.4f}",
-        "economic_downshift_ratio_range": f"{ECONOMIC_RATIO_MIN:.2f} <= ratio <= {ECONOMIC_DOWNSHIFT_RATIO_MAX:.2f}",
+        "economic_downshift_ratio_range": f"ratio <= {ECONOMIC_DOWNSHIFT_RATIO_MAX:.2f}",
         "max_economic_section_trials": str(MAX_ECONOMIC_SECTION_TRIALS),
         "overlimit_recovery_section_trials": str(OVERLIMIT_RECOVERY_SECTION_TRIALS),
         "economy_downshift_section_trials": str(ECONOMY_DOWNSHIFT_SECTION_TRIALS),
@@ -809,7 +810,7 @@ def _economic_downshift_candidate(
         ratio = float(result.get("controlling_ratio"))
     except (TypeError, ValueError):
         return None
-    if not (ECONOMIC_RATIO_MIN <= ratio <= ECONOMIC_DOWNSHIFT_RATIO_MAX):
+    if ratio <= 0.0 or ratio > ECONOMIC_DOWNSHIFT_RATIO_MAX:
         return None
     current_index = _candidate_index_by_name(catalog_candidates, current.section_name)
     if current_index is None or current_index <= 0:
@@ -828,7 +829,7 @@ def _economic_downshift_candidate(
         "current_modulus_mm3": current.estimated_bending_section_modulus_mm3,
         "next_modulus_mm3": candidate.estimated_bending_section_modulus_mm3,
         "source_ref": (
-            "passed candidate ratio is in the conservative 0.60-0.75 band; "
+            "passed candidate ratio is at or below the conservative 0.75 threshold; "
             "run exactly one immediately lower intake-allowed section before final selection"
         ),
     }
@@ -1804,7 +1805,7 @@ def run_square_section_search(
                 "economic_downshift_ratio_min": ECONOMIC_RATIO_MIN,
                 "economic_downshift_ratio_max": ECONOMIC_DOWNSHIFT_RATIO_MAX,
                 "policy": (
-                    "A passing candidate in 0.60 <= ratio <= 0.75 may be oversized. "
+                    "A passing candidate at ratio <= 0.75 may be oversized. "
                     "Run exactly one immediately lower intake-allowed section; if that lower section fails, "
                     "keep the already passing larger section."
                 ),
@@ -2110,7 +2111,7 @@ def run_square_section_search(
         "search normally runs at most two fresh ANSYS candidate trials: one first candidate and one section-modulus "
         "correction if the first ratio is outside the economy band. If both normal trials are deterministic over-limit, "
         "the search may run up to two larger intake-allowed recovery candidates. If a passing larger section lands in "
-        "0.60 <= ratio <= 0.75, the search may run exactly one immediately lower intake-allowed section as an economy "
+        "ratio <= 0.75, the search may run exactly one immediately lower intake-allowed section as an economy "
         "downshift check. If JCZH/LS-FORCE/HF-FORCE/MAX/TMAX/Mode or runtime output-growth checks fail, "
         "section sweeping stops and the source/post-processing issue must be fixed first. Feasibility is based on "
         "deterministic ratios; final report-figure checks are applied only after the selected formal run."

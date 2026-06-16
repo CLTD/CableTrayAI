@@ -588,6 +588,67 @@ def test_two_trial_economy_search_uses_one_modulus_correction_after_over_limit(t
     assert selection["economy_corrections"][0]["direction"] == "larger"
 
 
+def test_low_ratio_smart_jump_downshifts_once_before_accepting(tmp_path: Path) -> None:
+    base_job = tmp_path / "base"
+    _write_minimal_job(base_job)
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in (
+        "100-100-8",
+        "120-120-10",
+        "140-140-8",
+        "50-42",
+        "CAOGANG42DAN",
+        "YIXINGGANG150",
+        "YIXINGGANG150DAN",
+    ):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    ratios = {
+        "100-100-8": 1.70,
+        "140-140-8": 0.50,
+        "120-120-10": 0.82,
+    }
+    run_sections: list[str] = []
+
+    def runner(trial_dir: Path) -> dict[str, str]:
+        run_sections.append(trial_dir.name)
+        ratio = ratios[trial_dir.name]
+        (trial_dir / "evaluation_summary.json").write_text(
+            json.dumps([{"check_id": "square_support.fresh", "ratio": ratio}]),
+            encoding="utf-8",
+        )
+        status = "fail" if ratio > 1.0 else "pass"
+        check = {"check_id": "evaluation_ratio_limit", "status": status}
+        if ratio > 1.0:
+            check["evidence"] = [{"check_id": "square_support.fresh", "ratio": ratio}]
+        (trial_dir / "result_validation.json").write_text(
+            json.dumps({"status": status, "checks": [check]}),
+            encoding="utf-8",
+        )
+        return {"status": "success"}
+
+    selection = run_square_section_search(
+        base_job,
+        tmp_path / "trials",
+        candidates=[
+            SquareSectionCandidate(section_name="100-100-8", outer_mm=100, thickness_mm=8, source_file=str(source_root / "100-100-8.SECT")),
+            SquareSectionCandidate(section_name="120-120-10", outer_mm=120, thickness_mm=10, source_file=str(source_root / "120-120-10.SECT")),
+            SquareSectionCandidate(section_name="140-140-8", outer_mm=140, thickness_mm=8, source_file=str(source_root / "140-140-8.SECT")),
+        ],
+        runner=runner,
+        source_root=source_root,
+        max_evaluated_candidates=2,
+    )
+
+    assert run_sections == ["100-100-8", "140-140-8", "120-120-10"]
+    assert selection["status"] == "pass"
+    assert selection["selected"]["section_name"] == "120-120-10"
+    assert selection["selected"]["controlling_ratio"] == 0.82
+    assert selection["economic_downshift_extensions"]
+    assert selection["economic_downshift_extensions"][0]["next_section"] == "120-120-10"
+
+
 def test_overlimit_pair_extends_to_two_larger_allowed_sections(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     _write_minimal_job(base_job)
