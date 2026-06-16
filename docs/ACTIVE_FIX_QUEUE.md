@@ -1,4 +1,20 @@
 # CableTrayAI ??????
+## 2026-06-16 platform-owned single-tray command-flow shadow v1
+
+Resolved in source and verified:
+
+1. Added platform-owned standard command-flow shadow generation for S2 single tray-width jobs.
+2. Generated review files are `platform_standard_solve.mac`, `platform_standard_post.mac`, and `platform_standard_post_numeric.mac`.
+3. The shadow files are not production entrypoints. `run_all.mac` still executes `generated_solve.mac` plus the production `generated_post_numeric.mac`.
+4. Scope gate skips mixed tray widths, third-side jobs, unsupported support types, and unsupported analysis methods.
+5. Publishing now includes optional `platform_standard_*` command streams when present.
+6. Verification passed: py_compile, full unit tests, render smoke, and real ANSYS18.2 single-tray 300 mm validation with `result_validation=pass`.
+
+Deployment queue status: completed.
+
+1. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
 ## 2026-06-16 mixed tray loop/offset closeout
 
 Resolved in source and verified:

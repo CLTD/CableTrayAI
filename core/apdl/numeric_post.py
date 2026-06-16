@@ -24,6 +24,7 @@ def build_numeric_post_macro(
     *,
     source_name: str = "generated_post.mac",
     output_name: str = NUMERIC_POST_MACRO,
+    audit_name: str = NUMERIC_POST_AUDIT,
 ) -> dict[str, Any]:
     """Create a numeric-only post macro for the main real ANSYS run.
 
@@ -43,7 +44,7 @@ def build_numeric_post_macro(
             "target": output_name,
             "commented_graphics_commands": 0,
         }
-        (job_dir / NUMERIC_POST_AUDIT).write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+        (job_dir / audit_name).write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
         return audit
 
     output_lines: list[str] = [
@@ -69,5 +70,5 @@ def build_numeric_post_macro(
             "Report figures are generated afterwards by export_figures.mac from the preserved generated_post.mac."
         ),
     }
-    (job_dir / NUMERIC_POST_AUDIT).write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
+    (job_dir / audit_name).write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")
     return audit

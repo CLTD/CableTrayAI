@@ -16,6 +16,9 @@ def test_command_stream_manifest_includes_spectrum_and_residual_mass_streams(tmp
         "ansys_spectrum_sl2.mac",
         "ansys_spectrum_workbook_format.mac",
         "ansys_zpa_parameters.mac",
+        "platform_standard_solve.mac",
+        "platform_standard_post.mac",
+        "platform_standard_post_numeric.mac",
     ):
         (job_dir / filename).write_text("! test\n", encoding="utf-8")
 
@@ -30,3 +33,7 @@ def test_command_stream_manifest_includes_spectrum_and_residual_mass_streams(tmp
     assert roles["spectrum_sl2_solve"]["exists"] is True
     assert roles["spectrum_workbook_format_review"]["exists"] is True
     assert roles["residual_mass_static_correction"]["exists"] is True
+    assert roles["platform_standard_calculation_shadow"]["exists"] is True
+    assert roles["platform_standard_calculation_shadow"]["required"] is False
+    assert roles["platform_standard_result_extraction_shadow"]["exists"] is True
+    assert roles["platform_standard_numeric_extraction_shadow"]["exists"] is True

@@ -28,6 +28,7 @@ from core.apdl.section_specific_export import augment_square_support_export
 from core.apdl.section_offsets import normalize_yixing_arm_secoffset
 from core.apdl.source_diff import read_text_with_encoding
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
+from core.apdl.platform_standard_flow import build_platform_standard_shadow_flow
 from core.apdl.standard_command_renderer import _copy_required_sections, _prepend_command_headers, _sha256
 from core.intake.tray_load_parser import LOAD_KG_PER_M, TRAY_AREA_M2
 from core.optimizer.square_section_selector import parse_square_section_name
@@ -1828,6 +1829,13 @@ def render_intake_standard_family_commands(
     command_header_audit = _prepend_command_headers(job_dir)
     post_alignment_audit = align_postprocessor_to_intake(job_dir, render_context)
     section_export_audit = augment_square_support_export(job_dir / "generated_post.mac")
+    platform_standard_flow_audit = build_platform_standard_shadow_flow(
+        job_dir,
+        render_context,
+        solve_source_audit=solve_source_audit,
+        solve_parameterization_audit=solve_parameterization_audit,
+        post_alignment_audit=post_alignment_audit,
+    )
     alias_audit = write_command_aliases(job_dir)
     sections = _copy_required_sections(job_dir, source_root, job_dir / "generated_model.mac")
     master_macro_audit = build_run_all_macro(job_dir)
@@ -1852,6 +1860,7 @@ def render_intake_standard_family_commands(
         "sections": sections,
         "command_headers": command_header_audit,
         "postprocessor_alignment": post_alignment_audit,
+        "platform_standard_flow": platform_standard_flow_audit,
         "post_keypoint_numbering": post_keypoint_numbering_audit,
         "section_specific_export": section_export_audit,
         "command_aliases": alias_audit,

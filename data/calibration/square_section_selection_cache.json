@@ -1278,6 +1278,71 @@
       },
       "cache_version": "square-section-cache-v7-section-6-1-ratio",
       "updated_at": "2026-06-16T10:36:47.230840+00:00"
+    },
+    "0d613fd54a6b3fcd16f9b3b71a2bc55c37316e4e99e6b95b2374436c68062b39": {
+      "status": "pass",
+      "selected": {
+        "section_name": "100-100-6",
+        "estimated_area_mm2": 2256.0,
+        "estimated_bending_section_modulus_mm3": 66717.44,
+        "source_kind": "local_sect",
+        "controlling_ratio": 0.24417413972723276,
+        "section_selection_ratio": 0.24417413972723276,
+        "final_chapter6_controlling_ratio": 0.24417413972723276,
+        "square_support_ratio": null,
+        "result_gate_status": "pass",
+        "trial_validation_status": "fail",
+        "effective_validation_status": "pass",
+        "validation_status": "pass",
+        "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+        "dominant_component": "mixed_beam_type_1",
+        "failed_non_ratio_checks": [],
+        "status": "pass",
+        "run_status": "pass"
+      },
+      "candidate_results": [
+        {
+          "section_name": "100-100-6",
+          "estimated_area_mm2": 2256.0,
+          "estimated_bending_section_modulus_mm3": 66717.44,
+          "source_kind": "local_sect",
+          "controlling_ratio": 0.24417413972723276,
+          "section_selection_ratio": 0.24417413972723276,
+          "final_chapter6_controlling_ratio": 0.24417413972723276,
+          "square_support_ratio": null,
+          "result_gate_status": "pass",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "pass",
+          "validation_status": "pass",
+          "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+          "dominant_component": "mixed_beam_type_1",
+          "failed_non_ratio_checks": [],
+          "status": "pass",
+          "run_status": "pass"
+        }
+      ],
+      "policy": "All feasible reviewed/intake-allowed sections tried within the two-trial economy search have ratio < 0.60. This is treated as a light-duty row or lower-bound candidate limit, so select the minimum feasible section rather than running more oversized sections.",
+      "source_job_dir": "jobs\\validation_platform_standard_shadow_real_20260616_194924\\PLATFORM-STANDARD-SINGLE-300",
+      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
+      "similarity_features": {
+        "support_type": "s2",
+        "analysis_method": "response_spectrum",
+        "building": "nx",
+        "area": "nx",
+        "elevation_m": -8.8,
+        "support_spacing_m": 2.0,
+        "support_height_m": 2.2,
+        "layers_front": 2,
+        "layers_back": 0,
+        "layer_count": 2,
+        "tray_widths_mm": [
+          300.0,
+          300.0
+        ],
+        "tray_load_sum_kg_m": 106.0
+      },
+      "cache_version": "square-section-cache-v7-section-6-1-ratio",
+      "updated_at": "2026-06-16T11:50:06.663235+00:00"
     }
   },
   "cache_version": "square-section-cache-v7-section-6-1-ratio",

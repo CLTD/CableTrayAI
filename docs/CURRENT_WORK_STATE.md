@@ -1,4 +1,35 @@
 # CableTrayAI ??????
+## 2026-06-16 platform-owned single-tray command-flow shadow v1
+
+Current latest source/validation state:
+
+1. Added `core/apdl/platform_standard_flow.py`.
+2. For S2 single tray-width front/back jobs, the renderer now writes three platform-owned shadow command streams:
+   - `platform_standard_solve.mac`
+   - `platform_standard_post.mac`
+   - `platform_standard_post_numeric.mac`
+3. These files are review/baseline artifacts only. Production `run_all.mac` still uses the validated `generated_solve.mac` and `generated_post_numeric.mac` path.
+4. The scope gate deliberately skips mixed tray widths, third-side jobs, unsupported support types, and unsupported analysis methods.
+5. `platform_standard_flow_audit.json` records scope, source hashes, required numeric-output checks, numeric-post generation, execution policy, and promotion gates.
+6. Published command-stream manifests now include the optional `platform_standard_*` files when present, clearly marked as shadow review streams.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile` passed for the touched modules.
+2. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+3. Render smoke passed for a single-tray 300 mm S2 job; the three `platform_standard_*` files and audit were generated.
+4. Real ANSYS18.2 validation passed at `jobs/validation_platform_standard_shadow_real_20260616_194924/PLATFORM-STANDARD-SINGLE-300`.
+5. Real validation selected `100-100-6`, controlling ratio `0.24417413972723276`, `result_validation.status=pass`, `result_publishable=true`.
+6. The published output folder contains `platform_standard_solve.mac`, `platform_standard_post.mac`, and `platform_standard_post_numeric.mac` under `command_streams`.
+
+Deployment closeout:
+
+1. Server, desktop, and installer runtimes were rebuilt.
+2. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+3. Package gate and update self-verification passed, including runtime XML/expat and no-expat spectrum smoke.
+4. Local `D:/CableTrayAI` was updated from the refreshed update package; the exact latest backup path is recorded by the installer in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+5. Local `/health` and `duxyb/cnpe123` login smoke passed; installed hashes match source/package for the touched platform-standard command-flow files.
+
 ## 2026-06-16 mixed tray loop/offset closeout
 
 Current latest source/validation state:

@@ -31,6 +31,9 @@ AUDIT_COMMAND_STREAMS = (
     ("spectrum_sl2_solve", "ansys_spectrum_sl2.mac", False),
     ("spectrum_workbook_format_review", "ansys_spectrum_workbook_format.mac", False),
     ("residual_mass_static_correction", "ansys_zpa_parameters.mac", False),
+    ("platform_standard_calculation_shadow", "platform_standard_solve.mac", False),
+    ("platform_standard_result_extraction_shadow", "platform_standard_post.mac", False),
+    ("platform_standard_numeric_extraction_shadow", "platform_standard_post_numeric.mac", False),
 )
 
 
@@ -85,7 +88,8 @@ def write_command_stream_manifest(job_dir: Path | str) -> dict[str, Any]:
                 "audit_policy": (
                     "Model, solve, and post streams are required for every review publish. "
                     "Response-spectrum jobs also publish the generated spectrum and ZPA/static-correction streams "
-                    "when present because they materially affect the calculation."
+                    "when present because they materially affect the calculation. Platform-standard shadow streams "
+                    "are optional review artifacts for baseline comparison and are not production entrypoints yet."
                 ),
             }
         )
@@ -98,6 +102,7 @@ def write_command_stream_manifest(job_dir: Path | str) -> dict[str, Any]:
         "notes": [
             "run_all.mac remains an internal ANSYS batch entrypoint and is intentionally not part of the review publish set.",
             "The reviewed streams include modeling, calculation, result extraction, response-spectrum commands, and residual-mass/static-correction parameters when generated.",
+            "platform_standard_* streams, when present, are shadow review/baseline streams and do not replace generated_solve.mac or generated_post_numeric.mac.",
         ],
     }
     (job_dir / "command_stream_manifest.json").write_text(
