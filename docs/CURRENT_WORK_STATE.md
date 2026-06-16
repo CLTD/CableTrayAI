@@ -1,4 +1,32 @@
 # CableTrayAI ??????
+## 2026-06-16 seven-intake layer parsing and preview closeout
+
+Current latest source/validation state:
+
+1. Fixed unlabeled double-side layer-width parsing in `core/intake/tray_load_parser.py`.
+2. Equal declared side counts now repeat the declared layer sequence on every side. For example, `double-side 3+3 layers, one 100, one 300, one 500` parses as front `[100,300,500]` plus back `[100,300,500]`.
+3. The six `input.json` tray-layer rows for 4210 are therefore trace rows for both sides: three front rows plus three back rows. They are not a single-side six-layer model.
+4. Unequal declared side counts still distribute the unlabeled layer sequence by count, and native side labels such as front/back/left/right remain authoritative.
+5. Fixed the web APDL preview interpreter in `apps/web/index.html` so it understands APDL array variables and functions used by mixed-loop models, including `QW(I)`, `HW(I)`, `QTOFF(I)`, and `ABS(...)`.
+6. This fixes the visual-only issue where 4213/4214/4210 command streams could contain the correct APDL loop model but the web 3D preview displayed only two layers.
+7. The existing 4211 small controlling ratio `0.0530209796187918` was checked against the completed job. It belongs to a light double-side two-layer 100 mm tray case with section `100-100-6`; current raw/evaluation files indicate this is a real deterministic result, not a zero-extraction/table-mapping error.
+
+Verification:
+
+1. Targeted parser tests passed for equal-side repetition and unequal-side distribution.
+2. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+3. Node syntax check for `apps/web/index.html` passed.
+4. Real ANSYS18.2 validation passed for seven rows under `jobs/validation_layer_fix_real_20260616`.
+5. Real validation summary: 4210 `120-120-6`, ratio `0.9123861426715882`; 4211 `100-100-6`, ratio `0.0530209796187918`; 4212 `100-100-6`, ratio `0.5616030578647903`; 4213 static `140-140-8`, ratio `0.779440071051453`; 4214 `100-100-8`, ratio `0.8629901759670398`; 4215 `140-140-8`, ratio `0.509069498978923`; 4220 `100-100-6`, ratio `0.1465742343488118`.
+6. All seven validation jobs have `result_validation.status=pass`.
+
+Deployment closeout:
+
+1. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. Use the external `.sha256.txt` sidecars beside `CableTrayAI.zip` and `update package zip` as the transfer authority; exact zip hashes are not embedded in packaged docs to avoid self-referential hash churn.
+3. The refreshed update package was applied to local `D:/CableTrayAI`. The exact latest backup path is recorded by the installer in `D:/CableTrayAI/docs/last_internal_update_apply.json` and `D:/CableTrayAI/docs/last_mail_update_apply.json`.
+4. Local health/login/hash smoke passed after applying the update.
+
 ## 2026-06-16 platform-owned single-tray command-flow shadow v1
 
 Current latest source/validation state:

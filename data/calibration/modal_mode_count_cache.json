@@ -493,7 +493,241 @@
         ]
       },
       "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "3618823a17b5dcef",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4210",
+      "learned_at": "2026-06-16T13:41:58.427126+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 70,
+      "first_above_cutoff_mode": 54,
+      "last_above_cutoff_mode": 70,
+      "last_frequency_hz": 67.58306589737,
+      "recommended_modal_mode_count": 60,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 6,
+        "side_count": 2,
+        "layers_front": 3,
+        "layers_back": 3,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.7,
+        "square_outer_mm": 120.0,
+        "square_thickness_mm": 6.0,
+        "tray_widths_m": [
+          0.1,
+          0.3,
+          0.5,
+          0.1,
+          0.3,
+          0.5
+        ],
+        "tray_arm_lengths_m": [
+          0.2,
+          0.2,
+          0.35,
+          0.2,
+          0.2,
+          0.35
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "ab1faf04aa7dc97f",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4211",
+      "learned_at": "2026-06-16T13:46:18.540249+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 50,
+      "first_above_cutoff_mode": 21,
+      "last_above_cutoff_mode": 50,
+      "last_frequency_hz": 143.4448721761,
+      "recommended_modal_mode_count": 30,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 4,
+        "side_count": 2,
+        "layers_front": 2,
+        "layers_back": 2,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.8,
+        "square_outer_mm": 100.0,
+        "square_thickness_mm": 6.0,
+        "tray_widths_m": [
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "tray_arm_lengths_m": [
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "53c1999b18dcbd79",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4212",
+      "learned_at": "2026-06-16T13:48:01.209268+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 30,
+      "first_above_cutoff_mode": 29,
+      "last_above_cutoff_mode": 30,
+      "last_frequency_hz": 57.54220971987,
+      "recommended_modal_mode_count": 40,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 2,
+        "side_count": 1,
+        "layers_front": 2,
+        "layers_back": null,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.8,
+        "square_outer_mm": 100.0,
+        "square_thickness_mm": 6.0,
+        "tray_widths_m": [
+          0.2,
+          0.2
+        ],
+        "tray_arm_lengths_m": [
+          0.2,
+          0.2
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "4c62511093b06ae1",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4214",
+      "learned_at": "2026-06-16T13:59:09.463554+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 80,
+      "first_above_cutoff_mode": 70,
+      "last_above_cutoff_mode": 80,
+      "last_frequency_hz": 62.10774437377,
+      "recommended_modal_mode_count": 80,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 6,
+        "side_count": 2,
+        "layers_front": 4,
+        "layers_back": 2,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 2.0,
+        "square_outer_mm": 100.0,
+        "square_thickness_mm": 8.0,
+        "tray_widths_m": [
+          0.5,
+          0.6,
+          0.5,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "tray_arm_lengths_m": [
+          0.35,
+          0.47,
+          0.35,
+          0.35,
+          0.35,
+          0.35
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "3531f500144ae91d",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4215",
+      "learned_at": "2026-06-16T14:02:52.360970+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 50,
+      "first_above_cutoff_mode": 44,
+      "last_above_cutoff_mode": 50,
+      "last_frequency_hz": 60.60016127663,
+      "recommended_modal_mode_count": 50,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 4,
+        "side_count": 2,
+        "layers_front": 2,
+        "layers_back": 2,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.6,
+        "square_outer_mm": 140.0,
+        "square_thickness_mm": 8.0,
+        "tray_widths_m": [
+          0.3,
+          0.5,
+          0.3,
+          0.5
+        ],
+        "tray_arm_lengths_m": [
+          0.2,
+          0.35,
+          0.2,
+          0.35
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
+    },
+    {
+      "cache_key": "a17fc72a9105adbb",
+      "status": "pass",
+      "source_job_dir": "jobs\\validation_layer_fix_real_20260616\\18185NI-LXSJ4220",
+      "learned_at": "2026-06-16T14:04:25.208747+00:00",
+      "cutoff_frequency_hz": 50.0,
+      "observed_modal_mode_count": 30,
+      "first_above_cutoff_mode": 20,
+      "last_above_cutoff_mode": 30,
+      "last_frequency_hz": 81.19568535662,
+      "recommended_modal_mode_count": 30,
+      "modal_learning_mode_margin": 4,
+      "similarity_features": {
+        "analysis_method": "response_spectrum",
+        "support_type": "S2",
+        "layer_count": 2,
+        "side_count": 1,
+        "layers_front": 2,
+        "layers_back": null,
+        "layers_third": 0,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.6,
+        "square_outer_mm": 100.0,
+        "square_thickness_mm": 6.0,
+        "tray_widths_m": [
+          0.1,
+          0.2
+        ],
+        "tray_arm_lengths_m": [
+          0.2,
+          0.2
+        ]
+      },
+      "policy": "Recommended MT is the next bounded retry value at least four modes above the first source mode that exceeded 50 Hz in a successful real ANSYS run. The next run still verifies Mode.oup and retries upward if this learned initial MT is insufficient."
     }
   ],
-  "updated_at": "2026-06-16T11:51:06.785037+00:00"
+  "updated_at": "2026-06-16T14:04:25.209115+00:00"
 }

@@ -45,3 +45,66 @@ def test_tray_load_parser_keeps_first_width_after_native_side_label() -> None:
         ("back", 1, 300),
         ("back", 2, 500),
     ]
+
+
+def test_tray_load_parser_repeats_unlabeled_equal_side_layer_pattern() -> None:
+    parsed = parse_tray_load_description(
+        "\u53cc\u4fa73+3\u5c42 "
+        "\u4e00\u5c42100 \u4e00\u5c42300 \u4e00\u5c42500"
+    )
+
+    assert parsed["front_layers"] == 3
+    assert parsed["back_layers"] == 3
+    assert [
+        (layer["side"], layer["layer_index"], layer["tray_width_mm"])
+        for layer in parsed["layers"]
+    ] == [
+        ("front", 1, 100),
+        ("front", 2, 300),
+        ("front", 3, 500),
+        ("back", 1, 100),
+        ("back", 2, 300),
+        ("back", 3, 500),
+    ]
+
+
+def test_tray_load_parser_repeats_unlabeled_double_side_two_width_pattern() -> None:
+    parsed = parse_tray_load_description(
+        "\u53cc\u4fa72\u5c42 \u4e00\u5c42300 \u4e00\u5c42500"
+    )
+
+    assert parsed["front_layers"] == 2
+    assert parsed["back_layers"] == 2
+    assert [
+        (layer["side"], layer["layer_index"], layer["tray_width_mm"])
+        for layer in parsed["layers"]
+    ] == [
+        ("front", 1, 300),
+        ("front", 2, 500),
+        ("back", 1, 300),
+        ("back", 2, 500),
+    ]
+
+
+def test_tray_load_parser_distributes_unlabeled_unequal_side_layer_sequence() -> None:
+    parsed = parse_tray_load_description(
+        "\u53cc\u4fa74+2\u5c42\n"
+        "\u4e2d\u4f4e\u538b500\n"
+        "\u4e2d\u4f4e\u538b600\n"
+        "\u63a7\u5236\u6d4b\u91cf500+\u63a7\u5236\u6d4b\u91cf500\n"
+        "\u63a7\u5236\u6d4b\u91cf500+\u63a7\u5236\u6d4b\u91cf500"
+    )
+
+    assert parsed["front_layers"] == 4
+    assert parsed["back_layers"] == 2
+    assert [
+        (layer["side"], layer["layer_index"], layer["tray_width_mm"], layer["cable_type"])
+        for layer in parsed["layers"]
+    ] == [
+        ("front", 1, 500, "medium_low_voltage"),
+        ("front", 2, 600, "medium_low_voltage"),
+        ("front", 3, 500, "control_measurement"),
+        ("front", 4, 500, "control_measurement"),
+        ("back", 1, 500, "control_measurement"),
+        ("back", 2, 500, "control_measurement"),
+    ]

@@ -273,6 +273,111 @@ def _parse_compact_declared_width_layers(
     }
 
 
+def _slot_layer_count(slot: str) -> int:
+    count, slot_text = _count_and_slot(slot)
+    if not slot_text or slot_text == "0" or not _has_width_token(slot_text):
+        return 0
+    return max(int(count), 0)
+
+
+def _parse_declared_width_sequence_layers(
+    *,
+    lines: list[str],
+    n_sides: int,
+    declared_counts: list[int],
+    sides: list[str],
+) -> dict[str, Any] | None:
+    """Use declared side counts to interpret unlabeled width sequences.
+
+    Examples:
+    - 双侧3+3层 一层100 一层300 一层500 -> repeat 100/300/500 on both sides.
+    - 双侧4+2层 ... six layer slots -> first four front, next two back.
+    Side-labeled text is handled by the native side-descriptor branches before
+    this helper is called.
+    """
+
+    if n_sides <= 1 or not declared_counts:
+        return None
+    counts_by_side = _declared_counts_by_side(n_sides, declared_counts)
+    if not counts_by_side or any(int(item) <= 0 for item in counts_by_side):
+        return None
+
+    slots: list[str] = []
+    for line in lines:
+        for slot in _split_tray_slots(line):
+            slot_text = _normalise(slot)
+            if slot_text and slot_text != "0" and _has_width_token(slot_text):
+                slots.append(slot_text)
+    if not slots:
+        return None
+
+    slot_counts = [_slot_layer_count(slot) for slot in slots]
+    if any(count <= 0 for count in slot_counts):
+        return None
+    pattern_layer_count = sum(slot_counts)
+    parsed: list[ParsedTrayLayer] = []
+    side_layer_indices = {side: 0 for side in sides}
+    source_policy = ""
+
+    if len(set(counts_by_side)) == 1 and pattern_layer_count == int(counts_by_side[0]):
+        for side_index, target in enumerate(counts_by_side):
+            side = sides[min(side_index, len(sides) - 1)]
+            before = side_layer_indices[side]
+            for slot in slots:
+                side_layer_indices[side] = _append_slot_layers(
+                    parsed,
+                    side=side,
+                    start_index=side_layer_indices[side],
+                    slot=slot,
+                )
+            if side_layer_indices[side] - before != int(target):
+                return None
+        source_policy = (
+            "Deterministic parser repeated an unlabeled layer-width sequence on every side because "
+            "the declared per-side layer counts are equal and match the sequence length."
+        )
+    elif pattern_layer_count == sum(int(item) for item in counts_by_side):
+        slot_index = 0
+        for side_index, target in enumerate(counts_by_side):
+            side = sides[min(side_index, len(sides) - 1)]
+            filled = 0
+            while slot_index < len(slots) and filled < int(target):
+                count = slot_counts[slot_index]
+                if filled + count > int(target):
+                    return None
+                side_layer_indices[side] = _append_slot_layers(
+                    parsed,
+                    side=side,
+                    start_index=side_layer_indices[side],
+                    slot=slots[slot_index],
+                )
+                filled += count
+                slot_index += 1
+            if filled != int(target):
+                return None
+        if slot_index != len(slots):
+            return None
+        source_policy = (
+            "Deterministic parser distributed an unlabeled layer-width sequence by the declared "
+            "front/back/third layer counts."
+        )
+    else:
+        return None
+
+    if not parsed:
+        return None
+    return {
+        "status": "pass",
+        "side_count": n_sides,
+        "front_layers": max((item.layer_index for item in parsed if item.side == "front"), default=0),
+        "back_layers": max((item.layer_index for item in parsed if item.side == "back"), default=0),
+        "third_layers": max((item.layer_index for item in parsed if item.side == "third"), default=0),
+        "layers": [item.__dict__ for item in parsed],
+        "declared_layers": declared_counts,
+        "source_policy": source_policy,
+    }
+
+
 def parse_tray_load_description(raw_text: Any) -> dict[str, Any]:
     n_sides, declared_counts, rest = _parse_header(str(raw_text or ""))
     lines = [line.strip() for line in str(rest).splitlines() if line.strip() and not _is_count_only_line(line)]
@@ -363,6 +468,15 @@ def parse_tray_load_description(raw_text: Any) -> dict[str, Any]:
             "declared_layers": declared_counts,
             "source_policy": "Deterministic parser based on side-descriptor intake tray-load text; no LLM guessing.",
         }
+
+    declared_sequence = _parse_declared_width_sequence_layers(
+        lines=lines,
+        n_sides=n_sides,
+        declared_counts=declared_counts,
+        sides=sides,
+    )
+    if declared_sequence:
+        return declared_sequence
 
     side_layer_indices = {side: 0 for side in sides}
     for line in lines:

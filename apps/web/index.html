@@ -2918,15 +2918,36 @@
         });
       }
 
+      function apdlVarKey(name, index = null) {
+        const upper = String(name || "").toUpperCase();
+        if (index === null || index === undefined) return upper;
+        return `${upper}(${Math.trunc(Number(index))})`;
+      }
+
+      function replaceApdlIdentifiers(expr, vars) {
+        return String(expr || "").replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name, offset, source) => {
+          const upper = name.toUpperCase();
+          if (upper === "ABS") return "Math.abs";
+          if ((upper === "E" || upper === "D") && offset > 0 && /[0-9.]/.test(source[offset - 1] || "")) {
+            return upper === "D" ? "E" : name;
+          }
+          const value = vars.get(apdlVarKey(upper));
+          return Number.isFinite(value) ? String(value) : "0";
+        });
+      }
+
       function evalApdlExpression(expression, vars) {
         let expr = expandApdlPercents(expression, vars).trim();
         if (!expr) return NaN;
-        expr = expr.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name) => {
-          const upper = name.toUpperCase();
-          if (!vars.has(upper)) return "0";
-          return String(vars.get(upper));
+        expr = expr.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\s*\(([^()]+)\)/g, (match, name, indexExpr) => {
+          if (String(name || "").toUpperCase() === "ABS") return match;
+          const index = evalApdlExpression(indexExpr, vars);
+          if (!Number.isFinite(index)) return "0";
+          const value = vars.get(apdlVarKey(name, index));
+          return Number.isFinite(value) ? String(value) : "0";
         });
-        if (!/^[0-9+\-*/(). Ee]+$/.test(expr)) return NaN;
+        expr = replaceApdlIdentifiers(expr, vars);
+        if (!/^[0-9+\-*/(). EeMathabs]+$/.test(expr)) return NaN;
         try {
           const value = Function(`"use strict"; return (${expr});`)();
           return Number.isFinite(Number(value)) ? Number(value) : NaN;
@@ -2995,11 +3016,13 @@
       }
 
       function assignApdlVariable(line, vars) {
-        const match = expandApdlPercents(line, vars).match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+        const match = expandApdlPercents(line, vars).match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\(([^()]+)\))?\s*=\s*(.+)$/);
         if (!match) return false;
-        const value = evalApdlExpression(match[2], vars);
+        const index = match[2] ? evalApdlExpression(match[2], vars) : null;
+        if (match[2] && !Number.isFinite(index)) return false;
+        const value = evalApdlExpression(match[3], vars);
         if (!Number.isFinite(value)) return false;
-        vars.set(match[1].toUpperCase(), value);
+        vars.set(apdlVarKey(match[1], index), value);
         return true;
       }
 

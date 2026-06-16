@@ -1,4 +1,21 @@
 # CableTrayAI ??????
+## 2026-06-16 seven-intake layer parsing and preview closeout
+
+Resolved in source and verified:
+
+1. `double-side 3+3 layers, one 100, one 300, one 500` now parses as front `[100,300,500]` and back `[100,300,500]`. The apparent "six layers" in `input.json` are three front trace rows plus three back trace rows.
+2. Unlabeled equal-side layer patterns are repeated per side; unequal declared counts are distributed by count; side-labeled text still takes precedence.
+3. Web 3D command-stream preview now evaluates APDL array variables and `ABS(...)`, so mixed-loop `generated_model.mac` files no longer preview as only two layers.
+4. 4211 ratio `0.0530209796187918` was checked as a light two-layer 100 mm double-side job with `100-100-6`; current deterministic outputs support the small ratio and do not indicate zero extraction.
+5. Real ANSYS18.2 validation passed for seven rows at `jobs/validation_layer_fix_real_20260616`: 4210, 4211, 4212, 4213, 4214, 4215, and 4220 all have `result_validation=pass`.
+
+Deployment queue status: completed.
+
+1. Refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and the mail/update package under the same folder.
+2. Refreshed the external `.sha256.txt` sidecars; use those sidecars as transfer authority after copying to the unit computer.
+3. Applied the update to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json` and `D:/CableTrayAI/docs/last_mail_update_apply.json`.
+4. `/health`, `duxyb/cnpe123` login, and source/package/installed hash checks passed.
+
 ## 2026-06-16 platform-owned single-tray command-flow shadow v1
 
 Resolved in source and verified:
