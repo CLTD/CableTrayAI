@@ -296,9 +296,9 @@ def parse_tray_load_description(raw_text: Any) -> dict[str, Any]:
 
     native_side_descriptor_lines: list[tuple[str, str]] = []
     native_side_patterns = [
-        ("front", r"^\s*(?:前侧|左侧)\s*\d*\s*[:：、]?\s*(?P<rest>.*)$"),
-        ("back", r"^\s*(?:后侧|右侧|另一侧)\s*\d*\s*[:：、]?\s*(?P<rest>.*)$"),
-        ("third", r"^\s*(?:第三侧|中间侧)\s*\d*\s*[:：、]?\s*(?P<rest>.*)$"),
+        ("front", r"^\s*(?:前侧|左侧)\s*(?:\d+\s*层)?\s*[:：、]?\s*(?P<rest>.*)$"),
+        ("back", r"^\s*(?:后侧|右侧|另一侧)\s*(?:\d+\s*层)?\s*[:：、]?\s*(?P<rest>.*)$"),
+        ("third", r"^\s*(?:第三侧|中间侧)\s*(?:\d+\s*层)?\s*[:：、]?\s*(?P<rest>.*)$"),
     ]
     for line in lines:
         normalised = _normalise(line)

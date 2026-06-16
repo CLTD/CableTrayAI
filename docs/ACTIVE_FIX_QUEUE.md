@@ -1,4 +1,21 @@
 # CableTrayAI ??????
+## 2026-06-16 mixed tray loop/offset closeout
+
+Resolved in source and verified:
+
+1. Fixed the latest mixed-tray offset review: channel secondary arm `CAOGANG42DAN` generates `SECOFFSET,user,,-0.03249`; non-channel secondary arms still generate `SECOFFSET,user`.
+2. Replaced explicit per-point mixed geometry generation with APDL arrays plus `*DO` loops for support columns, tray-layer keypoints, tray-layer lines, meshing, and root coupling.
+3. Enforced mixed-layer vertical order: for each side, wider trays are lower and smaller trays are above them. Example `300+600` is rendered as bottom `600`, top `300`.
+4. Fixed double-side mixed root CP coupling so one support node is not coupled twice in UX.
+5. Fixed native side parsing for `前侧300+600` / `后侧300+500` so the first tray width is retained.
+6. Verification passed: py_compile, targeted parser/mixed tests, full `tests/unit`, render smokes for single/double/seven-layer/different-section cases, and two real ANSYS18.2 mixed-loop jobs with `result_validation=pass`.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars beside the zip files as transfer authority.
+3. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
 ## 2026-06-16 tray-300 physical bolt and <=300 L3 fix
 
 Resolved in source and verified:

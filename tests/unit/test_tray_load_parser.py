@@ -26,3 +26,22 @@ def test_tray_load_parser_splits_mixed_500_and_600_slots_without_width_bleed() -
         (500, "medium_low_voltage", "500-75-2mm"),
         (600, "control_measurement", "600-75-2mm"),
     ]
+
+
+def test_tray_load_parser_keeps_first_width_after_native_side_label() -> None:
+    parsed = parse_tray_load_description(
+        "\u53cc\u4fa72+2\u5c42\n"
+        "\u524d\u4fa7300+600\n"
+        "\u540e\u4fa7300+500"
+    )
+
+    assert parsed["side_count"] == 2
+    assert [
+        (layer["side"], layer["layer_index"], layer["tray_width_mm"])
+        for layer in parsed["layers"]
+    ] == [
+        ("front", 1, 300),
+        ("front", 2, 600),
+        ("back", 1, 300),
+        ("back", 2, 500),
+    ]

@@ -393,14 +393,112 @@ def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology(
     assert "SECREAD,'600-75-2mm'" in rendered
     assert "SECTYPE,10,BEAM,CSOLID" in rendered
     assert "SECDATA,0.006" in rendered
-    assert "K,516" in rendered
-    assert "K,526" in rendered
-    assert "K,529" in rendered
-    assert "0.52" in rendered
+    assert "QW(1)=0.6" in rendered
+    assert "QW(2)=0.3" in rendered
+    assert "QA(1)=0.47" in rendered
+    assert "QB(1)=0.2" in rendered
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'CAOGANG42DAN'" in rendered
+    assert "*DO,I,1,2" in rendered
+    assert "K,501+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
+    assert "K,506+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
+    assert "K,516" not in rendered
     assert audit["shared_max_width_geometry"]["status"] == "not_used"
+    assert audit["command_style"]["status"] == "loop_parameterized"
+    assert audit["secondary_arm_offset_policy"] == "channel_secondary_arm_offset_minus_0p03249"
     assert audit["model_geometry_widths_mm"] == [300, 600]
-    layer2 = [item for item in audit["layer_geometry"] if item["layer_index"] == 2][0]
-    assert layer2["l3_tail_m"] == 0.2
+    bottom_layer = [item for item in audit["layer_geometry"] if item["model_layer_index"] == 1][0]
+    top_layer = [item for item in audit["layer_geometry"] if item["model_layer_index"] == 2][0]
+    assert bottom_layer["width_mm"] == 600
+    assert bottom_layer["l3_tail_m"] == 0.2
+    assert bottom_layer["original_layer_index"] == 2
+    assert top_layer["width_mm"] == 300
+    assert top_layer["original_layer_index"] == 1
+
+
+def test_mixed_tray_layer_renderer_standard_loop_handles_single_side_seven_mixed_layers() -> None:
+    payload = _single_two_layer_mixed_300_600_payload()
+    widths = [300, 500, 500, 500, 600, 600, 600]
+    density_by_width = {300: 44315.0, 500: 56704.260652, 600: 65423.0}
+    split_by_width = {300: (0.20, 0.15), 500: (0.35, 0.20), 600: (0.47, 0.20)}
+    payload["support"]["layers_front"] = 7
+    payload["support"]["support_height_m"] = 2.2
+    payload["sections"] = [
+        {"section_id": "square", "sect_file": "100-100-6.SECT"},
+        {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+        {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+        {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+    ]
+    payload["tray_layers"] = []
+    for index, width in enumerate(widths, start=1):
+        arm_a, arm_b = split_by_width[width]
+        payload["tray_layers"].append(
+            {
+                "side": "front",
+                "layer_index": index,
+                "tray_width_m": width / 1000.0,
+                "tray_density_kg_m3": density_by_width[width],
+                "tray_section_id": f"tray-{width}",
+                "arm_a_length_m": arm_a,
+                "arm_b_length_m": arm_b,
+            }
+        )
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert "senum=7" in rendered
+    assert "*DO,I,1,7" in rendered
+    assert "QW(1)=0.6" in rendered
+    assert "QW(4)=0.5" in rendered
+    assert "QW(7)=0.3" in rendered
+    assert "K,571" not in rendered
+    assert "K,501+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
+    assert [item["width_mm"] for item in audit["layer_geometry"]] == [600, 600, 600, 500, 500, 500, 300]
+    assert audit["layer_geometry"][-1]["original_layer_index"] == 1
+    assert audit["layer_order_policy"]["status"] == "width_descending_small_trays_above"
+
+
+def test_mixed_tray_layer_renderer_handles_double_side_mixed_layers_with_same_loop_policy() -> None:
+    payload = _double_two_by_two_mixed_300_500_payload()
+    payload["tray_layers"].append(
+        {
+            "side": "front",
+            "layer_index": 3,
+            "tray_width_m": 0.6,
+            "tray_density_kg_m3": 65423.0,
+            "tray_section_id": "tray-600",
+            "arm_a_length_m": 0.47,
+            "arm_b_length_m": 0.20,
+        }
+    )
+    payload["sections"].append({"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"})
+    payload["support"]["layers_front"] = 3
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert "qiancengshu=3" in rendered
+    assert "houcengshu=2" in rendered
+    assert "QW(1)=0.6" in rendered
+    assert "HW(1)=0.5" in rendered
+    assert "K,KPBKBASE+1+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
+    assert "CP,NEXT,ALL,NROOT,NFROOT,NBROOT" in rendered
+    assert "K,1501" not in rendered
+    front_widths = [item["width_mm"] for item in audit["layer_geometry"] if item["side"] == "front"]
+    back_widths = [item["width_mm"] for item in audit["layer_geometry"] if item["side"] == "back"]
+    assert front_widths == [600, 300, 300]
+    assert back_widths == [500, 500]
+
+
+def test_mixed_tray_layer_renderer_keeps_yixing_secondary_arm_without_channel_offset() -> None:
+    payload = _single_two_layer_mixed_300_600_payload()
+    payload["support"]["square_tube_width_m"] = 0.14
+    payload["sections"][0]["sect_file"] = "140-140-8.SECT"
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert "SECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in rendered
+    assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in rendered
+    assert audit["secondary_arm_offset_policy"] == "non_channel_secondary_arm_no_offset"
 
 
 def test_single_width_family_l3_tracks_square_width_le_120() -> None:

@@ -1,4 +1,31 @@
 # CableTrayAI ??????
+## 2026-06-16 mixed tray loop/offset closeout
+
+Current latest source/validation state:
+
+1. Mixed front/back tray layers are now rendered with APDL arrays and `*DO` loops instead of explicit Python-generated keypoints and lines. This keeps the generated command stream standardizable for seven-layer and other mixed layouts.
+2. Same-side mixed tray widths are modeled from wider lower layers to narrower upper layers. Example: input `300+600` becomes model layer 1 `600` and model layer 2 `300`, so the small tray is above the large tray while original layer indices remain in `layer_geometry`.
+3. Secondary-arm offset policy is explicit: `CAOGANG42DAN` keeps `SECOFFSET,user,,-0.03249`; non-channel secondary arms such as `YIXINGGANG150DAN` keep `SECOFFSET,user`.
+4. Double-side root coupling now uses one CP set per layer/frame (`NROOT,NFROOT,NBROOT`) so MAPDL does not put the same support node UX into two coupled sets.
+5. Native side text parsing now preserves the first width after labels such as `前侧300+600` and `后侧300+500`; it no longer consumes `300` as a side count.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/mixed_tray_model.py core/intake/tray_load_parser.py` passed.
+2. Targeted parser/mixed-render tests passed.
+3. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+4. Render smoke passed for single-side `300+600`, single-side seven-layer `300/500/600`, double-side mixed, and `YIXINGGANG` no-channel-offset cases.
+5. Real ANSYS18.2 passed for `jobs/validation_mixed_loop_real_single_20260616_183024/MIXLOOP-SINGLE-300600`: selected `100-100-6`, controlling ratio `0.44156708491319885`, `result_validation.status=pass`.
+6. Real ANSYS18.2 passed for `jobs/validation_mixed_loop_real_double_20260616_183434/MIXLOOP-DOUBLE-300600-300500`: selected `100-100-6`, controlling ratio `0.7684645157108101`, `result_validation.status=pass`.
+
+Deployment closeout:
+
+1. Server, desktop, and installer runtimes were rebuilt.
+2. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+3. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars beside the zip files as transfer authority.
+4. Package gate and update self-verification passed.
+5. Local `D:/CableTrayAI` was updated; the exact latest backup path is recorded by the installer in `D:/CableTrayAI/docs/last_internal_update_apply.json`; `/health` ok; `duxyb/cnpe123` login pass; source/package/installed hashes match for the mixed renderer, parser, and learning caches.
+
 ## 2026-06-16 tray-300 physical bolt modeling and small-tray L3 closeout
 
 Current latest source/validation state:
