@@ -58,6 +58,39 @@ def _payload_with_uniform_tray_width(width_mm: int) -> dict:
     return payload
 
 
+def _double_two_by_two_mixed_300_500_payload() -> dict:
+    tray_layers = []
+    for side, width_mm in (("front", 300), ("back", 500)):
+        for index in range(1, 3):
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width_mm / 1000.0,
+                    "tray_density_kg_m3": 44315.0 if width_mm == 300 else 56704.260652,
+                    "tray_section_id": f"tray-{width_mm}",
+                    "arm_a_length_m": 0.35,
+                    "arm_b_length_m": 0.0,
+                }
+            )
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 2,
+            "layers_back": 2,
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "100-100-6.SECT"},
+            {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+            {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+        ],
+        "tray_layers": tray_layers,
+    }
+
+
 def _single_two_layer_600_payload() -> dict:
     tray_layers = []
     for index in range(1, 3):
@@ -282,6 +315,35 @@ def test_standard_family_keeps_500_tray_slots_when_source_places_trays_before_ar
     assert audit["section_role_map"]["tray_equivalent_sections"][0]["section"] == "500-75-2mm"
 
 
+def test_mixed_width_single_source_uses_governing_max_width_geometry_not_first_width() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.1",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=2",
+            "senum1=2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+            "MP,DENS,2,7850",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _double_two_by_two_mixed_300_500_payload())
+
+    assert "L2=0.5" in rendered
+    assert "SECREAD,'500-75-2mm'" in rendered
+    assert "SECREAD,'300-75-2mm'" not in rendered
+    assert "MP,DENS,2,56704" in rendered
+    assert audit["tray_widths_mm"] == [300, 500]
+    assert audit["model_geometry_widths_mm"] == [500]
+    assert audit["material_slot_widths_mm"] == [500]
+    assert audit["shared_max_width_geometry"]["status"] == "applied"
+
+
 def test_single_width_family_l3_tracks_square_width_le_120() -> None:
     source_text = "\n".join(
         [
@@ -338,7 +400,7 @@ def test_single_width_family_l3_tracks_square_width_gt_120() -> None:
     assert audit["l3_policy"]["status"] == "square_outer_width_gt_120_l3_0p15m"
 
 
-def test_single_width_family_connection_offset_tracks_l3_when_square_controls_l3() -> None:
+def test_300_single_width_family_keeps_reviewed_l2_half_connection_offset() -> None:
     source_text = "\n".join(
         [
             "H1=0.10",
@@ -366,11 +428,146 @@ def test_single_width_family_connection_offset_tracks_l3_when_square_controls_l3
 
     rendered, audit = _render_model_from_family(source_text, payload)
 
-    assert "L3=0.2" in rendered
-    assert "H1/2+L1-L2/2" not in rendered
-    assert rendered.count("H1/2+L1-L3") == 4
-    assert audit["single_width_connection_offset"]["status"] == "rewritten"
-    assert audit["single_width_connection_offset"]["replacement_count"] == 4
+    assert "L3=0.15" in rendered
+    assert "H1/2+L1-L2/2" in rendered
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
+
+
+def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupling() -> None:
+    source_text = "\n".join(
+        [
+            "ET,1,188",
+            "KEYOPT,1,4,2",
+            "ET,2,188",
+            "KEYOPT,2,4,2",
+            "ET,4,188",
+            "KEYOPT,2,4,2",
+            "SECTYPE,1,BEAM,MESH",
+            "SECREAD,'100-100-6','SECT',,MESH",
+            "SECTYPE,4,BEAM,MESH",
+            "SECREAD,'300-75-2mm','SECT',,MESH",
+            "SECTYPE,10,BEAM,CSOLID",
+            "SECDATA,0.006",
+            "SECOFFSET,USER,",
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.3",
+            "L3=0.15",
+            "L4=2.0",
+            "L5=0.074",
+            "senum=2",
+            "*DO,J,1,3",
+            "*DO,I,1,senum",
+            "K,501+10*I+100*(J-1),H1/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,503+10*I+100*(J-1),H1/2+L1,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L3,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,507+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,508+10*I+100*(J-1),H1/2+L1-L3,L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "L,506+10*I+100*(J-1),507+10*I+100*(J-1)",
+            "L,507+10*I+100*(J-1),508+10*I+100*(J-1)",
+            "*ENDDO",
+            "*ENDDO",
+            "ALLSEL",
+            "LSEL,S,LOC,X,KX(516)",
+            "LATT,1,,4,,,,10",
+            "LESIZE,ALL,0.05,,,,,,,1",
+            "LMESH,ALL",
+            "ALLSEL",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "CPCYC,UX,,,,,L5-0.05",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.3
+        layer["tray_section_id"] = "tray-300"
+    payload["sections"][1]["section_id"] = "tray-300"
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "SECTYPE,10,BEAM,CSOLID" in rendered
+    assert "SECDATA,0.006" in rendered
+    assert "LATT,1,,4,,,,10" in rendered
+    assert "CPCYC,UX" in rendered
+    assert audit["physical_bolt_modeling"]["status"] == "pass"
+    assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
+
+
+def test_300_modeling_gate_fails_when_only_coupling_exists_without_bolt_elements() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.3",
+            "L3=0.15",
+            "L4=2.0",
+            "senum=2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'300-75-2mm'",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "CPCYC,UX,,,,,L5-0.05",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.3
+        layer["tray_section_id"] = "tray-300"
+    payload["sections"][1]["section_id"] = "tray-300"
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    _, audit = _render_model_from_family(source_text, payload)
+
+    assert audit["physical_bolt_modeling"]["status"] == "fail"
+    assert "round_bar_section_10" in audit["physical_bolt_modeling"]["missing"]
+    assert "section_10_latt_meshing" in audit["physical_bolt_modeling"]["missing"]
+    assert audit["physical_bolt_modeling"]["checks"]["has_coupling_only_as_supplement"] is True
+
+
+def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=1.8",
+            "L5=0.074",
+            "senum=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
+            "L,502+10*I+100*(J-1),509+10*I+100*(J-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.2
+        layer["tray_section_id"] = "tray-200"
+    payload["sections"][1]["section_id"] = "tray-200"
+    payload["sections"][1]["sect_file"] = "200-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L2=0.2" in rendered
+    assert "L3=0.15" in rendered
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,503+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
+    assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
 
 
 def test_single_width_family_l3_rewrite_does_not_collapse_intermediate_arm_segment() -> None:

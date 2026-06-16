@@ -3117,6 +3117,12 @@
         const idA = Number(element.a);
         const idB = Number(element.b);
         const idBand = Math.max(idA, idB);
+        const suffixA = Math.abs(idA) % 10;
+        const suffixB = Math.abs(idB) % 10;
+        const isBoltRodPair =
+          idBand >= 500 && idBand < 2500 &&
+          ((suffixA === 6 && suffixB === 7) || (suffixA === 7 && suffixB === 8));
+        if (isBoltRodPair && dy / max > 0.55) return "bolt_rod";
         if (dz / max > 0.72 && Math.abs(midX) < 0.2) return "square_support";
         if (dx / max > 0.68) return "cantilever_arm";
         if (dy / max > 0.68 && midX > 0.1) return "tray_rail";
@@ -3130,6 +3136,7 @@
           square_support: { color: "#0b6b57", edge: "#074637", width: 8, label: "方钢立柱", glyph: "square" },
           cantilever_arm: { color: "#1e63a8", edge: "#123e6e", width: 7, label: "托臂槽钢", glyph: "channel" },
           tray_rail: { color: "#b86b10", edge: "#7a4108", width: 5, label: "托盘/纵向件", glyph: "open_up" },
+          bolt_rod: { color: "#5b6472", edge: "#27313f", width: 4.5, label: "螺栓/圆钢", glyph: "round_bar" },
           vertical_connector: { color: "#64748b", edge: "#334155", width: 4, label: "竖向连接", glyph: "connector" },
           connector: { color: "#64748b", edge: "#334155", width: 4, label: "连接/短撑", glyph: "connector" },
           other: { color: "#64748b", edge: "#334155", width: 4, label: "其它线单元", glyph: "connector" },
@@ -3153,7 +3160,7 @@
           return;
         }
         const counts = modelKindCounts(model);
-        stats.textContent = `${model.nodes.length} 点 / ${model.elements.length} 线 · 方钢 ${counts.square_support || 0} · 托臂 ${counts.cantilever_arm || 0} · 托盘 ${counts.tray_rail || 0}`;
+        stats.textContent = `${model.nodes.length} 点 / ${model.elements.length} 线 · 方钢 ${counts.square_support || 0} · 托臂 ${counts.cantilever_arm || 0} · 托盘 ${counts.tray_rail || 0} · 螺栓/圆钢 ${counts.bolt_rod || 0}`;
       }
 
       function project(point, width, height) {
@@ -3382,6 +3389,19 @@
             ctx.fillText("开口", openTo.x + 4, openTo.y - 3);
           }
         }
+        if (style.glyph === "round_bar") {
+          ctx.save();
+          ctx.translate(mid.x, mid.y);
+          ctx.rotate(Math.atan2(dy, dx));
+          ctx.fillStyle = "rgba(39, 49, 63, 0.18)";
+          ctx.strokeStyle = style.edge;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 8, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
       }
 
       function drawModelLegend(ctx, width) {
@@ -3390,6 +3410,7 @@
           ["square_support", `方钢立柱/矩形管 ${counts.square_support || 0}`],
           ["cantilever_arm", `托臂槽钢 ${counts.cantilever_arm || 0}`],
           ["tray_rail", `托盘纵向件 ${counts.tray_rail || 0}`],
+          ["bolt_rod", `螺栓/圆钢 ${counts.bolt_rod || 0}`],
           ["connector", `连接/短撑 ${(counts.connector || 0) + (counts.vertical_connector || 0)}`],
         ];
         let x = 18;
@@ -3425,6 +3446,7 @@
           ["方钢", counts.square_support || 0],
           ["托臂", counts.cantilever_arm || 0],
           ["托盘", counts.tray_rail || 0],
+          ["螺栓/圆钢", counts.bolt_rod || 0],
         ];
         const x = width - 180;
         const y = 20;

@@ -1,4 +1,21 @@
 # CableTrayAI ??????
+## 2026-06-16 tray-300 physical bolt and <=300 L3 fix
+
+Resolved in source and verified:
+
+1. `L3` rule corrected for small trays: single-width/no-L6 S2 tray widths `<=300 mm` render `L3=0.15 m` regardless of square-tube section. Wider trays still follow the square-tube L3 policy.
+2. 300 mm tray modeling now requires physical bolt/round-bar APDL, not just `CP/CPCYC`. The selector gives a strong preference to standard families with `ET,4`, `SECTYPE,10`, `SECDATA,0.006`, `LATT,1,,4,,,,10`, and 506/507/508 physical bolt line pairs.
+3. The 300 mm gate is not applied to 200/100 mm small trays. 200/100 are governed by the reviewed small-tray partition: `502/1502` at `L3`, `503/1503` and CPCYC at `L2/2`, and the connector line rewired to `503-509` when transforming larger single-width families.
+4. Mixed-width shared-maximum fallback now also applies while rendering APDL parameters. For 300/500 cases that reuse a reviewed 500 mm single-width source, the generated geometry and material slots use 500 mm instead of the first listed 300 mm tray.
+5. Web APDL preview now recognizes bolt/round-bar elements and shows them separately from tray rails and arms.
+6. Verification passed: targeted tray-width tests, broader selector/static/bolt tests, full `tests/unit`, Node syntax check, and render-entry smokes for double 300 3+2, single 200, and mixed 300/500.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `0DD63988F61B00BB5AB61C590C1613E7E0CA667B3A5898C2EE952CB3B4A8318C`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `1171B1FB97138FCD6F2762BF9EC469796435CEC8E69D9DA35044434967212ECB`.
+3. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
 ## 2026-06-16 4215 smart section-selection and deployment closeout
 
 Resolved in source and verified:

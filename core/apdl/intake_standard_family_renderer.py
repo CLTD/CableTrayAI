@@ -214,10 +214,39 @@ def _arm_section_family(payload: dict[str, Any]) -> tuple[str, str, str]:
     return "50-42", "CAOGANG42DAN", "square_le_120_standard_channel_family"
 
 
-def _single_width_family_l3_from_square(square_outer_mm: float) -> tuple[float, str]:
+def _single_width_family_l3_from_tray_and_square(primary_tray_width_mm: int, square_outer_mm: float) -> tuple[float, str]:
+    if primary_tray_width_mm <= 300:
+        return 0.15, "tray_width_le_300_l3_0p15m"
     if square_outer_mm > 120.0:
         return 0.15, "square_outer_width_gt_120_l3_0p15m"
     return 0.20, "square_outer_width_le_120_l3_0p20m"
+
+
+def _has_reviewed_300_physical_bolt_modeling(text: str, *, has_back_side: bool) -> bool:
+    def has(pattern: str) -> bool:
+        return re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE) is not None
+
+    front_line_pairs = (
+        has(r"^\s*L\s*,\s*506\s*\+\s*10\s*\*\s*I\b.*,\s*507\s*\+\s*10\s*\*\s*I\b")
+        or has(r"^\s*L\s*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*6\b.*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*7\b")
+    ) and (
+        has(r"^\s*L\s*,\s*507\s*\+\s*10\s*\*\s*I\b.*,\s*508\s*\+\s*10\s*\*\s*I\b")
+        or has(r"^\s*L\s*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*7\b.*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*8\b")
+    )
+    back_line_pairs = (not has_back_side) or (
+        has(r"^\s*L\s*,\s*1506\s*\+\s*10\s*\*\s*I\b.*,\s*1507\s*\+\s*10\s*\*\s*I\b")
+        and has(r"^\s*L\s*,\s*1507\s*\+\s*10\s*\*\s*I\b.*,\s*1508\s*\+\s*10\s*\*\s*I\b")
+    )
+    return all(
+        [
+            has(r"^\s*ET\s*,\s*4\s*,\s*(?:188|BEAM188)\b"),
+            has(r"^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b"),
+            has(r"^\s*SECDATA\s*,\s*0\.006\b"),
+            has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
+            front_line_pairs,
+            back_line_pairs,
+        ]
+    )
 
 
 def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
@@ -272,6 +301,14 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
     add("primary_arm_section", family.primary_arm_section.upper() == primary.upper(), 20, family.primary_arm_section, primary)
     add("secondary_arm_section", family.secondary_arm_section.upper() == secondary.upper(), 10, family.secondary_arm_section, secondary)
     add("mixed_widths", family.has_mixed_widths == mixed, 8, family.has_mixed_widths, mixed)
+    if widths == [300]:
+        add(
+            "tray_300_physical_bolt_modeling",
+            _has_reviewed_300_physical_bolt_modeling(family.text, has_back_side=family.has_back_side),
+            45,
+            family.path.name,
+            "ET,4 + SECTYPE,10 CSOLID + LATT,1,,4,,,,10 + 506/507/508 physical bolt lines",
+        )
     if source_senum is not None and expected_primary_layers:
         add("primary_layer_count", int(source_senum) == int(expected_primary_layers), 16, int(source_senum), int(expected_primary_layers))
     if back and source_senum1 is not None and expected_secondary_layers is not None:
@@ -850,6 +887,136 @@ def _rewrite_single_width_connection_offset_to_l3(text: str, *, enabled: bool) -
     }
 
 
+def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str, dict[str, Any]]:
+    if not enabled:
+        return text, {
+            "status": "not_required",
+            "reason": "not_tray_width_le_200_single_width_family",
+        }
+
+    positive_l2_half = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2", flags=re.IGNORECASE)
+    positive_l3 = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\b", flags=re.IGNORECASE)
+    negative_l2_half = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2\s*\)", flags=re.IGNORECASE)
+    negative_l3 = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\s*\)", flags=re.IGNORECASE)
+
+    def keypoint_base(line: str) -> int | None:
+        match = re.match(r"\s*K\s*,\s*(\d+)", line, flags=re.IGNORECASE)
+        return int(match.group(1)) if match else None
+
+    def rewrite_keypoint(line: str, base: int) -> tuple[str, int]:
+        if base == 502:
+            return positive_l2_half.subn("H1/2+L1-L3", line)
+        if base == 503:
+            return positive_l3.subn("H1/2+L1-L2/2", line)
+        if base == 1502:
+            return negative_l2_half.subn("-(H1/2+L1-L3)", line)
+        if base == 1503:
+            return negative_l3.subn("-(H1/2+L1-L2/2)", line)
+        return line, 0
+
+    line_502_to_509 = re.compile(
+        r"(?i)(L\s*,\s*)502(\s*\+\s*10\s*\*\s*I\s*\+\s*100\s*\*\s*\(\s*J\s*-\s*1\s*\)\s*,\s*509)",
+    )
+    line_1502_to_1509 = re.compile(
+        r"(?i)(L\s*,\s*)1502(\s*\+\s*10\s*\*\s*I\s*\+\s*100\s*\*\s*\(\s*J\s*-\s*1\s*\)\s*,\s*1509)",
+    )
+
+    updated_lines: list[str] = []
+    keypoint_replacements = 0
+    line_replacements = 0
+    for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        base = keypoint_base(line)
+        if base in {502, 503, 1502, 1503}:
+            line, count = rewrite_keypoint(line, base)
+            keypoint_replacements += count
+        line, count = line_502_to_509.subn(r"\g<1>503\g<2>", line)
+        line_replacements += count
+        line, count = line_1502_to_1509.subn(r"\g<1>1503\g<2>", line)
+        line_replacements += count
+        updated_lines.append(line)
+
+    replacement_count = keypoint_replacements + line_replacements
+    return "\n".join(updated_lines), {
+        "status": "rewritten" if replacement_count else "unchanged",
+        "replacement_count": replacement_count,
+        "keypoint_replacements": keypoint_replacements,
+        "line_replacements": line_replacements,
+        "source_ref": "small_tray_200_100_standard_family_partition",
+        "policy": (
+            "For single-width S2 tray widths <=200 mm, the reviewed 200/100 mm small-tray topology keeps "
+            "L3 fixed at 0.15 m, places the first cantilever split keypoint 502/1502 at H1/2+L1-L3, and "
+            "keeps the tray connection/CPCYC line at H1/2+L1-L2/2. This applies only when a larger single-width "
+            "family has to be reused for a small tray; 300 mm sources are left in their reviewed L2/2 bolt topology."
+        ),
+    }
+
+
+def _audit_small_tray_physical_bolt_modeling(
+    text: str,
+    *,
+    tray_width_mm: int,
+    has_back_side: bool,
+) -> dict[str, Any]:
+    if tray_width_mm != 300:
+        return {
+            "status": "not_required",
+            "tray_width_mm": tray_width_mm,
+            "reason": "physical_bolt_gate_only_for_300_tray",
+            "policy": (
+                "The reviewed 300 mm tray command stream uses additional physical bolt/round-bar BEAM188 "
+                "elements. Reviewed 200/100 mm small-tray command streams use the small-tray arm partition "
+                "and coupling topology, so they are checked by small_tray_arm_partition instead of this gate."
+            ),
+        }
+
+    def has(pattern: str) -> bool:
+        return re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE) is not None
+
+    front_line_pairs = [
+        (
+            has(r"^\s*L\s*,\s*506\s*\+\s*10\s*\*\s*I\b.*,\s*507\s*\+\s*10\s*\*\s*I\b")
+            or has(r"^\s*L\s*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*6\b.*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*7\b")
+        ),
+        (
+            has(r"^\s*L\s*,\s*507\s*\+\s*10\s*\*\s*I\b.*,\s*508\s*\+\s*10\s*\*\s*I\b")
+            or has(r"^\s*L\s*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*7\b.*,\s*500\s*\+\s*10\s*\*\s*cengshu1\s*\+\s*8\b")
+        ),
+    ]
+    back_line_pairs = [
+        has(r"^\s*L\s*,\s*1506\s*\+\s*10\s*\*\s*I\b.*,\s*1507\s*\+\s*10\s*\*\s*I\b"),
+        has(r"^\s*L\s*,\s*1507\s*\+\s*10\s*\*\s*I\b.*,\s*1508\s*\+\s*10\s*\*\s*I\b"),
+    ]
+    checks = {
+        "beam188_type_4": has(r"^\s*ET\s*,\s*4\s*,\s*(?:188|BEAM188)\b"),
+        "round_bar_section_10": has(r"^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b"),
+        "round_bar_diameter": has(r"^\s*SECDATA\s*,\s*0\.006\b"),
+        "section_10_latt_meshing": has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
+        "front_physical_bolt_lines": all(front_line_pairs),
+        "back_physical_bolt_lines": (not has_back_side) or all(back_line_pairs),
+        "has_coupling_only_as_supplement": has(r"\b(?:CP|CPCYC)\s*,"),
+    }
+    required = [
+        "beam188_type_4",
+        "round_bar_section_10",
+        "round_bar_diameter",
+        "section_10_latt_meshing",
+        "front_physical_bolt_lines",
+        "back_physical_bolt_lines",
+    ]
+    missing = [name for name in required if not checks.get(name)]
+    return {
+        "status": "pass" if not missing else "fail",
+        "tray_width_mm": tray_width_mm,
+        "checks": checks,
+        "missing": missing,
+        "source_ref": "300 tray standard APDL family: ET,4 + SECTYPE,10 CSOLID + LATT,1,,4,,,,10",
+        "policy": (
+            "The 300 mm tray standard family must contain physical bolt/round-bar beam elements. CP/CPCYC "
+            "coupling is only a supplementary node coupling and cannot by itself satisfy the 300 mm modeling gate."
+        ),
+    }
+
+
 def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     support = payload.get("support") or {}
     sections = {str(item.get("section_id")): item for item in payload.get("sections") or []}
@@ -863,8 +1030,18 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     if not unique_widths:
         unique_widths = [500]
     source_tray_widths = list(_tray_widths_from_sections(_secreads(text)))
-    model_widths = unique_widths
-    material_slot_widths = _expanded_tray_widths_for_source(source_tray_widths, unique_widths)
+    shared_max_width_geometry = bool(
+        len(unique_widths) > 1
+        and len(source_tray_widths) == 1
+        and int(source_tray_widths[0]) == max(unique_widths)
+    )
+    if shared_max_width_geometry:
+        model_widths = [max(unique_widths)]
+        material_widths_for_source = model_widths
+    else:
+        model_widths = unique_widths
+        material_widths_for_source = unique_widths
+    material_slot_widths = _expanded_tray_widths_for_source(source_tray_widths, material_widths_for_source)
     primary_width = model_widths[0]
     secondary_width = model_widths[1] if len(model_widths) > 1 else primary_width
     layers_by_width = {
@@ -892,7 +1069,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     has_source_span_l6 = source_assignments.get("L6") is not None
     source_has_multi_width_geometry = len(source_tray_widths) > 1
     square_outer_mm = _square_outer_width_mm_from_payload(payload)
-    section_l3_value, section_l3_policy = _single_width_family_l3_from_square(square_outer_mm)
+    section_l3_value, section_l3_policy = _single_width_family_l3_from_tray_and_square(primary_width, square_outer_mm)
 
     rendered = text
     rendered = _replace_nth_secread(rendered, 0, support_section)
@@ -945,17 +1122,32 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
+    small_tray_partition_enabled = (
+        not has_source_span_l6
+        and assigned_senum > 0
+        and primary_width <= 200
+    )
+    rendered, small_tray_partition_audit = _rewrite_small_tray_arm_partition(
+        rendered,
+        enabled=small_tray_partition_enabled,
+    )
     rendered, connection_offset_audit = _rewrite_single_width_connection_offset_to_l3(
         rendered,
         enabled=(
             not has_source_span_l6
             and assigned_senum > 0
+            and primary_width > 300
             and abs(float(assigned_l3) - float(assigned_l2) / 2.0) > 1e-9
         ),
     )
     rendered, beam188_warping_keyopts = _ensure_standard_beam188_warping_keyopts(rendered)
     keypoint_numbering = _standard_family_keypoint_numbering(front, back)
     rendered, keypoint_numbering = _apply_model_keypoint_numbering(rendered, keypoint_numbering)
+    physical_bolt_modeling = _audit_small_tray_physical_bolt_modeling(
+        rendered,
+        tray_width_mm=primary_width,
+        has_back_side=bool(back),
+    )
 
     audit = {
         "support_section": support_section,
@@ -987,6 +1179,18 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "tray_widths_mm": unique_widths,
         "model_geometry_widths_mm": model_widths,
         "source_geometry_widths_mm": source_tray_widths,
+        "shared_max_width_geometry": {
+            "status": "applied" if shared_max_width_geometry else "not_required",
+            "input_widths_mm": unique_widths,
+            "model_widths_mm": model_widths,
+            "source_ref": "standard_family_selection:shared_max_width_geometry",
+            "policy": (
+                "When a mixed-width intake has no exact mixed-width source family and the selected reviewed "
+                "single-width family already models the governing maximum tray width, geometry and material "
+                "slots are rendered at that maximum width. This is a conservative reviewed-command fallback; "
+                "it prevents the first listed smaller tray from shortening the shared APDL geometry."
+            ),
+        },
         "material_slot_widths_mm": material_slot_widths,
         "tray_density_by_width": density_map,
         "source_has_multi_width_geometry": source_has_multi_width_geometry,
@@ -998,7 +1202,9 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "primary_arm_secread_replacements": primary_arm_replacements,
         "secondary_arm_secread_replacements": secondary_arm_replacements,
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
+        "small_tray_arm_partition": small_tray_partition_audit,
         "single_width_connection_offset": connection_offset_audit,
+        "physical_bolt_modeling": physical_bolt_modeling,
         "beam188_warping_keyopts": beam188_warping_keyopts,
         "assigned": {
             "H1": assigned_h1,
@@ -1015,10 +1221,13 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "l3_policy": {
             "status": section_l3_policy if not has_source_span_l6 else "source_multi_width_l3_tracks_primary_tray_width",
             "square_outer_width_mm": square_outer_mm,
+            "primary_tray_width_mm": primary_width,
             "applied_to": "L3" if not has_source_span_l6 else None,
             "policy": (
-                "For single-width/no-L6 standard S2 model families, L3 follows square tube outer width: "
-                "<=120 mm uses 0.20 m and >120 mm uses 0.15 m. Multi-width source families keep L3/L4 as tray-width parameters."
+                "For single-width/no-L6 standard S2 model families, tray widths <=300 mm use reviewed small-tray "
+                "geometry with L3=0.15 m independent of square-tube section. Wider trays keep the existing square "
+                "tube outer-width policy: <=120 mm uses 0.20 m and >120 mm uses 0.15 m. Multi-width source "
+                "families keep L3/L4 as tray-width parameters."
             ),
         },
         "keypoint_numbering": keypoint_numbering,
@@ -1616,8 +1825,9 @@ def render_intake_standard_family_commands(
     )
     section_failures = [item for item in sections if item.get("status") != "copied"]
     solve_parameterization_failed = solve_parameterization_audit.get("status") == "fail"
+    model_parameterization_failed = (parameter_audit.get("physical_bolt_modeling") or {}).get("status") == "fail"
     payload_out = {
-        "status": "pass" if not section_failures and not solve_parameterization_failed else "fail",
+        "status": "pass" if not section_failures and not solve_parameterization_failed and not model_parameterization_failed else "fail",
         "job_id": job_id,
         "job_dir": str(job_dir),
         "family": {**family, "source_encoding": encoding},

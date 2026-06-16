@@ -1,4 +1,34 @@
 # CableTrayAI ??????
+## 2026-06-16 tray-300 physical bolt modeling and small-tray L3 closeout
+
+Current latest source/validation state:
+
+1. The user-provided 300 mm and 200 mm standard PIP command streams were reviewed against the renderer logic.
+2. For single-width/no-L6 S2 families, tray widths `<=300 mm` now always render `L3=0.15 m`, independent of selected square tube size. Tray widths above 300 mm keep the existing square-section-controlled L3 policy.
+3. The 300 mm tray path now requires a real physical bolt/round-bar model, not only coupled nodes. Selection strongly prefers reviewed APDL families containing `ET,4,188`, `SECTYPE,10,BEAM,CSOLID`, `SECDATA,0.006`, `LATT,1,,4,,,,10`, and 506/507/508 physical line pairs. `CP/CPCYC` remains a supplementary coupling and cannot alone satisfy the 300 mm modeling gate.
+4. The 200/100 mm small-tray path is intentionally separate: it uses the reviewed small-tray arm partition where `K502/1502` are at `H1/2+L1-L3`, `K503/1503` and the tray/CPCYC connection stay at `H1/2+L1-L2/2`, and the connector line moves from `502-509` to `503-509` when a larger family is reused.
+5. Mixed-width fallback is fixed at render time. If a mixed intake such as 300/500 has to reuse a reviewed single-width maximum-width family, the generated `L2`, tray `SECREAD`, and density replacement now use the governing maximum width instead of the first listed smaller tray.
+6. Web command-stream preview now labels and draws bolt/round-bar line elements separately, so the operator can visually confirm that the 300 mm physical bolt/round-bar lines are present rather than seeing only coupled points.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py tests/unit/test_square_section_selector.py tests/unit/test_static_method_no_modal_policy.py tests/unit/test_bolt_width_policy.py -q` passed.
+3. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+4. Node inline syntax check for `apps/web/index.html` passed.
+5. Full render-entry smoke passed for `verify_double_300_3_2`: selected `source_materials/model_commands/报告及模型命令流/18185NI-LXSJ4155/计算文件/01双侧同类型电缆桥架-方钢300.PIP`, `L3=0.15`, `physical_bolt_modeling=pass`.
+6. Full render-entry smoke passed for `verify_single_200_2`: `L3=0.15`, `physical_bolt_modeling=not_required`, and the small-tray path is not blocked by the 300 mm physical-bolt gate.
+7. Full render-entry smoke passed for `verify_mixed_300_500`: selected reviewed 500 mm shared geometry, `L2=0.5`, `model_geometry_widths_mm=[500]`, and `shared_max_width_geometry=applied`.
+
+Deployment closeout:
+
+1. Server, desktop, and installer runtimes were rebuilt.
+2. Full package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `0DD63988F61B00BB5AB61C590C1613E7E0CA667B3A5898C2EE952CB3B4A8318C`.
+3. Update package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `1171B1FB97138FCD6F2762BF9EC469796435CEC8E69D9DA35044434967212ECB`.
+4. Package gate passed, including runtime XML support and no-expat spectrum smoke. Update package `-VerifyOnly` passed.
+5. Local `D:/CableTrayAI` was updated from the new update package; backup is `D:/CableTrayAI/_update_backups/20260616_153124`.
+6. Local smoke passed: `/health` returned `ok`, `duxyb/cnpe123` login returned `pass`, and installed `core/apdl/intake_standard_family_renderer.py` plus `apps/web/index.html` hashes match source.
+
 ## 2026-06-16 4215 smart section-selection and deployment closeout
 
 Current latest source/validation state:
