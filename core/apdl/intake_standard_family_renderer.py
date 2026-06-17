@@ -826,6 +826,236 @@ def _rewrite_model_bolt_section_radius(text: str, widths: list[int]) -> tuple[st
     }
 
 
+def _normalize_physical_bolt_element_type_keyopts(text: str) -> tuple[str, dict[str, Any]]:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    updated: list[str] = []
+    rewritten = 0
+    inserted = 0
+    saw_et4 = False
+    found_keyopt4 = False
+    found_keyopt1 = False
+    in_et4_block = False
+
+    for line in lines:
+        if re.match(r"\s*ET\s*,\s*4\s*,\s*188\b", line, flags=re.IGNORECASE):
+            if in_et4_block and saw_et4:
+                if not found_keyopt4:
+                    updated.append("KEYOPT,4,4,2")
+                    inserted += 1
+                if not found_keyopt1:
+                    updated.append("KEYOPT,4,1,1")
+                    inserted += 1
+            updated.append(line)
+            saw_et4 = True
+            in_et4_block = True
+            found_keyopt4 = False
+            found_keyopt1 = False
+            continue
+
+        if in_et4_block:
+            match = re.match(r"(\s*)KEYOPT\s*,\s*(\d+)\s*,\s*([14])\s*,\s*(\d+)\s*(.*)$", line, flags=re.IGNORECASE)
+            if match:
+                prefix, element_type, option, value, suffix = match.groups()
+                if element_type == "2" and option in {"1", "4"}:
+                    line = f"{prefix}KEYOPT,4,{option},{value}{suffix}"
+                    rewritten += 1
+                if re.match(r"\s*KEYOPT\s*,\s*4\s*,\s*4\s*,\s*2\b", line, flags=re.IGNORECASE):
+                    found_keyopt4 = True
+                if re.match(r"\s*KEYOPT\s*,\s*4\s*,\s*1\s*,\s*1\b", line, flags=re.IGNORECASE):
+                    found_keyopt1 = True
+                updated.append(line)
+                continue
+
+            if not re.match(r"\s*KEYOPT\s*,", line, flags=re.IGNORECASE):
+                if not found_keyopt4:
+                    updated.append("KEYOPT,4,4,2")
+                    inserted += 1
+                if not found_keyopt1:
+                    updated.append("KEYOPT,4,1,1")
+                    inserted += 1
+                in_et4_block = False
+
+        updated.append(line)
+
+    if in_et4_block and saw_et4:
+        if not found_keyopt4:
+            updated.append("KEYOPT,4,4,2")
+            inserted += 1
+        if not found_keyopt1:
+            updated.append("KEYOPT,4,1,1")
+            inserted += 1
+
+    return "\n".join(updated), {
+        "status": "rewritten" if rewritten else "inserted" if inserted else "already_correct" if saw_et4 else "not_present",
+        "rewritten_count": rewritten,
+        "inserted_count": inserted,
+        "source_ref": "current-type physical bolt BEAM188 element-type correction",
+        "policy": (
+            "Physical bolt/connector lines use element type 4 through LATT,1,,4,,,,10. "
+            "Some reviewed command streams inherited KEYOPT,2 immediately after ET,4; generated APDL "
+            "normalizes that block to KEYOPT,4 so the bolt element type owns the intended BEAM188 settings."
+        ),
+    }
+
+
+def _has_physical_bolt_topology(text: str, *, has_back_side: bool) -> bool:
+    checks = [
+        r"(?im)^\s*ET\s*,\s*4\s*,\s*188\b",
+        r"(?im)^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b",
+        r"(?im)^\s*K\s*,\s*509\s*\+\s*10\s*\*\s*I\b",
+        r"(?im)^\s*L\s*,\s*(?:502|503)\s*\+\s*10\s*\*\s*I\b.*,\s*509\s*\+\s*10\s*\*\s*I\b",
+        r"(?im)^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b",
+    ]
+    if has_back_side:
+        checks.extend(
+            [
+                r"(?im)^\s*K\s*,\s*1509\s*\+\s*10\s*\*\s*I\b",
+                r"(?im)^\s*L\s*,\s*(?:1502|1503)\s*\+\s*10\s*\*\s*I\b.*,\s*1509\s*\+\s*10\s*\*\s*I\b",
+            ]
+        )
+    return all(re.search(pattern, text) for pattern in checks)
+
+
+def _ensure_small_tray_physical_bolt_elements(
+    text: str,
+    *,
+    enabled: bool,
+    has_back_side: bool,
+) -> tuple[str, dict[str, Any]]:
+    if not enabled:
+        return text, {
+            "status": "not_required",
+            "reason": "not_tray_width_le_200_single_width_family",
+        }
+    if _has_physical_bolt_topology(text, has_back_side=has_back_side):
+        return text, {
+            "status": "already_present",
+            "source_ref": "operator-confirmed physical bolt modeling requirement",
+            "policy": (
+                "100/200 mm S2 small-tray jobs retain physical bolt/connector BEAM188 lines. "
+                "Subsequent normalization still verifies element type 4 KEYOPT settings and M8 section data."
+            ),
+        }
+
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    inserted = {
+        "element_type_4_blocks": 0,
+        "section_10_blocks": 0,
+        "front_k509_and_connector": 0,
+        "back_k1509_and_connector": 0,
+        "tray_center_unselect_lines": 0,
+        "section_10_mesh_blocks": 0,
+    }
+
+    if not re.search(r"(?im)^\s*ET\s*,\s*4\s*,\s*188\b", text):
+        insert_at = None
+        for index, line in enumerate(lines):
+            if re.match(r"\s*KEYOPT\s*,\s*2\s*,\s*1\s*,\s*1\b", line, flags=re.IGNORECASE):
+                insert_at = index + 1
+                break
+            if insert_at is None and re.match(r"\s*ET\s*,\s*2\s*,\s*188\b", line, flags=re.IGNORECASE):
+                insert_at = index + 1
+        if insert_at is not None:
+            lines[insert_at:insert_at] = ["ET,4,188", "KEYOPT,4,4,2", "KEYOPT,4,1,1"]
+            inserted["element_type_4_blocks"] = 1
+
+    if not re.search(r"(?im)^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b", "\n".join(lines)):
+        insert_at = next(
+            (
+                index
+                for index, line in enumerate(lines)
+                if re.match(r"\s*MP\s*,", line, flags=re.IGNORECASE)
+            ),
+            None,
+        )
+        if insert_at is not None:
+            lines[insert_at:insert_at] = ["SECTYPE,10,BEAM,CSOLID", "SECDATA,0.004", "SECOFFSET,USER,"]
+            inserted["section_10_blocks"] = 1
+
+    text_after_header = "\n".join(lines)
+    need_front_connector = not re.search(r"(?im)^\s*K\s*,\s*509\s*\+\s*10\s*\*\s*I\b", text_after_header)
+    need_back_connector = has_back_side and not re.search(r"(?im)^\s*K\s*,\s*1509\s*\+\s*10\s*\*\s*I\b", text_after_header)
+    rebuilt: list[str] = []
+    for line in lines:
+        rebuilt.append(line)
+        if need_front_connector and re.match(
+            r"\s*L\s*,\s*507\s*\+\s*10\s*\*\s*I\b.*,\s*508\s*\+\s*10\s*\*\s*I\b",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            rebuilt.extend(
+                [
+                    "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+                    "L,503+10*I+100*(J-1),509+10*I+100*(J-1)",
+                ]
+            )
+            inserted["front_k509_and_connector"] += 1
+        if need_back_connector and re.match(
+            r"\s*L\s*,\s*1507\s*\+\s*10\s*\*\s*I\b.*,\s*1508\s*\+\s*10\s*\*\s*I\b",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            rebuilt.extend(
+                [
+                    "K,1509+10*I+100*(J-1),-(H1/2+L1-L2/2),0+L4*(J-1),0.15+0.2*(I-1)",
+                    "L,1503+10*I+100*(J-1),1509+10*I+100*(J-1)",
+                ]
+            )
+            inserted["back_k1509_and_connector"] += 1
+
+    compact = re.sub(r"\s+", "", "\n".join(rebuilt))
+    need_section10_mesh = "LATT,1,,4,,,,10" not in compact
+    rebuilt2: list[str] = []
+    pending_section10_after_lmesh = False
+    for line in rebuilt:
+        if re.match(r"\s*LATT\s*,\s*2\s*,\s*,\s*2\s*,\s*,\s*,\s*,\s*4\b", line, flags=re.IGNORECASE):
+            for keypoint in ("519", "619", "719"):
+                unselect = f"LSEL,U,LOC,Y,KY({keypoint})"
+                if unselect not in rebuilt2:
+                    rebuilt2.append(unselect)
+                    inserted["tray_center_unselect_lines"] += 1
+            if has_back_side:
+                for keypoint in ("1519", "1619", "1719"):
+                    unselect = f"LSEL,U,LOC,Y,KY({keypoint})"
+                    if unselect not in rebuilt2:
+                        rebuilt2.append(unselect)
+                        inserted["tray_center_unselect_lines"] += 1
+            pending_section10_after_lmesh = need_section10_mesh
+        rebuilt2.append(line)
+        if pending_section10_after_lmesh and re.match(r"\s*LMESH\s*,\s*ALL\b", line, flags=re.IGNORECASE):
+            bolt_mesh = [
+                "",
+                "ALLSEL",
+                "LSEL,S,LOC,X,KX(516)",
+            ]
+            if has_back_side:
+                bolt_mesh.append("LSEL,A,LOC,X,KX(1516)")
+            bolt_mesh.extend(
+                [
+                    "LATT,1,,4,,,,10",
+                    "LESIZE,ALL,0.05,,,,,,,1",
+                    "LMESH,ALL",
+                ]
+            )
+            rebuilt2.extend(bolt_mesh)
+            inserted["section_10_mesh_blocks"] += 1
+            pending_section10_after_lmesh = False
+            need_section10_mesh = False
+
+    return "\n".join(rebuilt2), {
+        "status": "inserted" if any(inserted.values()) else "already_present",
+        "inserted": inserted,
+        "has_back_side": has_back_side,
+        "source_ref": "operator-confirmed physical bolt modeling requirement",
+        "policy": (
+            "100/200 mm S2 small-tray jobs must model the physical bolt/connector beam. "
+            "If the selected current-type source family lacks ET4/SECTYPE10/K509 connector lines, "
+            "generated APDL inserts the missing physical-bolt topology before normalizing KEYOPT, section, "
+            "and M8 radius."
+        ),
+    }
+
+
 def _wrap_optional_block_once(text: str, start_regex: str, condition: str) -> tuple[str, int]:
     pattern = re.compile(rf"(?ms)(ALLSEL\s*\n\s*{start_regex}.*?LMESH\s*,\s*ALL)", flags=re.IGNORECASE)
 
@@ -1442,7 +1672,6 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered = _replace_or_insert_assignment_after(rendered, "senum2", int(extra_assignments["senum2"]), "senum1")
     if "senum3" in extra_assignments:
         rendered = _replace_or_insert_assignment_after(rendered, "senum3", int(extra_assignments["senum3"]), "senum2")
-    rendered, bolt_section_radius_audit = _rewrite_model_bolt_section_radius(rendered, unique_widths)
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
@@ -1455,6 +1684,13 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered,
         enabled=small_tray_partition_enabled,
     )
+    rendered, small_tray_physical_bolt_policy = _ensure_small_tray_physical_bolt_elements(
+        rendered,
+        enabled=small_tray_partition_enabled,
+        has_back_side=bool(back),
+    )
+    rendered, bolt_section_radius_audit = _rewrite_model_bolt_section_radius(rendered, unique_widths)
+    rendered, physical_bolt_element_type_keyopts = _normalize_physical_bolt_element_type_keyopts(rendered)
     rendered, optional_mixed_mesh_guards = _guard_single_mixed_optional_mesh_blocks(rendered, source_mixed_shape)
     connection_offset_audit = {
         "status": "not_required",
@@ -1543,7 +1779,9 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
         "channel_secoffset_replacements": channel_secoffset_replacements,
         "small_tray_arm_partition": small_tray_partition_audit,
+        "small_tray_physical_bolt_policy": small_tray_physical_bolt_policy,
         "bolt_section_radius": bolt_section_radius_audit,
+        "physical_bolt_element_type_keyopts": physical_bolt_element_type_keyopts,
         "optional_mixed_mesh_guards": optional_mixed_mesh_guards,
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,

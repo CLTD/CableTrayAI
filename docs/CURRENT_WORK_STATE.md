@@ -1,5 +1,32 @@
 # CableTrayAI ??????
 
+## 2026-06-18 physical bolt element-type and grouped mixed TMAX closeout
+
+Current source/validation state:
+
+1. Physical bolt/connector geometry is retained for 100/200 mm small-tray jobs. The temporary idea of removing physical bolts is superseded and must not be reused.
+2. Fixed current-family small-tray physical bolt BEAM188 definition: when generated APDL has `ET,4,188`, the following element options are normalized to `KEYOPT,4,4,2` and `KEYOPT,4,1,1`. Reviewed source files that accidentally put `KEYOPT,2,...` after `ET,4` are corrected at render time without modifying source materials.
+3. If a reviewed 100/200 mm double-side source lacks physical bolt topology, generated APDL now inserts `ET,4,188`, `SECTYPE,10,BEAM,CSOLID`, M8 `SECDATA,0.004`, front/back `K509/K1509`, connector lines, and `LATT,1,,4,,,,10`.
+4. Fixed grouped mixed 100/200 mm post-processing: models using `ARM_ET(NARM)=2` and `ARM_SEC(NARM)=2/3` now select TMAX cantilever arms with `ESEL,S,SEC,,2` plus `ESEL,A,SEC,,3`, preventing `TMAXBEAMSTRESS.LIS` from being all-zero.
+5. Replaced the old DOTALL regex TMAX selector rewrite with a linear line-based replacement. This removes the 120-minute CPU hang seen before real ANSYS started on `18185NI-LXSJ4215`.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+2. Targeted postprocessor and tray-width tests passed: `tests/unit/test_postprocessor_alignment.py` and `tests/unit/test_intake_standard_family_tray_widths.py`.
+3. Real ANSYS18.2 passed for `jobs/verify_small_tray_bolt_matrix_real_20260618_rerun` rows 5, 7, and 20.
+4. Real-run results: `18185NI-LXSJ4213` selected `100-100-6`, section ratio `0.6179154054744243`, final max ratio `0.9313729151561154`; `18185NI-LXSJ4215` selected `120-120-6`, section ratio `0.3986404089390689`, final max ratio `0.7488461481605604`; temporary double-side 200 row `18185NI-LXSJ9299` selected `100-100-6`, section ratio `0.19562670633692059`, final max ratio `0.43973493136852526`.
+5. Published `TMAXBEAMSTRESS.LIS` for `4215` is non-zero; `result_validation.status=pass`.
+6. Generated models for `4213`, `4215`, and `9299` contain `ET,4,188`, `KEYOPT,4,4,2`, `KEYOPT,4,1,1`, no bad `KEYOPT,2` near `ET,4`, `BEAM,CSOLID`, M8 `SECDATA,0.004`, and physical `LATT,1,,4`.
+
+Deployment closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as transfer hash authority.
+2. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `更新包.zip.sha256.txt` as transfer hash authority.
+3. Refreshed `CableTrayAI.zip.sha256.txt` and `更新包.zip.sha256.txt`.
+4. Applied the update to local `D:/CableTrayAI`; the exact latest backup path is recorded in the installed update manifest; health check passed.
+5. Package gate passed, including runtime XML/expat files and the no-expat spectrum smoke.
+
 ## 2026-06-17 4213 bolt-section and 4210 grouped mixed closeout
 
 Current source/validation state:

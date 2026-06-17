@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-06-18 physical bolt element-type and grouped mixed TMAX queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4213`-class physical bolt visual defect root cause found: generated models assigned physical bolt connector lines with `LATT,1,,4,...`, but reviewed sources had `KEYOPT,2,...` immediately after `ET,4,188`. Generated APDL now normalizes that block to `KEYOPT,4,4,2` and `KEYOPT,4,1,1`.
+2. 100/200 mm small-tray jobs must keep physical bolt/connector geometry. If the selected reviewed source lacks that topology, generation inserts ET4, M8 CSOLID section, K509/K1509 connector points, and section-10 bolt meshing.
+3. `4215` grouped mixed small-tray post-processing no longer selects nonexistent `10*I+2/10*I+3` arm element types. It detects grouped `TYPE=2`/`SEC=2/3` topology and uses section-based TMAX selection.
+4. The TMAX selector patcher is now line-based, not a large DOTALL regex, eliminating the pre-ANSYS CPU hang/no-log symptom.
+5. Verification passed: full `tests/unit`, targeted postprocessor/tray-width tests, and real ANSYS18.2 for `4213`, `4215`, and a temporary double-side 200 row `9299`.
+6. Real results: `4213` ratio `0.6179154054744243`, `4215` section ratio `0.3986404089390689` with final max ratio `0.7488461481605604`, and `9299` ratio `0.19562670633692059`; all have `result_validation.status=pass`.
+7. Deployment refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; sidecar hashes were regenerated.
+8. Local `D:/CableTrayAI` updated from `更新包`; the exact latest backup path is recorded in the installed update manifest; health check passed.
+
+Open:
+
+1. Commit and push this completed update.
+
 ## 2026-06-17 4213 bolt-section and 4210 grouped mixed queue
 
 Resolved in source, real ANSYS, package, and local deployment:

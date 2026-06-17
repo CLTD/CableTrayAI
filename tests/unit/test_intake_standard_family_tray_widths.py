@@ -954,9 +954,12 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
     assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
 
 
-def test_200_small_tray_rewrites_physical_bolt_section_to_m8_radius() -> None:
+def test_200_small_tray_keeps_physical_bolt_with_m8_section_and_type4_keyopts() -> None:
     source_text = "\n".join(
         [
+            "ET,4,188",
+            "KEYOPT,2,4,2",
+            "KEYOPT,2,1,1",
             "SECTYPE,10,BEAM,CSOLID",
             "SECDATA,0.006",
             "SECOFFSET,USER,",
@@ -970,8 +973,17 @@ def test_200_small_tray_rewrites_physical_bolt_section_to_m8_radius() -> None:
             "senum=2",
             "SECREAD,'100-100-6'",
             "SECREAD,'200-75-2mm'",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
             "L,503+10*I+100*(J-1),509+10*I+100*(J-1)",
+            "ALLSEL",
+            "LSEL,S,LOC,X,KX(516)",
+            "LSEL,U,LOC,Y,KY(519)",
+            "LATT,2,,2,,,,4",
+            "LMESH,ALL",
+            "ALLSEL",
+            "LSEL,S,LOC,X,KX(516)",
             "LATT,1,,4,,,,10",
+            "LMESH,ALL",
             "CPCYC,UX,,,,,L5-0.05",
         ]
     )
@@ -984,8 +996,21 @@ def test_200_small_tray_rewrites_physical_bolt_section_to_m8_radius() -> None:
 
     rendered, audit = _render_model_from_family(source_text, payload)
 
+    assert "ET,4,188" in rendered
+    assert "KEYOPT,4,4,2" in rendered
+    assert "KEYOPT,4,1,1" in rendered
+    assert "KEYOPT,2,4,2\nKEYOPT,2,1,1\nSECTYPE,10" not in rendered
+    assert "SECTYPE,10,BEAM,CSOLID" in rendered
     assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
     assert "SECDATA,0.006" not in rendered
+    assert "K,509+10*I+100*(J-1)" in rendered
+    assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
+    assert "LSEL,U,LOC,Y,KY(519)" in rendered
+    assert "LATT,1,,4,,,,10" in rendered
+    assert "LATT,2,,2,,,,4" in rendered
+    assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
+    assert audit["physical_bolt_element_type_keyopts"]["status"] == "rewritten"
+    assert audit["physical_bolt_element_type_keyopts"]["rewritten_count"] == 2
     assert audit["bolt_section_radius"]["status"] == "rewritten"
     assert audit["bolt_section_radius"]["radius_m"] == 0.004
     assert audit["bolt_section_radius"]["widths_mm"] == [200]
@@ -1023,6 +1048,33 @@ def test_current_type_command_library_does_not_use_300_family_for_100_or_200_tra
         assert "small_tray_must_not_use_300_family" not in [
             check.get("reason") for check in family.get("checks") or []
         ]
+
+
+def test_double_200_small_tray_inserts_missing_physical_bolt_topology() -> None:
+    payload = _payload_with_uniform_tray_width(200)
+
+    family = select_standard_model_family(payload)
+    source_text, _ = read_text_with_encoding(Path(family["source"]))
+    rendered, audit = _render_model_from_family(source_text, payload)
+    compact = "".join(rendered.split())
+
+    assert family["source"].endswith("double_uniform_200_square.PIP")
+    assert "ET,4,188" in rendered
+    assert "KEYOPT,4,4,2" in rendered
+    assert "KEYOPT,4,1,1" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
+    assert "K,509+10*I+100*(J-1)" in rendered
+    assert "K,1509+10*I+100*(J-1)" in rendered
+    assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
+    assert "L,1503+10*I+100*(J-1),1509+10*I+100*(J-1)" in rendered
+    assert "LSEL,U,LOC,Y,KY(519)" in rendered
+    assert "LSEL,U,LOC,Y,KY(1519)" in rendered
+    assert "LATT,1,,4,,,,10" in compact
+    assert audit["small_tray_physical_bolt_policy"]["status"] == "inserted"
+    assert audit["small_tray_physical_bolt_policy"]["inserted"]["section_10_mesh_blocks"] == 1
+    assert audit["bolt_section_radius"]["radius_m"] == 0.004
+    assert audit["physical_bolt_element_type_keyopts"]["status"] in {"already_correct", "inserted"}
 
 
 def test_300_modeling_gate_fails_when_only_coupling_exists_without_bolt_elements() -> None:
@@ -1096,8 +1148,10 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
     assert "0.1+L5+0.2*(I-1)" in rendered
     assert "CPCYC,UX,,,,,L5-0.05" in rendered
     assert "0.068-0.05" not in rendered
+    assert "K,509+10*I+100*(J-1)" in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
     assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
@@ -1147,6 +1201,7 @@ def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
     assert "0.068-0.05" not in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
     assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
