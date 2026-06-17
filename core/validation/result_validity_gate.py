@@ -324,6 +324,8 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
         or selection.get("selection_validation_mode")
         or ""
     )
+    final_ratio = _square_section_selection_ratio(evaluation_rows)
+    final_chapter6_ratio = _max_evaluation_ratio(evaluation_rows)
     if validation_mode == "learned_formal_validation":
         return {
             "check_id": "square_section_formal_validation_mode",
@@ -338,8 +340,39 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
                 "source_ref": "square_section_selection.json:learned_formal_validation",
             },
         }
-    final_ratio = _square_section_selection_ratio(evaluation_rows)
-    final_chapter6_ratio = _max_evaluation_ratio(evaluation_rows)
+    if validation_mode == "preserved_after_spacing_recovery_pending_formal_validation":
+        evidence = {
+            "section_name": selected.get("section_name") or metadata.get("square_section_selected"),
+            "validation_mode": validation_mode,
+            "final_section_selection_ratio": final_ratio,
+            "final_chapter6_controlling_ratio": final_chapter6_ratio,
+            "support_spacing_current_m": metadata.get("support_spacing_current_m"),
+            "support_spacing_previous_m": metadata.get("support_spacing_previous_m"),
+            "source_ref": "input.json metadata + evaluation_summary.json after support-spacing recovery",
+        }
+        if final_ratio is None:
+            return {
+                "check_id": "square_section_spacing_recovery_final_ratio_missing",
+                "status": "fail",
+                "message": "Current square section was preserved after support-spacing recovery, but the formal Chapter 6.1 section-selection ratio is missing.",
+                "evidence": evidence,
+            }
+        if float(final_ratio) > 1.0:
+            return {
+                "check_id": "square_section_spacing_recovery_final_ratio_overlimit",
+                "status": "fail",
+                "message": "Current square section was preserved after support-spacing recovery, but the formal Chapter 6.1 section-selection ratio is still over limit.",
+                "evidence": evidence,
+            }
+        return {
+            "check_id": "square_section_spacing_recovery_formal_validation",
+            "status": "pass",
+            "message": (
+                "Current square section was preserved after support-spacing recovery; the old trial ratio is not "
+                "comparable to the new spacing, so the current formal ANSYS/evaluation ratio is used directly."
+            ),
+            "evidence": evidence,
+        }
     trial_ratio = _metric_value(
         selected.get("trial_controlling_ratio")
         or selected.get("controlling_ratio")

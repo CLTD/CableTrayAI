@@ -162,6 +162,91 @@ def test_final_ratio_recovery_requires_current_section_to_be_max_allowed(tmp_pat
     assert plan["reason"] == "current_square_section_is_not_maximum_allowed"
 
 
+def test_final_ratio_recovery_can_keep_current_section_and_reduce_spacing(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    source_root = tmp_path / "source"
+    _write_job(job_dir)
+    _write_catalog(source_root)
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"]["square_section_selected"] = "140-140-8"
+    payload["support"]["support_section_id"] = "140-140-8"
+    payload["sections"][0]["section_id"] = "140-140-8"
+    payload["sections"][0]["sect_file"] = "140-140-8"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [
+                            {
+                                "check_id": "cantilever_root_weld_equivalent.accident.bending",
+                                "ratio": 1.496,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    plan = plan_support_spacing_recovery_from_final_ratio(
+        job_dir,
+        source_root=source_root,
+        require_current_max_allowed=False,
+    )
+
+    assert plan["status"] == "pass"
+    assert plan["current_square_section"] == "140-140-8"
+    assert plan["max_allowed_square_section"] == "160-160-8"
+    assert plan["require_current_max_allowed"] is False
+    assert plan["new_support_spacing_m"] < 2.0
+    assert plan["source_ref"] == "support_spacing_recovery:current_section_final_gate_overlimit"
+
+
+def test_apply_spacing_recovery_can_preserve_current_square_section(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    source_root = tmp_path / "source"
+    _write_job(job_dir)
+    _write_catalog(source_root)
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [
+                            {
+                                "check_id": "cantilever_root_weld_equivalent.accident.bending",
+                                "ratio": 1.18,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    plan = plan_support_spacing_recovery_from_final_ratio(job_dir, source_root=source_root)
+
+    applied = apply_support_spacing_recovery(job_dir, plan, preserve_square_section=True)
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+
+    assert applied["status"] == "pass"
+    assert applied["preserve_square_section"] is True
+    assert payload["support"]["support_spacing_m"] == plan["new_support_spacing_m"]
+    assert payload["support"]["support_section_id"] == "160-160-8"
+    assert payload["metadata"]["square_section_selected"] == "160-160-8"
+    assert payload["metadata"]["square_section_selection_status"] == "auto_selected_by_real_ansys"
+    assert payload["metadata"]["support_spacing_adjustment_status"] == "auto_reduced_preserving_current_square_section"
+
+
 def test_final_ratio_recovery_allows_weld_ratio_when_max_section_is_active(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     source_root = tmp_path / "source"

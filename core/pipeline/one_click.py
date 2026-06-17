@@ -837,17 +837,35 @@ def run_operator_one_click(
                         ansys_pid=event.get("ansys_pid"),
                     )
 
-                def rerender_after_support_spacing_change(plan: dict[str, Any]) -> dict[str, Any]:
-                    apply_audit = apply_support_spacing_recovery(job_dir, plan)
+                def rerender_after_support_spacing_change(
+                    plan: dict[str, Any],
+                    *,
+                    preserve_square_section: bool = False,
+                ) -> dict[str, Any]:
+                    apply_audit = apply_support_spacing_recovery(
+                        job_dir,
+                        plan,
+                        preserve_square_section=preserve_square_section,
+                    )
                     cleanup_audit = _clean_regenerable_outputs_for_rerun(job_dir, include_command_streams=True)
-                    progress(
-                        "adjust_support_spacing",
-                        (
+                    section_label = plan.get("current_square_section") or plan.get("max_allowed_square_section")
+                    if preserve_square_section:
+                        spacing_message = (
+                            f"{item['job_id']}: final weld/bolt/connection ratio "
+                            f"{float(plan.get('failed_ratio') or 0.0):.3f} is over limit; keep current square section "
+                            f"{section_label}, reduce support spacing from {plan.get('current_support_spacing_m')}m "
+                            f"to {plan.get('new_support_spacing_m')}m and regenerate APDL."
+                        )
+                    else:
+                        spacing_message = (
                             f"{item['job_id']}: max allowed square section {plan.get('max_allowed_square_section')} "
                             f"ratio {float(plan.get('failed_ratio') or 0.0):.3f} is over limit; "
                             f"reduce support spacing from {plan.get('current_support_spacing_m')}m "
                             f"to {plan.get('new_support_spacing_m')}m and regenerate APDL."
-                        ),
+                        )
+                    progress(
+                        "adjust_support_spacing",
+                        spacing_message,
                         min(base_progress + 78, 92),
                         job_id=item["job_id"],
                     )
@@ -1247,6 +1265,71 @@ def run_operator_one_click(
                         )
                         run_formal_ansys_once("(after clean square-section reselection)")
                     row_result["square_section_clean_reselection_attempts"] = clean_reselection_attempts
+                    final_ratio_spacing_attempts: list[dict[str, Any]] = []
+                    while len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS:
+                        if result_validation_needs_square_section_upgrade(job_dir):
+                            break
+                        if not result_validation_needs_final_ratio_section_recovery(job_dir):
+                            break
+                        validation = _read_validation_status(job_dir)
+                        if validation.get("status") == "pass":
+                            break
+                        if provided_square_section_frozen:
+                            final_ratio_spacing_attempts.append(
+                                {
+                                    "status": "skipped_frozen_provided_section",
+                                    "reason": "Fixed intake/report square sections and spacing are not changed automatically.",
+                                }
+                            )
+                            break
+                        spacing_plan = plan_support_spacing_recovery_from_final_ratio(
+                            job_dir,
+                            source_root=source_root,
+                            attempt_index=len(support_spacing_adjustments) + 1,
+                            require_current_max_allowed=False,
+                        )
+                        if spacing_plan.get("status") != "pass":
+                            final_ratio_spacing_attempts.append(
+                                {
+                                    "status": "skipped",
+                                    "plan": spacing_plan,
+                                    "validation_status": validation.get("status"),
+                                }
+                            )
+                            break
+                        spacing_recovery_audit = rerender_after_support_spacing_change(
+                            spacing_plan,
+                            preserve_square_section=True,
+                        )
+                        current_section = spacing_plan.get("current_square_section")
+                        spacing_recovery_audit["selection_status"] = "preserved_current_square_section"
+                        spacing_recovery_audit["selected_section"] = current_section
+                        spacing_recovery_audit["triggering_validation_status"] = validation.get("status")
+                        spacing_recovery_audit["triggering_validation_fail_count"] = validation.get("fail_count")
+                        support_spacing_adjustments.append(spacing_recovery_audit)
+                        final_ratio_spacing_attempts.append(spacing_recovery_audit)
+                        row_result["support_spacing_adjustments"] = support_spacing_adjustments
+                        row_result["support_spacing_recovery_status"] = "applied"
+                        row_result["final_ratio_section_recovery_status"] = "support_spacing_preferred"
+                        row_result["rerun_reason"] = "final_ratio_spacing_recovery"
+                        row_result["rerun_reason_detail"] = (
+                            "Final deterministic weld/bolt/global ratio gate exceeded 1.0; "
+                            "the current Chapter 6.1 square-section sizing is kept and support spacing is reduced first."
+                        )
+                        if current_section:
+                            row_result["square_section_selected"] = current_section
+                        cleanup_heavy_solver_artifacts(job_dir)
+                        progress(
+                            "rerunning_ansys_after_spacing_recovery",
+                            (
+                                f"{item['job_id']}: support spacing was reduced to "
+                                f"{spacing_plan.get('new_support_spacing_m')}m while keeping "
+                                f"{current_section}; rerun formal ANSYS before trying a larger square section."
+                            ),
+                            min(base_progress + 80, 94),
+                            job_id=item["job_id"],
+                        )
+                        run_formal_ansys_once("(final ratio spacing recovery preserving current section)")
                     for upgrade_attempt in range(1, 4):
                         section_ratio_recovery = result_validation_needs_square_section_upgrade(job_dir)
                         final_ratio_recovery = result_validation_needs_final_ratio_section_recovery(job_dir)
@@ -1375,7 +1458,6 @@ def run_operator_one_click(
                         raise RuntimeError("Square section upgrade loop ended but final square-support ratio is still above 1.0.")
                     if result_validation_needs_final_ratio_section_recovery(job_dir):
                         raise RuntimeError("Final ratio section-recovery loop ended while a larger allowed section was still available.")
-                    final_ratio_spacing_attempts: list[dict[str, Any]] = []
                     while len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS:
                         validation = _read_validation_status(job_dir)
                         if validation.get("status") == "pass":

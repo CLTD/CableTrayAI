@@ -1,5 +1,28 @@
 # CableTrayAI ??????
 
+## 2026-06-17 4215 final-gate spacing-first economy recovery
+
+Current latest source/validation state:
+
+1. Implemented the user's economy preference for cases like `18185NI-LXSJ4215`: when the current square tube passes Chapter 6.1 member sizing but a weld/bolt/connection final gate is over 1.0, the workflow now keeps the current square tube and reduces support spacing before trying a larger square tube.
+2. `core/optimizer/support_spacing_recovery.py` now supports two explicit planning modes:
+   - largest allowed square section is active and still over limit;
+   - current section is preserved because the over-limit item is a non-section final gate.
+3. `core/pipeline/one_click.py` now runs the spacing-first branch before `final_ratio_design_recovery` section enlargement. The branch preserves the current square section, regenerates APDL, reruns real ANSYS, and only falls back to larger sections if spacing recovery cannot produce a publishable result.
+4. `core/validation/result_validity_gate.py` now treats `preserved_after_spacing_recovery_pending_formal_validation` as a formal-validation mode. The old trial ratio is not comparable after spacing changes, so the current formal Chapter 6.1 ratio is used directly; weld/bolt/global over-limit rows still block through the normal final gate.
+5. Real ANSYS18.2 validation used uploaded workbook `C:/Users/duxy/Desktop/1818 S2支架.xlsx`, selected row 7 / `18185NI-LXSJ4215`. The first formal run selected `120-120-10`, Chapter 6.1 ratio about `0.815`, but weld accident bending ratio was `1.496`.
+6. The new branch reduced support spacing from `2.0m` to `1.5m` while preserving `120-120-10`; the rerun passed with `result_validation.status=pass`, final Chapter 6.1 section-selection ratio `0.5241137016938773`, and controlling final weld ratio `0.961668929223405`.
+7. Verification passed: targeted result-validity/support-spacing/square-section policy tests, full `D:/miniconda3/python.exe -m pytest tests/unit -q`, py_compile for touched modules, source_materials clean, and `git diff --check` only reports the known CRLF normalization warning for the calibration JSON.
+
+Deployment closeout:
+
+1. Rebuilt server, desktop, and installer runtimes.
+2. Refreshed full package `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+3. Refreshed update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+4. Package gate and update self-verification passed, including runtime XML/expat and no-expat spectrum smoke.
+5. Applied update to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; `/health` returned ok and `duxyb/cnpe123` login passed.
+6. Installed hashes match source for `core/optimizer/support_spacing_recovery.py`, `core/pipeline/one_click.py`, `core/validation/result_validity_gate.py`, and `data/calibration/modal_mode_count_cache.json`.
+
 ## 2026-06-17 uploaded-intake 4211/4215 row binding and final-gate recovery
 
 Current latest source/validation state:

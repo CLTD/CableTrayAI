@@ -1,5 +1,24 @@
 # CableTrayAI ??????
 
+## 2026-06-17 4215 spacing-first economy recovery queue
+
+Resolved in source and real ANSYS:
+
+1. For `4215`-class jobs where Chapter 6.1 square-section sizing passes but weld/bolt/connection final ratio controls, automatic recovery now reduces support spacing before trying a larger square tube.
+2. The preserved-section spacing branch keeps the current square section, regenerates APDL, reruns formal ANSYS, and validates against the current formal Chapter 6.1 ratio instead of requiring the old trial ratio, which is no longer comparable after spacing changes.
+3. Real ANSYS validation on uploaded workbook row 7 / `18185NI-LXSJ4215` passed: selected section remained `120-120-10`, support spacing changed `2.0m -> 1.5m`, final Section 6.1 ratio `0.5241137016938773`, controlling final weld ratio `0.961668929223405`, `result_validation.status=pass`.
+4. Regression coverage was added for support-spacing planning, preserved-section application, and result-validity formal validation after spacing recovery.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+2. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+3. Local `D:/CableTrayAI` was updated; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; health, login, and installed-hash checks passed.
+
+Open:
+
+1. No source/package blocker remains for this policy. For the unit machine, use the update package for an existing deployment or the full package for a fresh deployment, and verify with the refreshed `.sha256.txt` sidecars.
+
 ## 2026-06-17 uploaded-intake 4211/4215 queue
 
 Resolved in source and real ANSYS:
