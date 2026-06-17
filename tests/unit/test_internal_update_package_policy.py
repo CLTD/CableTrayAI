@@ -36,3 +36,5 @@ def test_mail_update_packager_wraps_clean_deployment_payload() -> None:
     assert "runtime\\\\auth_sessions\\.json" in source
     assert "install_update.ps1" in source
     assert "-VerifyOnly" in source
+    assert '"$UpdateZip.sha256.txt"' in source
+    assert "update_zip_sha256=$updateZipHash" in source

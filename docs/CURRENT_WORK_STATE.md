@@ -1,5 +1,30 @@
 # CableTrayAI ??????
 
+## 2026-06-18 4219 mixed 500/600 TMAX and source-style modeling closeout
+
+Current source/validation state:
+
+1. Fixed `18185NI-LXSJ4219`-class mirrored double-side mixed `500+600` modeling so grouped mixed command streams keep source-style review variables: `L1/L2/L3/L4/L5` plus `senum1/senum2`, instead of expanding the same geometry to hard-coded constants such as `0.67-0.3`.
+2. The grouped mixed renderer now takes `H1` from the final selected square section metadata before falling back to the original intake width. This prevents selected `120/140/160` sections from retaining stale `H1=0.1` in mixed generated models.
+3. Fixed grouped mixed post-processing for both TMAX and TBMODEL selectors. `TMAXBEAMSTRESS.LIS` selects actual arm sections with `ESEL,S,SEC,,2` and `ESEL,A,SEC,,3`; TBMODEL/Fig. 5.2 selects `SEC=2/3/4..9` and excludes bolt sections `10/11`, eliminating undefined `10*_CTAI_LAYER` and `200*_CTAI_LAYER` TYPE warnings.
+4. Verified the desktop `C:/Users/duxy/Desktop/类型` mixed command files match `resources/current_type_command_flows` by SHA256 for single `600+500+300`, single `500+600` yixing, double mixed square, and double mixed yixing baselines.
+
+Verification:
+
+1. Targeted tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_postprocessor_alignment.py tests/unit/test_intake_standard_family_tray_widths.py -q`.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. Real ANSYS18.2 rerun for Excel physical row 11 / `18185NI-LXSJ4219` completed the solve successfully with return code `0`, no fatal output evidence and no command-stream warnings after the TBMODEL selector fix.
+4. `TMAXBEAMSTRESS.LIS` is non-zero for `4219`: NORMAL/UPSET/FAULTED rows are present, so the previous publication blocker `cantilever_stress_rows` is fixed.
+5. `4219` still correctly fails final deterministic publication because `cantilever_root_weld_equivalent.accident.bending` ratio is `1.6677249408688304`; automatic larger-section recovery tried `140-140-8` and `160-160-8`, with controlling ratios `1.3648178105509505` and `1.0221575043033666`. This is an engineering over-limit result, not a result-extraction failure.
+6. Static row 10 / `18185NI-LXSJ4218` was also real-run verified during row-number calibration; it passed after automatic spacing/section recovery and confirmed selected-section `H1` synchronization in mixed modeling.
+
+Deployment closeout:
+
+1. Full deployment package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`; use the adjacent `.sha256.txt` sidecars as the transfer hash authority.
+2. The update package was applied to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+3. Local smoke passed: `/health` returned `ok`, `duxyb/cnpe123` login returned `pass`, and installed runtime hashes match source for the touched APDL/post-processing modules.
+4. Packaging scripts now regenerate outer `.sha256.txt` sidecars automatically for both `CableTrayAI.zip` and `更新包.zip`, preventing stale transfer hashes after rebuilds.
+
 ## 2026-06-18 physical bolt element-type and grouped mixed TMAX closeout
 
 Current source/validation state:

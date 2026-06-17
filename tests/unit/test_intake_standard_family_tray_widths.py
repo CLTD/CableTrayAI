@@ -235,6 +235,44 @@ def _double_three_by_three_mirrored_mixed_100_300_500_payload() -> dict:
     }
 
 
+def _double_two_by_two_mirrored_mixed_500_600_payload() -> dict:
+    tray_layers = []
+    specs = [
+        (1, 500, 56704.260652, 0.35, 0.20),
+        (2, 600, 65423.0, 0.47, 0.20),
+    ]
+    for side in ("front", "back"):
+        for index, width, density, arm_a, arm_b in specs:
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width / 1000.0,
+                    "tray_density_kg_m3": density,
+                    "tray_section_id": f"tray-{width}",
+                    "arm_a_length_m": arm_a,
+                    "arm_b_length_m": arm_b,
+                }
+            )
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 2,
+            "layers_back": 2,
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "100-100-6.SECT"},
+            {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+            {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+        ],
+        "tray_layers": tray_layers,
+        "metadata": {"analysis_method": "response_spectrum"},
+    }
+
+
 def _double_five_by_five_mirrored_mixed_100_200_300_500_600_payload() -> dict:
     tray_layers = []
     specs = [
@@ -627,6 +665,52 @@ def test_4210_style_mirrored_mixed_renderer_uses_grouped_current_type_loops() ->
     assert "BOLT_SEC(NBOLT)=10" in rendered
     assert "QCODE" not in rendered
     assert "QW(" not in rendered
+
+
+def test_4219_style_mirrored_500_600_uses_source_style_variables_and_selected_h1() -> None:
+    payload = _double_two_by_two_mirrored_mixed_500_600_payload()
+    payload["metadata"]["square_section_selected"] = "120-120-10"
+    payload["metadata"]["square_section_outer_mm"] = 120
+    payload["metadata"]["square_section_thickness_mm"] = 10
+    payload["sections"][0]["sect_file"] = "120-120-10.SECT"
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["assigned"]["H1"] == 0.12
+    assert "H1=0.12" in rendered
+    assert "L1=0.67" in rendered
+    assert "L2=0.55" in rendered
+    assert "L3=0.6" in rendered
+    assert "L4=0.5" in rendered
+    assert "L5=0.2" in rendered
+    assert "H1/2+L1-L3/2" in rendered
+    assert "H1/2+L2-L4/2" in rendered
+    assert "H1/2+0.67-0.3" not in rendered
+    assert audit["command_style"]["source_style_parameter_policy"] == "source_style_two_width_500_600"
+    assert "ARM_SEC(NARM)=2" in rendered
+    assert "ARM_SEC(NARM)=3" in rendered
+
+
+def test_4219_full_render_uses_section_based_tmax_for_grouped_500_600(tmp_path: Path) -> None:
+    payload = _double_two_by_two_mirrored_mixed_500_600_payload()
+    payload["metadata"]["square_section_selected"] = "120-120-10"
+    payload["metadata"]["square_section_outer_mm"] = 120
+    payload["metadata"]["square_section_thickness_mm"] = 10
+    payload["sections"][0]["sect_file"] = "120-120-10.SECT"
+
+    result = render_intake_standard_family_commands("4219_grouped_render", payload, jobs_dir=tmp_path)
+    rendered = (tmp_path / "4219_grouped_render" / "generated_model.mac").read_text(encoding="utf-8")
+    post = (tmp_path / "4219_grouped_render" / "generated_post.mac").read_text(encoding="utf-8")
+
+    assert result["status"] == "pass"
+    assert result["parameterization"]["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert "H1=0.12" in rendered
+    assert "H1/2+L1-L3/2" in rendered
+    assert "H1/2+L2-L4/2" in rendered
+    assert "ESEL,S,SEC,,2" in post
+    assert "ESEL,A,SEC,,3" in post
+    assert "10*I+2" not in post.split("*CREATE,TMAXBEAMSTRESS-WRITE,MAC", 1)[0]
 
 
 def test_4210_style_five_width_mirrored_mixed_renderer_stays_grouped() -> None:

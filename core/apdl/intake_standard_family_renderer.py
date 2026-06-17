@@ -1584,7 +1584,8 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     channel_secoffset_replacements = secondary_secoffset_audit.get("channel_replacements", 0)
     required_tray_sections = _required_tray_sections_from_payload(payload)
     missing_required_tray_sections = _missing_required_sections_in_text(rendered, required_tray_sections)
-    assigned_h1 = round(float(support.get("square_tube_width_m") or source_assignments.get("H1") or 0.1), 4)
+    selected_square_outer_m = _square_outer_width_mm_from_payload(payload) / 1000.0
+    assigned_h1 = round(float(selected_square_outer_m or support.get("square_tube_width_m") or source_assignments.get("H1") or 0.1), 4)
     assigned_h2 = round(float(support.get("support_height_m") or source_assignments.get("H2") or 2.0), 4)
     assigned_l1 = round(
         float(primary_arm_total or source_assignments.get("L1") or 0.55),

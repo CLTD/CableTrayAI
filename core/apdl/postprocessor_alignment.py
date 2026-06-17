@@ -276,7 +276,24 @@ def _source_type1_tbmodel_selector() -> str:
     )
 
 
-def _align_tbmodel_selector(text: str, *, preserve_source_type1_arm_topology: bool = False) -> tuple[str, dict[str, Any]]:
+def _section_based_tbmodel_selector() -> str:
+    return "\n".join(
+        [
+            "! CableTrayAI grouped mixed TBMODEL selector.",
+            "! Grouped mixed models use SEC=2/3 for tray arms and SEC=4..9 for tray beams; bolt sections 10/11 are excluded.",
+            "ESEL,S,SEC,,2",
+            "ESEL,A,SEC,,3",
+            "ESEL,A,SEC,,4,9",
+        ]
+    )
+
+
+def _align_tbmodel_selector(
+    text: str,
+    *,
+    preserve_source_type1_arm_topology: bool = False,
+    use_section_based_arm_topology: bool = False,
+) -> tuple[str, dict[str, Any]]:
     pattern = re.compile(
         r"ESEL\s*,\s*NONE\s*\n"
         r"\s*\*DO\s*,\s*_CTAI_LAYER\s*,\s*1\s*,\s*10\s*,\s*1\s*\n"
@@ -289,6 +306,23 @@ def _align_tbmodel_selector(text: str, *, preserve_source_type1_arm_topology: bo
         r"\s*\*ENDDO",
         re.IGNORECASE,
     )
+    if use_section_based_arm_topology:
+        updated, count = pattern.subn(_section_based_tbmodel_selector(), text)
+        if not count and "ESEL,S,SEC,,2" in text and "ESEL,A,SEC,,4,9" in text:
+            return text, {
+                "status": "already_section_topology",
+                "replaced_count": 0,
+                "selector": ["ESEL,S,SEC,,2", "ESEL,A,SEC,,3", "ESEL,A,SEC,,4,9"],
+                "source_ref": "generated_post.mac:TBMODEL selector already matches grouped mixed section topology",
+                "policy": "Fig. 5.2 TBMODEL selection follows grouped mixed topology so MAPDL does not warn about undefined 10*layer/200*layer TYPE IDs.",
+            }
+        return updated, {
+            "status": "section_topology_applied" if count else "not_found",
+            "replaced_count": count,
+            "selector": ["ESEL,S,SEC,,2", "ESEL,A,SEC,,3", "ESEL,A,SEC,,4,9"],
+            "source_ref": "generated_model.mac:grouped mixed tray arms/trays are selected by section numbers",
+            "policy": "Fig. 5.2 TBMODEL selection follows grouped mixed topology so MAPDL does not warn about undefined 10*layer/200*layer TYPE IDs.",
+        }
     if not preserve_source_type1_arm_topology:
         return text, {
             "status": "parameterized_type_selector_preserved",
@@ -323,7 +357,11 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
     text, threshold_audit = _align_appendix_c_threshold(text)
     preserve_source_topology = _model_uses_source_type1_arm_topology(job_dir)
     use_section_based_topology = _model_uses_section_based_arm_topology(job_dir)
-    text, tbmodel_audit = _align_tbmodel_selector(text, preserve_source_type1_arm_topology=preserve_source_topology)
+    text, tbmodel_audit = _align_tbmodel_selector(
+        text,
+        preserve_source_type1_arm_topology=preserve_source_topology,
+        use_section_based_arm_topology=use_section_based_topology,
+    )
     text, selector_audit = _align_tmax_selector(
         text,
         preserve_source_type1_arm_topology=preserve_source_topology,

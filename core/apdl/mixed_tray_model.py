@@ -53,6 +53,18 @@ def _square_outer_width_mm_from_payload(payload: dict[str, Any]) -> float:
     return 0.0
 
 
+def _selected_square_outer_m(payload: dict[str, Any], fallback: float = 0.1) -> float:
+    selected_mm = _square_outer_width_mm_from_payload(payload)
+    if selected_mm > 0.0:
+        return selected_mm / 1000.0
+    support = payload.get("support") or {}
+    try:
+        value = float(support.get("square_tube_width_m") or 0.0)
+    except (TypeError, ValueError):
+        value = 0.0
+    return value if value > 0.0 else fallback
+
+
 def _arm_section_family(payload: dict[str, Any]) -> tuple[str, str, str]:
     square_outer_mm = _square_outer_width_mm_from_payload(payload)
     if square_outer_mm > 120.0:
@@ -479,14 +491,16 @@ def _append_grouped_width_loop(
     arm_tail: float,
     tray_sec: int,
     tray_mat: int,
+    arm_total_expr: str | None = None,
+    tray_width_expr: str | None = None,
+    arm_tail_expr: str | None = None,
 ) -> None:
     front = side == "front"
     base = 500 if front else 1500
     x_root = "H1/2" if front else "-H1/2"
-    total = _num(arm_total)
-    tray = _num(width / 1000.0)
-    half = _num(width / 2000.0)
-    tail = _num(arm_tail)
+    total = arm_total_expr or _num(arm_total)
+    half = f"{tray_width_expr}/2" if tray_width_expr else _num(width / 2000.0)
+    tail = arm_tail_expr or _num(arm_tail)
     x_bolt = _expr_side(f"H1/2+{total}-{half}", front=front)
     x_tail = _expr_side(f"H1/2+{total}-{tail}", front=front)
     x_end = _expr_side(f"H1/2+{total}", front=front)
@@ -497,6 +511,7 @@ def _append_grouped_width_loop(
     lines.extend(
         [
             f"! {side} grouped mixed tray width {width} mm.",
+            f"! Source-style width segment: total={total}, tray_half={half}, tail={tail}.",
             f"*IF,{end_expr},GE,{start_expr},THEN",
             "*DO,J,1,3",
             f"*DO,I,{start_expr},{end_expr}",
@@ -560,9 +575,30 @@ def _append_grouped_width_loop(
 
 
 def _append_grouped_coupling_loop(lines: list[str], *, side: str, start_expr: str, end_expr: str, width: int, arm_total: float) -> None:
+    _append_grouped_coupling_loop_with_terms(
+        lines,
+        side=side,
+        start_expr=start_expr,
+        end_expr=end_expr,
+        width=width,
+        arm_total=arm_total,
+    )
+
+
+def _append_grouped_coupling_loop_with_terms(
+    lines: list[str],
+    *,
+    side: str,
+    start_expr: str,
+    end_expr: str,
+    width: int,
+    arm_total: float,
+    arm_total_expr: str | None = None,
+    tray_width_expr: str | None = None,
+) -> None:
     front = side == "front"
-    half = _num(width / 2000.0)
-    total = _num(arm_total)
+    half = f"{tray_width_expr}/2" if tray_width_expr else _num(width / 2000.0)
+    total = arm_total_expr or _num(arm_total)
     x_bolt = _expr_side(f"H1/2+{total}-{half}", front=front)
     lines.extend(
         [
@@ -584,9 +620,65 @@ def _append_grouped_coupling_loop(lines: list[str], *, side: str, start_expr: st
     )
 
 
+def _source_style_dimension_terms(
+    groups: list[tuple[int, int]],
+    representative: dict[int, dict[str, Any]],
+) -> tuple[list[str], dict[int, dict[str, str]], str]:
+    widths = [width for width, _ in groups]
+
+    def arm_total(width: int) -> float:
+        layer = representative.get(width) or {}
+        return float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+
+    def arm_tail(width: int) -> float:
+        layer = representative.get(width) or {}
+        return float(layer.get("arm_b_length_m") or 0.0)
+
+    common_tail = max((arm_tail(width) for width in widths), default=0.0)
+    assignment_lines: list[str] = []
+    terms: dict[int, dict[str, str]] = {}
+
+    if len(widths) == 2 and min(widths) >= 500:
+        wide, narrow = widths
+        assignment_lines.extend(
+            [
+                "! Source-style two-width mixed tray parameters, learned from single 500+600 current-type PIP.",
+                f"L1={_num(arm_total(wide))}                        ! {wide} mm tray arm total length",
+                f"L2={_num(arm_total(narrow))}                        ! {narrow} mm tray arm total length",
+                f"L3={_num(wide / 1000.0)}                        ! {wide} mm tray width",
+                f"L4={_num(narrow / 1000.0)}                        ! {narrow} mm tray width",
+                f"L5={_num(common_tail)}                        ! secondary arm tail length",
+            ]
+        )
+        terms[wide] = {"total": "L1", "tray": "L3", "tail": "L5"}
+        terms[narrow] = {"total": "L2", "tray": "L4", "tail": "L5"}
+        return assignment_lines, terms, "source_style_two_width_500_600"
+
+    if len(widths) == 3 and set(widths).issubset({300, 500, 600}):
+        first, second, third = widths
+        assignment_lines.extend(
+            [
+                "! Source-style three-width mixed tray parameters, learned from single 600+500+300 current-type PIP.",
+                f"L1={_num(arm_total(first))}                        ! {first} mm tray arm total length",
+                f"L2={_num(first / 1000.0)}                        ! {first} mm tray width",
+                f"L11={_num(arm_total(second))}                       ! {second} mm tray arm total length",
+                f"L12={_num(second / 1000.0)}                       ! {second} mm tray width",
+                f"L3={_num(arm_total(third))}                        ! {third} mm tray arm total length",
+                f"L4={_num(third / 1000.0)}                        ! {third} mm tray width",
+                f"L5={_num(common_tail)}                        ! secondary arm tail length",
+            ]
+        )
+        terms[first] = {"total": "L1", "tray": "L2", "tail": "L5"}
+        terms[second] = {"total": "L11", "tray": "L12", "tail": "L5"}
+        terms[third] = {"total": "L3", "tray": "L4", "tail": "L5"}
+        return assignment_lines, terms, "source_style_three_width_600_500_300"
+
+    return assignment_lines, terms, "numeric_grouped_width_terms"
+
+
 def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[tuple[int, int]], front_layers: list[dict[str, Any]], back_layers: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
     support = payload.get("support") or {}
-    h1 = float(support.get("square_tube_width_m") or (_square_outer_width_mm_from_payload(payload) / 1000.0) or 0.1)
+    h1 = _selected_square_outer_m(payload)
     h2 = float(support.get("support_height_m") or 2.0)
     span = float(support.get("support_spacing_m") or 2.0)
     support_section = _support_section(payload)
@@ -594,6 +686,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
     secondary_offset_line, secondary_offset_policy = _secondary_arm_secoffset(secondary_arm)
     representative = _representative_layer_by_width(front_layers + back_layers)
     widths = [width for width, _ in groups]
+    source_style_assignments, source_style_terms, source_style_policy = _source_style_dimension_terms(groups, representative)
     bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
     total_layers = sum(count for _, count in groups)
     cumulative_counts: list[int] = []
@@ -664,6 +757,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
             "MP,DENS,1,7850",
             f"H1={_num(h1)}",
             f"H2={_num(h2)}",
+            *source_style_assignments,
             f"L6={_num(span)}",
             f"M1={_num(_tray_offset_m(max(widths), secondary_arm))}",
         ]
@@ -707,6 +801,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         layer = representative.get(width) or {}
         arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
         arm_tail = float(layer.get("arm_b_length_m") or 0.0)
+        terms = source_style_terms.get(width, {})
         _append_grouped_width_loop(
             lines,
             side="front",
@@ -717,6 +812,9 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
             arm_tail=arm_tail,
             tray_sec=tray_section_numbers[width],
             tray_mat=tray_material_numbers[width],
+            arm_total_expr=terms.get("total"),
+            tray_width_expr=terms.get("tray"),
+            arm_tail_expr=terms.get("tail"),
         )
         _append_grouped_width_loop(
             lines,
@@ -728,6 +826,9 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
             arm_tail=arm_tail,
             tray_sec=tray_section_numbers[width],
             tray_mat=tray_material_numbers[width],
+            arm_total_expr=terms.get("total"),
+            tray_width_expr=terms.get("tray"),
+            arm_tail_expr=terms.get("tail"),
         )
 
     lines.extend(["NUMMRG,KP"])
@@ -745,8 +846,27 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
     for index, (width, _) in enumerate(groups):
         layer = representative.get(width) or {}
         arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
-        _append_grouped_coupling_loop(lines, side="front", start_expr=starts[index], end_expr=ends[index], width=width, arm_total=arm_total)
-        _append_grouped_coupling_loop(lines, side="back", start_expr=starts[index], end_expr=ends[index], width=width, arm_total=arm_total)
+        terms = source_style_terms.get(width, {})
+        _append_grouped_coupling_loop_with_terms(
+            lines,
+            side="front",
+            start_expr=starts[index],
+            end_expr=ends[index],
+            width=width,
+            arm_total=arm_total,
+            arm_total_expr=terms.get("total"),
+            tray_width_expr=terms.get("tray"),
+        )
+        _append_grouped_coupling_loop_with_terms(
+            lines,
+            side="back",
+            start_expr=starts[index],
+            end_expr=ends[index],
+            width=width,
+            arm_total=arm_total,
+            arm_total_expr=terms.get("total"),
+            tray_width_expr=terms.get("tray"),
+        )
 
     lines.extend(
         [
@@ -778,7 +898,8 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         "grouped_width_counts": [{"width_mm": width, "count_per_side": count} for width, count in groups],
         "command_style": {
             "status": "senum_grouped_current_type_loops",
-            "policy": "Mirrored mixed trays are rendered as grouped width loops using senum1/senum2/senum3 cutoffs, matching the current-type mixed command-flow style and avoiding the old per-layer width-code stream.",
+            "source_style_parameter_policy": source_style_policy,
+            "policy": "Mirrored mixed trays are rendered as grouped width loops using senum1/senum2/senum3 cutoffs. Where the current-type single-side mixed PIP provides a reviewed pattern, the generated double-side mirror keeps the same L1/L2/L3/L4/L5 variable form for human review while retaining line-id capture for deterministic post-processing.",
         },
         "physical_bolt_modeling": {
             "status": "pass",
@@ -817,7 +938,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
     widths = sorted({_width_mm(layer) for layer in front_layers + back_layers})
     bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
     support = payload.get("support") or {}
-    h1 = float(support.get("square_tube_width_m") or (_square_outer_width_mm_from_payload(payload) / 1000.0) or 0.1)
+    h1 = _selected_square_outer_m(payload)
     h2 = float(support.get("support_height_m") or 2.0)
     span = float(support.get("support_spacing_m") or 2.0)
     max_layers = max(len(front_layers), len(back_layers), 1)

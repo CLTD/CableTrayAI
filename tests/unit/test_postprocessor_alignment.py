@@ -74,6 +74,15 @@ def test_grouped_mixed_tmax_selector_uses_arm_sections(tmp_path: Path) -> None:
     (job_dir / "generated_post.mac").write_text(
         "\n".join(
             [
+                "ESEL,NONE",
+                "*DO,_CTAI_LAYER,1,10,1",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+2",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+3",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+4",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+2",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+3",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+4",
+                "*ENDDO",
                 "ALLSEL",
                 "! CableTrayAI audited cantilever selector for parameterized S2 models.",
                 "! front/back layer-specific selector",
@@ -98,8 +107,11 @@ def test_grouped_mixed_tmax_selector_uses_arm_sections(tmp_path: Path) -> None:
     before_tmax = text.split("*CREATE,TMAXBEAMSTRESS-WRITE,MAC", 1)[0]
 
     assert audit["section_based_arm_topology"] is True
+    assert audit["tbmodel_selector"]["status"] == "section_topology_applied"
+    assert "ESEL,A,SEC,,4,9" in before_tmax
     assert audit["tmax_selector"]["status"] == "applied"
     assert audit["tmax_selector"]["replacement_mode"] == "parameterized_selector_replaced"
     assert "ESEL,S,SEC,,2" in before_tmax
     assert "ESEL,A,SEC,,3" in before_tmax
+    assert "10*_CTAI_LAYER" not in before_tmax
     assert "10*I+2" not in before_tmax

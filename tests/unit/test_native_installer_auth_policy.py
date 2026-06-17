@@ -41,6 +41,8 @@ def test_release_packager_avoids_libreoffice_python_for_gate() -> None:
     assert "Remove-GeneratedPythonCaches -Path $PackageDir" in source
     assert "UTF8Encoding($false)" in source
     assert "[System.IO.File]::WriteAllText($initialPasswordPath" in source
+    assert '"$ZipPath.sha256.txt"' in source
+    assert "Zip SHA256" in source
 
 
 def test_fallback_installers_honor_packaged_initial_password() -> None:

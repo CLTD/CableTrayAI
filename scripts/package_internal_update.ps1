@@ -205,11 +205,15 @@ if ($LASTEXITCODE -ne 0) {
     throw "Update package self-verification failed"
 }
 
+$updateZipHash = (Get-FileHash -LiteralPath $UpdateZip -Algorithm SHA256).Hash
+$updateZipHash | Set-Content -Encoding ASCII -Path "$UpdateZip.sha256.txt"
+
 $latestPath = Join-Path $OutputRoot "update_package_latest.txt"
 @(
     "latest_update_zip=$UpdateZip",
     "latest_update_dir=$UpdateDir",
     "created_at=$((Get-Date).ToString("s"))",
+    "update_zip_sha256=$updateZipHash",
     "payload_zip_sha256=$($updateManifest.payload_zip_sha256)",
     "payload_file_count=$($updateManifest.payload_file_count)"
 ) | Set-Content -Encoding UTF8 -Path $latestPath
@@ -218,4 +222,5 @@ Write-Host "CableTrayAI internal update package created:"
 Write-Host $UpdateDir
 Write-Host $UpdateZip
 Write-Host ("Update zip size MB: {0:N2}" -f ((Get-Item -LiteralPath $UpdateZip).Length / 1MB))
+Write-Host "Update zip SHA256: $updateZipHash"
 Write-Host "Self verification: pass"

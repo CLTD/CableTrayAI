@@ -1,5 +1,21 @@
 # CableTrayAI ??????
 
+## 2026-06-18 4219 mixed 500/600 source-style modeling and TMAX queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4219` old blocker `Result validation failed: cantilever_stress_rows` is fixed. Grouped mixed models now select TMAX cantilever arms by section (`SEC=2/3`), and the real ANSYS `TMAXBEAMSTRESS.LIS` has non-zero NORMAL/UPSET/FAULTED rows.
+2. `4218/4219` mirrored double-side `500+600` command streams now keep reviewed source-style variables `L1/L2/L3/L4/L5` and `senum1/senum2`, learned from the current-type single mixed command flows, while retaining line-id capture for deterministic post-processing.
+3. Mixed model `H1` now follows the final selected square section first, not the original intake width.
+4. TBMODEL/Fig. 5.2 for grouped mixed models now selects `SEC=2/3/4..9`, excluding bolt sections `10/11`, so ANSYS no longer warns about undefined `10*_CTAI_LAYER` or `200*_CTAI_LAYER` TYPE IDs.
+5. Verification passed: targeted postprocessor/tray-width tests, full `tests/unit`, real ANSYS18.2 row 11 / `18185NI-LXSJ4219` with run success, no command-stream warnings, and non-zero TMAX.
+6. `4219` now fails only because the deterministic final engineering gate is over limit: controlling `cantilever_root_weld_equivalent.accident.bending` ratio `1.6677249408688304`; larger-section recovery checked `140-140-8` and `160-160-8`, still `>1.0`.
+7. Packaging scripts now regenerate outer `.sha256.txt` sidecars automatically for both full and update zips, so transfer hashes cannot remain stale after a rebuild.
+
+Open:
+
+1. Commit and push this completed update.
+
 ## 2026-06-18 physical bolt element-type and grouped mixed TMAX queue
 
 Resolved in source, real ANSYS, package, and local deployment:

@@ -243,8 +243,11 @@ if (Test-Path -LiteralPath $ZipPath) {
     Remove-Item -LiteralPath $ZipPath -Force
 }
 Compress-Archive -Path (Join-Path $PackageDir "*") -DestinationPath $ZipPath -Force
+$zipHash = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
+$zipHash | Set-Content -Encoding ASCII -Path "$ZipPath.sha256.txt"
 
 Write-Host "CableTrayAI deployment package created:"
 Write-Host $PackageDir
 Write-Host $ZipPath
 Write-Host ("Zip size MB: {0:N2}" -f ((Get-Item -LiteralPath $ZipPath).Length / 1MB))
+Write-Host "Zip SHA256: $zipHash"
