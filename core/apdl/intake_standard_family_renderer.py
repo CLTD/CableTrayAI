@@ -266,6 +266,42 @@ def _single_width_family_l3_from_tray_and_square(primary_tray_width_mm: int, squ
     return 0.20, "square_outer_width_le_120_l3_0p20m"
 
 
+def _width_compatibility(family: CommandFamily, widths: list[int]) -> dict[str, Any]:
+    family_widths = sorted(set(int(width) for width in family.width_family if int(width) > 0))
+    expected_widths = sorted(set(int(width) for width in widths if int(width) > 0))
+    if not expected_widths:
+        return {"status": "pass", "reason": "no_width_constraint", "value": family_widths, "expected": expected_widths}
+    if not family_widths:
+        return {"status": "fail", "reason": "source_has_no_tray_width", "value": family_widths, "expected": expected_widths}
+    if family_widths == expected_widths:
+        return {"status": "pass", "reason": "exact_width_family", "value": family_widths, "expected": expected_widths}
+
+    if len(expected_widths) == 1:
+        width = expected_widths[0]
+        if width <= 200:
+            if family_widths == [200]:
+                return {"status": "pass", "reason": "reviewed_100_200_small_tray_family", "value": family_widths, "expected": expected_widths}
+            if (
+                not family.has_mixed_widths
+                and len(family_widths) == 1
+                and family_widths[0] > 300
+            ):
+                return {"status": "pass", "reason": "single_width_small_tray_rewrite_from_wide_family", "value": family_widths, "expected": expected_widths}
+            return {"status": "fail", "reason": "small_tray_must_not_use_300_family", "value": family_widths, "expected": expected_widths}
+        if width == 300:
+            return {"status": "fail", "reason": "tray_300_requires_exact_physical_bolt_family", "value": family_widths, "expected": expected_widths}
+        if width > 300 and not family.has_mixed_widths and len(family_widths) == 1 and family_widths[0] > 300:
+            return {"status": "pass", "reason": "reviewed_wide_single_width_rewrite", "value": family_widths, "expected": expected_widths}
+
+    if len(expected_widths) > 1 and family.has_mixed_widths:
+        if set(expected_widths).issubset(set(family_widths)):
+            return {"status": "pass", "reason": "mixed_width_family_covers_intake_widths", "value": family_widths, "expected": expected_widths}
+        if max(expected_widths) in family_widths:
+            return {"status": "pass", "reason": "mixed_width_family_covers_governing_width", "value": family_widths, "expected": expected_widths}
+
+    return {"status": "fail", "reason": "incompatible_width_family", "value": family_widths, "expected": expected_widths}
+
+
 def _has_reviewed_300_physical_bolt_modeling(text: str, *, has_back_side: bool) -> bool:
     def has(pattern: str) -> bool:
         return re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE) is not None
@@ -330,6 +366,7 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
             score += weight
         checks.append({"check_id": check_id, "status": "pass" if passed else "fail", "weight": weight, "value": value, "expected": expected})
 
+    width_compatibility = _width_compatibility(family, widths)
     add("side_kind", family.side_kind == side_kind, 120, family.side_kind, side_kind)
     if expected_support_section:
         add(
@@ -339,6 +376,14 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
             family.support_section,
             expected_support_section,
         )
+    add(
+        "width_compatibility",
+        width_compatibility["status"] == "pass",
+        160,
+        width_compatibility["value"],
+        width_compatibility["expected"],
+    )
+    checks[-1]["reason"] = width_compatibility.get("reason")
     add("width_family", sorted(family.width_family) == widths, 25, list(family.width_family), widths)
     if widths:
         add("max_width_covered", max(widths) in family.width_family, 20, list(family.width_family), max(widths))
@@ -449,9 +494,27 @@ def select_standard_model_family(payload: dict[str, Any], source_root: Path | st
             "not silently map a three-side topology onto a single/double-side command stream."
         )
     scored = []
+    width_rejected: list[dict[str, Any]] = []
     for family in families:
+        width_check = _width_compatibility(family, sorted(set(_input_widths(payload))))
+        if width_check["status"] != "pass":
+            width_rejected.append(
+                {
+                    "source": str(family.path),
+                    "source_library": family.source_library,
+                    "reason": width_check.get("reason"),
+                    "value": width_check.get("value"),
+                    "expected": width_check.get("expected"),
+                }
+            )
+            continue
         score, checks = _score_family(family, payload)
         scored.append((score, family, checks))
+    if not scored:
+        raise ValueError(
+            "No width-compatible standard APDL/PIP model family matches the intake geometry. "
+            f"Rejected candidates: {width_rejected[:8]}"
+        )
     scored.sort(key=lambda item: (-item[0], item[1].path.as_posix()))
     best_score, best, best_checks = scored[0]
     if best_score <= 0:
@@ -906,10 +969,20 @@ def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str,
     line_1502_to_1509 = re.compile(
         r"(?i)(L\s*,\s*)1502(\s*\+\s*10\s*\*\s*I\s*\+\s*100\s*\*\s*\(\s*J\s*-\s*1\s*\)\s*,\s*1509)",
     )
+    wide_source_tray_z_offset = re.compile(
+        r"(?<![\w.])0\.168\s*\+\s*0\.2\s*\*\s*\(\s*I\s*-\s*1\s*\)",
+        flags=re.IGNORECASE,
+    )
+    wide_source_coupling_offset = re.compile(
+        r"(?<![\w.])0\.068\s*-\s*0\.05\b",
+        flags=re.IGNORECASE,
+    )
 
     updated_lines: list[str] = []
     keypoint_replacements = 0
     line_replacements = 0
+    z_offset_replacements = 0
+    coupling_offset_replacements = 0
     for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         base = keypoint_base(line)
         if base in {502, 503, 1502, 1503}:
@@ -919,20 +992,29 @@ def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str,
         line_replacements += count
         line, count = line_1502_to_1509.subn(r"\g<1>1503\g<2>", line)
         line_replacements += count
+        line, count = wide_source_tray_z_offset.subn("0.1+L5+0.2*(I-1)", line)
+        z_offset_replacements += count
+        line, count = wide_source_coupling_offset.subn("L5-0.05", line)
+        coupling_offset_replacements += count
         updated_lines.append(line)
 
-    replacement_count = keypoint_replacements + line_replacements
+    replacement_count = keypoint_replacements + line_replacements + z_offset_replacements + coupling_offset_replacements
     return "\n".join(updated_lines), {
         "status": "rewritten" if replacement_count else "unchanged",
         "replacement_count": replacement_count,
         "keypoint_replacements": keypoint_replacements,
         "line_replacements": line_replacements,
+        "z_offset_replacements": z_offset_replacements,
+        "coupling_offset_replacements": coupling_offset_replacements,
         "source_ref": "small_tray_200_100_standard_family_partition",
         "policy": (
             "For single-width S2 tray widths <=200 mm, the reviewed 200/100 mm small-tray topology keeps "
             "L3 fixed at 0.15 m, places the first cantilever split keypoint 502/1502 at H1/2+L1-L3, and "
-            "keeps the tray connection/CPCYC line at H1/2+L1-L2/2. This applies only when a larger single-width "
-            "family has to be reused for a small tray; 300 mm sources are left in their reviewed L2/2 bolt topology."
+            "keeps the tray connection/CPCYC line at H1/2+L1-L2/2. If the reused wide-tray source hardcodes "
+            "0.168 m tray offset or 0.068-0.05 coupling offset, it is normalized to the reviewed small-tray "
+            "0.1+L5 and L5-0.05 expressions with L5=0.074. "
+            "This applies only when a larger single-width family has to be reused for a small tray; 300 mm sources "
+            "are left in their reviewed L2/2 bolt topology."
         ),
     }
 
@@ -1086,6 +1168,8 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         assigned_l3 = round(float(section_l3_value), 4)
         assigned_l4 = round(float(support.get("support_spacing_m") or source_assignments.get("L4") or 2.0), 4)
         assigned_l5 = source_assignments.get("L5")
+        if primary_width <= 300 and assigned_l5 is None:
+            assigned_l5 = 0.074
         assigned_l6 = source_assignments.get("L6")
     rendered = _replace_assignment(rendered, "H1", assigned_h1)
     rendered = _replace_assignment(rendered, "H2", assigned_h2)
@@ -1094,7 +1178,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     rendered = _replace_assignment(rendered, "L3", assigned_l3)
     rendered = _replace_assignment(rendered, "L4", assigned_l4)
     if assigned_l5 is not None:
-        rendered = _replace_assignment(rendered, "L5", assigned_l5)
+        rendered = _replace_or_insert_assignment_after(rendered, "L5", assigned_l5, "L4")
     if assigned_l6 is not None:
         rendered = _replace_assignment(rendered, "L6", assigned_l6)
     front = int(support.get("layers_front") or 0)

@@ -1,5 +1,30 @@
 # CableTrayAI ??????
 
+## 2026-06-17 small-tray/wide-tray command-flow correction closeout
+
+Current source/validation state:
+
+1. Fixed the current-type source-family selector so single 100/200 mm trays cannot select the reviewed 300 mm physical-bolt family. If no exact single 100/200 family exists, production may reuse a reviewed wide single-width family only after the small-tray rewrite gate normalizes the geometry.
+2. Fixed the 100/200 small-tray rewrite to normalize all reviewed small-tray details inherited from wide sources: `L3=0.15m`, `L5=0.074m`, keypoints 502/1502 at `H1/2+L1-L3`, tray/bolt line at `H1/2+L1-L2/2`, tray Z offset from `0.168+...` to `0.1+L5+...`, and `CPCYC` offset from `0.068-0.05` to `L5-0.05`.
+3. Fixed square-section replacement so single-width generated models synchronize `H1` and `L3` together. Final L3 policy is now: tray width `<=300 mm` uses `0.15m`; tray width `>300 mm` uses `0.15m` when square outer width is `>120 mm`, otherwise `0.20m`.
+4. Fixed mixed tray offsets so CAOGANG42DAN mixed 500/600 layers use `QTOFF/HTOFF=0.074`, while YIXINGGANG150DAN wide mixed layers keep the reviewed `0.068` offset.
+5. This preserves the earlier 500/600 rule that 502 and 506-509 stay on `H1/2+L1-L2/2`, and preserves the 300 mm physical-bolt topology instead of mixing it with 100/200 or 500/600 rules.
+
+Verification:
+
+1. Targeted tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py tests/unit/test_square_section_selector.py tests/unit/test_square_section_workflow_policy.py -q`.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. Render smoke confirmed 4211/4311 no longer contain small-tray `0.168` or `0.068-0.05`; 4215 uses `H1=0.140000`, `L3=0.15`; 4514 mixed CAOGANG uses `QTOFF(1)=0.074`.
+4. Real ANSYS18.2 validation passed for rows 9 and 10 under `jobs/validation_small_tray_coupling_real_20260617`: 4211 double 200 selected `100-100-6`, section-selection ratio `0.6179190587519203`, overall max `0.9314387883147078`; 4311 double 100 selected `100-100-6`, overall max `0.039109041001640685`.
+5. Real ANSYS18.2 validation passed for rows 7 and 14 under `jobs/validation_wide_mixed_model_real_20260617`: 4215 double 600 selected `140-140-8`, overall max `0.8902034974335807`; 4514 mixed 500/600 selected `100-100-6`, overall max `0.7143462445371618`.
+
+Deployment closeout:
+
+1. Rebuilt the server runtime and refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; SHA256 `8C1A395EA8BE1701C38668F348005EFCDC9873B9CDFD883BFEEB54EB51EAD810`.
+2. Refreshed existing-install update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; SHA256 `2D0489EE38878E492FA5CB96F4DA88A45FE9F186467588F0616904AD585F01B9`.
+3. Update applied to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260617_192703`.
+4. Local smoke passed: `/health` returned ok, `duxyb/cnpe123` login returned pass, and source/package/installed hashes match for `core/apdl/intake_standard_family_renderer.py`, `core/apdl/mixed_tray_model.py`, `core/optimizer/square_section_selector.py`, the two learning caches, and `runtime/CableTrayAI_Server/CableTrayAI_Server.exe`.
+
 ## 2026-06-17 department S2 rule alignment
 
 Current source/validation state:

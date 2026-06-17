@@ -120,11 +120,13 @@ def _secondary_arm_secoffset(secondary_arm: str) -> tuple[str, str]:
     return "SECOFFSET,user", "non_channel_secondary_arm_no_offset"
 
 
-def _tray_offset_m(width_mm: int) -> float:
+def _tray_offset_m(width_mm: int, secondary_arm: str | None = None) -> float:
+    if str(secondary_arm or "").upper() == "CAOGANG42DAN":
+        return 0.074
     return 0.068 if width_mm >= 500 else 0.074
 
 
-def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float) -> dict[str, Any]:
+def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float, secondary_arm: str) -> dict[str, Any]:
     sign = 1.0 if side == "front" else -1.0
     width = _width_mm(layer)
     tray_width_m = width / 1000.0
@@ -147,11 +149,11 @@ def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float) -> dic
         "x_bolt_m": round(x_bolt, 6),
         "x_tail_m": round(x_tail, 6),
         "x_end_m": round(x_end, 6),
-        "tray_offset_m": _tray_offset_m(width),
+        "tray_offset_m": _tray_offset_m(width, secondary_arm),
     }
 
 
-def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str, Any]]) -> None:
+def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str, Any]], secondary_arm: str) -> None:
     if not layers:
         return
     lines.extend(
@@ -178,7 +180,7 @@ def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str
                 f"{prefix}ALEN({index})={_num(arm_a + arm_b)}",
                 f"{prefix}L3A({index})={_num(arm_b)}",
                 f"{prefix}DENS({index})={_num(float(layer.get('tray_density_kg_m3') or 0.0))}",
-                f"{prefix}TOFF({index})={_num(_tray_offset_m(width))}",
+                f"{prefix}TOFF({index})={_num(_tray_offset_m(width, secondary_arm))}",
                 f"{prefix}CODE({index})={width}",
             ]
         )
@@ -438,8 +440,8 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         "MP,DENS,1,7850",
     ]
 
-    _append_layer_arrays(lines, prefix="Q", layers=front_layers)
-    _append_layer_arrays(lines, prefix="H", layers=back_layers)
+    _append_layer_arrays(lines, prefix="Q", layers=front_layers, secondary_arm=secondary_arm)
+    _append_layer_arrays(lines, prefix="H", layers=back_layers, secondary_arm=secondary_arm)
     lines.extend(
         [
             f"*DIM,LS_SUP,ARRAY,{support_line_capacity}",
@@ -608,7 +610,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
 
     widths = sorted({_width_mm(layer) for layer in front_layers + back_layers})
     layer_geometry = [
-        _layer_geometry_audit(layer, side=side, h1=h1)
+        _layer_geometry_audit(layer, side=side, h1=h1, secondary_arm=secondary_arm)
         for side, layers in (("front", front_layers), ("back", back_layers))
         for layer in layers
     ]

@@ -398,6 +398,7 @@ def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology(
     assert "QW(2)=0.3" in rendered
     assert "QA(1)=0.47" in rendered
     assert "QB(1)=0.2" in rendered
+    assert "QTOFF(1)=0.074" in rendered
     assert "QTCODE=QCODE(I)" in rendered
     assert "QCODE=QCODE(I)" not in rendered
     assert "*ELSEIF,QTCODE,EQ,300,THEN" in rendered
@@ -508,6 +509,7 @@ def test_mixed_tray_layer_renderer_keeps_yixing_secondary_arm_without_channel_of
     assert "SECREAD,'YIXINGGANG150DAN'" in rendered
     assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in rendered
     assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "QTOFF(1)=0.068" in rendered
     assert audit["secondary_arm_offset_policy"] == "non_channel_secondary_arm_no_offset"
 
 
@@ -687,6 +689,25 @@ def test_current_type_command_library_is_preferred_for_300_model_family() -> Non
     assert family["source"].endswith("single_300_square.PIP")
 
 
+def test_current_type_command_library_does_not_use_300_family_for_100_or_200_trays() -> None:
+    for width_mm in (100, 200):
+        payload = _single_two_layer_600_payload()
+        tray_section_id = f"tray-{width_mm}"
+        for layer in payload["tray_layers"]:
+            layer["tray_width_m"] = width_mm / 1000.0
+            layer["tray_section_id"] = tray_section_id
+        payload["sections"][1]["section_id"] = tray_section_id
+        payload["sections"][1]["sect_file"] = f"{width_mm}-75-2mm.SECT"
+
+        family = select_standard_model_family(payload)
+
+        assert family["source_library"] == "current_type_command_flows"
+        assert not family["source"].endswith("single_300_square.PIP")
+        assert "small_tray_must_not_use_300_family" not in [
+            check.get("reason") for check in family.get("checks") or []
+        ]
+
+
 def test_300_modeling_gate_fails_when_only_coupling_exists_without_bolt_elements() -> None:
     source_text = "\n".join(
         [
@@ -731,11 +752,12 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
             "senum=2",
             "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
             "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
-            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.168+0.2*(I-1)",
             "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
             "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
             "L,502+10*I+100*(J-1),509+10*I+100*(J-1)",
             "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "CPCYC,UX,,,,,0.068-0.05",
             "SECREAD,'100-100-6'",
             "SECREAD,'500-75-2mm'",
         ]
@@ -751,10 +773,16 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
 
     assert "L2=0.2" in rendered
     assert "L3=0.15" in rendered
+    assert "L5=0.074" in rendered
     assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
     assert "K,503+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "0.1+L5+0.2*(I-1)" in rendered
+    assert "CPCYC,UX,,,,,L5-0.05" in rendered
+    assert "0.068-0.05" not in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
+    assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
 
 
@@ -771,11 +799,12 @@ def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
             "senum=2",
             "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
             "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
-            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.168+0.2*(I-1)",
             "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
             "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
             "L,502+10*I+100*(J-1),509+10*I+100*(J-1)",
             "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "CPCYC,UX,,,,,0.068-0.05",
             "SECREAD,'100-100-6'",
             "SECREAD,'500-75-2mm'",
         ]
@@ -791,12 +820,18 @@ def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
 
     assert "L2=0.1" in rendered
     assert "L3=0.15" in rendered
+    assert "L5=0.074" in rendered
     assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
     assert "K,503+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
     assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "0.1+L5+0.2*(I-1)" in rendered
     assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "CPCYC,UX,,,,,L5-0.05" in rendered
+    assert "0.068-0.05" not in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
+    assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
 
 

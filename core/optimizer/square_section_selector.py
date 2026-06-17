@@ -1541,12 +1541,45 @@ def _sync_trial_input_to_square_section(job_dir: Path, section_name: str, arm_po
     }
 
 
+def _single_tray_width_mm_from_payload(payload: dict[str, Any]) -> int | None:
+    widths: list[int] = []
+    for layer in payload.get("tray_layers") or []:
+        if not isinstance(layer, dict):
+            continue
+        raw_width = layer.get("tray_width_m")
+        if raw_width is None:
+            raw_width = layer.get("width_m")
+        try:
+            width = int(round(float(raw_width) * 1000.0)) if raw_width is not None else 0
+        except (TypeError, ValueError):
+            width = 0
+        if width <= 0:
+            raw_width_mm = layer.get("tray_width_mm") or layer.get("width_mm")
+            try:
+                width = int(round(float(raw_width_mm))) if raw_width_mm is not None else 0
+            except (TypeError, ValueError):
+                width = 0
+        if width > 0 and width not in widths:
+            widths.append(width)
+    return widths[0] if len(widths) == 1 else None
+
+
+def _single_width_l3_for_square_section(tray_width_mm: int, square_outer_mm: float) -> tuple[float, str]:
+    if tray_width_mm <= 300:
+        return 0.15, "tray_width_le_300_l3_0p15m"
+    if square_outer_mm > 120.0:
+        return 0.15, "square_outer_width_gt_120_l3_0p15m"
+    return 0.20, "square_outer_width_le_120_l3_0p20m"
+
+
 def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[str, Any]:
-    """Keep generated model geometry width H1 aligned with the square tube.
+    """Keep generated model geometry parameters aligned with the square tube.
 
     The first SECREAD controls the square-tube cross-section properties, but
     the source-family APDL also uses ``H1`` as the physical square-tube outside
-    width in coordinates such as ``H1/2``.  Candidate trials must update both.
+    width in coordinates such as ``H1/2``.  For single-width 500/600 trays,
+    ``L3`` also follows the same reviewed square-section branch, so candidate
+    trials and the formal selected model must update both dimensions together.
     """
 
     parsed = parse_square_section_name(section_name)
@@ -1557,13 +1590,13 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
         return {"status": "skipped", "reason": "generated_model.mac missing"}
     text = model_path.read_text(encoding="utf-8", errors="replace")
     h1_value = parsed.outer_mm / 1000.0
-    updated, count = re.subn(
+    updated, h1_count = re.subn(
         r"(?m)^(\s*H1\s*=\s*)[-+0-9.Ee]+",
         rf"\g<1>{h1_value:.6f}",
         text,
         count=1,
     )
-    if count == 0:
+    if h1_count == 0:
         lines = text.splitlines()
         insert_at = 0
         for index, line in enumerate(lines[:40]):
@@ -1574,15 +1607,53 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
             insert_at = 0
         lines.insert(insert_at, f"H1={h1_value:.6f}")
         updated = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+    h1_updated = updated != text
+
+    payload = _read_trial_input_payload(job_dir)
+    tray_width_mm = _single_tray_width_mm_from_payload(payload)
+    l3_audit: dict[str, Any]
+    if re.search(r"(?im)^\s*L6\s*=", updated):
+        l3_audit = {
+            "status": "skipped",
+            "reason": "source_multi_width_L6_family",
+            "policy": "Multi-width source families use L3/L4 as tray-width parameters; square-section branch sync is not applied.",
+        }
+    elif tray_width_mm is None:
+        l3_audit = {
+            "status": "skipped",
+            "reason": "not_single_tray_width_or_missing_tray_width",
+        }
+    else:
+        l3_value, l3_policy = _single_width_l3_for_square_section(tray_width_mm, parsed.outer_mm)
+        l3_updated, l3_count = re.subn(
+            r"(?m)^(\s*L3\s*=\s*)[-+0-9.Ee]+",
+            rf"\g<1>{l3_value:.6g}",
+            updated,
+            count=1,
+        )
+        l3_audit = {
+            "status": "updated" if l3_updated != updated else "already_current",
+            "tray_width_mm": tray_width_mm,
+            "L3_m": l3_value,
+            "replaced_count": l3_count,
+            "policy_status": l3_policy,
+            "policy": (
+                "Single-width S2 L3 rule: tray width <=300 mm uses 0.15 m; "
+                "500/600 mm trays use 0.20 m for square outer <=120 mm and 0.15 m for square outer >120 mm."
+            ),
+        }
+        updated = l3_updated
     if updated != text:
         model_path.write_text(updated, encoding="utf-8", newline="\n")
     return {
         "status": "updated" if updated != text else "already_current",
         "section_name": section_name,
         "H1_m": h1_value,
-        "replaced_count": count,
+        "replaced_count": h1_count,
+        "h1_status": "updated" if h1_updated else "already_current",
+        "L3_sync": l3_audit,
         "source_ref": "square_section_name outer width -> generated_model.mac H1",
-        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1.",
+        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1. Single-width L3 is also synchronized when the model is not a multi-width L6 family.",
     }
 
 

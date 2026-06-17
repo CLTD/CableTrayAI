@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-06-17 small-tray/wide-tray command-flow correction queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Width-compatible source-family selection now blocks 100/200 mm trays from selecting the 300 mm physical-bolt command family.
+2. 100/200 mm small-tray rewrite now normalizes inherited wide-source geometry: `L3=0.15m`, `L5=0.074m`, tray Z offset `0.1+L5+...`, and `CPCYC` offset `L5-0.05`.
+3. Square-section candidate/final replacement now synchronizes `H1` and single-width `L3` together, so 600 mm trays selected as 140/160 no longer retain stale `L3=0.2`.
+4. Mixed CAOGANG 500/600 tray layers now use `QTOFF/HTOFF=0.074`; YIXING wide mixed layers keep `0.068`.
+5. Verification passed: targeted tray-width/selector/workflow tests, full `tests/unit`, real ANSYS rows 9/10 for 4211/4311, and real ANSYS rows 7/14 for 4215/4514.
+6. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `8C1A395EA8BE1701C38668F348005EFCDC9873B9CDFD883BFEEB54EB51EAD810`.
+7. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `2D0489EE38878E492FA5CB96F4DA88A45FE9F186467588F0616904AD585F01B9`.
+8. Local `D:/CableTrayAI` was updated from the refreshed update package; latest backup is `D:/CableTrayAI/_update_backups/20260617_192703`; `/health` and `duxyb/cnpe123` login passed; source/package/installed hashes match for the touched modules, learning caches, and server exe.
+
+Open:
+
+1. No current source/package/deployment blocker remains for this queue. Existing unit installs should use `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; fresh installs can use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Verify transfer with the adjacent `.sha256.txt` sidecars.
+
 ## 2026-06-17 department S2 rule alignment queue
 
 Resolved in source and unit tests:

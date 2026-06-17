@@ -1145,6 +1145,71 @@ def test_square_section_replacement_fails_when_input_tray_section_is_missing(tmp
         replace_square_and_arm_sections_in_model(job_dir, "120-120-6", source_root=source_root)
 
 
+def test_square_section_replacement_syncs_l3_for_single_width_wide_tray(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    source_root.mkdir()
+    for section_name in (
+        "120-120-10",
+        "140-140-8",
+        "50-42",
+        "CAOGANG42DAN",
+        "YIXINGGANG150",
+        "YIXINGGANG150DAN",
+        "600-75-2mm",
+    ):
+        (source_root / f"{section_name}.SECT").write_text("sect", encoding="utf-8")
+
+    def write_job(job_dir: Path) -> None:
+        job_dir.mkdir(parents=True)
+        (job_dir / "input.json").write_text(
+            json.dumps(
+                {
+                    "support": {"support_section_id": "100-100-6", "square_tube_width_m": 0.1},
+                    "sections": [
+                        {"section_id": "100-100-6", "sect_file": "100-100-6"},
+                        {"section_id": "arm-main", "sect_file": "50-42"},
+                        {"section_id": "arm-secondary", "sect_file": "CAOGANG42DAN"},
+                        {"section_id": "tray-600", "sect_file": "600-75-2mm"},
+                    ],
+                    "tray_layers": [{"tray_width_m": 0.6, "tray_section_id": "tray-600"}],
+                }
+            ),
+            encoding="utf-8",
+        )
+        (job_dir / "generated_model.mac").write_text(
+            "\n".join(
+                [
+                    "H1=0.100000",
+                    "L2=0.6",
+                    "L3=0.2",
+                    "SECREAD,100-100-6,SECT",
+                    "SECREAD,50-42,SECT",
+                    "SECREAD,CAOGANG42DAN,SECT",
+                    "SECREAD,600-75-2mm,SECT",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    shaped_job = tmp_path / "shaped"
+    write_job(shaped_job)
+    shaped_audit = replace_square_and_arm_sections_in_model(shaped_job, "140-140-8", source_root=source_root)
+    shaped_text = (shaped_job / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert "H1=0.140000" in shaped_text
+    assert "L3=0.15" in shaped_text
+    assert shaped_audit["model_h1_sync_audit"]["L3_sync"]["policy_status"] == "square_outer_width_gt_120_l3_0p15m"
+
+    standard_job = tmp_path / "standard"
+    write_job(standard_job)
+    standard_audit = replace_square_and_arm_sections_in_model(standard_job, "120-120-10", source_root=source_root)
+    standard_text = (standard_job / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert "H1=0.120000" in standard_text
+    assert "L3=0.2" in standard_text
+    assert standard_audit["model_h1_sync_audit"]["L3_sync"]["policy_status"] == "square_outer_width_le_120_l3_0p20m"
+
+
 def test_candidate_trial_syncs_input_and_post_branch_before_runner(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     base_job.mkdir()
