@@ -1,5 +1,41 @@
 # CableTrayAI ??????
 
+## 2026-06-17 current-type mixed tray dispatch and coupling queue
+
+Resolved in source and real ANSYS:
+
+1. `100/200 mm` small-tray coupling follows the department clarification: keep `CPCYC ... L5-0.05`; do not use the temporary `CPCYC ... L5` interpretation.
+2. Exact current-type mixed source families are used only when the reviewed `resources/current_type_command_flows` family covers the intake topology. This keeps `4514` on the reviewed single-side `500+600` family and prevents `4210` double-side per-side mixed `100+300+500` from being forced into a mismatched single-side source family.
+3. `4514` now renders with standard-family variables `senum1/senum2/senum3`, `L1/L2/L11/L12/L5`, and `M1-0.05`, with guarded optional mesh blocks for unused source width families and no platform-only `QTOFF/QCODE`.
+4. `4210` now records a current-family cover failure and uses the deterministic mixed tray renderer; real ANSYS confirms this path is publishable.
+5. Verification passed: full `tests/unit`, real ANSYS `4210`, real ANSYS `4211`, and real ANSYS `4514`.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package and existing-install update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`; use the adjacent `.sha256.txt` sidecars as transfer hash authority.
+2. The update was applied to local `D:/CableTrayAI` through the update package installer entrypoint.
+3. `/health` passed, `duxyb/cnpe123` login passed, and source/package/installed hashes match for the touched runtime files and recovery docs.
+
+Open:
+
+1. Commit and push the completed source/package-state update.
+
+## 2026-06-17 4211 small-tray coupling review correction queue
+
+Resolved in source and verified with real ANSYS:
+
+1. Department clarification supersedes the temporary `CPCYC ... L5` interpretation from image review. For `100/200 mm` trays, `L5-0.05` couples the bolt upper point to the tray; `L5` would couple the cantilever arm/tray location.
+2. The `100/200 mm` small-tray rewrite keeps `K509/K1509`, rewrites the inherited connector line to `503/1503 -> 509/1509`, and rewrites `0.068-0.05` to `L5-0.05`.
+3. The 300 mm physical-bolt topology remains unchanged. The 500/600 mm topology remains on the reviewed `L2/2` connection line.
+4. Verification passed: targeted tray-width/selector/workflow tests, full `tests/unit`, render smoke, and real ANSYS18.2 row 9 / `18185NI-LXSJ4211` at `jobs/verify_4211_l5_minus_coupling_real_20260617`.
+5. Real-run result: selected `100-100-6`, result validation `pass`, final Chapter 6.1 controlling ratio `0.9313729151561154`, and model command stream contains `K509`, `L,503 -> 509`, and `CPCYC ... L5-0.05`.
+
+Open:
+
+1. Refresh full/update deployment packages, apply the update to local `D:/CableTrayAI`, smoke-test, then commit and push.
+
 ## 2026-06-17 small-tray/wide-tray command-flow correction queue
 
 Resolved in source, real ANSYS, package, and local deployment:

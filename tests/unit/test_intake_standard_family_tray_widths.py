@@ -4,6 +4,7 @@ from pathlib import Path
 
 from core.apdl.intake_standard_family_renderer import (
     _apply_post_keypoint_numbering,
+    _current_type_mixed_family_covers_payload,
     _modal_policy_source_bundle,
     _render_model_from_family,
     _render_solve_from_source,
@@ -13,6 +14,7 @@ from core.apdl.intake_standard_family_renderer import (
 from core.apdl.mixed_tray_model import render_mixed_tray_layer_model, should_use_mixed_tray_layer_renderer
 from core.apdl.modal_policy import parse_source_modal_mode_count
 from core.apdl.intake_template_context import build_standard_s2_template_context
+from core.apdl.source_diff import read_text_with_encoding
 
 
 def _double_three_by_three_500_payload() -> dict:
@@ -160,6 +162,36 @@ def _single_two_layer_mixed_300_600_payload() -> dict:
             },
         ],
     }
+
+
+def _single_two_layer_mixed_500_600_payload() -> dict:
+    payload = _single_two_layer_mixed_300_600_payload()
+    payload["sections"] = [
+        {"section_id": "square", "sect_file": "100-100-6.SECT"},
+        {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+        {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+    ]
+    payload["tray_layers"] = [
+        {
+            "side": "front",
+            "layer_index": 1,
+            "tray_width_m": 0.5,
+            "tray_density_kg_m3": 56704.260652,
+            "tray_section_id": "tray-500",
+            "arm_a_length_m": 0.35,
+            "arm_b_length_m": 0.20,
+        },
+        {
+            "side": "front",
+            "layer_index": 2,
+            "tray_width_m": 0.6,
+            "tray_density_kg_m3": 65423.0,
+            "tray_section_id": "tray-600",
+            "arm_a_length_m": 0.47,
+            "arm_b_length_m": 0.20,
+        },
+    ]
+    return payload
 
 
 def _double_layer_payload(layer_count: int) -> dict:
@@ -382,6 +414,107 @@ def test_mixed_width_single_source_uses_governing_max_width_geometry_not_first_w
     assert audit["model_geometry_widths_mm"] == [500]
     assert audit["material_slot_widths_mm"] == [500]
     assert audit["shared_max_width_geometry"]["status"] == "applied"
+
+
+def test_single_mixed_500_600_uses_current_type_standard_family_variables() -> None:
+    source_text, _ = read_text_with_encoding(Path("resources/current_type_command_flows/single_mixed_600_500_300_universal.PIP"))
+
+    rendered, audit = _render_model_from_family(source_text, _single_two_layer_mixed_500_600_payload())
+
+    assert "QTOFF" not in rendered
+    assert "QCODE" not in rendered
+    assert "senum1=2" in rendered
+    assert "senum=2" in rendered
+    assert "senum2=2" in rendered
+    assert "senum3=1" in rendered
+    assert "L1=0.67" in rendered
+    assert "L2=0.6" in rendered
+    assert "L11=0.55" in rendered
+    assert "L12=0.5" in rendered
+    assert "L5=0.2" in rendered
+    assert "CPCYC,UX,,,,,M1-0.05" in rendered
+    assert "*IF,senum3,GT,0,THEN" in rendered
+    assert "*IF,senum2,GT,senum3,THEN" in rendered
+    assert "*IF,senum1,GT,senum2,THEN" in rendered
+    assert rendered.index("SECREAD,'600-75-2mm'") < rendered.index("SECREAD,'500-75-2mm'")
+    assert audit["source_mixed_family_shape"] == "single_mixed_600_500_300_universal"
+    assert audit["model_geometry_widths_mm"] == [600, 500]
+    assert audit["material_slot_widths_mm"] == [600, 500, 300]
+    assert audit["standard_mixed_layer_counts"]["senum3"] == 1
+    assert audit["standard_mixed_layer_counts"]["senum2"] == 2
+    assert audit["optional_mixed_mesh_guards"]["status"] == "guarded"
+
+
+def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:
+    source_text, _ = read_text_with_encoding(Path("resources/current_type_command_flows/single_mixed_500_600_yixing.PIP"))
+    payload = _single_two_layer_mixed_500_600_payload()
+    payload["support"]["square_tube_width_m"] = 0.14
+    payload["sections"][0]["sect_file"] = "140-140-8.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "SECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in rendered
+    assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "senum1=2" in rendered
+    assert "senum=2" in rendered
+    assert "senum3=1" in rendered
+    assert "L1=0.67" in rendered
+    assert "L2=0.55" in rendered
+    assert "L3=0.6" in rendered
+    assert "L4=0.5" in rendered
+    assert "L5=0.15" in rendered
+    assert "CPCYC,UX,,,,,0.068-0.05" in rendered
+    assert "*IF,senum3,GT,0,THEN" in rendered
+    assert "*IF,senum1,GT,senum3,THEN" in rendered
+    assert audit["source_mixed_family_shape"] == "single_mixed_600_500_yixing"
+
+
+def test_current_type_mixed_cover_accepts_4514_style_single_500_600() -> None:
+    source = Path("resources/current_type_command_flows/single_mixed_600_500_300_universal.PIP")
+    source_text, _ = read_text_with_encoding(source)
+
+    cover = _current_type_mixed_family_covers_payload(
+        _single_two_layer_mixed_500_600_payload(),
+        source_text=source_text,
+        source_path=source,
+    )
+
+    assert cover["status"] == "pass"
+    assert cover["reason"] == "single_side_current_type_mixed_family_exact_cover"
+
+
+def test_current_type_mixed_cover_rejects_per_side_mixed_4210_style_payload() -> None:
+    payload = _double_two_by_two_mixed_300_500_payload()
+    payload["sections"].extend(
+        [
+            {"section_id": "tray-100", "sect_file": "100-75-2mm.SECT"},
+            {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+        ]
+    )
+    payload["tray_layers"] = []
+    for side in ("front", "back"):
+        for index, width in enumerate((100, 300, 500), start=1):
+            payload["tray_layers"].append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width / 1000.0,
+                    "tray_density_kg_m3": 44315.0,
+                    "tray_section_id": f"tray-{width}",
+                    "arm_a_length_m": 0.35 if width >= 500 else 0.20,
+                    "arm_b_length_m": 0.20 if width >= 500 else 0.15,
+                }
+            )
+    payload["support"]["layers_front"] = 3
+    payload["support"]["layers_back"] = 3
+    source = Path("resources/current_type_command_flows/double_mixed_yixing.PIP")
+    source_text, _ = read_text_with_encoding(source)
+
+    cover = _current_type_mixed_family_covers_payload(payload, source_text=source_text, source_path=source)
+
+    assert cover["status"] == "fail"
+    assert cover["reason"] == "double_side_payload_has_per_side_mixed_widths_or_uncovered_widths"
 
 
 def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology() -> None:

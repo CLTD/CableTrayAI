@@ -695,6 +695,169 @@ def _density_by_width(payload: dict[str, Any]) -> dict[int, float]:
     return result
 
 
+def _layer_width_counts(payload: dict[str, Any], side: str | None = None) -> dict[int, int]:
+    counts: dict[int, int] = {}
+    for layer in payload.get("tray_layers") or []:
+        layer_side = str(layer.get("side") or "front").lower()
+        if side is not None and layer_side != side:
+            continue
+        width = int(round(float(layer.get("tray_width_m") or 0.0) * 1000))
+        if width > 0:
+            counts[width] = counts.get(width, 0) + 1
+    return counts
+
+
+def _one_side_width(payload: dict[str, Any], side: str, default: int) -> int:
+    counts = _layer_width_counts(payload, side)
+    if not counts:
+        return default
+    # Standard double-different command streams have one tray-width family per
+    # side.  If an intake side contains multiple widths, keep the governing
+    # width for source-family parameterization and let the family-selection
+    # gate decide whether this is acceptable.
+    return max(counts)
+
+
+def _source_mixed_family_shape(text: str, source_tray_widths: list[int]) -> str:
+    has_back = re.search(r"(?im)^\s*K\s*,\s*1501\s*\+", text) is not None
+    has_l11 = _assignment_number(text, "L11") is not None
+    has_senum2 = _assignment_number(text, "senum2") is not None
+    has_senum3 = _assignment_number(text, "senum3") is not None
+    widths = set(source_tray_widths)
+    if not has_back and has_l11 and has_senum2 and has_senum3 and {300, 500, 600}.issubset(widths):
+        return "single_mixed_600_500_300_universal"
+    if not has_back and has_senum3 and widths == {500, 600}:
+        return "single_mixed_600_500_yixing"
+    if has_back and len(widths) > 1:
+        return "double_mixed_one_width_per_side"
+    return "standard_or_single_width"
+
+
+def _current_type_mixed_family_covers_payload(
+    payload: dict[str, Any],
+    *,
+    source_text: str,
+    source_path: Path,
+) -> dict[str, Any]:
+    widths = sorted(set(_input_widths(payload)))
+    source_tray_widths = list(_tray_widths_from_sections(_secreads(source_text)))
+    source_shape = _source_mixed_family_shape(source_text, source_tray_widths)
+    source_name = source_path.name
+    if not widths:
+        return {"status": "not_mixed", "source_shape": source_shape, "source": source_name}
+    if source_shape in {"single_mixed_600_500_300_universal", "single_mixed_600_500_yixing"}:
+        side_count = _payload_side_count(payload)
+        covered = (
+            side_count == 1
+            and len(widths) > 1
+            and set(widths).issubset(set(source_tray_widths))
+            and not any(width <= 200 for width in widths)
+        )
+        return {
+            "status": "pass" if covered else "fail",
+            "source_shape": source_shape,
+            "source": source_name,
+            "payload_widths": widths,
+            "source_widths": source_tray_widths,
+            "reason": "single_side_current_type_mixed_family_exact_cover"
+            if covered
+            else "single_side_mixed_family_does_not_exactly_cover_payload",
+        }
+    if source_shape == "double_mixed_one_width_per_side":
+        front_widths = sorted(_layer_width_counts(payload, "front"))
+        back_widths = sorted(_layer_width_counts(payload, "back"))
+        covered = (
+            len(widths) > 1
+            and len(front_widths) == 1
+            and len(back_widths) == 1
+            and set(front_widths + back_widths).issubset(set(source_tray_widths))
+        )
+        return {
+            "status": "pass" if covered else "fail",
+            "source_shape": source_shape,
+            "source": source_name,
+            "payload_widths": widths,
+            "source_widths": source_tray_widths,
+            "front_widths": front_widths,
+            "back_widths": back_widths,
+            "reason": "double_side_one_width_per_side_current_type_cover"
+            if covered
+            else "double_side_payload_has_per_side_mixed_widths_or_uncovered_widths",
+        }
+    return {
+        "status": "fail",
+        "source_shape": source_shape,
+        "source": source_name,
+        "payload_widths": widths,
+        "source_widths": source_tray_widths,
+        "reason": "source_is_not_current_mixed_family_shape",
+    }
+
+
+def _wide_tray_tail_m(widths: list[int], square_outer_mm: float, default: float | None = None) -> float:
+    if widths and max(widths) <= 300:
+        return 0.15
+    if square_outer_mm > 120.0:
+        return 0.15
+    return 0.20
+
+
+def _wrap_optional_block_once(text: str, start_regex: str, condition: str) -> tuple[str, int]:
+    pattern = re.compile(rf"(?ms)(ALLSEL\s*\n\s*{start_regex}.*?LMESH\s*,\s*ALL)", flags=re.IGNORECASE)
+
+    def repl(match: re.Match[str]) -> str:
+        block = match.group(1)
+        if f"*IF,{condition},THEN" in block:
+            return block
+        return f"*IF,{condition},THEN\n{block}\n*ENDIF"
+
+    return pattern.subn(repl, text, count=1)
+
+
+def _guard_single_mixed_optional_mesh_blocks(text: str, source_mixed_shape: str) -> tuple[str, dict[str, Any]]:
+    if source_mixed_shape not in {"single_mixed_600_500_300_universal", "single_mixed_600_500_yixing"}:
+        return text, {"status": "not_required", "source_mixed_family_shape": source_mixed_shape}
+
+    replacements: list[dict[str, str]] = []
+
+    def apply(start_regex: str, condition: str, label: str) -> None:
+        nonlocal text
+        text, count = _wrap_optional_block_once(text, start_regex, condition)
+        if count:
+            replacements.append({"block": label, "condition": condition})
+
+    apply(r"LSEL\s*,\s*S\s*,\s*LOC\s*,\s*X\s*,\s*KX\(\s*516\s*\)", "senum3,GT,0", "600_tray_mesh")
+    if source_mixed_shape == "single_mixed_600_500_300_universal":
+        apply(
+            r"LSEL\s*,\s*S\s*,\s*LOC\s*,\s*X\s*,\s*KX\(\s*506\s*\+\s*\(\s*senum3\s*\+\s*1\s*\)\s*\*\s*10\s*\)",
+            "senum2,GT,senum3",
+            "500_tray_mesh",
+        )
+        apply(
+            r"LSEL\s*,\s*S\s*,\s*LOC\s*,\s*X\s*,\s*KX\(\s*506\s*\+\s*\(\s*senum2\s*\+\s*1\s*\)\s*\*\s*10\s*\)",
+            "senum1,GT,senum2",
+            "300_tray_mesh",
+        )
+    else:
+        apply(
+            r"LSEL\s*,\s*S\s*,\s*LOC\s*,\s*X\s*,\s*KX\(\s*506\s*\+\s*\(\s*senum3\s*\+\s*1\s*\)\s*\*\s*10\s*\)",
+            "senum1,GT,senum3",
+            "500_tray_mesh",
+        )
+
+    return text, {
+        "status": "guarded" if replacements else "unchanged",
+        "source_mixed_family_shape": source_mixed_shape,
+        "replacements": replacements,
+        "policy": (
+            "Current unit single-side mixed command streams contain fixed mesh-selection blocks for every "
+            "reviewed width family. When an intake has zero layers for one width, CableTrayAI preserves the "
+            "standard block but wraps it in an APDL *IF guard so KX(...) is not evaluated for undefined "
+            "keypoints."
+        ),
+    }
+
+
 def _standard_family_keypoint_numbering(front_layers: int, back_layers: int) -> dict[str, Any]:
     """Return keypoint-numbering expansion for source families above 9 layers.
 
@@ -1098,18 +1261,34 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     if not unique_widths:
         unique_widths = [500]
     source_tray_widths = list(_tray_widths_from_sections(_secreads(text)))
+    source_mixed_shape = _source_mixed_family_shape(text, source_tray_widths)
     shared_max_width_geometry = bool(
         len(unique_widths) > 1
+        and source_mixed_shape == "standard_or_single_width"
         and len(source_tray_widths) == 1
         and int(source_tray_widths[0]) == max(unique_widths)
     )
-    if shared_max_width_geometry:
+    if source_mixed_shape in {"single_mixed_600_500_300_universal", "single_mixed_600_500_yixing"}:
+        material_slot_widths = source_tray_widths
+        model_widths = [width for width in source_tray_widths if width in unique_widths] or unique_widths
+    elif source_mixed_shape == "double_mixed_one_width_per_side":
+        front_default = source_tray_widths[0] if source_tray_widths else (unique_widths[0] if unique_widths else 500)
+        back_default = source_tray_widths[1] if len(source_tray_widths) > 1 else front_default
+        front_width = _one_side_width(payload, "front", front_default)
+        back_width = _one_side_width(payload, "back", back_default)
+        material_slot_widths = [front_width, back_width]
+        model_widths = []
+        for width in material_slot_widths:
+            if width not in model_widths:
+                model_widths.append(width)
+    elif shared_max_width_geometry:
         model_widths = [max(unique_widths)]
         material_widths_for_source = model_widths
+        material_slot_widths = _expanded_tray_widths_for_source(source_tray_widths, material_widths_for_source)
     else:
         model_widths = unique_widths
         material_widths_for_source = unique_widths
-    material_slot_widths = _expanded_tray_widths_for_source(source_tray_widths, material_widths_for_source)
+        material_slot_widths = _expanded_tray_widths_for_source(source_tray_widths, material_widths_for_source)
     primary_width = model_widths[0]
     secondary_width = model_widths[1] if len(model_widths) > 1 else primary_width
     layers_by_width = {
@@ -1138,6 +1317,9 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     source_has_multi_width_geometry = len(source_tray_widths) > 1
     square_outer_mm = _square_outer_width_mm_from_payload(payload)
     section_l3_value, section_l3_policy = _single_width_family_l3_from_tray_and_square(primary_width, square_outer_mm)
+    width_counts_all = _layer_width_counts(payload)
+    width_counts_front = _layer_width_counts(payload, "front")
+    width_counts_back = _layer_width_counts(payload, "back")
 
     rendered = text
     rendered = _replace_nth_secread(rendered, 0, support_section)
@@ -1154,11 +1336,47 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         float(primary_arm_total or source_assignments.get("L1") or 0.55),
         4,
     )
-    if has_source_span_l6:
+    extra_assignments: dict[str, float | int] = {}
+    if source_mixed_shape == "single_mixed_600_500_300_universal":
+        assigned_l1 = round(float(arm_total_for_width(600) or source_assignments.get("L1") or 0.67), 4)
+        assigned_l2 = 0.6
+        extra_assignments["L11"] = round(float(arm_total_for_width(500) or source_assignments.get("L11") or 0.55), 4)
+        extra_assignments["L12"] = 0.5
+        assigned_l3 = round(float(arm_total_for_width(300) or source_assignments.get("L3") or 0.35), 4)
+        assigned_l4 = 0.3
+        assigned_l5 = round(_wide_tray_tail_m(unique_widths, square_outer_mm, arm_tail_for_width(max(unique_widths)) or source_assignments.get("L5")), 4)
+        assigned_l6 = round(float(support.get("support_spacing_m") or source_assignments.get("L6") or 2.0), 4)
+        extra_assignments["senum1"] = sum(width_counts_all.values())
+        extra_assignments["senum3"] = width_counts_all.get(600, 0)
+        extra_assignments["senum2"] = width_counts_all.get(600, 0) + width_counts_all.get(500, 0)
+        section_l3_policy = "single_mixed_600_500_300_standard_family"
+    elif source_mixed_shape == "single_mixed_600_500_yixing":
+        assigned_l1 = round(float(arm_total_for_width(600) or source_assignments.get("L1") or 0.67), 4)
+        assigned_l2 = round(float(arm_total_for_width(500) or source_assignments.get("L2") or 0.55), 4)
+        assigned_l3 = 0.6
+        assigned_l4 = 0.5
+        assigned_l5 = round(_wide_tray_tail_m(unique_widths, square_outer_mm, arm_tail_for_width(max(unique_widths)) or source_assignments.get("L5")), 4)
+        assigned_l6 = round(float(support.get("support_spacing_m") or source_assignments.get("L6") or 2.0), 4)
+        extra_assignments["senum1"] = sum(width_counts_all.values())
+        extra_assignments["senum3"] = width_counts_all.get(600, 0)
+        section_l3_policy = "single_mixed_600_500_yixing_standard_family"
+    elif source_mixed_shape == "double_mixed_one_width_per_side":
+        front_width = material_slot_widths[0]
+        back_width = material_slot_widths[1] if len(material_slot_widths) > 1 else front_width
+        assigned_l1 = round(float(arm_total_for_width(front_width) or source_assignments.get("L1") or front_width / 1000.0), 4)
+        assigned_l2 = round(float(front_width) / 1000.0, 4)
+        assigned_l3 = round(_wide_tray_tail_m(unique_widths, square_outer_mm, source_assignments.get("L3")), 4)
+        assigned_l4 = round(float(support.get("support_spacing_m") or source_assignments.get("L4") or 2.0), 4)
+        assigned_l5 = round(float(arm_total_for_width(back_width) or source_assignments.get("L5") or back_width / 1000.0), 4)
+        assigned_l6 = round(float(back_width) / 1000.0, 4)
+        extra_assignments["senum"] = sum(width_counts_front.values())
+        extra_assignments["senum1"] = sum(width_counts_back.values())
+        section_l3_policy = "double_mixed_one_width_per_side_standard_family"
+    elif has_source_span_l6:
         assigned_l2 = round(float(secondary_arm_total or source_assignments.get("L2") or primary_arm_total or 0.55), 4)
         assigned_l3 = round(float(primary_width) / 1000.0, 4)
         assigned_l4 = round(float(secondary_width) / 1000.0, 4)
-        assigned_l5 = round(float(source_assignments.get("L5") or primary_arm_tail or 0.15), 4)
+        assigned_l5 = round(_wide_tray_tail_m(unique_widths, square_outer_mm, primary_arm_tail or source_assignments.get("L5")), 4)
         assigned_l6 = round(float(support.get("support_spacing_m") or source_assignments.get("L6") or 2.0), 4)
     else:
         assigned_l2 = round(
@@ -1183,14 +1401,23 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered = _replace_assignment(rendered, "L6", assigned_l6)
     front = int(support.get("layers_front") or 0)
     back = int(support.get("layers_back") or 0)
-    assigned_senum = max(front, back) if back else front
-    assigned_senum1 = min(front, back) if back else 0
-    if back:
-        rendered = _replace_assignment(rendered, "senum", assigned_senum)
-        rendered = _replace_or_insert_assignment_after(rendered, "senum1", assigned_senum1, "senum")
+    assigned_senum = int(extra_assignments.get("senum", max(front, back) if back else front))
+    assigned_senum1 = int(extra_assignments.get("senum1", min(front, back) if back else 0))
+    if "L11" in extra_assignments:
+        rendered = _replace_assignment(rendered, "L11", extra_assignments["L11"])
+    if "L12" in extra_assignments:
+        rendered = _replace_assignment(rendered, "L12", extra_assignments["L12"])
+    if "senum" in extra_assignments:
+        rendered = _replace_assignment(rendered, "senum", int(extra_assignments["senum"]))
+    elif source_mixed_shape in {"single_mixed_600_500_300_universal", "single_mixed_600_500_yixing"}:
+        rendered = _replace_or_insert_assignment_after(rendered, "senum", assigned_senum, "senum1")
     else:
         rendered = _replace_assignment(rendered, "senum", assigned_senum)
-        rendered = _replace_or_insert_assignment_after(rendered, "senum1", assigned_senum1, "senum")
+    rendered = _replace_or_insert_assignment_after(rendered, "senum1", assigned_senum1, "senum")
+    if "senum2" in extra_assignments:
+        rendered = _replace_or_insert_assignment_after(rendered, "senum2", int(extra_assignments["senum2"]), "senum1")
+    if "senum3" in extra_assignments:
+        rendered = _replace_or_insert_assignment_after(rendered, "senum3", int(extra_assignments["senum3"]), "senum2")
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
@@ -1203,6 +1430,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered,
         enabled=small_tray_partition_enabled,
     )
+    rendered, optional_mixed_mesh_guards = _guard_single_mixed_optional_mesh_blocks(rendered, source_mixed_shape)
     connection_offset_audit = {
         "status": "not_required",
         "source_ref": "reviewed_single_width_s2_keypoint_topology",
@@ -1267,6 +1495,19 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "material_slot_widths_mm": material_slot_widths,
         "tray_density_by_width": density_map,
         "source_has_multi_width_geometry": source_has_multi_width_geometry,
+        "source_mixed_family_shape": source_mixed_shape,
+        "standard_mixed_layer_counts": {
+            "all": width_counts_all,
+            "front": width_counts_front,
+            "back": width_counts_back,
+            "senum2": int(extra_assignments["senum2"]) if "senum2" in extra_assignments else None,
+            "senum3": int(extra_assignments["senum3"]) if "senum3" in extra_assignments else None,
+            "policy": (
+                "For current_type mixed command families, the reviewed source loop structure is preserved. "
+                "Single-side 600/500/300 families use senum3 as the 600-layer cutoff and senum2 as the "
+                "600+500 cutoff; double-different families keep one tray-width family per side."
+            ),
+        },
         "required_tray_sections": required_tray_sections,
         "missing_required_tray_sections": missing_required_tray_sections,
         "tray_section_status": "pass" if not missing_required_tray_sections else "fail",
@@ -1277,6 +1518,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
         "channel_secoffset_replacements": channel_secoffset_replacements,
         "small_tray_arm_partition": small_tray_partition_audit,
+        "optional_mixed_mesh_guards": optional_mixed_mesh_guards,
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,
         "beam188_warping_keyopts": beam188_warping_keyopts,
@@ -1289,8 +1531,12 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             "L4": assigned_l4,
             "L5": assigned_l5,
             "L6": assigned_l6,
+            "L11": extra_assignments.get("L11"),
+            "L12": extra_assignments.get("L12"),
             "senum": assigned_senum,
             "senum1": assigned_senum1,
+            "senum2": extra_assignments.get("senum2"),
+            "senum3": extra_assignments.get("senum3"),
         },
         "l3_policy": {
             "status": section_l3_policy if not has_source_span_l6 else "source_multi_width_l3_tracks_primary_tray_width",
@@ -1771,17 +2017,44 @@ def render_intake_standard_family_commands(
     )
     source_root = Path(source_root)
     family = select_standard_model_family(payload, source_root)
-    source_text, encoding = read_text_with_encoding(Path(family["source"]))
-    if should_use_mixed_tray_layer_renderer(payload):
+    family_source_path = Path(family["source"])
+    source_text, encoding = read_text_with_encoding(family_source_path)
+    metadata = payload.get("metadata") or {}
+    allow_platform_mixed_renderer = bool(metadata.get("allow_platform_mixed_tray_renderer"))
+    mixed_family_cover = _current_type_mixed_family_covers_payload(
+        payload,
+        source_text=source_text,
+        source_path=family_source_path,
+    )
+    use_platform_mixed_renderer = should_use_mixed_tray_layer_renderer(payload) and (
+        allow_platform_mixed_renderer or mixed_family_cover.get("status") != "pass"
+    )
+    if use_platform_mixed_renderer:
         rendered_model, parameter_audit = render_mixed_tray_layer_model(payload)
         parameter_audit["source_family_model_status"] = "bypassed_for_mixed_tray_layer_renderer"
+        parameter_audit["current_type_mixed_family_cover"] = mixed_family_cover
         parameter_audit["source_family_reference"] = {
             "source": family["source"],
             "source_sha256": family.get("source_sha256"),
-            "policy": "Mixed tray layer geometry is generated per layer; selected source family remains the audited solve/post reference.",
+            "policy": (
+                "Mixed tray layer geometry is generated per layer when no current unit standard mixed family "
+                "exactly covers the payload. The selected source family remains the audited solve/post reference."
+            ),
         }
     else:
         rendered_model, parameter_audit = _render_model_from_family(source_text, payload)
+        parameter_audit["current_type_mixed_family_cover"] = mixed_family_cover
+        if should_use_mixed_tray_layer_renderer(payload):
+            parameter_audit["platform_mixed_tray_renderer"] = {
+                "status": "disabled_for_production_standard_family_baseline",
+                "allow_platform_mixed_tray_renderer": allow_platform_mixed_renderer,
+                "source_ref": family["source"],
+                "policy": (
+                    "Production mixed tray-width jobs preserve the current unit standard command-flow family by "
+                    "default. The platform-owned mixed renderer is retained only as an explicit experimental "
+                    "fallback after separate review."
+                ),
+            }
     required_tray_sections = _required_tray_sections_from_payload(payload)
     missing_required_tray_sections = _missing_required_sections_in_text(rendered_model, required_tray_sections)
     if missing_required_tray_sections:

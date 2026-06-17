@@ -1,5 +1,45 @@
 # CableTrayAI ??????
 
+## 2026-06-17 current-type mixed tray dispatch and coupling closeout
+
+Current source/validation state:
+
+1. The department clarification is now the active small-tray rule: for `100/200 mm` trays, `CPCYC ... L5-0.05` couples the bolt upper point to the tray. The temporary `CPCYC ... L5` interpretation is not used.
+2. Mixed tray modeling is tied to the current unit standard command-flow library in `resources/current_type_command_flows/` only when that reviewed source family exactly covers the intake topology. This prevents a reviewed single-side mixed family from being forced onto a double-side per-side mixed intake.
+3. `18185NI-LXSJ4514`-class single-side `500+600` mixed trays now use the current standard mixed source family shape with `senum1/senum2/senum3`, `L1/L2/L11/L12/L5`, `CPCYC ... M1-0.05`, and no platform-only `QTOFF/QCODE` line groups. Optional mesh blocks for unused source width families are preserved but wrapped in APDL `*IF` guards so ANSYS18.2 does not evaluate undefined keypoints.
+4. `18185NI-LXSJ4210`-class double-side `100+300+500` per-side mixed trays do not have an exact current-type standard source family in the reviewed `类型` folder. They now explicitly bypass the current-family renderer and use the deterministic per-layer mixed renderer instead of silently reusing a mismatched source.
+5. The selector audit records this distinction so code review can see whether a job used an exact current-type family or the deterministic mixed renderer fallback.
+
+Verification:
+
+1. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+2. Real ANSYS18.2 passed for `4210` at `jobs/verify_4210_after_mixed_dispatch_20260617/18185NI-LXSJ4210`: selected `140-140-8`, result validation `pass`, final section-selection and Chapter 6.1 ratio `0.9672676676517402`.
+3. Real ANSYS18.2 passed for `4211` at `jobs/verify_4210_4211_after_standard_mixed_20260617/18185NI-LXSJ4211`: selected `100-100-6`, result validation `pass`, section-selection ratio `0.6179154054744243`, final Chapter 6.1 ratio `0.9313729151561154`, and generated model contains `CPCYC,UX,,,,,L5-0.05`.
+4. Real ANSYS18.2 passed for `4514` at `jobs/verify_4514_standard_family_real_final_20260617/18185NI-LXSJ4514`: selected `100-100-6`, result validation `pass`, section-selection ratio `0.5635385466913663`, final Chapter 6.1 ratio `0.7162255419833204`, generated model contains `senum1/senum2/senum3`, `M1-0.05`, and no `QTOFF/QCODE`.
+
+Deployment closeout:
+
+1. Full package and existing-install update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe` from this source state. Use the adjacent `.sha256.txt` sidecars as the transfer hash authority.
+2. The update was applied to local `D:/CableTrayAI` through the update package installer entrypoint, not by feeding the outer update zip directly to `apply_internal_update.ps1`.
+3. Local smoke passed: `/health` returned ok and `duxyb/cnpe123` login returned pass.
+4. Source/package/installed hashes match for `core/apdl/intake_standard_family_renderer.py`, the two learning caches, the three recovery docs, and `runtime/CableTrayAI_Server/CableTrayAI_Server.exe`.
+
+## 2026-06-17 4211 small-tray coupling review correction
+
+Current source/validation state:
+
+1. Supersedes the temporary `CPCYC ... L5` interpretation made during image review. The department clarification is authoritative: for tray widths `100/200 mm`, `L5-0.05` is the coupling distance between the bolt upper point and the tray; without subtracting `0.05`, the coupling reaches the cantilever arm/tray instead.
+2. `core/apdl/intake_standard_family_renderer.py` keeps the `100/200 mm` small-tray branch as: `L3=0.15m`, `L5=0.074m`, keypoints `502/1502` at `H1/2+L1-L3`, keypoints `503/1503` and tray keypoints `506/507/508` at `H1/2+L1-L2/2`, tray Z offset `0.1+L5+...`, connector line rewritten to `503/1503 -> 509/1509`, and `CPCYC` offset `L5-0.05`.
+3. The 300 mm physical-bolt branch and the 500/600 mm L2/2 topology are unchanged.
+
+Verification:
+
+1. Targeted tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q`.
+2. Square-section workflow tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_square_section_selector.py tests/unit/test_square_section_workflow_policy.py -q`.
+3. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+4. Render smoke using the latest installed `D:/CableTrayAI/jobs/18185NI-LXSJ4211/input.json` confirmed `CPCYC,UX,,,,,L5-0.05`, `K509`, and `L,503 -> 509` are present; plain `CPCYC ... L5` and old `L,502 -> 509` are absent.
+5. Real ANSYS18.2 validation passed under `jobs/verify_4211_l5_minus_coupling_real_20260617/18185NI-LXSJ4211`: generated model has `L2=0.2`, `L3=0.15`, `L5=0.074`, `K509`, `L,503 -> 509`, and `CPCYC ... L5-0.05`; selected `100-100-6`; result validation `pass`; final Chapter 6.1 controlling ratio `0.9313729151561154`; connection-load extraction has non-zero rows.
+
 ## 2026-06-17 small-tray/wide-tray command-flow correction closeout
 
 Current source/validation state:
