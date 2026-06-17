@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-06-17 4213 bolt-section and 4210 grouped mixed queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4213` 100/200 mm small-tray jobs no longer keep a wide-tray M12 `SECDATA,0.006` physical bolt section. The renderer rewrites section 10 to M8 nominal radius `SECDATA,0.004` for small-tray widths while preserving physical bolt/connector lines.
+2. `4210` mirrored double-side mixed jobs with 2 to 5 tray-width groups now render grouped `senum` boundary loops instead of the old `QW/QCODE` per-layer array stream. The formal row 2 case with 100/200/300/500/600 mm trays emits `senum1=5` through `senum5=1`.
+3. The grouped renderer now records `ARM_ET` and `TRAY_ET` in addition to section/material arrays, fixing the real MAPDL `No dimensions set for parameter= ARM_ET` failure.
+4. Mixed small/large tray jobs keep separate bolt section ids through `BOLT_SEC`: M12/large tray on section 10 and M8/small tray on section 11.
+5. Verification passed: py_compile, targeted tray-width tests, full `tests/unit`, and real ANSYS18.2 rows 2/5 from `C:/Users/duxy/Desktop/1818 S2支架.xlsx`.
+6. Real ANSYS results: `4210` selected `140-140-8` with final section-selection ratio `0.9527713364018127`; `4213` selected `100-100-6` with ratio `0.6179154054744243`; both have `result_validation.status=pass`.
+7. Deployment refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `.sha256.txt` sidecars as transfer hash authority.
+8. Local `D:/CableTrayAI` was updated; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; `/health` and `duxyb/cnpe123` login passed.
+
+Open:
+
+1. Commit and push this completed source/package-state update.
+
 ## 2026-06-17 current-type mixed tray dispatch and coupling queue
 
 Resolved in source and real ANSYS:

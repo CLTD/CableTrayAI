@@ -9,6 +9,7 @@ from core.apdl.intake_standard_family_renderer import (
     _render_model_from_family,
     _render_solve_from_source,
     _standard_family_keypoint_numbering,
+    render_intake_standard_family_commands,
     select_standard_model_family,
 )
 from core.apdl.mixed_tray_model import render_mixed_tray_layer_model, should_use_mixed_tray_layer_renderer
@@ -192,6 +193,90 @@ def _single_two_layer_mixed_500_600_payload() -> dict:
         },
     ]
     return payload
+
+
+def _double_three_by_three_mirrored_mixed_100_300_500_payload() -> dict:
+    tray_layers = []
+    specs = [
+        (1, 100, 44315.0, 0.20, 0.15),
+        (2, 300, 44315.0, 0.20, 0.15),
+        (3, 500, 56704.260652, 0.35, 0.20),
+    ]
+    for side in ("front", "back"):
+        for index, width, density, arm_a, arm_b in specs:
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width / 1000.0,
+                    "tray_density_kg_m3": density,
+                    "tray_section_id": f"tray-{width}",
+                    "arm_a_length_m": arm_a,
+                    "arm_b_length_m": arm_b,
+                }
+            )
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 3,
+            "layers_back": 3,
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "100-100-6.SECT"},
+            {"section_id": "tray-100", "sect_file": "100-75-2mm.SECT"},
+            {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+            {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+        ],
+        "tray_layers": tray_layers,
+        "metadata": {"analysis_method": "response_spectrum"},
+    }
+
+
+def _double_five_by_five_mirrored_mixed_100_200_300_500_600_payload() -> dict:
+    tray_layers = []
+    specs = [
+        (1, 100, 3896.1, 0.20, 0.15),
+        (2, 200, 51095.0, 0.20, 0.15),
+        (3, 300, 44315.0, 0.20, 0.15),
+        (4, 500, 56704.260652, 0.35, 0.20),
+        (5, 600, 65423.162584, 0.47, 0.20),
+    ]
+    for side in ("front", "back"):
+        for index, width, density, arm_a, arm_b in specs:
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width / 1000.0,
+                    "tray_density_kg_m3": density,
+                    "tray_section_id": f"tray-{width}",
+                    "arm_a_length_m": arm_a,
+                    "arm_b_length_m": arm_b,
+                }
+            )
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 5,
+            "layers_back": 5,
+            "support_height_m": 1.7,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.14,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "140-140-8.SECT"},
+            {"section_id": "tray-100", "sect_file": "100-75-2mm.SECT"},
+            {"section_id": "tray-200", "sect_file": "200-75-2mm.SECT"},
+            {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+            {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+            {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+        ],
+        "tray_layers": tray_layers,
+        "metadata": {"analysis_method": "response_spectrum"},
+    }
 
 
 def _double_layer_payload(layer_count: int) -> dict:
@@ -517,6 +602,68 @@ def test_current_type_mixed_cover_rejects_per_side_mixed_4210_style_payload() ->
     assert cover["reason"] == "double_side_payload_has_per_side_mixed_widths_or_uncovered_widths"
 
 
+def test_4210_style_mirrored_mixed_renderer_uses_grouped_current_type_loops() -> None:
+    payload = _double_three_by_three_mirrored_mixed_100_300_500_payload()
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["assigned"]["senum1"] == 3
+    assert audit["assigned"]["senum2"] == 2
+    assert audit["assigned"]["senum3"] == 1
+    assert "senum1=3" in rendered
+    assert "senum2=2" in rendered
+    assert "senum3=1" in rendered
+    assert "SECREAD,'100-75-2mm'" in rendered
+    assert "SECREAD,'300-75-2mm'" in rendered
+    assert "SECREAD,'500-75-2mm'" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID" in rendered
+    assert "SECTYPE,11,BEAM,CSOLID" in rendered
+    assert "*DIM,ARM_ET,ARRAY" in rendered
+    assert "*DIM,TRAY_ET,ARRAY" in rendered
+    assert "ARM_ET(NARM)=2" in rendered
+    assert "TRAY_ET(NTRAY)=4" in rendered
+    assert "BOLT_SEC(NBOLT)=11" in rendered
+    assert "BOLT_SEC(NBOLT)=10" in rendered
+    assert "QCODE" not in rendered
+    assert "QW(" not in rendered
+
+
+def test_4210_style_five_width_mirrored_mixed_renderer_stays_grouped() -> None:
+    payload = _double_five_by_five_mirrored_mixed_100_200_300_500_600_payload()
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["assigned"]["senum1"] == 5
+    assert audit["assigned"]["senum2"] == 4
+    assert audit["assigned"]["senum3"] == 3
+    assert audit["assigned"]["senum4"] == 2
+    assert audit["assigned"]["senum5"] == 1
+    for width in (100, 200, 300, 500, 600):
+        assert f"SECREAD,'{width}-75-2mm'" in rendered
+    assert "BOLT_SEC(NBOLT)=11" in rendered
+    assert "BOLT_SEC(NBOLT)=10" in rendered
+    assert "QCODE" not in rendered
+    assert "QW(" not in rendered
+
+
+def test_4210_full_command_render_uses_grouped_renderer_not_legacy_arrays(tmp_path: Path) -> None:
+    payload = _double_three_by_three_mirrored_mixed_100_300_500_payload()
+
+    result = render_intake_standard_family_commands("4210_grouped_render", payload, jobs_dir=tmp_path)
+    rendered = (tmp_path / "4210_grouped_render" / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert result["status"] == "pass"
+    audit = result["parameterization"]
+    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert "senum1=3" in rendered
+    assert "senum2=2" in rendered
+    assert "senum3=1" in rendered
+    assert "QCODE" not in rendered
+    assert "QW(" not in rendered
+
+
 def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology() -> None:
     payload = _single_two_layer_mixed_300_600_payload()
 
@@ -805,6 +952,43 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
     assert "CPCYC,UX" in rendered
     assert audit["physical_bolt_modeling"]["status"] == "pass"
     assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
+
+
+def test_200_small_tray_rewrites_physical_bolt_section_to_m8_radius() -> None:
+    source_text = "\n".join(
+        [
+            "SECTYPE,10,BEAM,CSOLID",
+            "SECDATA,0.006",
+            "SECOFFSET,USER,",
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.2",
+            "L3=0.15",
+            "L4=2.0",
+            "L5=0.074",
+            "senum=2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'200-75-2mm'",
+            "L,503+10*I+100*(J-1),509+10*I+100*(J-1)",
+            "LATT,1,,4,,,,10",
+            "CPCYC,UX,,,,,L5-0.05",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.2
+        layer["tray_section_id"] = "tray-200"
+    payload["sections"][1]["section_id"] = "tray-200"
+    payload["sections"][1]["sect_file"] = "200-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
+    assert "SECDATA,0.006" not in rendered
+    assert audit["bolt_section_radius"]["status"] == "rewritten"
+    assert audit["bolt_section_radius"]["radius_m"] == 0.004
+    assert audit["bolt_section_radius"]["widths_mm"] == [200]
 
 
 def test_current_type_command_library_is_preferred_for_300_model_family() -> None:

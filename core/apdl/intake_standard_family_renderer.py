@@ -802,6 +802,30 @@ def _wide_tray_tail_m(widths: list[int], square_outer_mm: float, default: float 
     return 0.20
 
 
+def _bolt_radius_m_for_widths(widths: list[int]) -> tuple[float, str]:
+    positive_widths = [int(width) for width in widths if int(width) > 0]
+    if positive_widths and max(positive_widths) <= 200:
+        return 0.004, "tray_width_le_200_uses_m8_nominal_round_bar_radius"
+    return 0.006, "tray_width_gt_200_uses_m12_nominal_round_bar_radius"
+
+
+def _rewrite_model_bolt_section_radius(text: str, widths: list[int]) -> tuple[str, dict[str, Any]]:
+    radius, policy = _bolt_radius_m_for_widths(widths)
+    pattern = re.compile(
+        r"(?im)^(\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\s*\n\s*SECDATA\s*,)\s*[-+]?\d+(?:\.\d+)?(?:[Ee][-+]?\d+)?\b"
+    )
+    replacement = rf"\g<1>{radius:.3f}"
+    updated, count = pattern.subn(replacement, text)
+    return updated, {
+        "status": "rewritten" if count else "not_present",
+        "radius_m": radius,
+        "widths_mm": sorted(set(int(width) for width in widths if int(width) > 0)),
+        "replacement_count": count,
+        "policy": policy,
+        "source_ref": "standard tray-support installation manual bolt size rule: 100/200 trays use M8; 300/500/600 trays use M12",
+    }
+
+
 def _wrap_optional_block_once(text: str, start_regex: str, condition: str) -> tuple[str, int]:
     pattern = re.compile(rf"(?ms)(ALLSEL\s*\n\s*{start_regex}.*?LMESH\s*,\s*ALL)", flags=re.IGNORECASE)
 
@@ -1418,6 +1442,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered = _replace_or_insert_assignment_after(rendered, "senum2", int(extra_assignments["senum2"]), "senum1")
     if "senum3" in extra_assignments:
         rendered = _replace_or_insert_assignment_after(rendered, "senum3", int(extra_assignments["senum3"]), "senum2")
+    rendered, bolt_section_radius_audit = _rewrite_model_bolt_section_radius(rendered, unique_widths)
     for material_id, width in enumerate(material_slot_widths, start=2):
         if width in density_map:
             rendered = _replace_density(rendered, material_id, density_map[width])
@@ -1518,6 +1543,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
         "channel_secoffset_replacements": channel_secoffset_replacements,
         "small_tray_arm_partition": small_tray_partition_audit,
+        "bolt_section_radius": bolt_section_radius_audit,
         "optional_mixed_mesh_guards": optional_mixed_mesh_guards,
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,

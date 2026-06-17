@@ -1,5 +1,32 @@
 # CableTrayAI ??????
 
+## 2026-06-17 4213 bolt-section and 4210 grouped mixed closeout
+
+Current source/validation state:
+
+1. Fixed `18185NI-LXSJ4213`-class 100/200 mm tray modeling so a reviewed source that contains `SECTYPE,10,BEAM,CSOLID` is rewritten to the small-tray M8 nominal round-bar radius: `SECDATA,0.004`. 300/500/600 mm trays still use the M12 nominal radius `0.006`.
+2. Fixed mirrored double-side mixed tray modeling for `4210`-class jobs. When both sides have the same mixed width distribution, the renderer now emits grouped `senum` boundary loops for 2 to 5 tray-width groups. This covers the current uploaded `4210` row with 100/200/300/500/600 mm trays and no longer emits the old `QW/QCODE` per-layer array stream.
+3. The grouped mixed renderer now records `ARM_ET`, `ARM_SEC`, `TRAY_ET`, `TRAY_SEC`, `TRAY_MAT`, and `BOLT_SEC` for every generated line before meshing. This fixed the real ANSYS18.2 `No dimensions set for parameter= ARM_ET` error found during validation.
+4. Mixed jobs with small and large trays keep separate bolt section numbers: `SECTYPE,10` for large-tray/M12 bolt lines and `SECTYPE,11` for small-tray/M8 bolt lines; each bolt line records the correct `BOLT_SEC` before `LATT`.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/mixed_tray_model.py core/apdl/intake_standard_family_renderer.py` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q` passed with 41 tests.
+3. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+4. Real ANSYS18.2 validation passed for the formal intake workbook rows 2 and 5 under `jobs/verify_4210_4213_current_request_real_fixed_20260617`.
+5. `18185NI-LXSJ4210` selected `140-140-8`, `ansys_run_status=success`, `result_validation.status=pass`, final section-selection ratio `0.9527713364018127`; generated model contains `senum1=5` through `senum5=1`, `ARM_ET/TRAY_ET/BOLT_SEC`, and no `QW(` or `QCODE`.
+6. `18185NI-LXSJ4213` selected `100-100-6`, `ansys_run_status=success`, `result_validation.status=pass`, section-selection ratio `0.6179154054744243`; generated model contains `SECREAD,'200-75-2mm'` and `SECTYPE,10,BEAM,CSOLID` with `SECDATA,0.004`.
+
+Deployment closeout:
+
+1. Rebuilt server, desktop, and installer runtimes.
+2. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `.sha256.txt` sidecar as transfer hash authority.
+3. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `.sha256.txt` sidecar as transfer hash authority.
+4. Applied the update to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+5. Local smoke passed: `/health` returned ok and `duxyb/cnpe123` login returned pass.
+6. Installed hashes match source for `core/apdl/intake_standard_family_renderer.py`, `core/apdl/mixed_tray_model.py`, `data/calibration/modal_mode_count_cache.json`, and `data/calibration/square_section_selection_cache.json`.
+
 ## 2026-06-17 current-type mixed tray dispatch and coupling closeout
 
 Current source/validation state:

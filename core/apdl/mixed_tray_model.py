@@ -126,6 +126,13 @@ def _tray_offset_m(width_mm: int, secondary_arm: str | None = None) -> float:
     return 0.068 if width_mm >= 500 else 0.074
 
 
+def _bolt_radius_m_for_widths(widths_mm: list[int]) -> tuple[float, str]:
+    positive_widths = [int(width) for width in widths_mm if int(width) > 0]
+    if positive_widths and max(positive_widths) <= 200:
+        return 0.004, "tray_width_le_200_uses_m8_nominal_round_bar_radius"
+    return 0.006, "tray_width_gt_200_uses_m12_nominal_round_bar_radius"
+
+
 def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float, secondary_arm: str) -> dict[str, Any]:
     sign = 1.0 if side == "front" else -1.0
     width = _width_mm(layer)
@@ -302,6 +309,11 @@ def _append_side_keypoint_loop(lines: list[str], *, side: str, layer_count: int,
             "*GET,_LNEW,LINE,0,NUM,MAX",
             "NBOLT=NBOLT+1",
             "LS_BOLT(NBOLT)=_LNEW",
+            "*IF,QTCODE,LE,200,THEN",
+            "BOLT_SEC(NBOLT)=11",
+            "*ELSE",
+            "BOLT_SEC(NBOLT)=10",
+            "*ENDIF",
             "*ENDDO",
             "*ENDDO",
         ]
@@ -370,7 +382,8 @@ def _append_line_id_mesh_loops(lines: list[str]) -> None:
             "*ENDDO",
             "*DO,I,1,NBOLT",
             "LSEL,S,LINE,,LS_BOLT(I)",
-            "LATT,1,,4,,,,10",
+            "_BSEC=BOLT_SEC(I)",
+            "LATT,1,,4,,,,_BSEC",
             "LESIZE,ALL,0.05,,,,,,,1",
             "LMESH,ALL",
             "ALLSEL",
@@ -379,10 +392,430 @@ def _append_line_id_mesh_loops(lines: list[str]) -> None:
     )
 
 
+def _side_group_counts(layers: list[dict[str, Any]]) -> list[tuple[int, int]]:
+    counts: dict[int, int] = {}
+    for layer in layers:
+        width = _width_mm(layer)
+        if width > 0:
+            counts[width] = counts.get(width, 0) + 1
+    return [(width, counts[width]) for width in sorted(counts, reverse=True)]
+
+
+def _mirrored_grouped_mixed_groups(front_layers: list[dict[str, Any]], back_layers: list[dict[str, Any]]) -> list[tuple[int, int]] | None:
+    if not front_layers or not back_layers:
+        return None
+    front = _side_group_counts(front_layers)
+    back = _side_group_counts(back_layers)
+    if front != back or not (2 <= len(front) <= 5):
+        return None
+    return front
+
+
+def _representative_layer_by_width(layers: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    result: dict[int, dict[str, Any]] = {}
+    for layer in layers:
+        width = _width_mm(layer)
+        if width > 0 and width not in result:
+            result[width] = layer
+    return result
+
+
+def _append_recorded_line(
+    lines: list[str],
+    start: str,
+    end: str,
+    bucket: str,
+    *,
+    arm_et: str | None = None,
+    arm_sec: str | None = None,
+    tray_et: str | None = None,
+    tray_sec: str | None = None,
+    tray_mat: str | None = None,
+    bolt_sec: str | None = None,
+) -> None:
+    lines.extend(
+        [
+            f"L,{start},{end}",
+            "*GET,_LNEW,LINE,0,NUM,MAX",
+        ]
+    )
+    if bucket == "ARM":
+        lines.extend(
+            [
+                "NARM=NARM+1",
+                "LS_ARM(NARM)=_LNEW",
+                "ARM_ET(NARM)=" + str(arm_et or "2"),
+                "ARM_SEC(NARM)=" + str(arm_sec or "2"),
+            ]
+        )
+    elif bucket == "TRAY":
+        lines.extend(
+            [
+                "NTRAY=NTRAY+1",
+                "LS_TRAY(NTRAY)=_LNEW",
+                "TRAY_ET(NTRAY)=" + str(tray_et or "4"),
+                "TRAY_SEC(NTRAY)=" + str(tray_sec or "4"),
+                "TRAY_MAT(NTRAY)=" + str(tray_mat or "2"),
+            ]
+        )
+    elif bucket == "BOLT":
+        lines.extend(["NBOLT=NBOLT+1", "LS_BOLT(NBOLT)=_LNEW", "BOLT_SEC(NBOLT)=" + str(bolt_sec or "10")])
+    elif bucket == "SUP":
+        lines.extend(["NSUP=NSUP+1", "LS_SUP(NSUP)=_LNEW"])
+
+
+def _expr_side(expr: str, *, front: bool) -> str:
+    return expr if front else f"-({expr})"
+
+
+def _append_grouped_width_loop(
+    lines: list[str],
+    *,
+    side: str,
+    start_expr: str,
+    end_expr: str,
+    width: int,
+    arm_total: float,
+    arm_tail: float,
+    tray_sec: int,
+    tray_mat: int,
+) -> None:
+    front = side == "front"
+    base = 500 if front else 1500
+    x_root = "H1/2" if front else "-H1/2"
+    total = _num(arm_total)
+    tray = _num(width / 1000.0)
+    half = _num(width / 2000.0)
+    tail = _num(arm_tail)
+    x_bolt = _expr_side(f"H1/2+{total}-{half}", front=front)
+    x_tail = _expr_side(f"H1/2+{total}-{tail}", front=front)
+    x_end = _expr_side(f"H1/2+{total}", front=front)
+    def kid(suffix: int) -> str:
+        return f"{base + suffix}+10*I+100*(J-1)"
+
+    section_10_or_11 = "11" if width <= 200 else "10"
+    lines.extend(
+        [
+            f"! {side} grouped mixed tray width {width} mm.",
+            f"*IF,{end_expr},GE,{start_expr},THEN",
+            "*DO,J,1,3",
+            f"*DO,I,{start_expr},{end_expr}",
+            "QZ=0.1+0.2*(I-1)",
+            f"K,{kid(1)},{x_root},L6*(J-1),QZ",
+        ]
+    )
+    if width <= 200:
+        lines.extend(
+            [
+                f"K,{kid(2)},{x_tail},L6*(J-1),QZ",
+                f"K,{kid(3)},{x_bolt},L6*(J-1),QZ",
+                f"K,{kid(4)},{x_end},L6*(J-1),QZ",
+                f"K,{kid(6)},{x_bolt},-L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(7)},{x_bolt},L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(8)},{x_bolt},L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(9)},{x_bolt},L6*(J-1),0.15+0.2*(I-1)",
+            ]
+        )
+        _append_recorded_line(lines, kid(1), kid(2), "ARM", arm_sec="2")
+        _append_recorded_line(lines, kid(2), kid(3), "ARM", arm_sec="3")
+        _append_recorded_line(lines, kid(3), kid(4), "ARM", arm_sec="3")
+        _append_recorded_line(lines, kid(6), kid(7), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(7), kid(8), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(3), kid(9), "BOLT", bolt_sec=section_10_or_11)
+    elif width == 300:
+        lines.extend(
+            [
+                f"K,{kid(2)},{x_bolt},L6*(J-1),QZ",
+                f"K,{kid(4)},{x_end},L6*(J-1),QZ",
+                f"K,{kid(6)},{x_tail},-L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(7)},{x_tail},L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(8)},{x_tail},L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(9)},{x_bolt},L6*(J-1),0.15+0.2*(I-1)",
+            ]
+        )
+        _append_recorded_line(lines, kid(1), kid(2), "ARM", arm_sec="2")
+        _append_recorded_line(lines, kid(2), kid(4), "ARM", arm_sec="3")
+        _append_recorded_line(lines, kid(6), kid(7), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(7), kid(8), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(2), kid(9), "BOLT", bolt_sec=section_10_or_11)
+    else:
+        lines.extend(
+            [
+                f"K,{kid(2)},{x_bolt},L6*(J-1),QZ",
+                f"K,{kid(3)},{x_tail},L6*(J-1),QZ",
+                f"K,{kid(4)},{x_end},L6*(J-1),QZ",
+                f"K,{kid(6)},{x_bolt},-L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(7)},{x_bolt},L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(8)},{x_bolt},L6/2+L6*(J-1),0.1+M1+0.2*(I-1)",
+                f"K,{kid(9)},{x_bolt},L6*(J-1),0.15+0.2*(I-1)",
+            ]
+        )
+        _append_recorded_line(lines, kid(1), kid(2), "ARM", arm_sec="2")
+        _append_recorded_line(lines, kid(2), kid(3), "ARM", arm_sec="3")
+        _append_recorded_line(lines, kid(3), kid(4), "ARM", arm_sec="3")
+        _append_recorded_line(lines, kid(6), kid(7), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(7), kid(8), "TRAY", tray_sec=str(tray_sec), tray_mat=str(tray_mat))
+        _append_recorded_line(lines, kid(2), kid(9), "BOLT", bolt_sec=section_10_or_11)
+    lines.extend(["*ENDDO", "*ENDDO", "*ENDIF"])
+
+
+def _append_grouped_coupling_loop(lines: list[str], *, side: str, start_expr: str, end_expr: str, width: int, arm_total: float) -> None:
+    front = side == "front"
+    half = _num(width / 2000.0)
+    total = _num(arm_total)
+    x_bolt = _expr_side(f"H1/2+{total}-{half}", front=front)
+    lines.extend(
+        [
+            f"*IF,{end_expr},GE,{start_expr},THEN",
+            f"*DO,I,{start_expr},{end_expr}",
+            "QZ=0.1+0.2*(I-1)",
+            "ALLSEL",
+            f"NSEL,S,LOC,X,{x_bolt}",
+            "NSEL,R,LOC,Z,QZ,0.1+M1+0.2*(I-1)",
+            "CPCYC,UX,,,,,M1-0.05",
+            "CPCYC,UY,,,,,M1-0.05",
+            "CPCYC,UZ,,,,,M1-0.05",
+            "CPCYC,ROTY,,,,,M1-0.05",
+            "CPCYC,ROTZ,,,,,M1-0.05",
+            "ALLSEL",
+            "*ENDDO",
+            "*ENDIF",
+        ]
+    )
+
+
+def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[tuple[int, int]], front_layers: list[dict[str, Any]], back_layers: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+    support = payload.get("support") or {}
+    h1 = float(support.get("square_tube_width_m") or (_square_outer_width_mm_from_payload(payload) / 1000.0) or 0.1)
+    h2 = float(support.get("support_height_m") or 2.0)
+    span = float(support.get("support_spacing_m") or 2.0)
+    support_section = _support_section(payload)
+    primary_arm, secondary_arm, arm_policy = _arm_section_family(payload)
+    secondary_offset_line, secondary_offset_policy = _secondary_arm_secoffset(secondary_arm)
+    representative = _representative_layer_by_width(front_layers + back_layers)
+    widths = [width for width, _ in groups]
+    bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
+    total_layers = sum(count for _, count in groups)
+    cumulative_counts: list[int] = []
+    running_count = 0
+    for _, count in groups:
+        running_count += count
+        cumulative_counts.append(running_count)
+    boundary_names = [
+        "senum1" if index == len(groups) - 1 else f"senum{len(groups) - index}"
+        for index in range(len(groups))
+    ]
+    boundary_values = dict(zip(boundary_names, cumulative_counts))
+    tray_section_numbers = {width: 4 + index for index, (width, _) in enumerate(groups)}
+    tray_material_numbers = {width: 2 + index for index, (width, _) in enumerate(groups)}
+    line_capacity = max(1, 3 * total_layers * 12)
+
+    lines: list[str] = [
+        "finish",
+        "/clear",
+        "/prep7",
+        "! CableTrayAI generated current-type grouped mixed tray model.",
+        "! Mirrored double-side mixed widths use senum boundary grouped loops instead of the legacy per-layer renderer.",
+        "ET,1,188",
+        "KEYOPT,1,4,2",
+        "KEYOPT,1,1,1",
+        "ET,2,188",
+        "KEYOPT,2,4,2",
+        "KEYOPT,2,1,1",
+        "ET,4,188",
+        "KEYOPT,4,4,2",
+        "KEYOPT,4,1,1",
+        "SECTYPE,1,BEAM,MESH",
+        "SECOFFSET,cent,",
+        f"SECREAD,'{support_section}','SECT',,MESH",
+        "SECTYPE,2,BEAM,MESH",
+        "SECOFFSET,cent,",
+        f"SECREAD,'{primary_arm}','SECT',,MESH",
+        "SECTYPE,3,BEAM,MESH",
+        secondary_offset_line,
+        f"SECREAD,'{secondary_arm}','SECT',,MESH",
+    ]
+    for width, _ in groups:
+        layer = representative.get(width) or {}
+        section = _tray_section(layer, payload)
+        mat = tray_material_numbers[width]
+        sec = tray_section_numbers[width]
+        density = float(layer.get("tray_density_kg_m3") or 0.0)
+        lines.extend(
+            [
+                f"MP,EX,{mat},2.04E11",
+                f"MP,PRXY,{mat},0.3",
+                f"MP,DENS,{mat},{_num(density)}",
+                f"SECTYPE,{sec},BEAM,MESH",
+                "SECOFFSET,cent,",
+                f"SECREAD,'{section}','SECT',,MESH",
+            ]
+        )
+    lines.extend(
+        [
+            "SECTYPE,10,BEAM,CSOLID",
+            f"SECDATA,{_num(bolt_radius_m)}",
+            "SECOFFSET,USER,",
+            "SECTYPE,11,BEAM,CSOLID",
+            "SECDATA,0.004",
+            "SECOFFSET,USER,",
+            "MP,EX,1,2.04E11",
+            "MP,PRXY,1,0.3",
+            "MP,DENS,1,7850",
+            f"H1={_num(h1)}",
+            f"H2={_num(h2)}",
+            f"L6={_num(span)}",
+            f"M1={_num(_tray_offset_m(max(widths), secondary_arm))}",
+        ]
+    )
+    for number in range(1, len(groups) + 1):
+        name = f"senum{number}"
+        lines.append(f"{name}={boundary_values[name]}")
+    lines.extend(
+        [
+            "senum=senum1",
+            "senum_back=senum1",
+            f"*DIM,LS_SUP,ARRAY,{max(1, 3 * (total_layers + 1))}",
+            f"*DIM,LS_ARM,ARRAY,{line_capacity}",
+            f"*DIM,ARM_ET,ARRAY,{line_capacity}",
+            f"*DIM,ARM_SEC,ARRAY,{line_capacity}",
+            f"*DIM,LS_TRAY,ARRAY,{line_capacity}",
+            f"*DIM,TRAY_MAT,ARRAY,{line_capacity}",
+            f"*DIM,TRAY_ET,ARRAY,{line_capacity}",
+            f"*DIM,TRAY_SEC,ARRAY,{line_capacity}",
+            f"*DIM,LS_BOLT,ARRAY,{line_capacity}",
+            f"*DIM,BOLT_SEC,ARRAY,{line_capacity}",
+            "NSUP=0",
+            "NARM=0",
+            "NTRAY=0",
+            "NBOLT=0",
+            "*DO,J,1,3",
+            "K,500+100*(J-1),0,L6*(J-1),0",
+            "*DO,I,1,senum1",
+            "K,500+I+100*(J-1),0,L6*(J-1),0.1+0.2*(I-1)",
+            "*ENDDO",
+            "K,500+senum1+1+100*(J-1),0,L6*(J-1),H2",
+            "*DO,I,1,senum1+1",
+        ]
+    )
+    _append_recorded_line(lines, "500+(I-1)+100*(J-1)", "500+I+100*(J-1)", "SUP")
+    lines.extend(["*ENDDO", "*ENDDO"])
+
+    starts = ["1"] + [f"{boundary_names[index - 1]}+1" for index in range(1, len(groups))]
+    ends = boundary_names
+    for index, (width, _) in enumerate(groups):
+        layer = representative.get(width) or {}
+        arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+        arm_tail = float(layer.get("arm_b_length_m") or 0.0)
+        _append_grouped_width_loop(
+            lines,
+            side="front",
+            start_expr=starts[index],
+            end_expr=ends[index],
+            width=width,
+            arm_total=arm_total,
+            arm_tail=arm_tail,
+            tray_sec=tray_section_numbers[width],
+            tray_mat=tray_material_numbers[width],
+        )
+        _append_grouped_width_loop(
+            lines,
+            side="back",
+            start_expr=starts[index],
+            end_expr=ends[index],
+            width=width,
+            arm_total=arm_total,
+            arm_tail=arm_tail,
+            tray_sec=tray_section_numbers[width],
+            tray_mat=tray_material_numbers[width],
+        )
+
+    lines.extend(["NUMMRG,KP"])
+    _append_line_id_mesh_loops(lines)
+    lines.extend(
+        [
+            "*DO,J,1,3",
+            "*DO,I,1,senum1",
+            "QZ=0.1+0.2*(I-1)",
+            "CP,NEXT,ALL,NODE(0,L6*(J-1),QZ),NODE(H1/2,L6*(J-1),QZ),NODE(-H1/2,L6*(J-1),QZ)",
+            "*ENDDO",
+            "*ENDDO",
+        ]
+    )
+    for index, (width, _) in enumerate(groups):
+        layer = representative.get(width) or {}
+        arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+        _append_grouped_coupling_loop(lines, side="front", start_expr=starts[index], end_expr=ends[index], width=width, arm_total=arm_total)
+        _append_grouped_coupling_loop(lines, side="back", start_expr=starts[index], end_expr=ends[index], width=width, arm_total=arm_total)
+
+    lines.extend(
+        [
+            "ALLSEL",
+            "KSEL,S,KP,,500+senum1+1,700+senum1+1,100",
+            "NSLK,S,1",
+            "CM,YUESHU,NODE",
+            "ALLSEL",
+            "FINISH",
+            "",
+        ]
+    )
+    layer_geometry = [
+        _layer_geometry_audit(layer, side=side, h1=h1, secondary_arm=secondary_arm)
+        for side, layers in (("front", front_layers), ("back", back_layers))
+        for layer in layers
+    ]
+    return "\n".join(lines), {
+        "status": "pass",
+        "model_source": "current_type_grouped_mirrored_mixed_renderer",
+        "support_section": support_section,
+        "arm_primary_section": primary_arm,
+        "arm_secondary_section": secondary_arm,
+        "arm_section_policy": arm_policy,
+        "secondary_arm_offset_policy": secondary_offset_policy,
+        "tray_widths_mm": widths,
+        "model_geometry_widths_mm": widths,
+        "source_geometry_widths_mm": widths,
+        "grouped_width_counts": [{"width_mm": width, "count_per_side": count} for width, count in groups],
+        "command_style": {
+            "status": "senum_grouped_current_type_loops",
+            "policy": "Mirrored mixed trays are rendered as grouped width loops using senum1/senum2/senum3 cutoffs, matching the current-type mixed command-flow style and avoiding the old per-layer width-code stream.",
+        },
+        "physical_bolt_modeling": {
+            "status": "pass",
+            "section_10": f"M12/large-tray CSOLID radius {bolt_radius_m:g} m",
+            "section_11": "M8/small-tray CSOLID radius 0.004 m",
+            "bolt_radius_policy": bolt_radius_policy,
+            "policy": "Mixed jobs with both small and large trays keep separate M8/M12 bolt section numbers; each bolt line records the correct section before meshing.",
+        },
+        "assigned": {
+            "H1": round(h1, 6),
+            "H2": round(h2, 6),
+            "L6": round(span, 6),
+            "M1": round(_tray_offset_m(max(widths), secondary_arm), 6),
+            **{name: boundary_values[name] for name in sorted(boundary_values)},
+        },
+        "keypoint_numbering": {
+            "status": "legacy_source_numbering",
+            "enabled": False,
+            "max_layers": total_layers,
+            "safe_legacy_layer_limit": 9,
+            "keypoint_offset": 0,
+            "frame_step": 100,
+            "back_base": 1500,
+        },
+        "layer_geometry": layer_geometry,
+    }
+
+
 def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     grouped = _layers_by_side(payload)
     front_layers = grouped.get("front") or []
     back_layers = grouped.get("back") or []
+    mirrored_groups = _mirrored_grouped_mixed_groups(front_layers, back_layers)
+    if mirrored_groups:
+        return _render_mirrored_grouped_mixed_model(payload, mirrored_groups, front_layers, back_layers)
+    widths = sorted({_width_mm(layer) for layer in front_layers + back_layers})
+    bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
     support = payload.get("support") or {}
     h1 = float(support.get("square_tube_width_m") or (_square_outer_width_mm_from_payload(payload) / 1000.0) or 0.1)
     h2 = float(support.get("support_height_m") or 2.0)
@@ -433,7 +866,10 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         "SECOFFSET,cent,",
         f"SECREAD,'{support_section}','SECT',,MESH",
         "SECTYPE,10,BEAM,CSOLID",
-        "SECDATA,0.006",
+        f"SECDATA,{_num(bolt_radius_m)}",
+        "SECOFFSET,USER,",
+        "SECTYPE,11,BEAM,CSOLID",
+        "SECDATA,0.004",
         "SECOFFSET,USER,",
         "MP,EX,1,2.04E11",
         "MP,PRXY,1,0.3",
@@ -453,6 +889,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
             f"*DIM,TRAY_ET,ARRAY,{tray_line_capacity}",
             f"*DIM,TRAY_SEC,ARRAY,{tray_line_capacity}",
             f"*DIM,LS_BOLT,ARRAY,{bolt_line_capacity}",
+            f"*DIM,BOLT_SEC,ARRAY,{bolt_line_capacity}",
             "NSUP=0",
             "NARM=0",
             "NTRAY=0",
@@ -608,7 +1045,6 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         lines.append("CM,LS,NODE")
     lines.extend(["ALLSEL", "FINISH", ""])
 
-    widths = sorted({_width_mm(layer) for layer in front_layers + back_layers})
     layer_geometry = [
         _layer_geometry_audit(layer, side=side, h1=h1, secondary_arm=secondary_arm)
         for side, layers in (("front", front_layers), ("back", back_layers))
@@ -639,7 +1075,8 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         },
         "physical_bolt_modeling": {
             "status": "pass",
-            "section_10": "BEAM CSOLID diameter 0.006 m",
+            "section_10": f"BEAM CSOLID radius {bolt_radius_m:g} m",
+            "bolt_radius_policy": bolt_radius_policy,
             "keypoint_suffix": 9,
             "policy": "Every layer includes tray-arm connector keypoints and BEAM188 CSOLID bolt lines; coupling is supplemental only.",
         },
