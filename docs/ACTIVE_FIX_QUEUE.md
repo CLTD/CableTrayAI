@@ -1,4 +1,27 @@
 # CableTrayAI ??????
+
+## 2026-06-17 uploaded-intake 4211/4215 queue
+
+Resolved in source and real ANSYS:
+
+1. Duplicate report ids no longer override physical Excel row selection. This fixes the copied `4211__row_3` symptom where a row intended as `single-side 2-layer 500` was generated as `single-side 2-layer 100`.
+2. Structured tray layer data is now authoritative for scope/result requirements, so 500/600 mm tray jobs no longer depend on fragile text parsing.
+3. `18185NI-LXSJ4215` no longer treats weld/bolt/global final-ratio failures as Chapter 6.1 square-section stress failures. The workflow records those cases as `final_ratio_design_recovery`.
+4. Real ANSYS validation used the uploaded workbook `C:/Users/duxy/Desktop/1818 S2支架.xlsx`:
+   - row 3 / 4211: `500-75-2mm`, selected `120-120-6`, Chapter 6.1 ratio `0.9727244369318827`, pass.
+   - row 7 / 4215: `600-75-2mm`, 120-120-10 Chapter 6.1 ratio about `0.815`, weld final gate controlled, recovered to `160-160-8`, pass.
+5. Learning cache guard added: records with Chapter 6.1 section pass but final weld/bolt/global gate over 1.0 are not retained as successful square-section learning samples, and existing unsafe records were pruned.
+
+Deployment closeout:
+
+1. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. External SHA256 sidecars were refreshed beside both zip files.
+3. Update applied to local `D:/CableTrayAI`; latest backup `D:/CableTrayAI/_update_backups/20260617_095241`.
+4. `/health` passed, login `duxyb/cnpe123` passed, installed hashes match source for touched modules and pruned learning cache, and installed-code row-binding smoke generated 4211 as 500 mm and 4215 as 600 mm.
+
+Open:
+
+1. No current source/package blocker remains for unit transfer. For existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for fresh deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Use the `.sha256.txt` sidecars for transfer verification.
 ## 2026-06-16 mixed tray line-id standardization closeout
 
 Resolved in source and verified:

@@ -19,6 +19,32 @@ def test_row_override_number_fallback_ignores_engineering_serial() -> None:
     assert [row["provisional_intake_id"] for row in selected] == ["row_4"]
 
 
+def test_row_override_uses_physical_row_before_duplicate_report_identity() -> None:
+    rows = [
+        {
+            "intake_row_number": 3,
+            "report_number": "18185NI-LXSJ4211",
+            "calculation_batch": "18185NI-LXSJ4211",
+            "description": "single side 2 layers 500",
+            "provisional_intake_id": "row_3",
+        },
+        {
+            "intake_row_number": 10,
+            "report_number": "18185NI-LXSJ4211",
+            "calculation_batch": "18185NI-LXSJ4211",
+            "description": "single side 2 layers 100",
+            "provisional_intake_id": "row_10",
+        },
+    ]
+
+    selected = builder._select_rows_from_overrides(
+        rows,
+        [{"intake_row_number": 3, "report_number": "18185NI-LXSJ4211"}],
+    )
+
+    assert [row["provisional_intake_id"] for row in selected] == ["row_3"]
+
+
 def test_safe_job_id_is_ascii_for_ansys_parallel_workdirs() -> None:
     job_id = builder._safe_job_id("1818 S2支架需求汇总20240711_副本_S2形式_row_6")
 

@@ -51,6 +51,83 @@ def parse_tray_load_description(description: Any) -> dict[str, Any]:
     }
 
 
+def _as_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _tray_width_mm_from_layer(layer: dict[str, Any]) -> int | None:
+    for key in ("tray_width_mm", "width_mm"):
+        value = _as_float(layer.get(key))
+        if value is not None:
+            return int(round(value))
+    for key in ("tray_width_m", "width_m"):
+        value = _as_float(layer.get(key))
+        if value is not None:
+            return int(round(value * 1000.0))
+    value = _as_float(layer.get("width"))
+    if value is None:
+        return None
+    return int(round(value if value > 10.0 else value * 1000.0))
+
+
+def _unique_preserve_order(values: list[int]) -> list[int]:
+    seen: set[int] = set()
+    result: list[int] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
+def _tray_from_structured_input(input_payload: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    metadata = input_payload.get("metadata") if isinstance(input_payload.get("metadata"), dict) else {}
+    support = input_payload.get("support") if isinstance(input_payload.get("support"), dict) else {}
+    mapping = metadata.get("tray_load_mapping") if isinstance(metadata.get("tray_load_mapping"), dict) else {}
+    layers_source = mapping.get("layers") if isinstance(mapping.get("layers"), list) else input_payload.get("tray_layers")
+    layers = [item for item in layers_source or [] if isinstance(item, dict)]
+    if not layers:
+        return fallback
+
+    widths = _unique_preserve_order(
+        [width for width in (_tray_width_mm_from_layer(layer) for layer in layers) if width is not None]
+    )
+    sides = {str(layer.get("side") or "").strip().lower() for layer in layers if str(layer.get("side") or "").strip()}
+    side_count = int(mapping.get("side_count") or support.get("side_count") or len(sides) or 1)
+    layer_indices = [
+        int(value)
+        for value in (_as_float(layer.get("layer_index")) for layer in layers)
+        if value is not None and value > 0
+    ]
+    declared_layer_count = max(layer_indices) if layer_indices else len(layers)
+    if side_count > 2:
+        side_layout = "multi"
+    elif side_count == 2 or {"front", "back"}.issubset(sides):
+        side_layout = "double"
+    elif side_count == 1 or len(sides) == 1:
+        side_layout = "single"
+    else:
+        side_layout = fallback.get("side_layout") or "unknown"
+    return {
+        **fallback,
+        "side_layout": side_layout,
+        "has_tray": True,
+        "has_cantilever_arm": True,
+        "tray_widths_mm": widths,
+        "declared_layer_count": declared_layer_count,
+        "structured_layer_count": len(layers),
+        "structured_source": "metadata.tray_load_mapping.layers"
+        if isinstance(mapping.get("layers"), list)
+        else "input.tray_layers",
+    }
+
+
 def parse_square_section_spec(value: Any) -> dict[str, float | None] | None:
     text = _text(value).strip()
     if not text:
@@ -135,7 +212,7 @@ def classify_scope_from_input(input_payload: dict[str, Any]) -> dict[str, Any]:
         or raw_row.get("托盘荷载")
         or project.get("description")
     )
-    tray = parse_tray_load_description(description)
+    tray = _tray_from_structured_input(input_payload, parse_tray_load_description(description))
     square_section = square_section_spec_from_input(input_payload)
     square_outer_width_mm = float(square_section["outer_mm"]) if square_section else None
     square_thickness_mm = square_section["thickness_mm"] if square_section else None

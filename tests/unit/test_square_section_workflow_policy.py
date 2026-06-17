@@ -554,6 +554,91 @@ def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tm
     assert summary["trial_root_removed"] is True
 
 
+def test_learned_selection_with_historical_final_gate_fail_runs_fresh_trials(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "120-120-10",
+            "source_job_dir": "jobs/history/4215",
+            "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {
+                    "section_name": "120-120-10",
+                    "status": "pass",
+                    "run_status": "pass",
+                    "controlling_ratio": 0.8155,
+                    "section_selection_ratio": 0.8155,
+                    "final_chapter6_controlling_ratio": 1.496,
+                    "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
+                }
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.90},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.90}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert captured["max_evaluated_candidates"] == 2
+
+
+def test_selection_cache_does_not_record_historical_final_gate_fail(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["120-120-10", "160-160-8"])
+    cache_path = tmp_path / "cache.json"
+
+    workflow._write_cached_selection(
+        job_dir,
+        {
+            "status": "pass",
+            "selected": {
+                "section_name": "120-120-10",
+                "controlling_ratio": 0.8155,
+                "section_selection_ratio": 0.8155,
+                "final_chapter6_controlling_ratio": 1.496,
+                "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+                "dominant_component": "mixed_beam_type_1",
+                "run_status": "pass",
+            },
+            "candidate_results": [],
+        },
+        cache_path=cache_path,
+    )
+
+    assert not cache_path.exists()
+
+
 def test_old_cache_version_cannot_skip_candidate_trials(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "job"
     _write_job(
@@ -851,7 +936,7 @@ def test_square_support_ratio_over_limit_triggers_upgrade_not_clean_reselection(
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
 
 
-def test_auto_selected_weld_or_bolt_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
+def test_auto_selected_weld_or_bolt_ratio_over_limit_does_not_drive_square_upgrade(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     _write_job(
         job_dir,
@@ -887,7 +972,8 @@ def test_auto_selected_weld_or_bolt_ratio_over_limit_triggers_larger_allowed_upg
     )
 
     assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
-    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+    assert workflow.result_validation_needs_final_ratio_section_recovery(job_dir) is True
 
 
 def test_auto_selected_weld_or_bolt_ratio_over_limit_at_max_section_uses_spacing_recovery(tmp_path: Path) -> None:
@@ -926,6 +1012,7 @@ def test_auto_selected_weld_or_bolt_ratio_over_limit_at_max_section_uses_spacing
 
     assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+    assert workflow.result_validation_needs_final_ratio_section_recovery(job_dir) is False
 
 
 def test_auto_selected_section_6_1_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:

@@ -39,6 +39,33 @@ def test_static_scope_does_not_require_modal_analysis() -> None:
     assert any(str(name).upper().startswith("MOTAI") for name in scope["required_figures"])
 
 
+def test_scope_prefers_structured_tray_layers_over_description_text() -> None:
+    payload = _static_payload()
+    payload["metadata"] = {
+        **payload["metadata"],
+        "tray_load_description": "stale text says single side 2 layers 100",
+        "tray_load_mapping": {
+            "side_count": 1,
+            "front_layers": 2,
+            "back_layers": 0,
+            "layers": [
+                {"side": "front", "layer_index": 1, "tray_width_mm": 500},
+                {"side": "front", "layer_index": 2, "tray_width_mm": 500},
+            ],
+        },
+    }
+    payload["tray_layers"] = [
+        {"side": "front", "layer_index": 1, "tray_width_m": 0.5},
+        {"side": "front", "layer_index": 2, "tray_width_m": 0.5},
+    ]
+
+    scope = classify_scope_from_input(payload)
+
+    assert scope["tray"]["side_layout"] == "single"
+    assert scope["tray"]["tray_widths_mm"] == [500]
+    assert scope["tray"]["declared_layer_count"] == 2
+
+
 def test_static_intake_does_not_assign_modal_mode_count() -> None:
     modal_count, source = _intake_modal_mode_count({"analysis_method": "static"}, None, _static_payload())
 

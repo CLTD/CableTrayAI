@@ -25,6 +25,7 @@ from core.audit.job_state import fail_job_state, update_job_state
 from core.intake.job_input_builder import create_jobs_from_intake_workbook
 from core.optimizer.square_section_workflow import (
     result_validation_needs_square_section_clean_reselection,
+    result_validation_needs_final_ratio_section_recovery,
     result_validation_needs_square_section_upgrade,
     select_and_apply_square_section,
     square_section_auto_selection_required,
@@ -121,6 +122,8 @@ def _progress_stage_cap(stage: str) -> int:
         "rerunning_ansys_after_modal_retry": 84,
         "rerunning_ansys_after_section_reselection": 84,
         "rerunning_ansys_after_section_upgrade": 84,
+        "final_ratio_section_recovery": 94,
+        "rerunning_ansys_after_final_ratio_recovery": 84,
         "adjust_support_spacing": 84,
         "rerunning_ansys_after_spacing_recovery": 84,
         "ansys_output_monitor": 85,
@@ -1245,7 +1248,9 @@ def run_operator_one_click(
                         run_formal_ansys_once("(after clean square-section reselection)")
                     row_result["square_section_clean_reselection_attempts"] = clean_reselection_attempts
                     for upgrade_attempt in range(1, 4):
-                        if not result_validation_needs_square_section_upgrade(job_dir):
+                        section_ratio_recovery = result_validation_needs_square_section_upgrade(job_dir)
+                        final_ratio_recovery = result_validation_needs_final_ratio_section_recovery(job_dir)
+                        if not section_ratio_recovery and not final_ratio_recovery:
                             break
                         if provided_square_section_frozen:
                             row_result["square_section_upgrade_status"] = "skipped_frozen_provided_section"
@@ -1254,13 +1259,25 @@ def run_operator_one_click(
                                 "Automatic economic section upgrades are reserved for new intake rows whose column I is blank."
                             )
                             break
+                        recovery_mode = "square_section_ratio_gate" if section_ratio_recovery else "final_ratio_design_recovery"
+                        recovery_reason = (
+                            "Final deterministic Chapter 6.1 square-section ratio exceeded 1.0."
+                            if section_ratio_recovery
+                            else "Final deterministic weld/bolt/global ratio gate exceeded 1.0; trying a larger allowed section as design recovery."
+                        )
+                        recovery_stage = (
+                            "upgrade_square_section"
+                            if section_ratio_recovery
+                            else "final_ratio_section_recovery"
+                        )
+                        rerun_stage = (
+                            "rerunning_ansys_after_section_upgrade"
+                            if section_ratio_recovery
+                            else "rerunning_ansys_after_final_ratio_recovery"
+                        )
                         progress(
-                            "upgrade_square_section",
-                            (
-                                f"{item['job_id']}：评定后触发重跑，原因=方钢截面应力比超过 1.0；"
-                                f"改选更大 SECT 并重跑（第 {upgrade_attempt} 次）。"
-                                "这不是卡死，是截面门禁要求。"
-                            ),
+                            recovery_stage,
+                            f"{item['job_id']}: {recovery_reason} Rerun with a larger reviewed SECT (attempt {upgrade_attempt}).",
                             min(base_progress + 78, 92),
                             job_id=item["job_id"],
                         )
@@ -1271,12 +1288,17 @@ def run_operator_one_click(
                             confirm_user=confirm_user,
                             source_root=source_root,
                             limit=square_section_candidate_limit,
+                            section_selection_only=section_ratio_recovery,
+                            upgrade_reason=recovery_reason,
                         )
-                        row_result["square_section_upgrade_status"] = upgrade.get("status")
-                        row_result["rerun_reason"] = "square_section_ratio_gate"
-                        row_result["rerun_reason_detail"] = (
-                            "Final square-support ratio gate exceeded 1.0; production output cannot be published before a larger audited section passes."
+                        status_key = (
+                            "square_section_upgrade_status"
+                            if section_ratio_recovery
+                            else "final_ratio_section_recovery_status"
                         )
+                        row_result[status_key] = upgrade.get("status")
+                        row_result["rerun_reason"] = recovery_mode
+                        row_result["rerun_reason_detail"] = recovery_reason
                         selected_upgrade = upgrade.get("selected") or {}
                         if selected_upgrade:
                             row_result["square_section_selected"] = selected_upgrade.get("section_name")
@@ -1334,8 +1356,11 @@ def run_operator_one_click(
                             continue
                         cleanup_heavy_solver_artifacts(job_dir)
                         progress(
-                            "rerunning_ansys_after_section_upgrade",
-                            f"{item['job_id']}：已改用 {selected_upgrade.get('section_name')}，重新运行正式 ANSYS",
+                            rerun_stage,
+                            (
+                                f"{item['job_id']}: selected {selected_upgrade.get('section_name')} for "
+                                f"{recovery_mode}; rerun formal ANSYS."
+                            ),
                             min(base_progress + 80, 94),
                             job_id=item["job_id"],
                         )
@@ -1348,6 +1373,8 @@ def run_operator_one_click(
                                 "failure or a historical source conflict after report comparison."
                             )
                         raise RuntimeError("Square section upgrade loop ended but final square-support ratio is still above 1.0.")
+                    if result_validation_needs_final_ratio_section_recovery(job_dir):
+                        raise RuntimeError("Final ratio section-recovery loop ended while a larger allowed section was still available.")
                     final_ratio_spacing_attempts: list[dict[str, Any]] = []
                     while len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS:
                         validation = _read_validation_status(job_dir)

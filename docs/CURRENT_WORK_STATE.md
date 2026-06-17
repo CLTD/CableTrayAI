@@ -1,4 +1,28 @@
 # CableTrayAI ??????
+
+## 2026-06-17 uploaded-intake 4211/4215 row binding and final-gate recovery
+
+Current latest source/validation state:
+
+1. Fixed dashboard row override selection so a physical Excel row number wins over duplicate report/calculation ids. This prevents duplicate `18185NI-LXSJ4211` rows from bleeding between row 3 `single-side 2-layer 500` and later 100/200 variants.
+2. `analysis_scope` now prefers structured `metadata.tray_load_mapping.layers` / `input.tray_layers` over free-text tray descriptions. This prevents scope/result gates from seeing a stale text width such as 100 when the generated input contains 500 or 600 mm tray layers.
+3. Split final over-limit handling into two explicit paths:
+   - Chapter 6.1 member ratio over 1.0: square-section upgrade.
+   - Weld/bolt/global final gate over 1.0: final-ratio design recovery using larger reviewed sections or spacing recovery, but not labeled as square-section stress overlimit.
+4. Uploaded workbook `C:/Users/duxy/Desktop/1818 S2支架.xlsx` was used directly. Row 3 generated `18185NI-LXSJ4211` as `single-side 2-layer 500` with `500-75-2mm`; row 7 generated `18185NI-LXSJ4215` as `single-side 2-layer 600` with `600-75-2mm`.
+5. Real ANSYS18.2 validation passed:
+   - `jobs/validation_uploaded_intake_real_20260617/18185NI-LXSJ4211`: selected `120-120-6`, final Chapter 6.1 controlling ratio `0.9727244369318827`, `result_validation.status=pass`.
+   - `jobs/validation_uploaded_4215_recovery_20260617/18185NI-LXSJ4215`: learned/formal start `120-120-10` had Chapter 6.1 ratio about `0.815`; the real over-limit was weld/final gate (`cantilever_root_weld_equivalent.accident.bending` about `1.496` at 120). The workflow recovered via `final_ratio_design_recovery` to `160-160-8` and finished with `result_validation.status=pass`.
+6. Square-section learning cache is now guarded against this exact 4215 class: a historical sample whose selected section passes Chapter 6.1 sizing but exceeds the final weld/bolt/global ratio gate cannot be recorded or reused as a successful direct learned validation sample. Existing unsafe final-gate-fail cache records were pruned.
+7. Verification passed: `py_compile` for touched runtime modules, targeted policy tests, and full `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Deployment closeout:
+
+1. Rebuilt server, desktop, and installer runtimes.
+2. Refreshed full package `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; package gate and update self-verification passed.
+3. Refreshed external SHA256 sidecars beside both zips.
+4. Applied the update to local `D:/CableTrayAI`; latest backup `D:/CableTrayAI/_update_backups/20260617_095241`; `/health` returned `ok`, login `duxyb/cnpe123` returned `pass`, and installed hashes match source for the touched modules and pruned learning cache.
+5. Installed-code smoke using the uploaded workbook row 3/7 generated `500-75-2mm` for 4211 and `600-75-2mm` for 4215.
 ## 2026-06-16 mixed tray line-id standardization closeout
 
 Current latest source/validation state:

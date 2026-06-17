@@ -258,73 +258,6 @@
       "cache_version": "square-section-cache-v7-section-6-1-ratio",
       "updated_at": "2026-06-15T10:07:08.009439+00:00"
     },
-    "92b3572e30ac0d32e213b59c2c70b2c1ce541a3238c5e20fb1b47d66040e154c": {
-      "status": "pass",
-      "selected": {
-        "section_name": "160-160-8",
-        "estimated_area_mm2": 4864.0,
-        "estimated_bending_section_modulus_mm3": 234769.06666666665,
-        "source_kind": "local_sect",
-        "controlling_ratio": 0.9105823588028915,
-        "section_selection_ratio": 0.9105823588028915,
-        "final_chapter6_controlling_ratio": 1.0367178824268422,
-        "square_support_ratio": null,
-        "result_gate_status": "pass",
-        "trial_validation_status": "fail",
-        "effective_validation_status": "pass",
-        "validation_status": "pass",
-        "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
-        "dominant_component": "mixed_beam_type_1",
-        "failed_non_ratio_checks": [],
-        "status": "pass",
-        "run_status": "pass"
-      },
-      "candidate_results": [
-        {
-          "section_name": "160-160-8",
-          "estimated_area_mm2": 4864.0,
-          "estimated_bending_section_modulus_mm3": 234769.06666666665,
-          "source_kind": "local_sect",
-          "controlling_ratio": 0.9105823588028915,
-          "section_selection_ratio": 0.9105823588028915,
-          "final_chapter6_controlling_ratio": 1.0367178824268422,
-          "square_support_ratio": null,
-          "result_gate_status": "pass",
-          "trial_validation_status": "fail",
-          "effective_validation_status": "pass",
-          "validation_status": "pass",
-          "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
-          "dominant_component": "mixed_beam_type_1",
-          "failed_non_ratio_checks": [],
-          "status": "pass",
-          "run_status": "pass"
-        }
-      ],
-      "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
-      "source_job_dir": "jobs\\validation_spacing_recovery_20260615_175157\\real_ansys_jobs_rerun\\18185NI-LXSJ-V600ST",
-      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
-      "similarity_features": {
-        "support_type": "s2",
-        "analysis_method": "static",
-        "building": "nr",
-        "area": "nr",
-        "elevation_m": 8.5,
-        "support_spacing_m": 1.8,
-        "support_height_m": 1.8,
-        "layers_front": 2,
-        "layers_back": 2,
-        "layer_count": 4,
-        "tray_widths_mm": [
-          600.0,
-          600.0,
-          600.0,
-          600.0
-        ],
-        "tray_load_sum_kg_m": 470.0
-      },
-      "cache_version": "square-section-cache-v7-section-6-1-ratio",
-      "updated_at": "2026-06-15T10:14:15.269397+00:00"
-    },
     "fae9d963773de2d84310426648ac7fc571fcc7c16c72ebadee389b7a32409c93": {
       "status": "pass",
       "selected": {
@@ -873,176 +806,6 @@
       },
       "cache_version": "square-section-cache-v7-section-6-1-ratio",
       "updated_at": "2026-06-15T16:17:59.872666+00:00"
-    },
-    "68bef404226d01ad179e4457b4bea84d4ea2cafcbf6737130b7cbeb36a551e8d": {
-      "status": "pass",
-      "selected": {
-        "section_name": "120-120-6",
-        "estimated_area_mm2": 2736.0,
-        "estimated_bending_section_modulus_mm3": 99043.2,
-        "source_kind": "local_sect",
-        "controlling_ratio": 0.8779676496592758,
-        "section_selection_ratio": 0.8779676496592758,
-        "final_chapter6_controlling_ratio": 1.1127183471841533,
-        "square_support_ratio": null,
-        "result_gate_status": "pass",
-        "trial_validation_status": "fail",
-        "effective_validation_status": "pass",
-        "validation_status": "pass",
-        "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
-        "dominant_component": "mixed_beam_type_1",
-        "failed_non_ratio_checks": [],
-        "status": "pass",
-        "run_status": "pass"
-      },
-      "candidate_results": [
-        {
-          "section_name": "160-160-8",
-          "estimated_area_mm2": 4864.0,
-          "estimated_bending_section_modulus_mm3": 234769.06666666665,
-          "source_kind": "local_sect",
-          "controlling_ratio": 0.39507086865841506,
-          "section_selection_ratio": 0.39507086865841506,
-          "final_chapter6_controlling_ratio": 0.8682418965261616,
-          "square_support_ratio": null,
-          "result_gate_status": "pass",
-          "trial_validation_status": "fail",
-          "effective_validation_status": "pass",
-          "validation_status": "pass",
-          "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined",
-          "dominant_component": "mixed_beam_type_1",
-          "failed_non_ratio_checks": [],
-          "status": "pass",
-          "run_status": "pass"
-        },
-        {
-          "section_name": "120-120-6",
-          "estimated_area_mm2": 2736.0,
-          "estimated_bending_section_modulus_mm3": 99043.2,
-          "source_kind": "local_sect",
-          "controlling_ratio": 0.8779676496592758,
-          "section_selection_ratio": 0.8779676496592758,
-          "final_chapter6_controlling_ratio": 1.1127183471841533,
-          "square_support_ratio": null,
-          "result_gate_status": "pass",
-          "trial_validation_status": "fail",
-          "effective_validation_status": "pass",
-          "validation_status": "pass",
-          "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
-          "dominant_component": "mixed_beam_type_1",
-          "failed_non_ratio_checks": [],
-          "status": "pass",
-          "run_status": "pass"
-        }
-      ],
-      "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
-      "source_job_dir": "jobs\\validation_4215_smart_selection_real_fix2_20260615_232420\\18185NI-LXSJ-V4215F",
-      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
-      "similarity_features": {
-        "support_type": "s2",
-        "analysis_method": "static",
-        "building": "nb厂房内部结构环形区域",
-        "area": "nb厂房内部结构环形区域",
-        "elevation_m": 7.5,
-        "support_spacing_m": 2.0,
-        "support_height_m": 1.8,
-        "layers_front": 2,
-        "layers_back": 2,
-        "layer_count": 4,
-        "tray_widths_mm": [
-          600.0,
-          600.0,
-          600.0,
-          600.0
-        ],
-        "tray_load_sum_kg_m": 470.0
-      },
-      "cache_version": "square-section-cache-v7-section-6-1-ratio",
-      "updated_at": "2026-06-15T15:36:41.510092+00:00"
-    },
-    "0b0a4bd69a6672f576a390219917e4a0449b92223070875a8bb64b0879b59e31": {
-      "status": "pass",
-      "selected": {
-        "section_name": "120-120-10",
-        "estimated_area_mm2": 4400.0,
-        "estimated_bending_section_modulus_mm3": 149111.1111111111,
-        "source_kind": "local_sect",
-        "controlling_ratio": 0.904557317492394,
-        "section_selection_ratio": 0.904557317492394,
-        "final_chapter6_controlling_ratio": 1.4077137073546087,
-        "square_support_ratio": null,
-        "result_gate_status": "pass",
-        "trial_validation_status": "fail",
-        "effective_validation_status": "pass",
-        "validation_status": "pass",
-        "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
-        "dominant_component": "mixed_beam_type_1",
-        "failed_non_ratio_checks": [],
-        "status": "pass",
-        "run_status": "pass"
-      },
-      "candidate_results": [
-        {
-          "section_name": "100-100-8",
-          "estimated_area_mm2": 2944.0,
-          "estimated_bending_section_modulus_mm3": 83688.10666666667,
-          "source_kind": "local_sect",
-          "controlling_ratio": 1.1291531554932157,
-          "section_selection_ratio": 1.1291531554932157,
-          "final_chapter6_controlling_ratio": 1.1291531554932157,
-          "square_support_ratio": null,
-          "result_gate_status": "fail",
-          "trial_validation_status": "fail",
-          "effective_validation_status": "fail",
-          "validation_status": "fail",
-          "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
-          "dominant_component": "mixed_beam_type_1",
-          "failed_non_ratio_checks": [],
-          "status": "fail",
-          "run_status": "pass"
-        },
-        {
-          "section_name": "120-120-10",
-          "estimated_area_mm2": 4400.0,
-          "estimated_bending_section_modulus_mm3": 149111.1111111111,
-          "source_kind": "local_sect",
-          "controlling_ratio": 0.904557317492394,
-          "section_selection_ratio": 0.904557317492394,
-          "final_chapter6_controlling_ratio": 1.4077137073546087,
-          "square_support_ratio": null,
-          "result_gate_status": "pass",
-          "trial_validation_status": "fail",
-          "effective_validation_status": "pass",
-          "validation_status": "pass",
-          "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
-          "dominant_component": "mixed_beam_type_1",
-          "failed_non_ratio_checks": [],
-          "status": "pass",
-          "run_status": "pass"
-        }
-      ],
-      "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
-      "source_job_dir": "jobs\\validation_4215_smart_selection_real_fix3_20260615_234758\\18185NI-LXSJ-V4215D",
-      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
-      "similarity_features": {
-        "support_type": "s2",
-        "analysis_method": "response_spectrum",
-        "building": "nr",
-        "area": "nr",
-        "elevation_m": 21.95,
-        "support_spacing_m": 2.0,
-        "support_height_m": 1.8,
-        "layers_front": 2,
-        "layers_back": 0,
-        "layer_count": 2,
-        "tray_widths_mm": [
-          600.0,
-          600.0
-        ],
-        "tray_load_sum_kg_m": 235.0
-      },
-      "cache_version": "square-section-cache-v7-section-6-1-ratio",
-      "updated_at": "2026-06-15T15:59:12.080335+00:00"
     },
     "98783532772c3e45029958a72149c3864b83d9906ad3ec6f7663f3cf2d1beb7f": {
       "status": "pass",
@@ -1909,11 +1672,142 @@
       },
       "cache_version": "square-section-cache-v7-section-6-1-ratio",
       "updated_at": "2026-06-16T14:03:30.118812+00:00"
+    },
+    "dc93cb38790f1588e1bf01bd62891ff3cb37e04bae9c8581d1690a882f7c5dbb": {
+      "status": "pass",
+      "selected": {
+        "section_name": "120-120-6",
+        "estimated_area_mm2": 2736.0,
+        "estimated_bending_section_modulus_mm3": 99043.2,
+        "source_kind": "local_sect",
+        "controlling_ratio": 0.9727244369318827,
+        "section_selection_ratio": 0.9727244369318827,
+        "final_chapter6_controlling_ratio": 0.9727244369318827,
+        "square_support_ratio": null,
+        "result_gate_status": "pass",
+        "trial_validation_status": "fail",
+        "effective_validation_status": "pass",
+        "validation_status": "pass",
+        "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+        "dominant_component": "mixed_beam_type_1",
+        "failed_non_ratio_checks": [],
+        "status": "pass",
+        "run_status": "pass"
+      },
+      "candidate_results": [
+        {
+          "section_name": "100-100-8",
+          "estimated_area_mm2": 2944.0,
+          "estimated_bending_section_modulus_mm3": 83688.10666666667,
+          "source_kind": "local_sect",
+          "controlling_ratio": 1.2007824000425935,
+          "section_selection_ratio": 1.2007824000425935,
+          "final_chapter6_controlling_ratio": 1.2007824000425935,
+          "square_support_ratio": null,
+          "result_gate_status": "fail",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "fail",
+          "validation_status": "fail",
+          "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+          "dominant_component": "mixed_beam_type_1",
+          "failed_non_ratio_checks": [],
+          "status": "fail",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "120-120-10",
+          "estimated_area_mm2": 4400.0,
+          "estimated_bending_section_modulus_mm3": 149111.1111111111,
+          "source_kind": "local_sect",
+          "controlling_ratio": 0.6440399727689081,
+          "section_selection_ratio": 0.6440399727689081,
+          "final_chapter6_controlling_ratio": 0.6984392102982812,
+          "square_support_ratio": null,
+          "result_gate_status": "pass",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "pass",
+          "validation_status": "pass",
+          "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+          "dominant_component": "mixed_beam_type_1",
+          "failed_non_ratio_checks": [],
+          "status": "pass",
+          "run_status": "pass"
+        },
+        {
+          "section_name": "120-120-6",
+          "estimated_area_mm2": 2736.0,
+          "estimated_bending_section_modulus_mm3": 99043.2,
+          "source_kind": "local_sect",
+          "controlling_ratio": 0.9727244369318827,
+          "section_selection_ratio": 0.9727244369318827,
+          "final_chapter6_controlling_ratio": 0.9727244369318827,
+          "square_support_ratio": null,
+          "result_gate_status": "pass",
+          "trial_validation_status": "fail",
+          "effective_validation_status": "pass",
+          "validation_status": "pass",
+          "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+          "dominant_component": "mixed_beam_type_1",
+          "failed_non_ratio_checks": [],
+          "status": "pass",
+          "run_status": "pass"
+        }
+      ],
+      "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
+      "source_job_dir": "jobs\\validation_uploaded_intake_real_20260617\\18185NI-LXSJ4211",
+      "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
+      "similarity_features": {
+        "support_type": "s2",
+        "analysis_method": "response_spectrum",
+        "building": "nr",
+        "area": "nr",
+        "elevation_m": 21.95,
+        "support_spacing_m": 2.0,
+        "support_height_m": 1.8,
+        "layers_front": 2,
+        "layers_back": 0,
+        "layer_count": 2,
+        "tray_widths_mm": [
+          500.0,
+          500.0
+        ],
+        "tray_load_sum_kg_m": 181.0
+      },
+      "cache_version": "square-section-cache-v7-section-6-1-ratio",
+      "updated_at": "2026-06-17T01:15:05.164624+00:00"
     }
   },
   "cache_version": "square-section-cache-v7-section-6-1-ratio",
   "maintenance": {
     "pruned_legacy_entries": 18,
-    "policy": "Only current 6.1-ratio cache records are packaged; legacy v3-v6 records are excluded because they may lack tray width/load features or use stale ratio bases."
+    "policy": "Only current 6.1-ratio cache records are packaged; legacy v3-v6 records are excluded because they may lack tray width/load features or use stale ratio bases.",
+    "pruned_final_gate_fail_entries": [
+      {
+        "cache_key": "92b3572e30ac0d32e213b59c2c70b2c1ce541a3238c5e20fb1b47d66040e154c",
+        "section_name": "160-160-8",
+        "final_chapter6_controlling_ratio": 1.0367178824268422,
+        "source_job_dir": "jobs\\validation_spacing_recovery_20260615_175157\\real_ansys_jobs_rerun\\18185NI-LXSJ-V600ST"
+      },
+      {
+        "cache_key": "68bef404226d01ad179e4457b4bea84d4ea2cafcbf6737130b7cbeb36a551e8d",
+        "section_name": "120-120-6",
+        "final_chapter6_controlling_ratio": 1.1127183471841533,
+        "source_job_dir": "jobs\\validation_4215_smart_selection_real_fix2_20260615_232420\\18185NI-LXSJ-V4215F"
+      },
+      {
+        "cache_key": "0b0a4bd69a6672f576a390219917e4a0449b92223070875a8bb64b0879b59e31",
+        "section_name": "120-120-10",
+        "final_chapter6_controlling_ratio": 1.4077137073546087,
+        "source_job_dir": "jobs\\validation_4215_smart_selection_real_fix3_20260615_234758\\18185NI-LXSJ-V4215D"
+      },
+      {
+        "cache_key": "73f5c982dc7e93193560b24db881e6b6623a8256c8eb62ee18c36a1fcfc74bbb",
+        "section_name": "120-120-10",
+        "final_chapter6_controlling_ratio": 1.4960703969692142,
+        "source_job_dir": "jobs\\validation_uploaded_intake_real_20260617\\18185NI-LXSJ4215"
+      }
+    ],
+    "pruned_final_gate_fail_updated_at": "2026-06-17T01:48:13.076879+00:00",
+    "final_gate_cache_policy": "Records whose selected section passed Chapter 6.1 section sizing but exceeded the final weld/bolt/global ratio gate are not packaged as successful square-section learning samples."
   }
 }

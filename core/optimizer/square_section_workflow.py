@@ -435,9 +435,12 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
                         "status",
                         "run_status",
                         "controlling_ratio",
+                        "section_selection_ratio",
+                        "final_chapter6_controlling_ratio",
                         "square_support_ratio",
                         "dominant_check_id",
                         "result_gate_status",
+                        "effective_validation_status",
                     )
                 }
                 for item in entry.get("candidate_results", [])
@@ -490,6 +493,9 @@ def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_p
     cache = _load_selection_cache(cache_path)
     entries = cache.setdefault("entries", {})
     compact_selected = _compact_candidate_result_for_cache(selected)
+    final_gate_ratio = _as_float(compact_selected.get("final_chapter6_controlling_ratio"))
+    if final_gate_ratio is not None and final_gate_ratio > 1.0:
+        return
     entries[key] = {
         "status": "pass",
         "selected": compact_selected,
@@ -660,6 +666,9 @@ def _learned_formal_validation_selection(
     selected_ratio = _as_float(selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio"))
     if selected_ratio is None or not (0.60 <= selected_ratio <= 0.9999):
         return None
+    final_gate_ratio = _as_float(selected_history.get("final_chapter6_controlling_ratio"))
+    if final_gate_ratio is not None and final_gate_ratio > 1.0:
+        return None
     if str(selected_history.get("run_status") or "") != "pass":
         return None
     lower_failure_audit: dict[str, Any] = {"status": "not_required", "reason": "selected ratio is already above 0.75"}
@@ -794,6 +803,8 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
             for item in evidence:
                 if not isinstance(item, dict):
                     continue
+                if not is_section_selection_evaluation_row(item):
+                    continue
                 try:
                     ratio = float(item.get("ratio"))
                 except (TypeError, ValueError):
@@ -804,13 +815,57 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
         return False
     input_path = job_path / "input.json"
     if not input_path.exists():
-        return any(is_section_selection_evaluation_row(item) for item in failed_ratio_evidence)
+        return True
     try:
         payload = _read_json(input_path)
     except json.JSONDecodeError:
-        return any(is_section_selection_evaluation_row(item) for item in failed_ratio_evidence)
+        return True
     return _has_larger_allowed_square_section(payload)
-    return False
+
+
+def result_validation_needs_final_ratio_section_recovery(job_dir: Path | str) -> bool:
+    """Return True when a final ratio gate may be recovered by a larger allowed section.
+
+    This is deliberately broader than square-section sizing.  Weld and bolt
+    ratios are final-result gates, not square-tube economy ratios; if they fail
+    while a larger reviewed square section is still allowed, the production
+    flow may try that section as a design recovery, but the UI/audit must not
+    label it as a 6.1 square-section stress failure.
+    """
+
+    job_path = Path(job_dir)
+    validation_path = job_path / "result_validation.json"
+    if not validation_path.exists():
+        return False
+    try:
+        validation = _read_json(validation_path)
+    except json.JSONDecodeError:
+        return False
+    if validation.get("status") == "pass":
+        return False
+    failed_ratio_evidence: list[dict[str, Any]] = []
+    for check in validation.get("checks") or []:
+        if check.get("check_id") != "evaluation_ratio_limit" or check.get("status") != "fail":
+            continue
+        for item in check.get("evidence") or []:
+            if not isinstance(item, dict):
+                continue
+            try:
+                ratio = float(item.get("ratio"))
+            except (TypeError, ValueError):
+                continue
+            if ratio > 1.0:
+                failed_ratio_evidence.append(item)
+    if not failed_ratio_evidence:
+        return False
+    input_path = job_path / "input.json"
+    if not input_path.exists():
+        return False
+    try:
+        payload = _read_json(input_path)
+    except json.JSONDecodeError:
+        return False
+    return _has_larger_allowed_square_section(payload)
 
 
 def result_validation_needs_square_section_clean_reselection(job_dir: Path | str) -> bool:
@@ -1606,12 +1661,25 @@ def upgrade_square_section_after_ratio_fail(
     limit: int | None = None,
     runner: Callable[[Path], dict[str, Any]] | None = None,
     allow_native_hrec_generated: bool = False,
+    section_selection_only: bool = True,
+    upgrade_reason: str | None = None,
 ) -> dict[str, Any]:
     """Select a larger square tube when the final deterministic ratio gate fails."""
 
     job_dir = Path(job_dir)
-    if not result_validation_needs_square_section_upgrade(job_dir):
-        payload = {"status": "skipped", "reason": "result_validation does not require square-section upgrade"}
+    recovery_required = (
+        result_validation_needs_square_section_upgrade(job_dir)
+        if section_selection_only
+        else result_validation_needs_final_ratio_section_recovery(job_dir)
+    )
+    if not recovery_required:
+        payload = {
+            "status": "skipped",
+            "reason": "result_validation does not require square-section upgrade"
+            if section_selection_only
+            else "result_validation does not require final-ratio section recovery",
+            "section_selection_only": section_selection_only,
+        }
         _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", payload)
         return payload
 
@@ -1635,7 +1703,10 @@ def upgrade_square_section_after_ratio_fail(
     ]
     candidates, allowed_square_section_filter = _filter_allowed_square_candidates(candidates, input_payload)
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
-    failed_ratio = _failed_section_selection_ratio(job_dir) or _failed_square_support_ratio(job_dir)
+    if section_selection_only:
+        failed_ratio = _failed_section_selection_ratio(job_dir) or _failed_square_support_ratio(job_dir)
+    else:
+        failed_ratio = _failed_evaluation_ratio(job_dir)
     estimated_required_modulus = None
     skipped_by_estimate = 0
     if not allowed_filter_applied and failed_ratio and failed_ratio > 1.0 and current_modulus > 0:
@@ -1702,7 +1773,13 @@ def upgrade_square_section_after_ratio_fail(
         smart_order=allowed_square_section_filter.get("status") != "applied",
         max_evaluated_candidates=2,
     )
-    selection["upgrade_reason"] = "Final deterministic evaluation ratio exceeded 1.0 for the current square tube."
+    selection["upgrade_reason"] = upgrade_reason or (
+        "Final deterministic 6.1 section-selection ratio exceeded 1.0 for the current square tube."
+        if section_selection_only
+        else "Final deterministic non-section gate ratio exceeded 1.0; trying larger allowed square sections as design recovery."
+    )
+    selection["section_selection_only"] = section_selection_only
+    selection["recovery_mode"] = "square_section_6_1_upgrade" if section_selection_only else "final_ratio_design_recovery"
     selection["current_section"] = current_name
     selection["allowed_square_section_filter"] = allowed_square_section_filter
     selection["candidate_prefilter"] = {
@@ -1721,8 +1798,9 @@ def upgrade_square_section_after_ratio_fail(
         "A provided or provisional square tube section is not accepted when final real-ANSYS deterministic ratios exceed 1.0. "
         "Only intake-allowed/reviewed local SECT candidates are tried by default. Generated job-local APDL HREC candidates are allowed "
         "only when allow_native_hrec_generated=true is set for a reviewed engineering run; selected section must still "
-        "have ratio <= 1.0. Upgrade selection uses the same bounded economy policy: target 0.60 <= ratio <= 0.9999 "
-        "within no more than two fresh ANSYS candidate trials, without sweeping larger sections after an economic pass."
+        "have ratio <= 1.0. Square-section sizing/economy is driven by Chapter 6.1 member ratios. Weld and bolt ratios remain "
+        "final-result gates; when they trigger a larger-section recovery, the action is recorded as final-ratio design recovery, "
+        "not as square-section stress overlimit."
     )
     if (
         selection.get("status") != "pass"

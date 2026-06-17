@@ -445,30 +445,29 @@ def _normalise_row_override_items(row_overrides: dict[str, dict] | list[dict] | 
 
 
 def _select_rows_from_overrides(rows: list[dict], override_items: list[dict]) -> list[dict]:
-    """Resolve UI selections by stable row identity before falling back to row number.
+    """Resolve dashboard row selections without letting duplicate report ids bleed.
 
-    The dashboard can edit report/calculation identifiers after parsing.  When a
-    selected row number and a stable row identity disagree, the identity wins so
-    we do not run a stale neighbouring row and mark an otherwise valid job fail.
+    Workbook row number is the authoritative selector when the UI supplies it.
+    Report numbers can repeat while operators compare variants, so identity
+    matching is only a fallback for override records without a physical row.
     """
 
     selected_indices: set[int] = set()
     for item in override_items:
+        row_numbers = _coerce_row_numbers_from_item(item)
+        if row_numbers:
+            matched_by_row = False
+            for index, row in enumerate(rows):
+                if _row_matches_selected_number(row, row_numbers):
+                    selected_indices.add(index)
+                    matched_by_row = True
+            if matched_by_row:
+                continue
         identity_keys = _row_identity_keys(item)
-        matched = False
         if identity_keys:
             for index, row in enumerate(rows):
                 if _row_identity_keys(row) & identity_keys:
                     selected_indices.add(index)
-                    matched = True
-        if matched:
-            continue
-        row_numbers = _coerce_row_numbers_from_item(item)
-        if not row_numbers:
-            continue
-        for index, row in enumerate(rows):
-            if _row_matches_selected_number(row, row_numbers):
-                selected_indices.add(index)
     return [row for index, row in enumerate(rows) if index in selected_indices]
 
 
