@@ -25,7 +25,7 @@ AUTO_MODAL_MODE_COUNT_SOURCES = {
     "default_initial_count",
 }
 INITIAL_MODAL_MODE_COUNT_BY_LAYER_COUNT = {
-    1: 40,
+    1: 20,
     2: 40,
     3: 50,
     4: 60,

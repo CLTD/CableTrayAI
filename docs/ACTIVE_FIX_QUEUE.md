@@ -1,5 +1,30 @@
 # CableTrayAI ??????
 
+## 2026-06-17 department S2 rule alignment queue
+
+Resolved in source and unit tests:
+
+1. Reviewed the department S2 memo against current production code.
+2. Kept broad steel-platform text recognition unchanged after the user's correction.
+3. Added missing `120-120-8` to the conversational-intake operator-confirmed default square-section list.
+4. Reduced one-layer new-intake MT fallback from `40` to `20`, while preserving learned MT, explicit MT, audited source MT, and post-run Mode.oup >50 Hz retry authority.
+
+Verification:
+
+1. Targeted chat/modal/intake-row tests passed.
+2. Full unit tests passed.
+3. `source_materials` is clean.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C9869E91836AEF02DED08EF2D1991737AEBF7DA6687AA173A672E010AA097124`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `BA45B05C3E53842D72E1664A360A7DE567FAB82C6E521505CA1310A569E876CC`.
+3. External SHA256 sidecars refreshed beside both zip files.
+4. Update applied to local `D:/CableTrayAI`; latest backup is `D:/CableTrayAI/_update_backups/20260617_164537`.
+5. `/health` passed, `duxyb/cnpe123` login passed, and installed code contains the `120-120-8` chat default plus one-layer MT fallback `20`.
+
 ## 2026-06-17 current-type command-flow baseline queue
 
 Resolved in source and real ANSYS:

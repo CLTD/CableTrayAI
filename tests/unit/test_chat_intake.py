@@ -2,8 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from core.intake.chat_intake import parse_chat_intake, write_chat_intake_workbook
+from core.intake.chat_intake import STANDARD_CHAT_SQUARE_SECTIONS, parse_chat_intake, write_chat_intake_workbook
 from core.intake.intake_excel_reader import read_tabular_intake_rows
+
+
+def test_standard_chat_square_sections_match_department_list() -> None:
+    assert STANDARD_CHAT_SQUARE_SECTIONS == [
+        "100-100-6",
+        "100-100-8",
+        "120-120-6",
+        "120-120-8",
+        "120-120-10",
+        "140-140-8",
+        "160-160-8",
+    ]
 
 
 def test_chat_intake_parses_double_side_600_with_explicit_sections() -> None:

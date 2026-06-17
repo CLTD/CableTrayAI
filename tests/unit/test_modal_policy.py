@@ -16,6 +16,10 @@ def test_six_layer_new_intake_starts_at_bounded_safe_initial_count() -> None:
     assert modal_mode_count_from_layer_count(6) == 80
 
 
+def test_one_layer_new_intake_starts_at_department_20_mode_rule() -> None:
+    assert modal_mode_count_from_layer_count(1) == 20
+
+
 def test_payload_infers_layer_count_when_explicit_modal_count_absent() -> None:
     payload = {
         "support": {"layers_front": 4, "layers_back": 2},

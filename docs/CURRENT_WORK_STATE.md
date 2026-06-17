@@ -1,5 +1,29 @@
 # CableTrayAI ??????
 
+## 2026-06-17 department S2 rule alignment
+
+Current source/validation state:
+
+1. Compared the department S2 rule memo against the current implementation. Existing production logic already matches the four-component model boundary, tray-width topology split, square-section-to-arm-family mapping, channel/yixing `SECOFFSET` policy, <=120 mm equivalent weld coefficient `0.526`, steel-platform static method with `1.5*9.81*peak` ACEL, and static no-main-MT policy.
+2. Per the user's correction, the broad "full text contains steel platform -> static method" recognition policy remains unchanged.
+3. Fixed the only source mismatch found in the conversational-intake default square-section list: `120-120-8` is now included with `100-100-6`, `100-100-8`, `120-120-6`, `120-120-10`, `140-140-8`, and `160-160-8`. Explicit intake calculation-note candidate lists still remain authoritative and are not expanded by the default list.
+4. Aligned new-intake fallback MT initialization with the department note that one-layer 600 mm tray cases generally use 20 modes. `modal_mode_count_from_layer_count(1)` now returns `20`; multi-layer existing verified fallback values and the Mode.oup >50 Hz retry gate remain unchanged.
+
+Verification:
+
+1. Targeted tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_chat_intake.py tests/unit/test_modal_policy.py tests/unit/test_intake_row_selection.py -q`.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. `git diff --check` passed.
+4. `source_materials` remains unchanged.
+
+Deployment closeout:
+
+1. Rebuilt server, desktop, and installer runtimes, then refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Refreshed existing-install update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Regenerated transfer hash sidecars. `CableTrayAI.zip` SHA256 is `C9869E91836AEF02DED08EF2D1991737AEBF7DA6687AA173A672E010AA097124`; `更新包.zip` SHA256 is `BA45B05C3E53842D72E1664A360A7DE567FAB82C6E521505CA1310A569E876CC`.
+4. Applied the update to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260617_164537`; `resources_applied=true` in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+5. Local smoke passed: `/health` returned ok, `duxyb/cnpe123` login returned pass, installed `core/intake/chat_intake.py` contains `120-120-8`, and installed `core/apdl/modal_policy.py` contains one-layer fallback `1: 20`.
+
 ## 2026-06-17 current-type command-flow baseline closeout
 
 Current latest source/validation state:
