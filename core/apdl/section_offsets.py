@@ -8,6 +8,10 @@ _CHANNEL_SECONDARY_OFFSET_RE = re.compile(
     r"(?P<trailing>\s*(?:!.*)?)$",
     re.IGNORECASE,
 )
+_SECOFFSET_RE = re.compile(
+    r"^(?P<indent>\s*)SECOFFSET\s*,(?P<body>[^!\r\n]*)(?P<trailing>\s*(?:!.*)?)$",
+    re.IGNORECASE,
+)
 _SECREAD_RE = re.compile(r"^\s*SECREAD\s*,\s*['\"]?(?P<section>[^,'\"\s]+)", re.IGNORECASE)
 _SECTION_BOUNDARY_RE = re.compile(r"^\s*(SECOFFSET|SECTYPE)\b", re.IGNORECASE)
 
@@ -38,6 +42,44 @@ def normalize_yixing_arm_secoffset(text: str) -> tuple[str, int]:
         lines[index] = f"{offset_match.group('indent')}SECOFFSET,user{trailing}{newline}"
         changed += 1
     return "".join(lines), changed
+
+
+def normalize_secondary_arm_secoffset(text: str) -> tuple[str, dict[str, int]]:
+    """Normalize secondary-arm ``SECOFFSET`` to the actual section family.
+
+    ``CAOGANG42DAN`` is the channel secondary arm and must keep the reviewed
+    ``SECOFFSET,user,,-0.03249`` offset.  ``YIXINGGANG150DAN`` is the shaped
+    steel branch and must use plain ``SECOFFSET,user``.  This is applied after
+    section replacement so a source-family swap cannot leave the old offset
+    attached to the new section.
+    """
+
+    lines = text.splitlines(keepends=True)
+    counts = {"yixing_replacements": 0, "channel_replacements": 0}
+    for index, line in enumerate(lines):
+        body = line.rstrip("\r\n")
+        newline = line[len(body) :]
+        offset_match = _SECOFFSET_RE.match(body)
+        if not offset_match:
+            continue
+        section = _next_secread_section(lines, index + 1)
+        if section is None:
+            continue
+        section_upper = section.upper()
+        trailing = offset_match.group("trailing") or ""
+        if "!" not in trailing:
+            trailing = ""
+        if section_upper == "YIXINGGANG150DAN":
+            replacement = f"{offset_match.group('indent')}SECOFFSET,user{trailing}{newline}"
+            if lines[index] != replacement:
+                lines[index] = replacement
+                counts["yixing_replacements"] += 1
+        elif section_upper == "CAOGANG42DAN":
+            replacement = f"{offset_match.group('indent')}SECOFFSET,user,,-0.03249{trailing}{newline}"
+            if lines[index] != replacement:
+                lines[index] = replacement
+                counts["channel_replacements"] += 1
+    return "".join(lines), counts
 
 
 def _next_secread_section(lines: list[str], start_index: int) -> str | None:

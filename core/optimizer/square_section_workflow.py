@@ -20,6 +20,7 @@ from core.ansys.runner import (
 )
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.audit.job_state import update_job_state
+from core.intake.tray_load_parser import TRAY_AREA_M2
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
     _clean_trial_runtime_outputs,
@@ -136,12 +137,22 @@ def _layer_width_mm(layer: dict[str, Any]) -> float | None:
 
 
 def _layer_load_kg_m(layer: dict[str, Any]) -> float | None:
-    return _as_float(
+    explicit = _as_float(
         layer.get("load_kg_m")
         or layer.get("load_kg_per_m")
         or layer.get("line_load_kg_m")
         or layer.get("mass_per_m_kg")
     )
+    if explicit is not None:
+        return explicit
+    width = _layer_width_mm(layer)
+    density = _as_float(layer.get("tray_density_kg_m3"))
+    if width is None or density is None:
+        return None
+    area = TRAY_AREA_M2.get(int(round(width)))
+    if area is None:
+        return None
+    return density * area
 
 
 def _payload_tray_design_layers(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1084,7 +1095,7 @@ def _estimated_square_anchor_from_payload(
 
     if score >= 7.0 or layer_count >= 8 or load_sum >= 760:
         target_name = "140-140-8"
-    elif score >= 5.2 or layer_count >= 6 or load_sum >= 560:
+    elif score >= 5.2 or layer_count >= 6 or load_sum >= 560 or (max_width >= 600 and load_sum >= 200):
         target_name = "120-120-10"
     elif score >= 2.0 or layer_count >= 4 or load_sum >= 360 or max_width >= 500:
         target_name = "100-100-8"

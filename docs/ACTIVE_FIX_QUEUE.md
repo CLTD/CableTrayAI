@@ -1,5 +1,50 @@
 # CableTrayAI ??????
 
+## 2026-06-17 current-type command-flow baseline queue
+
+Resolved in source and real ANSYS:
+
+1. Curated the latest reviewed command-flow folder `C:/Users/duxy/Desktop/类型` into `resources/current_type_command_flows/` and made it the preferred production model-family library.
+2. Historical standard command streams are not deleted because `source_materials` is the traceability baseline and must stay read-only. They are now fallback/reference only, not the first production modeling source.
+3. Fixed selector scoring so single/double/mixed topologies and wide-tray families do not cross-pick the wrong old source.
+4. Fixed mixed-tray APDL loop variable collision by changing the scalar width-code variable to `QTCODE`; `QCODE/HCODE` remain arrays.
+5. Fixed secondary-arm offset normalization for channel and yixing arms.
+6. Verified current production modeling rules for 100/200/300/500/600 and mixed layouts with a render matrix.
+7. Real ANSYS18.2 validation passed for rows 3, 4, 7, and 11 of the uploaded workbook at `jobs/validation_current_type_baseline_final_real_20260617`: 4211, 4212, 4215, and 4214 all have ANSYS success and deterministic pass.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. External SHA256 sidecars refreshed beside both zip files.
+4. Update applied to local `D:/CableTrayAI`; latest backup is `D:/CableTrayAI/_update_backups/20260617_161759`.
+5. `/health` passed, `duxyb/cnpe123` login passed, `resources/current_type_command_flows` exists in the installed tree, and source/package/installed hashes match for touched runtime files.
+
+## 2026-06-17 600-tray L2/2 topology and load-counting queue
+
+Resolved in source and real ANSYS:
+
+1. Fixed the 600 mm single-tray APDL topology pollution. Keypoints 506/507/508/509 for reviewed 500/600 standard families now follow the same `H1/2+L1-L2/2` connection line as 502; the previous broad L3 rewrite is removed.
+2. Preserved separate tray rules:
+   - tray `<=300 mm`: `L3=0.15m`;
+   - tray `>300 mm` and square outer `<=120 mm`: `L3=0.20m`;
+   - tray `>300 mm` and square outer `>120 mm`: `L3=0.15m`;
+   - 300 mm physical-bolt topology and 100/200 mm small-tray partition remain independently tested.
+3. Fixed square-section engineering anchor for 600 and mixed 500/600 cases. Density-only layers are converted back to kg/m for strategy scoring, but explicit kg/m line-load fields always win and are not double-counted with density.
+4. Added regression coverage for density fallback, explicit-line-load no-double-counting, single 600 anchor, 300 topology, 100/200 small-tray topology, and 500/600 L2/2 offsets.
+5. Hardened the full-intake production PowerShell script so it selects a Python runtime with required dependencies before invoking the backend calculation.
+6. Real ANSYS18.2 validation passed under `jobs/validation_600_mixed_fix_real_20260617`:
+   - `18185NI-LXSJ4215` single 600 selected `140-140-8`, final controlling ratio `0.8883527244537628`, pass.
+   - `18185NI-LXSJ4214` mixed 500/600 selected `100-100-8` after fresh ANSYS, final Chapter 6.1 ratio `0.869901992449058`, pass.
+
+Deployment queue status: source and real ANSYS complete; package/local deployment refresh remains to close this queue.
+
+Open:
+
+1. Rebuild `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and the update package, apply to local `D:/CableTrayAI`, smoke-test `/health` and login, then add a package closeout entry.
+
 ## 2026-06-17 section-before-spacing recovery and line-load override queue
 
 Resolved in source, real ANSYS, package, and local deployment:

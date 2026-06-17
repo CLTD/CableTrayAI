@@ -8,6 +8,7 @@ from core.apdl.intake_standard_family_renderer import (
     _render_model_from_family,
     _render_solve_from_source,
     _standard_family_keypoint_numbering,
+    select_standard_model_family,
 )
 from core.apdl.mixed_tray_model import render_mixed_tray_layer_model, should_use_mixed_tray_layer_renderer
 from core.apdl.modal_policy import parse_source_modal_mode_count
@@ -397,6 +398,10 @@ def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology(
     assert "QW(2)=0.3" in rendered
     assert "QA(1)=0.47" in rendered
     assert "QB(1)=0.2" in rendered
+    assert "QTCODE=QCODE(I)" in rendered
+    assert "QCODE=QCODE(I)" not in rendered
+    assert "*ELSEIF,QTCODE,EQ,300,THEN" in rendered
+    assert "L,502+KPOFF+10*I+KPFSTEP*(J-1),504+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
     assert "SECOFFSET,user,,-0.03249\nSECREAD,'CAOGANG42DAN'" in rendered
     assert "*DO,I,1,2" in rendered
     assert "K,501+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
@@ -573,6 +578,9 @@ def test_300_single_width_family_keeps_reviewed_l2_half_connection_offset() -> N
             "L4=2.0",
             "senum=2",
             "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L3,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,507+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,508+10*I+100*(J-1),H1/2+L1-L3,L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
             "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
             "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
             "SECREAD,'100-100-6'",
@@ -593,6 +601,9 @@ def test_300_single_width_family_keeps_reviewed_l2_half_connection_offset() -> N
     assert "L3=0.15" in rendered
     assert "H1/2+L1-L2/2" in rendered
     assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,507+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,508+10*I+100*(J-1),H1/2+L1-L3" in rendered
     assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
     assert audit["single_width_connection_offset"]["status"] == "not_required"
@@ -659,6 +670,21 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
     assert "CPCYC,UX" in rendered
     assert audit["physical_bolt_modeling"]["status"] == "pass"
     assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
+
+
+def test_current_type_command_library_is_preferred_for_300_model_family() -> None:
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.3
+        layer["tray_section_id"] = "tray-300"
+    payload["sections"][1]["section_id"] = "tray-300"
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    family = select_standard_model_family(payload)
+
+    assert family["source_library"] == "current_type_command_flows"
+    assert "resources" in family["source"].replace("\\", "/")
+    assert family["source"].endswith("single_300_square.PIP")
 
 
 def test_300_modeling_gate_fails_when_only_coupling_exists_without_bolt_elements() -> None:
@@ -732,7 +758,84 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
 
 
-def test_single_width_family_l3_rewrite_does_not_collapse_intermediate_arm_segment() -> None:
+def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.35",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=1.8",
+            "L5=0.074",
+            "senum=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
+            "L,502+10*I+100*(J-1),509+10*I+100*(J-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.1
+        layer["tray_section_id"] = "tray-100"
+    payload["sections"][1]["section_id"] = "tray-100"
+    payload["sections"][1]["sect_file"] = "100-75-2mm.SECT"
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L2=0.1" in rendered
+    assert "L3=0.15" in rendered
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,503+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
+    assert audit["small_tray_arm_partition"]["status"] == "rewritten"
+    assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
+
+
+def test_500_single_width_family_keeps_reviewed_l2_half_tray_and_bolt_offsets() -> None:
+    source_text = "\n".join(
+        [
+            "H1=0.10",
+            "H2=2.0",
+            "L1=0.55",
+            "L2=0.5",
+            "L3=0.2",
+            "L4=2.0",
+            "L5=0.074",
+            "senum=2",
+            "K,502+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,503+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+0.2*(I-1)",
+            "K,506+10*I+100*(J-1),H1/2+L1-L2/2,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
+            "L,502+10*I+100*(J-1),503+10*I+100*(J-1)",
+            "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2",
+            "SECREAD,'100-100-6'",
+            "SECREAD,'500-75-2mm'",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
+
+    assert "L2=0.5" in rendered
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,503+10*I+100*(J-1),H1/2+L1-L3" in rendered
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2" in rendered
+    assert audit["assigned"]["L3"] == 0.2
+    assert audit["l3_policy"]["status"] == "square_outer_width_le_120_l3_0p20m"
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
+
+
+def test_600_single_width_family_keeps_reviewed_l2_half_tray_and_bolt_offsets() -> None:
     source_text = "\n".join(
         [
             "H1=0.10",
@@ -758,11 +861,12 @@ def test_single_width_family_l3_rewrite_does_not_collapse_intermediate_arm_segme
 
     assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
     assert "K,503+10*I+100*(J-1),H1/2+L1-L3" in rendered
-    assert "K,506+10*I+100*(J-1),H1/2+L1-L3" in rendered
-    assert "K,509+10*I+100*(J-1),H1/2+L1-L3" in rendered
-    assert "NSEL,S,LOC,X,H1/2+L1-L3,H1/2+L1-L3" in rendered
-    assert audit["single_width_connection_offset"]["status"] == "rewritten"
-    assert audit["single_width_connection_offset"]["skipped_structural_keypoints"] == 1
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2" in rendered
+    assert audit["assigned"]["L3"] == 0.2
+    assert audit["l3_policy"]["status"] == "square_outer_width_le_120_l3_0p20m"
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
 
 
 def test_multi_width_family_keeps_l2_half_connection_offset() -> None:
@@ -793,7 +897,7 @@ def test_multi_width_family_keeps_l2_half_connection_offset() -> None:
     assert audit["single_width_connection_offset"]["status"] == "not_required"
 
 
-def test_double_side_single_width_family_tracks_l3_for_tray_connection_offset() -> None:
+def test_double_side_single_width_family_keeps_l2_half_for_wide_tray_connection_offset() -> None:
     source_text = "\n".join(
         [
             "H1=0.10",
@@ -817,12 +921,12 @@ def test_double_side_single_width_family_tracks_l3_for_tray_connection_offset() 
 
     rendered, audit = _render_model_from_family(source_text, _double_three_by_three_500_payload())
 
-    assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
-    assert "K,1502+10*I+100*(J-1),-(H1/2+L1-L3)" in rendered
-    assert "K,1509+10*I+100*(J-1),-(H1/2+L1-L3)" in rendered
-    assert "NSEL,S,LOC,X,H1/2+L1-L3,H1/2+L1-L3" in rendered
-    assert "NSEL,A,LOC,X,-(H1/2+L1-L3),-(H1/2+L1-L3)" in rendered
-    assert audit["single_width_connection_offset"]["status"] == "rewritten"
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+    assert "K,1502+10*I+100*(J-1),-(H1/2+L1-L2/2)" in rendered
+    assert "K,1509+10*I+100*(J-1),-(H1/2+L1-L2/2)" in rendered
+    assert "NSEL,S,LOC,X,H1/2+L1-L2/2,H1/2+L1-L2/2" in rendered
+    assert "NSEL,A,LOC,X,-(H1/2+L1-L2/2),-(H1/2+L1-L2/2)" in rendered
+    assert audit["single_width_connection_offset"]["status"] == "not_required"
 
 
 def test_standard_family_expands_keypoint_numbering_for_twelve_layers() -> None:

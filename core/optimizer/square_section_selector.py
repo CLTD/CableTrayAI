@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from core.apdl.section_offsets import normalize_yixing_arm_secoffset
+from core.apdl.section_offsets import normalize_secondary_arm_secoffset
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 
 
@@ -1361,7 +1361,9 @@ def replace_arm_sections_in_model(
     model = job_dir / "generated_model.mac"
     text = model.read_text(encoding="utf-8", errors="replace")
     new_text, primary_count, secondary_count = _replace_last_two_secreads(text, primary_arm_section, secondary_arm_section)
-    new_text, yixing_secoffset_count = normalize_yixing_arm_secoffset(new_text)
+    new_text, secondary_secoffset_audit = normalize_secondary_arm_secoffset(new_text)
+    yixing_secoffset_count = secondary_secoffset_audit.get("yixing_replacements", 0)
+    channel_secoffset_count = secondary_secoffset_audit.get("channel_replacements", 0)
     if primary_count + secondary_count < 1:
         raise ValueError("Could not replace arm section SECREADs in generated_model.mac")
     model.write_text(new_text, encoding="utf-8", newline="\n")
@@ -1381,6 +1383,7 @@ def replace_arm_sections_in_model(
         "primary_replacement_count": primary_count,
         "secondary_replacement_count": secondary_count,
         "yixing_secoffset_replacements": yixing_secoffset_count,
+        "channel_secoffset_replacements": channel_secoffset_count,
         "copied": copied,
         "source_ref": "square_section_outer_width_branch: <=120 uses 50-42/CAOGANG42DAN; >120 uses YIXINGGANG150/YIXINGGANG150DAN",
     }

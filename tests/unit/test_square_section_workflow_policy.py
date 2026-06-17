@@ -821,6 +821,76 @@ def test_similar_cache_missing_width_and_load_is_not_high_similarity(tmp_path: P
     assert "tray_load_sum_kg_m" in score["mismatched"]
 
 
+def test_engineering_anchor_uses_density_back_calculated_line_load_for_mixed_500_600() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {"side": "front", "layer_index": 1, "tray_width_m": 0.5, "tray_density_kg_m3": 90.5 / 0.001596},
+            {"side": "front", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+            {"side": "back", "layer_index": 1, "tray_width_m": 0.5, "tray_density_kg_m3": 90.5 / 0.001596},
+            {"side": "back", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+        ],
+    }
+
+    metrics = workflow._tray_layer_design_metrics(payload)
+    anchor = workflow._estimated_square_anchor_from_payload(payload, _candidates())
+
+    assert round(metrics["tray_load_sum_kg_m"], 3) == 416.0
+    assert anchor["section_name"] == "120-120-10"
+    assert anchor["target_section_name"] == "120-120-10"
+
+
+def test_engineering_anchor_does_not_double_count_explicit_line_load_and_density() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {
+                "side": "front",
+                "layer_index": 1,
+                "tray_width_m": 0.6,
+                "load_kg_m": 117.5,
+                "tray_density_kg_m3": 999999.0,
+            },
+            {
+                "side": "back",
+                "layer_index": 1,
+                "tray_width_m": 0.6,
+                "load_kg_m": 117.5,
+                "tray_density_kg_m3": 999999.0,
+            },
+        ],
+    }
+
+    metrics = workflow._tray_layer_design_metrics(payload)
+
+    assert metrics["tray_load_sum_kg_m"] == 235.0
+    assert metrics["max_line_load_kg_m"] == 117.5
+
+
+def test_engineering_anchor_starts_single_600_above_small_100x8() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 1.6,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {"side": "front", "layer_index": 1, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+            {"side": "front", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+        ],
+    }
+
+    anchor = workflow._estimated_square_anchor_from_payload(payload, _candidates())
+
+    assert anchor["section_name"] == "120-120-10"
+    assert anchor["target_section_name"] == "120-120-10"
+
+
 def test_allowed_square_sections_keep_modulus_jump_inside_allowed_list(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "job"
     _write_job(job_dir, allowed=["100-100-6", "100-100-8", "120-120-6"])

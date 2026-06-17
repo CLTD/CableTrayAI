@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from itertools import combinations
@@ -25,7 +26,7 @@ from core.apdl.mixed_tray_model import (
     should_use_mixed_tray_layer_renderer,
 )
 from core.apdl.section_specific_export import augment_square_support_export
-from core.apdl.section_offsets import normalize_yixing_arm_secoffset
+from core.apdl.section_offsets import normalize_secondary_arm_secoffset
 from core.apdl.source_diff import read_text_with_encoding
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.apdl.platform_standard_flow import build_platform_standard_shadow_flow
@@ -36,12 +37,14 @@ from core.spectra.static_coefficients import describe_segmented_spectrum_workboo
 
 
 MODEL_PATTERNS = ("01*.PIP", "01*.pip", "01*.MAC", "01*.mac", "01*.TXT", "01*.txt")
+CURRENT_TYPE_MODEL_PATTERNS = ("*.PIP", "*.pip", "*.MAC", "*.mac", "*.TXT", "*.txt")
 SOLVE_PATTERNS = ("02*.mac", "02*.MAC", "02*.PIP", "02*.pip", "02*.TXT", "02*.txt")
 
 
 @dataclass(frozen=True)
 class CommandFamily:
     path: Path
+    source_library: str
     source_encoding: str
     text: str
     side_kind: str
@@ -101,12 +104,13 @@ def _arm_sections_from_sections(sections: list[str]) -> tuple[str, str]:
 
 def _classify_source_side(path: Path, text: str) -> tuple[str, bool]:
     name = path.name
+    lower_name = name.lower()
     has_back = bool(re.search(r"K\s*,\s*15\d\d", text, flags=re.IGNORECASE))
-    if "三侧" in name:
+    if "三侧" in name or "three" in lower_name:
         return "three_side", has_back
-    if "单侧" in name or not has_back:
+    if "单侧" in name or "single" in lower_name or not has_back:
         return "single", has_back
-    if "不同" in name:
+    if "不同" in name or "mixed" in lower_name or "different" in lower_name:
         return "double_different", has_back
     return "double_same", has_back
 
@@ -127,12 +131,46 @@ def _payload_side_count(payload: dict[str, Any]) -> int:
         return 1
 
 
+def _current_type_command_roots(source_root: Path) -> list[Path]:
+    candidates: list[Path] = []
+    env_root = str(os.environ.get("CABLETRAYAI_CURRENT_TYPE_COMMAND_ROOT") or "").strip()
+    if env_root:
+        candidates.append(Path(env_root))
+    candidates.extend(
+        [
+            Path.cwd() / "resources" / "current_type_command_flows",
+            Path(__file__).resolve().parents[2] / "resources" / "current_type_command_flows",
+            source_root.parent.parent / "resources" / "current_type_command_flows",
+        ]
+    )
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        resolved = candidate.resolve()
+        key = str(resolved).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        roots.append(resolved)
+    return roots
+
+
 def _discover_families(source_root: Path) -> list[CommandFamily]:
     reports_root = source_root / "报告及模型命令流"
-    roots = [reports_root] if reports_root.exists() else [source_root]
+    scan_roots: list[tuple[Path, str, tuple[str, ...]]] = [
+        (root, "current_type_command_flows", CURRENT_TYPE_MODEL_PATTERNS)
+        for root in _current_type_command_roots(source_root)
+    ]
+    scan_roots.append(
+        (reports_root, "historical_source_materials", MODEL_PATTERNS)
+        if reports_root.exists()
+        else (source_root, "source_materials", MODEL_PATTERNS)
+    )
     families: list[CommandFamily] = []
-    for root in roots:
-        for pattern in MODEL_PATTERNS:
+    for root, source_library, patterns in scan_roots:
+        for pattern in patterns:
             for path in sorted(root.rglob(pattern), key=lambda item: item.as_posix()):
                 if not path.is_file() or path.name.lower().endswith(".bak") or "副本" in path.name:
                     continue
@@ -154,6 +192,7 @@ def _discover_families(source_root: Path) -> list[CommandFamily]:
                 families.append(
                     CommandFamily(
                         path=path,
+                        source_library=source_library,
                         source_encoding=encoding,
                         text=text,
                         side_kind=side_kind,
@@ -291,7 +330,7 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
             score += weight
         checks.append({"check_id": check_id, "status": "pass" if passed else "fail", "weight": weight, "value": value, "expected": expected})
 
-    add("side_kind", family.side_kind == side_kind, 30, family.side_kind, side_kind)
+    add("side_kind", family.side_kind == side_kind, 120, family.side_kind, side_kind)
     if expected_support_section:
         add(
             "support_section",
@@ -303,6 +342,14 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
     add("width_family", sorted(family.width_family) == widths, 25, list(family.width_family), widths)
     if widths:
         add("max_width_covered", max(widths) in family.width_family, 20, list(family.width_family), max(widths))
+    if len(widths) == 1 and widths[0] > 300:
+        add(
+            "wide_single_width_source_family",
+            bool(family.width_family) and min(family.width_family) > 300,
+            90,
+            list(family.width_family),
+            "single-width source family above 300 mm",
+        )
     add("primary_arm_section", family.primary_arm_section.upper() == primary.upper(), 20, family.primary_arm_section, primary)
     add("secondary_arm_section", family.secondary_arm_section.upper() == secondary.upper(), 10, family.secondary_arm_section, secondary)
     add("mixed_widths", family.has_mixed_widths == mixed, 8, family.has_mixed_widths, mixed)
@@ -320,6 +367,22 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
         add("secondary_layer_count", int(source_senum1) == int(expected_secondary_layers), 8, int(source_senum1), int(expected_secondary_layers))
     if expected_method in {"static", "spectrum"}:
         add("analysis_method", source_method == expected_method, 12, source_method, expected_method)
+    if expected_method == "static":
+        add(
+            "static_adjacent_solve_available",
+            source_method == "static",
+            80,
+            source_method,
+            "static adjacent 02 calculation command stream",
+        )
+    else:
+        add(
+            "current_type_command_library",
+            family.source_library == "current_type_command_flows",
+            100,
+            family.source_library,
+            "current_type_command_flows",
+        )
     if shared_max_geometry:
         score += 34
         checks.append(
@@ -400,8 +463,14 @@ def select_standard_model_family(payload: dict[str, Any], source_root: Path | st
         "score": best_score,
         "checks": best_checks,
         "candidate_count": len(families),
+        "source_library": best.source_library,
         "source_sha256": _sha256(best.path),
-        "policy": "Select a reusable standard command-flow family by intake geometry, side/topology, tray width, and arm-section family. Report result values and numerical closeness are not used.",
+        "policy": (
+            "Select a reusable standard command-flow family by intake geometry, side/topology, tray width, and "
+            "arm-section family. The curated resources/current_type_command_flows library is preferred for "
+            "modeling; historical source_materials remain read-only fallback and solve/post traceability sources. "
+            "Report result values and numerical closeness are not used."
+        ),
     }
 
 
@@ -804,94 +873,6 @@ def _ensure_standard_beam188_warping_keyopts(text: str) -> tuple[str, dict[str, 
     }
 
 
-def _rewrite_single_width_connection_offset_to_l3(text: str, *, enabled: bool) -> tuple[str, dict[str, Any]]:
-    if not enabled:
-        return text, {
-            "status": "not_required",
-            "reason": "not_single_width_no_l6_offset_mismatch",
-        }
-    positive_pattern = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2", flags=re.IGNORECASE)
-    negative_pattern = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L2\s*/\s*2\s*\)", flags=re.IGNORECASE)
-    replacement = "H1/2+L1-L3"
-    negative_replacement = "-(H1/2+L1-L3)"
-    positive_target_pattern = re.compile(r"H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\b", flags=re.IGNORECASE)
-    negative_target_pattern = re.compile(r"-\(\s*H1\s*/\s*2\s*\+\s*L1\s*-\s*L3\s*\)", flags=re.IGNORECASE)
-    tray_or_coupling_keypoints = {506, 507, 508, 509, 1506, 1507, 1508, 1509}
-    connection_keypoints = {502, 1502}
-
-    def keypoint_base(line: str) -> int | None:
-        match = re.match(r"\s*K\s*,\s*(\d+)", line, flags=re.IGNORECASE)
-        return int(match.group(1)) if match else None
-
-    def replace_offset(line: str) -> tuple[str, int]:
-        updated_line, negative_count = negative_pattern.subn(negative_replacement, line)
-        updated_line, positive_count = positive_pattern.subn(replacement, updated_line)
-        return updated_line, negative_count + positive_count
-
-    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    connection_keypoints_with_adjacent_l3_endpoint: set[int] = set()
-    for line in lines:
-        base = keypoint_base(line)
-        if base == 503 and positive_target_pattern.search(line):
-            connection_keypoints_with_adjacent_l3_endpoint.add(502)
-        if base == 1503 and negative_target_pattern.search(line):
-            connection_keypoints_with_adjacent_l3_endpoint.add(1502)
-
-    updated_lines: list[str] = []
-    replacement_count = 0
-    keypoint_replacements = 0
-    selector_replacements = 0
-    skipped_structural_keypoints = 0
-    for line in lines:
-        stripped = line.lstrip()
-        base = keypoint_base(line)
-        command = stripped.split(",", 1)[0].strip().upper() if stripped else ""
-        should_rewrite = False
-        if base in tray_or_coupling_keypoints:
-            should_rewrite = True
-        elif base in connection_keypoints:
-            if base in connection_keypoints_with_adjacent_l3_endpoint:
-                skipped_structural_keypoints += 1
-            else:
-                should_rewrite = True
-        elif command in {"LSEL", "NSEL"}:
-            should_rewrite = True
-
-        if should_rewrite:
-            updated_line, count = replace_offset(line)
-            replacement_count += count
-            if base is not None:
-                keypoint_replacements += count
-            else:
-                selector_replacements += count
-            updated_lines.append(updated_line)
-            continue
-
-        if base in {503, 1503} and (positive_pattern.search(line) or negative_pattern.search(line)):
-            skipped_structural_keypoints += 1
-        updated_lines.append(line)
-
-    updated = "\n".join(updated_lines)
-    return updated, {
-        "status": "rewritten" if replacement_count else "unchanged",
-        "replacement_count": replacement_count,
-        "keypoint_replacements": keypoint_replacements,
-        "selector_replacements": selector_replacements,
-        "skipped_structural_keypoints": skipped_structural_keypoints,
-        "source_expression": "H1/2+L1-L2/2",
-        "target_expression": replacement,
-        "source_ref": "single_width_standard_family:L3_square_section_spacing_policy",
-        "policy": (
-            "For single-width/no-L6 standard S2 families, L3 is the square-section-controlled tray "
-            "support/connection offset. When L3 differs from L2/2, tray transverse keypoints, connector "
-            "keypoints and coupling selectors must follow H1/2+L1-L3, otherwise light 300 mm cases can "
-            "leave tray nodes under-constrained. Structural intermediate keypoints 503/1503 are not "
-            "rewritten because some reviewed single-side families intentionally use the L2/2-to-L3 short "
-            "arm segment; rewriting those endpoints would create zero-length APDL lines."
-        ),
-    }
-
-
 def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str, dict[str, Any]]:
     if not enabled:
         return text, {
@@ -1080,7 +1061,9 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
     rendered = _replace_nth_secread(rendered, 0, support_section)
     rendered, tray_secread_replacements = _replace_tray_secreads_from_intake(rendered, material_slot_widths)
     rendered, primary_arm_replacements, secondary_arm_replacements = _replace_arm_secreads_by_name(rendered, primary_arm, secondary_arm)
-    rendered, yixing_secoffset_replacements = normalize_yixing_arm_secoffset(rendered)
+    rendered, secondary_secoffset_audit = normalize_secondary_arm_secoffset(rendered)
+    yixing_secoffset_replacements = secondary_secoffset_audit.get("yixing_replacements", 0)
+    channel_secoffset_replacements = secondary_secoffset_audit.get("channel_replacements", 0)
     required_tray_sections = _required_tray_sections_from_payload(payload)
     missing_required_tray_sections = _missing_required_sections_in_text(rendered, required_tray_sections)
     assigned_h1 = round(float(support.get("square_tube_width_m") or source_assignments.get("H1") or 0.1), 4)
@@ -1136,15 +1119,16 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         rendered,
         enabled=small_tray_partition_enabled,
     )
-    rendered, connection_offset_audit = _rewrite_single_width_connection_offset_to_l3(
-        rendered,
-        enabled=(
-            not has_source_span_l6
-            and assigned_senum > 0
-            and primary_width > 300
-            and abs(float(assigned_l3) - float(assigned_l2) / 2.0) > 1e-9
+    connection_offset_audit = {
+        "status": "not_required",
+        "source_ref": "reviewed_single_width_s2_keypoint_topology",
+        "policy": (
+            "L3 assignment remains width-policy controlled, but standard wide-tray 500/600 keypoints "
+            "502 and 506-509 use the reviewed H1/2+L1-L2/2 connection line. Tray widths <=200 are handled "
+            "by the small-tray partition rewrite, while reviewed 300 mm physical-bolt topology keeps its "
+            "own split: 506-508 at L3 and 509/coupling at L2/2."
         ),
-    )
+    }
     rendered, beam188_warping_keyopts = _ensure_standard_beam188_warping_keyopts(rendered)
     keypoint_numbering = _standard_family_keypoint_numbering(front, back)
     rendered, keypoint_numbering = _apply_model_keypoint_numbering(rendered, keypoint_numbering)
@@ -1207,6 +1191,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "primary_arm_secread_replacements": primary_arm_replacements,
         "secondary_arm_secread_replacements": secondary_arm_replacements,
         "yixing_secoffset_replacements": yixing_secoffset_replacements,
+        "channel_secoffset_replacements": channel_secoffset_replacements,
         "small_tray_arm_partition": small_tray_partition_audit,
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,

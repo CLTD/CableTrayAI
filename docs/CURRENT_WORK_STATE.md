@@ -1,5 +1,60 @@
 # CableTrayAI ??????
 
+## 2026-06-17 current-type command-flow baseline closeout
+
+Current latest source/validation state:
+
+1. The uploaded desktop folder `C:/Users/duxy/Desktop/类型` is now the curated production modeling baseline. Its ten reviewed PIP files were copied into `resources/current_type_command_flows/` with ASCII names so packaging, tests, and source control can track them.
+2. Historical command streams in `source_materials` were not deleted. They remain read-only traceability and fallback references per `AGENTS.md`, but the production model-family selector now strongly prefers `resources/current_type_command_flows` before scanning historical material.
+3. The selector now scores topology more strictly so single-side cases do not pick double-side sources, mixed cases pick mixed sources, and 500/600 wide-tray sources are not stolen by the 300 mm source family.
+4. Mixed tray geometry now keeps the standardized looped APDL style. The 300 mm branch uses the latest 501-502-504 physical-bolt topology, while 500/600 keep the reviewed L2/2 bolt/connection line and small trays keep their independent 100/200 topology.
+5. Fixed an ANSYS18.2 APDL variable collision found by real validation: `QCODE` remains the width-code array, and the loop scalar is now `QTCODE`, so MAPDL no longer raises `Parameter QCODE needs subscripts`.
+6. Secondary-arm offsets are normalized by arm family: `CAOGANG42DAN` keeps `SECOFFSET,user,,-0.03249`; `YIXINGGANG150DAN` keeps plain `SECOFFSET,user`.
+7. Explicit tray line-load fields are not added to equivalent density. Density is only back-calculated to kg/m when no explicit line-load field exists.
+8. The full package script now includes `resources/`, so the curated current baseline library is present in unit deployments.
+
+Verification:
+
+1. Render matrix passed for single-side 100/200/300/500/600, double-side 200/500, single mixed 300+600, double mixed 300+500, and single seven-layer 300/500/600.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. `git diff --check` returned no whitespace errors, only existing CRLF normalization warnings.
+4. Real ANSYS18.2 final validation passed for uploaded workbook rows 3, 4, 7, and 11 under `jobs/validation_current_type_baseline_final_real_20260617`.
+5. Final real-run results: `18185NI-LXSJ4211` selected `120-120-6`, ratio `0.9905821165756017`; `18185NI-LXSJ4212` selected `100-100-6`, ratio `0.8499368255073432`; `18185NI-LXSJ4215` selected `140-140-8`, ratio `0.8335106438226824`; `18185NI-LXSJ4214` selected `100-100-8`, ratio `0.869901992449058`. All four have `ansys_run_status=success`.
+
+Deployment closeout:
+
+1. Rebuilt server/desktop/installer runtimes, then refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Refreshed existing-install update package `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Regenerated external transfer hashes: `CableTrayAI.zip.sha256.txt` and `更新包.zip.sha256.txt`.
+4. Applied the update package to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260617_161759`.
+5. Local smoke passed: `/health` returned ok, `duxyb/cnpe123` login returned pass, installed hashes match source for the touched runtime files, and `D:/CableTrayAI/resources/current_type_command_flows` contains the ten curated baseline PIP files.
+6. The previous recommendation still stands: do not delete historical `source_materials`; constrain production selection to the curated current baseline and keep old streams only for audit fallback.
+
+## 2026-06-17 600-tray L2/2 topology and load-counting closeout
+
+Current latest source/validation state:
+
+1. Fixed the single-width 500/600 tray topology regression. Standard wide-tray S2 families now keep keypoints 502 and 506-509, plus the related coupling selector, on the reviewed `H1/2+L1-L2/2` line. They are no longer rewritten to `H1/2+L1-L3`.
+2. Preserved the separate small-tray and 300 mm policies: tray widths `<=300 mm` still assign `L3=0.15m`; 300 mm keeps its physical-bolt topology with 506-508 at L3 and 509/coupling at L2/2; 100/200 mm still use the reviewed small-tray partition rewrite.
+3. Wider trays above 300 mm keep the square-tube L3 rule: square outer width `<=120 mm` uses `L3=0.20m`; square outer width `>120 mm` uses `L3=0.15m`.
+4. Hardened square-section anchoring for 600 mm trays so single-side two-layer 600 starts above the small 100x8 path, and mixed 500/600 density-only inputs are anchored from actual back-calculated line load instead of stale learned evidence.
+5. Answered and guarded the double-counting risk: if a tray layer contains explicit `load_kg_m` / `line_load_kg_m` / equivalent line-load fields, that value is used directly. Equivalent density is back-calculated into kg/m only when no explicit line load exists, so line load and density are not added together.
+6. Hardened `scripts/run_production_full_intake_compute.ps1` to choose a Python runtime that can import required project dependencies before running production intake calculations. This prevents command-line real-ANSYS validation from accidentally using a system Python without `pydantic/openpyxl`.
+
+Verification:
+
+1. Targeted tests passed: `tests/unit/test_intake_standard_family_tray_widths.py` and `tests/unit/test_square_section_workflow_policy.py`.
+2. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+3. PowerShell syntax parse passed for `scripts/run_production_full_intake_compute.ps1`.
+4. Render-regression checks on uploaded workbook rows 4/7/9/10/11 confirmed 300, 200, 100, single 600, and mixed 500/600 geometry policies.
+5. Real ANSYS18.2 validation passed for uploaded workbook rows 7 and 11 under `jobs/validation_600_mixed_fix_real_20260617`.
+6. Row 7 / `18185NI-LXSJ4215` single 600 selected `140-140-8`; generated model uses `600-75-2mm`, `H1=0.140000`, `L3=0.2`, and 506/509/NSEL on `H1/2+L1-L2/2`; final controlling ratio `0.8883527244537628`, pass.
+7. Row 11 / `18185NI-LXSJ4214` mixed 500/600 selected `100-100-8` only after a fresh real ANSYS calculation; final Chapter 6.1 controlling ratio `0.869901992449058`, pass. The generated model preserves both `500-75-2mm` and `600-75-2mm` sections and per-layer mixed geometry.
+
+Deployment closeout:
+
+1. Packaging and local installed-service refresh are the remaining steps after this source/real-ANSYS validation. Use this section as the latest source truth until the package closeout entry is added.
+
 ## 2026-06-17 section-before-spacing recovery and line-load override closeout
 
 Current latest source/validation state:

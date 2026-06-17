@@ -161,6 +161,7 @@ $dirs = @(
     "data",
     "docs",
     "prompts",
+    "resources",
     "runtime",
     "scripts",
     "source_materials",

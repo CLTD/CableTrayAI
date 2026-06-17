@@ -19,6 +19,35 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
+function Resolve-CableTrayPython {
+    $candidates = @(
+        $env:CABLETRAYAI_PYTHON,
+        $env:CABLETRAYAI_PACKAGE_PYTHON,
+        (Join-Path $Root ".venv\Scripts\python.exe"),
+        "D:\miniconda3\python.exe",
+        "python"
+    ) | Where-Object { $_ -and $_.Trim() }
+
+    foreach ($candidate in $candidates) {
+        $resolved = $candidate
+        if ($candidate -ne "python" -and -not (Test-Path $candidate)) {
+            continue
+        }
+        try {
+            & $resolved -c "import pydantic, openpyxl" *> $null
+            if ($LASTEXITCODE -eq 0) {
+                return $resolved
+            }
+        }
+        catch {
+            continue
+        }
+    }
+    throw "No usable Python runtime found. Set CABLETRAYAI_PYTHON to a Python that can import pydantic and openpyxl."
+}
+
+$PythonExe = Resolve-CableTrayPython
+
 if (-not $IntakePath) {
     $intakeCandidate = Get-ChildItem -Path "uploads\intake" -File -Filter "*.xlsx" -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -like "*S2*" } |
@@ -263,7 +292,7 @@ print(json.dumps({
     "jobs_root": str(jobs_root),
     "result_file": "docs/production_runs/full_intake_compute_result.json",
 }, ensure_ascii=False, indent=2))
-"@ | python -
+"@ | & $PythonExe -
 
 $pythonExit = $LASTEXITCODE
 Remove-Item $LockPath -Force -ErrorAction SilentlyContinue
