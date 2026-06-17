@@ -213,7 +213,6 @@ def _base_plan(
     attempt_index: int,
     evidence: dict[str, Any],
     current_square_section: str | None = None,
-    require_current_max_allowed: bool = True,
 ) -> dict[str, Any]:
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
     current_spacing = _as_float(support.get("support_spacing_m"))
@@ -250,25 +249,14 @@ def _base_plan(
         min(max(1, attempt_index), MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS) - 1
     ]
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    if require_current_max_allowed:
-        source_ref = "support_spacing_recovery:largest_allowed_square_section_active_and_ratio_overlimit"
-        policy = (
-            "When the largest intake-allowed square tube is active and fresh deterministic ratio gates remain over "
-            "1.0, the software does not add unlisted square sections or publish failure immediately. It reduces the "
-            "support spacing as a design-parameter recovery, regenerates APDL, reruns square-section selection and "
-            "then reruns the formal ANSYS calculation. This also applies when the square-support member itself passes "
-            "but a weld or connection ratio still controls. The spacing estimate is only an ordering heuristic; the "
-            "rerun result remains the only publishable engineering conclusion."
-        )
-    else:
-        source_ref = "support_spacing_recovery:current_section_final_gate_overlimit"
-        policy = (
-            "When the current square tube already satisfies Chapter 6.1 member sizing but a weld, bolt, or connection "
-            "final ratio controls, the economical recovery is to keep the current reviewed square section and reduce "
-            "support spacing before trying a larger square tube. APDL is regenerated and the formal ANSYS calculation "
-            "is rerun; the spacing estimate is only an ordering heuristic and the rerun result remains the only "
-            "publishable engineering conclusion."
-        )
+    source_ref = "support_spacing_recovery:largest_allowed_square_section_active_and_ratio_overlimit"
+    policy = (
+        "Support spacing is only reduced after the largest intake-allowed square tube is active and fresh deterministic "
+        "ratio gates still remain over 1.0. The software first tries larger allowed square sections for weld, bolt, "
+        "connection, and member-ratio failures. It does not silently reduce upstream layout spacing while a larger "
+        "allowed square tube is still available. The spacing estimate is only an ordering heuristic; the rerun result "
+        "remains the only publishable engineering conclusion."
+    )
     return {
         "status": "pass",
         "trigger": trigger,
@@ -280,7 +268,7 @@ def _base_plan(
         "failed_ratio": failed_ratio,
         "target_ratio_for_spacing_estimate": target_ratio,
         "current_square_section": current_square_section,
-        "require_current_max_allowed": require_current_max_allowed,
+        "require_current_max_allowed": True,
         "max_allowed_square_section": max_allowed.section_name,
         "max_allowed_estimated_bending_section_modulus_mm3": max_allowed.estimated_bending_section_modulus_mm3,
         "spacing_step_m": SUPPORT_SPACING_STEP_M,
@@ -335,7 +323,6 @@ def plan_support_spacing_recovery_from_selection(
             "candidate_result": result,
         },
         current_square_section=max_allowed.section_name,
-        require_current_max_allowed=True,
     )
 
 
@@ -344,7 +331,6 @@ def plan_support_spacing_recovery_from_final_ratio(
     *,
     source_root: Path | str = Path("source_materials/model_commands"),
     attempt_index: int = 1,
-    require_current_max_allowed: bool = True,
 ) -> dict[str, Any]:
     job_path = Path(job_dir)
     payload = _read_json(job_path / "input.json")
@@ -352,11 +338,7 @@ def plan_support_spacing_recovery_from_final_ratio(
     if max_allowed is None:
         return {"status": "skipped", "reason": "allowed_square_sections_missing_or_invalid", "trigger": "final_ratio_failure"}
     current_section = _current_selected_square_section(payload)
-    if (
-        require_current_max_allowed
-        and current_section != max_allowed.section_name
-        and current_section != max_allowed.section_name.lower()
-    ):
+    if current_section != max_allowed.section_name and current_section != max_allowed.section_name.lower():
         return {
             "status": "skipped",
             "reason": "current_square_section_is_not_maximum_allowed",
@@ -386,15 +368,12 @@ def plan_support_spacing_recovery_from_final_ratio(
             "ratio_evidence": ratio_evidence,
         },
         current_square_section=current_section,
-        require_current_max_allowed=require_current_max_allowed,
     )
 
 
 def apply_support_spacing_recovery(
     job_dir: Path | str,
     plan: dict[str, Any],
-    *,
-    preserve_square_section: bool = False,
 ) -> dict[str, Any]:
     if plan.get("status") != "pass":
         return {"status": "skipped", "reason": "plan_status_is_not_pass", "plan": plan}
@@ -417,27 +396,13 @@ def apply_support_spacing_recovery(
         "square_section_thickness_mm",
     }
     previous_selection = {key: metadata.get(key) for key in sorted(reset_keys) if key in metadata}
-    if preserve_square_section:
-        for key in (
-            "square_section_selected_ratio",
-            "square_section_selection_policy",
-            "square_section_selection_requires_formal_validation",
-        ):
-            metadata.pop(key, None)
-    else:
-        for key in reset_keys:
-            metadata.pop(key, None)
+    for key in reset_keys:
+        metadata.pop(key, None)
     support["support_spacing_m"] = new_spacing
     metadata.update(
         {
-            "square_section_selection_status": (
-                "auto_selected_by_real_ansys" if preserve_square_section else "auto_selection_required"
-            ),
-            "support_spacing_adjustment_status": (
-                "auto_reduced_preserving_current_square_section"
-                if preserve_square_section
-                else "auto_reduced_after_max_allowed_square_section_overlimit"
-            ),
+            "square_section_selection_status": "auto_selection_required",
+            "support_spacing_adjustment_status": "auto_reduced_after_max_allowed_square_section_overlimit",
             "support_spacing_original_m": plan.get("original_support_spacing_m") or previous_spacing,
             "support_spacing_previous_m": previous_spacing,
             "support_spacing_current_m": new_spacing,
@@ -445,9 +410,6 @@ def apply_support_spacing_recovery(
             "support_spacing_adjustment_source_ref": plan.get("source_ref"),
         }
     )
-    if preserve_square_section:
-        metadata["square_section_selection_validation_mode"] = "preserved_after_spacing_recovery_pending_formal_validation"
-        metadata["square_section_selection_requires_formal_validation"] = True
     payload["support"] = support
     payload["metadata"] = metadata
     _write_json(input_path, payload)
@@ -465,7 +427,7 @@ def apply_support_spacing_recovery(
         "status": "pass",
         "previous_support_spacing_m": previous_spacing,
         "new_support_spacing_m": new_spacing,
-        "preserve_square_section": preserve_square_section,
+        "preserve_square_section": False,
         "previous_square_section_selection": previous_selection,
         "plan": plan,
         "updated_input": str(input_path),

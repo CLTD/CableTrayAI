@@ -1,5 +1,26 @@
 # CableTrayAI ??????
 
+## 2026-06-17 section-before-spacing recovery and line-load override queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Superseded the temporary spacing-first recovery. Current policy: for final weld/bolt/connection over-limit with the current square tube still below the largest allowed section, the workflow tries larger allowed square sections first. Support spacing is reduced only after the largest allowed square section is active and the final deterministic gate still exceeds 1.0.
+2. Removed the one-click preserved-current-section spacing branch and removed the corresponding result-gate validation bypass.
+3. Hardened `support_spacing_recovery` so it skips final-ratio spacing plans unless the current section equals the maximum allowed square section.
+4. Added dashboard/backend tray line-load override support. Operators can revise layer `kg/m` after parsing, rerun without re-uploading the intake, and keep original-vs-adjusted line-load audit in the job metadata.
+5. Real ANSYS18.2 validation for `18185NI-LXSJ4215` row 7 passed at `jobs/validation_4215_section_before_spacing_20260617_130851/18185NI-LXSJ4215`: initial 120 passed Chapter 6.1 but failed final gate, workflow tried 140 then 160, final selected `160-160-8`, support spacing stayed `2.0m`, controlling weld accident equivalent ratio `0.9049054104654485`, `result_validation.status=pass`.
+6. Verification passed: full `tests/unit`, targeted support-spacing/result-validity/tray-load-override tests, frontend Node/VM syntax check, package gate, update self-verification, local `/health`, `duxyb/cnpe123` login, and installed source-hash checks.
+
+Deployment queue status: completed.
+
+1. Full package: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as transfer hash authority.
+2. Update package: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `更新包.zip.sha256.txt` as transfer hash authority.
+3. Local update applied; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
+Open:
+
+1. No current source/package/deployment blocker remains. Existing unit installs should use `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; fresh installs can use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Verify transfer with the refreshed `.sha256.txt` sidecars.
+
 ## 2026-06-17 4215 spacing-first economy recovery queue
 
 Resolved in source and real ANSYS:

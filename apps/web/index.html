@@ -757,6 +757,19 @@
         border-bottom: 0;
       }
 
+      .tray-line-load-input {
+        min-height: 30px;
+        padding: 4px 6px;
+        text-align: right;
+      }
+
+      .tray-line-load-unit {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
       .tray-empty {
         border: 1px dashed #c7d3df;
         border-radius: 6px;
@@ -1783,6 +1796,67 @@
         return Array.isArray(row?.tray_equivalent_densities) ? row.tray_equivalent_densities : [];
       }
 
+      const TRAY_AREA_M2 = {
+        600: 0.001796,
+        500: 0.001596,
+        300: 53.0 / 44315.0,
+        200: 35.0 / 51095.0,
+        100: 15.0 / 3896.1,
+        50: 0.000400,
+      };
+
+      function parsePositiveNumber(value) {
+        const match = String(value ?? "").match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+        if (!match) return null;
+        const parsed = Number(match[0]);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      }
+
+      function updateLayerLineLoad(layer, lineLoad) {
+        if (!layer || !Number.isFinite(lineLoad) || lineLoad <= 0) return null;
+        const width = Number(layer.tray_width_mm);
+        const area = TRAY_AREA_M2[width];
+        layer.load_kg_per_m = lineLoad;
+        if (area) layer.tray_density_kg_m3 = lineLoad / area;
+        layer.source_ref = "dashboard_confirmed_line_weight";
+        return {
+          side: layer.side,
+          layer_index: layer.layer_index,
+          tray_width_mm: layer.tray_width_mm,
+          load_kg_per_m: lineLoad,
+          source_ref: "dashboard_confirmed_line_weight",
+        };
+      }
+
+      function applyTrayLineLoadInputs(row) {
+        if (!row) return;
+        const layers = trayLayerList(row);
+        if (!layers.length) return;
+        const inputs = document.querySelectorAll("#trayLoadAudit .tray-line-load-input[data-tray-load-index]");
+        if (!inputs.length) return;
+        if (!Array.isArray(row.tray_load_original_layers)) {
+          row.tray_load_original_layers = layers.map((layer) => ({ ...layer }));
+        }
+        const rawLayers = Array.isArray(row.tray_layers) ? row.tray_layers : [];
+        const overrides = [];
+        inputs.forEach((input) => {
+          const index = Number(input.dataset.trayLoadIndex);
+          if (!Number.isInteger(index) || !layers[index]) return;
+          const lineLoad = parsePositiveNumber(input.value);
+          if (lineLoad === null) return;
+          const original = row.tray_load_original_layers[index] || {};
+          const previousLoad = Number(original.load_kg_per_m);
+          const layerOverride = updateLayerLineLoad(layers[index], lineLoad);
+          if (rawLayers[index]) updateLayerLineLoad(rawLayers[index], lineLoad);
+          if (!layerOverride) return;
+          if (!Number.isFinite(previousLoad) || Math.abs(previousLoad - lineLoad) > 1e-9) {
+            overrides.push({ ...layerOverride, source_index: index });
+          }
+        });
+        row.tray_layer_overrides = overrides;
+        row.tray_load_override_status = overrides.length ? "pending_dashboard_rerun" : "";
+      }
+
       function traySideLabel(side) {
         const text = String(side || "").toLowerCase();
         if (text === "front") return "前侧";
@@ -1851,12 +1925,15 @@
               </tr>
             </thead>
             <tbody>
-              ${layers.map((layer) => `
+              ${layers.map((layer, layerIndex) => `
                 <tr>
                   <td>${esc(traySideLabel(layer.side))}${layer.layer_index ? ` ${esc(layer.layer_index)}层` : ""}</td>
                   <td>${esc(layer.tray_width_mm || "-")} mm</td>
                   <td>${esc(trayCableTypeLabel(layer.cable_type))}</td>
-                  <td>${esc(compact(layer.load_kg_per_m))} kg/m</td>
+                  <td>
+                    <input class="tray-line-load-input" data-tray-load-index="${layerIndex}" value="${esc(compact(layer.load_kg_per_m))}" aria-label="line load kg per meter" />
+                    <span class="tray-line-load-unit">kg/m</span>
+                  </td>
                   <td>${esc(compact(layer.tray_density_kg_m3))} kg/m³</td>
                   <td>${esc(layer.tray_section_file || "-")}</td>
                 </tr>
@@ -2159,6 +2236,7 @@
             row.elevation_raw = elevationText;
           }
         }
+        applyTrayLineLoadInputs(row);
         state.selectedRow = row;
         renderLocationOptions(row);
         renderTaskSummary();
@@ -2404,6 +2482,7 @@
             area: row.area || row.building,
             elevation: row.elevation,
             elevation_raw: row.elevation_raw,
+            tray_layer_overrides: row.tray_layer_overrides || [],
           };
         });
         setStatus("后台计算已提交", "warn");
@@ -3919,6 +3998,11 @@
         });
         $("elevationOverride").addEventListener("change", () => {
           commitCurrentRowOverrides({ renderTable: true });
+        });
+        document.addEventListener("change", (event) => {
+          if (!event.target?.matches?.(".tray-line-load-input")) return;
+          commitCurrentRowOverrides({ renderTable: true });
+          renderTrayLoadAudit(state.selectedRow || {});
         });
         $("outputRoot").addEventListener("input", () => {
           renderTaskSummary();

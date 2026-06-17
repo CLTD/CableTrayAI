@@ -1,5 +1,31 @@
 # CableTrayAI ??????
 
+## 2026-06-17 section-before-spacing recovery and line-load override closeout
+
+Current latest source/validation state:
+
+1. This supersedes the immediately preceding `4215 spacing-first economy recovery` note. The accepted production policy is now: try larger intake-allowed square sections first for final weld/bolt/connection over-limit cases; reduce support spacing only after the largest allowed square tube is active and the deterministic final gate still exceeds 1.0.
+2. `core/pipeline/one_click.py` no longer runs the preserved-current-section spacing branch before `final_ratio_design_recovery`. A 120 section that passes Chapter 6.1 but fails a weld final gate now progresses to 140/160 before any spacing recovery is considered.
+3. `core/optimizer/support_spacing_recovery.py` now enforces the same policy at the planner level. `plan_support_spacing_recovery_from_final_ratio` skips when the current selected square tube is not the maximum allowed section, preventing future accidental spacing-first calls.
+4. The result gate no longer recognizes `preserved_after_spacing_recovery_pending_formal_validation`; support-spacing recovery resets square-section selection and requires fresh selection plus a fresh formal run.
+5. Added operator-confirmed tray line-load override support. The dashboard can edit layer `kg/m` values and send `tray_layer_overrides` through row overrides. Backend job creation updates only the job-local `tray_layers`, recalculates equivalent density from the audited tray area table, and stores original/override audit metadata without modifying the source Excel intake.
+
+Verification:
+
+1. Targeted tests passed: `test_support_spacing_recovery.py`, `test_result_validity_square_section.py`, and `test_tray_load_overrides.py`.
+2. Full `D:/miniconda3/python.exe -m pytest tests/unit -q` passed.
+3. Frontend inline script syntax check passed using Node/VM UTF-8 parsing.
+4. Real ANSYS18.2 validation passed for uploaded workbook row 7 / `18185NI-LXSJ4215` at `jobs/validation_4215_section_before_spacing_20260617_130851/18185NI-LXSJ4215`. The run tried 100 and 120, then recovered final weld/connection over-limit by trying 140 and 160. Final selected section is `160-160-8`; support spacing stayed `2.0m`; no `support_spacing_adjustments.json` was written; `result_validation.status=pass`.
+5. Final controlling ratios for the validation job: weld accident equivalent `0.9049054104654485`, upset weld equivalent `0.890287195518`, cantilever Chapter 6.1 compression+bending accident `0.8128428436491665`.
+
+Deployment closeout:
+
+1. Rebuilt server, desktop, and installer runtimes.
+2. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the external `.sha256.txt` sidecar beside the zip as the transfer hash authority.
+3. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecar beside the zip as the transfer hash authority.
+4. Exact zip hashes are intentionally not embedded here to avoid self-referential package hash churn.
+5. Update applied to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; `/health` ok; login `duxyb/cnpe123` pass; installed hashes match source for `apps/web/index.html`, `core/pipeline/one_click.py`, `core/optimizer/support_spacing_recovery.py`, and `core/intake/job_input_builder.py`.
+
 ## 2026-06-17 4215 final-gate spacing-first economy recovery
 
 Current latest source/validation state:

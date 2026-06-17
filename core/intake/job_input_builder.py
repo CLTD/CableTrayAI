@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from core.apdl.modal_policy import coerce_modal_mode_count, modal_mode_count_from_payload, modal_policy_audit
 from core.intake.intake_excel_reader import read_and_validate_intake, read_tabular_intake_rows
-from core.intake.tray_load_parser import parse_tray_load_description
+from core.intake.tray_load_parser import TRAY_AREA_M2, parse_tray_load_description
 from core.audit.job_state import write_job_state
 from core.evaluators.material_policy import material_policy_metadata, production_material_inputs
 from core.jobs.sample_job_builder import sample_input_payload
@@ -127,6 +127,126 @@ def _sync_support_square_section(base: dict, square_section_spec: str, *, source
     base["metadata"] = metadata
 
 
+def _coerce_positive_float(value: object) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number <= 0:
+        return None
+    return number
+
+
+def _normalise_tray_layer_override_items(payload: dict) -> list[dict]:
+    raw = (
+        payload.get("tray_layer_overrides")
+        or payload.get("tray_load_overrides")
+        or payload.get("line_load_overrides")
+    )
+    if isinstance(raw, dict):
+        raw = raw.get("layers") or raw.get("items") or []
+    if not isinstance(raw, list):
+        return []
+    items: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        load = _coerce_positive_float(
+            item.get("load_kg_per_m")
+            or item.get("line_load_kg_per_m")
+            or item.get("line_load")
+            or item.get("load")
+        )
+        if load is None:
+            continue
+        try:
+            layer_index = int(item["layer_index"]) if item.get("layer_index") not in (None, "") else None
+        except (TypeError, ValueError):
+            layer_index = None
+        try:
+            source_index = int(item["source_index"]) if item.get("source_index") not in (None, "") else None
+        except (TypeError, ValueError):
+            source_index = None
+        items.append(
+            {
+                "source_index": source_index,
+                "side": str(item.get("side") or "").strip().lower(),
+                "layer_index": layer_index,
+                "tray_width_mm": item.get("tray_width_mm"),
+                "load_kg_per_m": load,
+                "source_ref": item.get("source_ref") or "dashboard_confirmed_line_weight",
+            }
+        )
+    return items
+
+
+def _tray_override_matches_layer(layer: dict, override: dict, layer_position: int) -> bool:
+    source_index = override.get("source_index")
+    if source_index is not None and int(source_index) == layer_position:
+        return True
+    side = str(override.get("side") or "").strip().lower()
+    layer_index = override.get("layer_index")
+    if side and layer_index is not None:
+        return str(layer.get("side") or "").strip().lower() == side and int(layer.get("layer_index") or -1) == int(layer_index)
+    return False
+
+
+def _apply_tray_layer_overrides(tray_mapping: dict | None, payload: dict) -> dict:
+    overrides = _normalise_tray_layer_override_items(payload)
+    if not overrides:
+        return {}
+    if not tray_mapping or not isinstance(tray_mapping.get("layers"), list):
+        return {
+            "tray_load_override_status": "skipped_no_parsed_tray_layers",
+            "tray_load_override_source_ref": "dashboard_confirmed_line_weight",
+            "tray_load_override_requested": overrides,
+        }
+    layers = tray_mapping["layers"]
+    original_layers = [dict(layer) for layer in layers if isinstance(layer, dict)]
+    applied: list[dict] = []
+    skipped: list[dict] = []
+    for override in overrides:
+        matched = False
+        for layer_position, layer in enumerate(layers):
+            if not isinstance(layer, dict) or not _tray_override_matches_layer(layer, override, layer_position):
+                continue
+            matched = True
+            width = int(layer.get("tray_width_mm") or override.get("tray_width_mm") or 0)
+            area = TRAY_AREA_M2.get(width)
+            if not area:
+                skipped.append({**override, "reason": "tray_width_area_not_supported"})
+                break
+            previous_load = _coerce_positive_float(layer.get("load_kg_per_m"))
+            previous_density = _coerce_positive_float(layer.get("tray_density_kg_m3"))
+            new_load = float(override["load_kg_per_m"])
+            layer["load_kg_per_m"] = new_load
+            layer["tray_density_kg_m3"] = new_load / area
+            layer["source_ref"] = "dashboard_confirmed_line_weight"
+            applied.append(
+                {
+                    "side": layer.get("side"),
+                    "layer_index": layer.get("layer_index"),
+                    "tray_width_mm": width,
+                    "previous_load_kg_per_m": previous_load,
+                    "new_load_kg_per_m": new_load,
+                    "previous_tray_density_kg_m3": previous_density,
+                    "new_tray_density_kg_m3": layer["tray_density_kg_m3"],
+                    "source_ref": override.get("source_ref") or "dashboard_confirmed_line_weight",
+                }
+            )
+            break
+        if not matched:
+            skipped.append({**override, "reason": "matching_tray_layer_not_found"})
+    return {
+        "tray_load_override_status": "applied" if applied else "requested_no_matching_layer",
+        "tray_load_override_source_ref": "dashboard_confirmed_line_weight",
+        "tray_load_override_count": len(applied),
+        "tray_load_original_layers": original_layers,
+        "tray_load_override_layers": applied,
+        "tray_load_override_skipped": skipped,
+    }
+
+
 def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None = None, spectrum_confirmed: bool = False) -> dict:
     base = sample_input_payload()
     analysis_method = str(payload.get("analysis_method") or "response_spectrum")
@@ -166,8 +286,10 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         base["support"]["support_height_m"] = float(payload["support_height_m"])
     tray_mapping: dict | None = None
     tray_mapping_error: str | None = None
+    tray_load_override_audit: dict = {}
     try:
         tray_mapping = parse_tray_load_description(payload.get("description") or "")
+        tray_load_override_audit = _apply_tray_layer_overrides(tray_mapping, payload)
         base["support"]["layers_front"] = int(tray_mapping["front_layers"])
         base["support"]["layers_back"] = int(tray_mapping["back_layers"])
         base["support"]["side_count"] = int(tray_mapping.get("side_count") or 1)
@@ -266,6 +388,7 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
             for key, value in static_coefficients_metadata.items()
             if key.startswith("zpa_") or key in {"static_acceleration_factor"}
         },
+        **tray_load_override_audit,
         "created_from_intake": True,
         "spectrum_config_confirmed": effective_spectrum_confirmed,
         "spectrum_config_confirmed_by": "static_method_no_response_spectrum" if analysis_method == "static" else None,
