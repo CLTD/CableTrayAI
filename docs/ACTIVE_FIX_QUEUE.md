@@ -15,7 +15,7 @@ Resolved in source, tests, and real ANSYS:
 
 Open:
 
-1. Commit and push the completed update.
+1. None for the current result-extraction component mapping closeout. Commit and push are complete at `78a10c0` on `origin/codex/unit-deployment-hardening-20260610`; the 2026-06-19 final audit reconfirmed result-file definitions, output presence, package hash, local install, and full tests.
 
 ## 2026-06-18 CableTrayAI mixed tray component-topology standard flow queue
 
