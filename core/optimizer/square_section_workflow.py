@@ -33,7 +33,7 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v7-section-6-1-ratio"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v8-final-all-ratio"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
@@ -446,6 +446,7 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
                         "status",
                         "run_status",
                         "controlling_ratio",
+                        "overall_controlling_ratio",
                         "section_selection_ratio",
                         "final_chapter6_controlling_ratio",
                         "square_support_ratio",
@@ -478,6 +479,7 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "estimated_bending_section_modulus_mm3",
         "source_kind",
         "controlling_ratio",
+        "overall_controlling_ratio",
         "section_selection_ratio",
         "final_chapter6_controlling_ratio",
         "square_support_ratio",
@@ -487,6 +489,10 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "validation_status",
         "dominant_check_id",
         "dominant_component",
+        "overall_dominant_check_id",
+        "overall_dominant_component",
+        "section_selection_dominant_check_id",
+        "section_selection_dominant_component",
         "failed_non_ratio_checks",
         "status",
         "run_status",
@@ -504,7 +510,11 @@ def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_p
     cache = _load_selection_cache(cache_path)
     entries = cache.setdefault("entries", {})
     compact_selected = _compact_candidate_result_for_cache(selected)
-    final_gate_ratio = _as_float(compact_selected.get("final_chapter6_controlling_ratio"))
+    final_gate_ratio = _as_float(
+        compact_selected.get("overall_controlling_ratio")
+        or compact_selected.get("final_chapter6_controlling_ratio")
+        or compact_selected.get("controlling_ratio")
+    )
     if final_gate_ratio is not None and final_gate_ratio > 1.0:
         return
     entries[key] = {
@@ -609,11 +619,13 @@ def _historical_immediate_lower_failed(
     for item in historical_results:
         if not isinstance(item, dict) or str(item.get("section_name") or "") != lower.section_name:
             continue
-        ratio = _as_float(item.get("section_selection_ratio") or item.get("controlling_ratio"))
-        section_sensitive = is_section_selection_evaluation_row(
-            {"check_id": item.get("dominant_check_id"), "component": item.get("dominant_component")}
+        ratio = _as_float(
+            item.get("overall_controlling_ratio")
+            or item.get("final_chapter6_controlling_ratio")
+            or item.get("controlling_ratio")
+            or item.get("section_selection_ratio")
         )
-        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass" and section_sensitive:
+        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass":
             return {
                 "status": "pass",
                 "lower_section": lower.section_name,
@@ -674,10 +686,20 @@ def _learned_formal_validation_selection(
         }
     ):
         return None
-    selected_ratio = _as_float(selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio"))
+    selected_ratio = _as_float(
+        selected_history.get("overall_controlling_ratio")
+        or selected_history.get("final_chapter6_controlling_ratio")
+        or selected_history.get("controlling_ratio")
+    )
+    section_selection_ratio = _as_float(
+        selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio")
+    )
     if selected_ratio is None or not (0.60 <= selected_ratio <= 0.9999):
         return None
-    final_gate_ratio = _as_float(selected_history.get("final_chapter6_controlling_ratio"))
+    final_gate_ratio = _as_float(
+        selected_history.get("overall_controlling_ratio")
+        or selected_history.get("final_chapter6_controlling_ratio")
+    )
     if final_gate_ratio is not None and final_gate_ratio > 1.0:
         return None
     if str(selected_history.get("run_status") or "") != "pass":
@@ -693,16 +715,20 @@ def _learned_formal_validation_selection(
         "estimated_bending_section_modulus_mm3": selected_candidate.estimated_bending_section_modulus_mm3,
         "source_kind": selected_candidate.source_kind,
         "controlling_ratio": selected_ratio,
-        "section_selection_ratio": selected_ratio,
-        "ratio_basis": "evaluation_summary.json:Chapter 6.1 structural member ratios",
+        "overall_controlling_ratio": selected_ratio,
+        "section_selection_ratio": section_selection_ratio,
+        "final_chapter6_controlling_ratio": final_gate_ratio,
+        "ratio_basis": "evaluation_summary.json:all deterministic stress ratios",
         "historical_controlling_ratio": selected_ratio,
         "status": "pass",
         "run_status": "formal_validation_pending",
         "result_gate_status": "formal_validation_pending",
         "validation_status": "formal_validation_pending",
         "failed_non_ratio_checks": [],
-        "dominant_check_id": selected_history.get("dominant_check_id"),
-        "dominant_component": selected_history.get("dominant_component"),
+        "dominant_check_id": selected_history.get("overall_dominant_check_id") or selected_history.get("dominant_check_id"),
+        "dominant_component": selected_history.get("overall_dominant_component") or selected_history.get("dominant_component"),
+        "section_selection_dominant_check_id": selected_history.get("section_selection_dominant_check_id"),
+        "section_selection_dominant_component": selected_history.get("section_selection_dominant_component"),
         "source_ref": "square_section_selection_cache.json:selected_section_hint",
         "formal_validation_required": True,
     }
@@ -1609,7 +1635,8 @@ def select_and_apply_square_section(
     selection["production_policy"] = (
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
-        "ratios; the selected section must have ratio <= 1.0 within that intake-allowed list. The production economy band is "
+        "overall stress ratios including weld, bolt, support and cantilever checks; the selected section must have "
+        "overall ratio <= 1.0 within that intake-allowed list. The production economy band is "
         "0.60 <= ratio <= 0.9999, and section selection normally completes within two fresh ANSYS candidate trials: "
         "one learned/estimated first trial plus one section-modulus correction if needed. Candidate order may not use "
         "local catalog fallback or historical results to add unlisted candidates or accept a section without current "
@@ -1809,9 +1836,9 @@ def upgrade_square_section_after_ratio_fail(
         "A provided or provisional square tube section is not accepted when final real-ANSYS deterministic ratios exceed 1.0. "
         "Only intake-allowed/reviewed local SECT candidates are tried by default. Generated job-local APDL HREC candidates are allowed "
         "only when allow_native_hrec_generated=true is set for a reviewed engineering run; selected section must still "
-        "have ratio <= 1.0. Square-section sizing/economy is driven by Chapter 6.1 member ratios. Weld and bolt ratios remain "
-        "final-result gates; when they trigger a larger-section recovery, the action is recorded as final-ratio design recovery, "
-        "not as square-section stress overlimit."
+        "have overall ratio <= 1.0. Square-section recovery/economy is now judged by the same final deterministic "
+        "ratio basis shown in the web result, including weld and bolt rows, so the selected candidate and final "
+        "publication gate cannot disagree."
     )
     if (
         selection.get("status") != "pass"

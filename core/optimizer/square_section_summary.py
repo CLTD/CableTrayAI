@@ -77,10 +77,15 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
     final_chapter6_controlling_ratio = controlling_evaluation_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
     trial_controlling_ratio = (
         (selected or {}).get("trial_controlling_ratio")
-        or (selected or {}).get("section_selection_ratio")
+        or (selected or {}).get("overall_controlling_ratio")
         or (selected or {}).get("controlling_ratio")
         or previous_selection.get("trial_controlling_ratio")
         or metadata.get("square_section_selected_ratio")
+    )
+    trial_section_selection_ratio = (
+        (selected or {}).get("trial_section_selection_ratio")
+        or (selected or {}).get("section_selection_ratio")
+        or previous_selection.get("trial_section_selection_ratio")
     )
     trial_square_support_ratio = (
         (selected or {}).get("trial_square_support_ratio")
@@ -88,29 +93,31 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         or previous_selection.get("trial_square_support_ratio")
     )
     controlling_ratio = (
-        final_section_selection_ratio
+        final_chapter6_controlling_ratio
+        if final_chapter6_controlling_ratio is not None
+        else final_section_selection_ratio
         if final_section_selection_ratio is not None
         else final_square_support_ratio
         if final_square_support_ratio is not None
         else trial_controlling_ratio
     )
     ratio_consistency_status = "not_checked"
-    ratio_consistency_message = "No formal Chapter 6.1 section-selection ratio was available."
-    if final_section_selection_ratio is not None and trial_controlling_ratio is not None:
-        delta = abs(float(final_section_selection_ratio) - float(trial_controlling_ratio))
+    ratio_consistency_message = "No formal deterministic final ratio was available."
+    if final_chapter6_controlling_ratio is not None and trial_controlling_ratio is not None:
+        delta = abs(float(final_chapter6_controlling_ratio) - float(trial_controlling_ratio))
         if delta <= TRIAL_FINAL_RATIO_TOLERANCE:
             ratio_consistency_status = "pass"
-            ratio_consistency_message = "Formal Chapter 6.1 section-selection ratio matches the section-search trial ratio."
-        elif float(final_section_selection_ratio) <= 1.0:
+            ratio_consistency_message = "Formal deterministic final ratio matches the section-search trial ratio."
+        elif float(final_chapter6_controlling_ratio) <= 1.0:
             ratio_consistency_status = "formal_override"
             ratio_consistency_message = (
-                "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio, "
+                "Formal deterministic final ratio differs from the section-search trial ratio, "
                 "but the current formal ANSYS/evaluation ratio is <= 1.0 and is used for publication and learning."
             )
         else:
             ratio_consistency_status = "fail"
             ratio_consistency_message = (
-                "Formal Chapter 6.1 section-selection ratio differs from the section-search trial ratio and the formal ratio is over limit; "
+                "Formal deterministic final ratio differs from the section-search trial ratio and the formal ratio is over limit; "
                 "section economy is not reliable until clean trial workspaces are rerun."
             )
     status = "pass" if candidate else "warning"
@@ -129,13 +136,14 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "thickness_mm": candidate.thickness_mm if candidate else None,
         "estimated_area_mm2": candidate.estimated_area_mm2 if candidate else None,
         "controlling_ratio": controlling_ratio,
-        "final_controlling_ratio": final_section_selection_ratio,
+        "final_controlling_ratio": final_chapter6_controlling_ratio,
         "final_section_selection_ratio": final_section_selection_ratio,
         "final_chapter6_controlling_ratio": final_chapter6_controlling_ratio,
         "final_square_support_ratio": final_square_support_ratio,
         "trial_controlling_ratio": trial_controlling_ratio,
+        "trial_section_selection_ratio": trial_section_selection_ratio,
         "trial_square_support_ratio": trial_square_support_ratio,
-        "ratio_source": "evaluation_summary.json:Chapter 6.1 structural member ratios" if final_section_selection_ratio is not None else "square_section_selection_trial",
+        "ratio_source": "evaluation_summary.json:all deterministic stress ratios" if final_chapter6_controlling_ratio is not None else "square_section_selection_trial",
         "ratio_consistency_status": ratio_consistency_status,
         "ratio_consistency_message": ratio_consistency_message,
         "ratio_consistency_tolerance": TRIAL_FINAL_RATIO_TOLERANCE,

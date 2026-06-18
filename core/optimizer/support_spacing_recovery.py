@@ -121,7 +121,12 @@ def _candidate_result_by_section(selection: dict[str, Any], section_name: str) -
 
 
 def _result_is_deterministic_overlimit(item: dict[str, Any]) -> bool:
-    ratio = _as_float(item.get("section_selection_ratio") or item.get("controlling_ratio"))
+    ratio = _as_float(
+        item.get("overall_controlling_ratio")
+        or item.get("final_chapter6_controlling_ratio")
+        or item.get("controlling_ratio")
+        or item.get("section_selection_ratio")
+    )
     if ratio is None or ratio <= 1.0:
         return False
     if str(item.get("run_status") or "") not in {"success", "pass"}:
@@ -309,7 +314,12 @@ def plan_support_spacing_recovery_from_selection(
             "max_allowed_square_section": max_allowed.section_name,
             "result": result,
         }
-    ratio = _as_float(result.get("section_selection_ratio") or result.get("controlling_ratio"))
+    ratio = _as_float(
+        result.get("overall_controlling_ratio")
+        or result.get("final_chapter6_controlling_ratio")
+        or result.get("controlling_ratio")
+        or result.get("section_selection_ratio")
+    )
     return _base_plan(
         job_path,
         payload=payload,

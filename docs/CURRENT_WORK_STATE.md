@@ -1,5 +1,32 @@
 # CableTrayAI ??????
 
+## 2026-06-18 all-ratio square-section display and 4210 render verification
+
+Current source state:
+
+1. Square-section candidate acceptance now uses the same overall deterministic stress-ratio basis as the final published result: support/member rows, cantilever rows, weld rows, bolt rows and mixed-beam rows are all included. The separate Chapter 6.1 member-only ratio remains in `section_selection_ratio` for audit and smart section-modulus jumps, but it no longer lets a candidate pass when weld/bolt/final rows exceed 1.0.
+2. Web candidate summaries already prefer `overall_controlling_ratio` / `final_chapter6_controlling_ratio`; the backend now writes those fields as the controlling candidate status, so the web display and final result gate cannot disagree.
+3. The learned square-section cache version is now `square-section-cache-v8-final-all-ratio`, preventing old records based on Chapter 6.1-only candidate acceptance from directly anchoring formal validation.
+4. Support-spacing recovery from selection failure also reads overall/final candidate ratio first, so a maximum allowed square section that is cleanly over-limit by weld/bolt/final ratio can trigger the existing spacing-recovery path after larger sections are exhausted.
+5. Re-rendered the actual installed `D:/CableTrayAI/jobs/18185NI-LXSJ4210/input.json` with current source. The rendered model source is `current_type_grouped_mirrored_mixed_renderer`, has `senum1=5` through `senum5=1`, includes `100/200/300/500/600-75-2mm` tray SECREADs, has no legacy `QCODE` or `QW(` arrays, keeps plain `SECOFFSET,user` for `YIXINGGANG150DAN`, and uses grouped bolt sections for small and large tray families.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m pytest tests/unit/test_square_section_selector.py tests/unit/test_square_section_summary.py tests/unit/test_square_section_workflow_policy.py tests/unit/test_support_spacing_recovery.py -q` passed.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. `D:/miniconda3/python.exe -m py_compile core/optimizer/square_section_selector.py core/optimizer/square_section_workflow.py core/optimizer/square_section_summary.py core/optimizer/support_spacing_recovery.py` passed.
+4. `git diff --check` passed.
+5. Targeted 4210 render checks passed and the temporary render directory was deleted to keep generated artifacts out of the source tree.
+
+Deployment closeout:
+
+1. Full installer package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+2. Local `D:/CableTrayAI` was synced from the refreshed full package with runtime data and ANSYS-local configuration preserved.
+3. Started `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe` as PID `23104`.
+4. Smoke checks passed: `/health` returned `{"status":"ok"}`, root page returned HTTP 200, and `duxyb/cnpe123` login returned `{"status":"pass","user":"duxyb"}`.
+5. Source and installed hashes match for `core/optimizer/square_section_selector.py`, `core/optimizer/square_section_workflow.py`, `core/optimizer/square_section_summary.py`, `core/optimizer/support_spacing_recovery.py`, and `docs/CODEX_RECOVERY_STATE.json`.
+6. Temporary package-run `logs` folder created by the installer under the send directory was removed after local install; `C:/Users/duxy/Desktop/duxyb-cnpe` contains the clean package folder, `CableTrayAI.zip`, and `CableTrayAI.zip.sha256.txt`.
+
 ## 2026-06-18 final installer-only closeout
 
 Current source/validation state:

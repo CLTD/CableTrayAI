@@ -1,5 +1,24 @@
 # CableTrayAI ??????
 
+## 2026-06-18 all-ratio square-section display queue
+
+Resolved in source and unit tests:
+
+1. Candidate pass/fail now uses the same all-row deterministic stress ratio as the final result, including weld and bolt rows. The previous Chapter 6.1 member-only ratio remains as `section_selection_ratio` for audit and smart jump heuristics only.
+2. Web candidate summary data now has aligned backend values: `controlling_ratio`, `overall_controlling_ratio`, and `final_chapter6_controlling_ratio` reflect the final all-row gate, so the web page cannot show a passing selected section while the final result is over limit.
+3. Learned square-section cache version bumped to `square-section-cache-v8-final-all-ratio`; old Chapter 6.1-only learned records cannot be used as current-version formal-validation evidence.
+4. Support-spacing recovery from selection failure now reads overall/final candidate ratio first, preserving the rule that spacing is reduced only after the largest allowed square section is active and still over limit.
+5. Current-source 4210 render verification passed for the actual installed 4210 input: grouped mixed renderer, `senum1=5` to `senum5=1`, all five tray widths present, no legacy `QCODE`/`QW(` arrays, and yixing secondary arm offset is plain `SECOFFSET,user`.
+6. Verification passed: targeted square-section/support-spacing tests, full `tests/unit`, py_compile, and `git diff --check`.
+
+Closeout:
+
+1. Full installer package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+2. Local `D:/CableTrayAI` synced from the refreshed full package; service restarted as PID `23104`.
+3. Local smoke passed: `/health` ok, root HTTP 200, and `duxyb/cnpe123` login pass.
+4. Source and installed hashes match for the touched optimizer modules and recovery state.
+5. No update package is required for this closeout; unit deployment should reinstall from the full `CableTrayAI.zip`.
+
 ## 2026-06-18 final installer-only queue
 
 Resolved in source and real ANSYS:

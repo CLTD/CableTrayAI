@@ -47,12 +47,12 @@ MAX_ECONOMIC_SECTION_TRIALS = 2
 OVERLIMIT_RECOVERY_SECTION_TRIALS = 2
 ECONOMY_DOWNSHIFT_SECTION_TRIALS = 1
 SECTION_RATIO_POLICY = (
-    "Square-section selection uses the fresh Chapter 6.1 structural member "
-    "ratios only: square support, cantilever arm, and mixed beam/support rows. "
-    "Weld and bolt ratios remain final-result gates, but they are not allowed "
-    "to drive square-tube economy selection. Trial candidates are acceptable only "
-    "when fresh 6.1 evaluation_summary ratios prove a section-selection ratio <= 1.0 "
-    "and result_validation has no blocking non-ratio failures; "
+    "Square-section candidate acceptance uses the fresh deterministic final "
+    "evaluation ratios, including support members, cantilever arms, welds, bolts "
+    "and mixed beam/support rows. The section-selection member ratio is retained "
+    "as a separate audit field, but a trial candidate is acceptable only when the "
+    "overall controlling evaluation ratio is <= 1.0 and result_validation has no "
+    "blocking non-ratio failures; "
     "history/cache/report numbers may order candidates but never decide the section. "
     "Production economy search targets 0.60 <= ratio <= 0.9999 and must normally "
     "finish within two fresh ANSYS candidate trials; if those two fresh trials are both "
@@ -62,7 +62,7 @@ SECTION_RATIO_POLICY = (
     "if that lower section fails, keep the already passing larger section."
 )
 SECTION_RATIO_BASIS = (
-    "evaluation_summary.json:Chapter 6.1 structural member ratios + "
+    "evaluation_summary.json:all deterministic stress ratios + "
     "result_validation.json:non-ratio completeness checks"
 )
 
@@ -561,12 +561,13 @@ def candidate_publishable_ratio(
 ) -> dict[str, Any]:
     """Return the ratio used to accept a candidate square section.
 
-    The candidate ratio is the Chapter 6.1 structural-member ratio for this
-    trial.  Weld and bolt checks remain in the final deterministic
-    result-validation gate, but they do not size the square tube.
+    The candidate ratio is the overall deterministic controlling ratio for this
+    trial. Weld, bolt and connection checks are included at the same stage as
+    support-member rows so candidate status and final published status use the
+    same engineering gate.
     """
 
-    summary_ratio = controlling_section_selection_ratio(evaluation_summary)
+    section_selection_ratio = controlling_section_selection_ratio(evaluation_summary)
     final_chapter6_ratio = controlling_evaluation_ratio(evaluation_summary)
     square_ratio = controlling_square_ratio(evaluation_summary)
     dominant_overall_ratio = _dominant_ratio_from_evaluation_summary(evaluation_summary)
@@ -581,7 +582,8 @@ def candidate_publishable_ratio(
             return {
                 **_section_ratio_audit_fields(),
                 "status": "missing_validation",
-                "controlling_ratio": summary_ratio,
+                "controlling_ratio": overall_candidate_ratio,
+                "section_selection_ratio": section_selection_ratio,
                 "final_chapter6_controlling_ratio": final_chapter6_ratio,
                 "overall_controlling_ratio": overall_candidate_ratio,
                 "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
@@ -594,8 +596,15 @@ def candidate_publishable_ratio(
             }
         return {
             **_section_ratio_audit_fields(),
-            "status": "pass" if summary_ratio is not None else "missing_ratio",
-            "controlling_ratio": summary_ratio,
+            "status": (
+                "missing_ratio"
+                if overall_candidate_ratio is None
+                else "fail"
+                if overall_candidate_ratio > 1.0
+                else "pass"
+            ),
+            "controlling_ratio": overall_candidate_ratio,
+            "section_selection_ratio": section_selection_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
             "overall_controlling_ratio": overall_candidate_ratio,
             "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
@@ -603,7 +612,7 @@ def candidate_publishable_ratio(
             "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
             "square_support_ratio": square_ratio,
             "validation_status": "missing",
-            "source_ref": "evaluation_summary.json:Chapter 6.1 structural member ratios",
+            "source_ref": "evaluation_summary.json:all deterministic stress ratios",
         }
     try:
         validation = json.loads(validation_path.read_text(encoding="utf-8"))
@@ -611,7 +620,8 @@ def candidate_publishable_ratio(
         return {
             **_section_ratio_audit_fields(),
             "status": "fail",
-            "controlling_ratio": summary_ratio,
+            "controlling_ratio": overall_candidate_ratio,
+            "section_selection_ratio": section_selection_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
             "overall_controlling_ratio": overall_candidate_ratio,
             "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
@@ -625,7 +635,7 @@ def candidate_publishable_ratio(
     dominant_over_limit = _dominant_ratio_limit_from_validation(validation)
     validation_over_limit_ratio = float(dominant_over_limit["ratio"]) if dominant_over_limit else None
     dominant_summary_ratio = _dominant_section_selection_ratio(evaluation_summary)
-    summary_ratio = float(dominant_summary_ratio["ratio"]) if dominant_summary_ratio else summary_ratio
+    section_selection_ratio = float(dominant_summary_ratio["ratio"]) if dominant_summary_ratio else section_selection_ratio
     raw_failed_non_ratio = [
         check.get("check_id")
         for check in validation.get("checks") or []
@@ -642,17 +652,19 @@ def candidate_publishable_ratio(
         for check_id in raw_failed_non_ratio
         if str(check_id) in ignored_check_ids
     ]
-    # Candidate selection must be decided from the freshly generated Chapter 6
-    # ratios for this trial.  result_validation.json remains the completeness
-    # gate for missing/blank LIS/OUP/figures, but its evaluation_ratio_limit
-    # evidence is deliberately not used as the controlling ratio because stale
-    # validation evidence can otherwise make a fresh 0.99 trial look failed.
-    ratio = summary_ratio
+    # Candidate selection must be decided from the freshly generated
+    # deterministic ratios for this trial. result_validation.json remains the
+    # completeness gate for missing/blank LIS/OUP/figures, but its
+    # evaluation_ratio_limit evidence is deliberately not used as the
+    # controlling ratio because stale validation evidence can otherwise make a
+    # fresh passing trial look failed.
+    ratio = overall_candidate_ratio
     if failed_non_ratio:
         return {
             **_section_ratio_audit_fields(),
             "status": "fail",
             "controlling_ratio": ratio,
+            "section_selection_ratio": section_selection_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
             "overall_controlling_ratio": overall_candidate_ratio,
             "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
@@ -660,8 +672,10 @@ def candidate_publishable_ratio(
             "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
             "square_support_ratio": square_ratio,
             "validation_status": validation.get("status"),
-            "dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
-            "dominant_component": dominant_summary_ratio.get("component") if dominant_summary_ratio else None,
+            "dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+            "dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+            "section_selection_dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
+            "section_selection_dominant_component": dominant_summary_ratio.get("component") if dominant_summary_ratio else None,
             "failed_non_ratio_checks": failed_non_ratio,
             "ignored_non_ratio_checks": ignored_non_ratio,
             "validation_ratio_limit_ratio": validation_over_limit_ratio,
@@ -674,6 +688,7 @@ def candidate_publishable_ratio(
         **_section_ratio_audit_fields(),
         "status": gate_status,
         "controlling_ratio": ratio,
+        "section_selection_ratio": section_selection_ratio,
         "final_chapter6_controlling_ratio": final_chapter6_ratio,
         "overall_controlling_ratio": overall_candidate_ratio,
         "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
@@ -681,12 +696,14 @@ def candidate_publishable_ratio(
         "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
         "square_support_ratio": square_ratio,
         "validation_status": validation.get("status"),
-        "dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
-        "dominant_component": dominant_summary_ratio.get("component") if dominant_summary_ratio else None,
+        "dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+        "dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+        "section_selection_dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
+        "section_selection_dominant_component": dominant_summary_ratio.get("component") if dominant_summary_ratio else None,
         "ignored_non_ratio_checks": ignored_non_ratio,
         "validation_ratio_limit_ratio": validation_over_limit_ratio,
-        "validation_ratio_limit_status": "ignored_for_candidate_ratio_recomputed_from_evaluation_summary",
-        "source_ref": "evaluation_summary.json:Chapter 6.1 structural member ratios + result_validation.json non-ratio checks",
+        "validation_ratio_limit_status": "ignored_for_candidate_ratio_recomputed_from_evaluation_summary_all_rows",
+        "source_ref": "evaluation_summary.json:all deterministic stress ratios + result_validation.json non-ratio checks",
     }
 
 
@@ -697,15 +714,16 @@ def _smart_jump_after_square_ratio_failure(
     *,
     target_ratio: float = 0.98,
 ) -> dict[str, Any] | None:
-    raw_ratio = result.get("section_selection_ratio") or result.get("controlling_ratio") or result.get("square_support_ratio")
+    raw_ratio = result.get("section_selection_ratio") or result.get("square_support_ratio")
     try:
         section_ratio = float(raw_ratio)
     except (TypeError, ValueError):
         return None
     if section_ratio <= 1.0:
         return None
-    dominant = str(result.get("dominant_check_id") or "")
-    if dominant and not is_section_selection_evaluation_row({"check_id": dominant, "component": result.get("dominant_component")}):
+    dominant = str(result.get("section_selection_dominant_check_id") or result.get("dominant_check_id") or "")
+    dominant_component = result.get("section_selection_dominant_component") or result.get("dominant_component")
+    if dominant and not is_section_selection_evaluation_row({"check_id": dominant, "component": dominant_component}):
         return None
     current = candidate_list[current_index]
     current_modulus = current.estimated_bending_section_modulus_mm3
@@ -1986,6 +2004,7 @@ def run_square_section_search(
         summary_path = trial_dir / "evaluation_summary.json"
         ratio = None
         final_chapter6_ratio = None
+        section_selection_ratio = None
         square_ratio = None
         gate_status = "missing_summary"
         validation_status = None
@@ -2001,6 +2020,7 @@ def run_square_section_search(
             )
             ratio = ratio_payload.get("controlling_ratio")
             final_chapter6_ratio = ratio_payload.get("final_chapter6_controlling_ratio")
+            section_selection_ratio = ratio_payload.get("section_selection_ratio")
             square_ratio = ratio_payload.get("square_support_ratio")
             gate_status = str(ratio_payload.get("status") or "")
             validation_status = ratio_payload.get("validation_status")
@@ -2026,7 +2046,7 @@ def run_square_section_search(
             "estimated_bending_section_modulus_mm3": candidate.estimated_bending_section_modulus_mm3,
             "source_kind": candidate.source_kind,
             "controlling_ratio": ratio,
-            "section_selection_ratio": ratio,
+            "section_selection_ratio": section_selection_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
             "overall_controlling_ratio": ratio_payload.get("overall_controlling_ratio"),
             "overall_dominant_check_id": ratio_payload.get("overall_dominant_check_id"),
@@ -2039,6 +2059,8 @@ def run_square_section_search(
             "validation_status": effective_validation_status,
             "dominant_check_id": dominant_check_id,
             "dominant_component": dominant_component,
+            "section_selection_dominant_check_id": ratio_payload.get("section_selection_dominant_check_id"),
+            "section_selection_dominant_component": ratio_payload.get("section_selection_dominant_component"),
             "failed_non_ratio_checks": failed_non_ratio_checks,
             "trial_dir": str(trial_dir),
             "status": candidate_status,
