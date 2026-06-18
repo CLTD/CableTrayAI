@@ -419,7 +419,13 @@ def _dominant_ratio_from_evaluation_summary(evaluation_summary: list[dict[str, A
         except (TypeError, ValueError):
             continue
         if dominant is None or ratio > float(dominant["ratio"]):
-            dominant = {"check_id": item.get("check_id"), "ratio": ratio}
+            dominant = {
+                "check_id": item.get("check_id"),
+                "ratio": ratio,
+                "component": item.get("component"),
+                "category": item.get("category"),
+                "stress_type": item.get("stress_type") or item.get("stress_label"),
+            }
     return dominant
 
 
@@ -563,6 +569,12 @@ def candidate_publishable_ratio(
     summary_ratio = controlling_section_selection_ratio(evaluation_summary)
     final_chapter6_ratio = controlling_evaluation_ratio(evaluation_summary)
     square_ratio = controlling_square_ratio(evaluation_summary)
+    dominant_overall_ratio = _dominant_ratio_from_evaluation_summary(evaluation_summary)
+    overall_candidate_ratio = (
+        float(dominant_overall_ratio["ratio"])
+        if dominant_overall_ratio and dominant_overall_ratio.get("ratio") is not None
+        else final_chapter6_ratio
+    )
     validation_path = trial_dir / "result_validation.json"
     if not validation_path.exists():
         if require_result_validation:
@@ -571,6 +583,10 @@ def candidate_publishable_ratio(
                 "status": "missing_validation",
                 "controlling_ratio": summary_ratio,
                 "final_chapter6_controlling_ratio": final_chapter6_ratio,
+                "overall_controlling_ratio": overall_candidate_ratio,
+                "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+                "overall_dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+                "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
                 "square_support_ratio": square_ratio,
                 "validation_status": "missing",
                 "failed_non_ratio_checks": ["result_validation_missing"],
@@ -581,6 +597,10 @@ def candidate_publishable_ratio(
             "status": "pass" if summary_ratio is not None else "missing_ratio",
             "controlling_ratio": summary_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
+            "overall_controlling_ratio": overall_candidate_ratio,
+            "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+            "overall_dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+            "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
             "square_support_ratio": square_ratio,
             "validation_status": "missing",
             "source_ref": "evaluation_summary.json:Chapter 6.1 structural member ratios",
@@ -593,6 +613,10 @@ def candidate_publishable_ratio(
             "status": "fail",
             "controlling_ratio": summary_ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
+            "overall_controlling_ratio": overall_candidate_ratio,
+            "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+            "overall_dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+            "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
             "square_support_ratio": square_ratio,
             "validation_status": "invalid",
             "reason": str(exc),
@@ -630,6 +654,10 @@ def candidate_publishable_ratio(
             "status": "fail",
             "controlling_ratio": ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
+            "overall_controlling_ratio": overall_candidate_ratio,
+            "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+            "overall_dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+            "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
             "square_support_ratio": square_ratio,
             "validation_status": validation.get("status"),
             "dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
@@ -647,6 +675,10 @@ def candidate_publishable_ratio(
         "status": gate_status,
         "controlling_ratio": ratio,
         "final_chapter6_controlling_ratio": final_chapter6_ratio,
+        "overall_controlling_ratio": overall_candidate_ratio,
+        "overall_dominant_check_id": dominant_overall_ratio.get("check_id") if dominant_overall_ratio else None,
+        "overall_dominant_component": dominant_overall_ratio.get("component") if dominant_overall_ratio else None,
+        "overall_dominant_category": dominant_overall_ratio.get("category") if dominant_overall_ratio else None,
         "square_support_ratio": square_ratio,
         "validation_status": validation.get("status"),
         "dominant_check_id": dominant_summary_ratio.get("check_id") if dominant_summary_ratio else None,
@@ -1996,6 +2028,10 @@ def run_square_section_search(
             "controlling_ratio": ratio,
             "section_selection_ratio": ratio,
             "final_chapter6_controlling_ratio": final_chapter6_ratio,
+            "overall_controlling_ratio": ratio_payload.get("overall_controlling_ratio"),
+            "overall_dominant_check_id": ratio_payload.get("overall_dominant_check_id"),
+            "overall_dominant_component": ratio_payload.get("overall_dominant_component"),
+            "overall_dominant_category": ratio_payload.get("overall_dominant_category"),
             "square_support_ratio": square_ratio,
             "result_gate_status": gate_status,
             "trial_validation_status": validation_status,

@@ -2762,13 +2762,18 @@
           const isSelected = selectedSectionName && name === selectedSectionName;
           const numericStatus = item.status || "-";
           const gateStatus = item.effective_validation_status || item.trial_validation_status || "-";
+          const overallRatio = item.overall_controlling_ratio ?? item.final_chapter6_controlling_ratio ?? item.controlling_ratio ?? "-";
+          const sectionRatio = item.section_selection_ratio ?? item.controlling_ratio ?? "-";
+          const dominantCheck = item.overall_dominant_check_id || item.dominant_check_id || "";
+          const dominantComponent = item.overall_dominant_component || item.dominant_component || "";
+          const dominantLabel = dominantCheck || dominantComponent;
           const acceptance = isSelected
             ? "最终采纳"
             : numericStatus === "pass"
               ? "候选数值通过，未采纳"
               : "候选不满足";
-          const dominant = item.dominant_check_id ? `；控制项 ${item.dominant_check_id}` : "";
-          return `${escapeHtml(name)}: 比值 ${escapeHtml(item.controlling_ratio ?? "-")}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(dominant)}`;
+          const dominant = dominantLabel ? `；控制项 ${dominantLabel}` : "";
+          return `${escapeHtml(name)}: 总控制比值 ${escapeHtml(overallRatio)}；选型比值 ${escapeHtml(sectionRatio)}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(dominant)}`;
         }).join("<br>");
         panel.classList.remove("hidden");
         panel.innerHTML = `

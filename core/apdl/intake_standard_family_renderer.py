@@ -1056,6 +1056,149 @@ def _ensure_small_tray_physical_bolt_elements(
     }
 
 
+def _small_tray_physical_bolt_line_selection_block(*, has_back_side: bool) -> list[str]:
+    lines = [
+        "",
+        "ALLSEL",
+        "! CableTrayAI: isolate 100/200 mm physical bolt connector lines before meshing.",
+        "_CTAI_BOLT_READY=0",
+        "*DO,J,1,3",
+        "*DO,I,1,senum",
+        "ALLSEL",
+        "LSEL,S,LOC,X,KX(509+10*I+100*(J-1))",
+        "LSEL,R,LOC,Z,KZ(509+10*I+100*(J-1))",
+        "*IF,_CTAI_BOLT_READY,EQ,0,THEN",
+        "CM,CTAI_SMALL_BOLT_LINES,LINE",
+        "_CTAI_BOLT_READY=1",
+        "*ELSE",
+        "CM,CTAI_SMALL_BOLT_TMP,LINE",
+        "CMSEL,S,CTAI_SMALL_BOLT_LINES",
+        "CMSEL,A,CTAI_SMALL_BOLT_TMP",
+        "CM,CTAI_SMALL_BOLT_LINES,LINE",
+        "*ENDIF",
+        "*ENDDO",
+        "*ENDDO",
+    ]
+    if has_back_side:
+        lines.extend(
+            [
+                "*IF,senum1,GT,0,THEN",
+                "*DO,J,1,3",
+                "*DO,I,1,senum1",
+                "ALLSEL",
+                "LSEL,S,LOC,X,KX(1509+10*I+100*(J-1))",
+                "LSEL,R,LOC,Z,KZ(1509+10*I+100*(J-1))",
+                "*IF,_CTAI_BOLT_READY,EQ,0,THEN",
+                "CM,CTAI_SMALL_BOLT_LINES,LINE",
+                "_CTAI_BOLT_READY=1",
+                "*ELSE",
+                "CM,CTAI_SMALL_BOLT_TMP,LINE",
+                "CMSEL,S,CTAI_SMALL_BOLT_LINES",
+                "CMSEL,A,CTAI_SMALL_BOLT_TMP",
+                "CM,CTAI_SMALL_BOLT_LINES,LINE",
+                "*ENDIF",
+                "*ENDDO",
+                "*ENDDO",
+                "*ENDIF",
+            ]
+        )
+    lines.extend(
+        [
+            "ALLSEL",
+            "CMSEL,S,CTAI_SMALL_BOLT_LINES",
+            "LATT,1,,4,,,,10",
+            "LESIZE,ALL,0.05,,,,,,,1",
+            "LMESH,ALL",
+            "ALLSEL",
+        ]
+    )
+    return lines
+
+
+def _is_section_10_mesh_block(lines: list[str], start: int) -> int | None:
+    if not re.match(r"\s*ALLSEL\b", lines[start], flags=re.IGNORECASE):
+        return None
+    saw_latt = False
+    for index in range(start + 1, min(len(lines), start + 40)):
+        line = lines[index]
+        if index > start + 1 and re.match(r"\s*ALLSEL\b", line, flags=re.IGNORECASE) and not saw_latt:
+            return None
+        if re.match(r"\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b", line, flags=re.IGNORECASE):
+            saw_latt = True
+        if saw_latt and re.match(r"\s*LMESH\s*,\s*ALL\b", line, flags=re.IGNORECASE):
+            return index
+    return None
+
+
+def _has_legacy_section10_geometry_selection(text: str) -> bool:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    for index, line in enumerate(lines):
+        if not re.match(
+            r"\s*LSEL\s*,\s*S\s*,\s*LOC\s*,\s*X\s*,\s*KX\s*\(\s*(?:516|1516)\s*\)",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            continue
+        for inner in lines[index + 1 : min(len(lines), index + 25)]:
+            if re.match(r"\s*ALLSEL\b", inner, flags=re.IGNORECASE):
+                break
+            if re.match(r"\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b", inner, flags=re.IGNORECASE):
+                return True
+    return False
+
+
+def _rewrite_small_tray_physical_bolt_mesh_selection(
+    text: str,
+    *,
+    enabled: bool,
+    has_back_side: bool,
+) -> tuple[str, dict[str, Any]]:
+    if not enabled:
+        return text, {
+            "status": "not_required",
+            "reason": "not_tray_width_le_200_single_width_family",
+        }
+    if re.search(r"(?im)^\s*CMSEL\s*,\s*S\s*,\s*CTAI_SMALL_BOLT_LINES\b", text):
+        return text, {
+            "status": "already_present",
+            "source_ref": "small_tray_physical_bolt_component_selection",
+            "policy": "100/200 mm physical bolt lines are already meshed through an isolated line component.",
+        }
+
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    rewritten: list[str] = []
+    replaced = 0
+    removed_duplicates = 0
+    index = 0
+    component_block = _small_tray_physical_bolt_line_selection_block(has_back_side=has_back_side)
+    while index < len(lines):
+        end = _is_section_10_mesh_block(lines, index)
+        if end is not None:
+            if replaced == 0:
+                rewritten.extend(component_block)
+                replaced += 1
+            else:
+                removed_duplicates += 1
+            index = end + 1
+            continue
+        rewritten.append(lines[index])
+        index += 1
+
+    status = "rewritten" if replaced else "not_found"
+    return "\n".join(rewritten), {
+        "status": status,
+        "replacement_count": replaced,
+        "removed_duplicate_blocks": removed_duplicates,
+        "has_back_side": has_back_side,
+        "source_ref": "small_tray_physical_bolt_component_selection",
+        "policy": (
+            "For 100/200 mm small-tray physical bolts, section-10 meshing must select only the K509/K1509 "
+            "connector lines through CTAI_SMALL_BOLT_LINES. Geometry-only selections such as KX(516) can also "
+            "catch tray or cantilever lines at the same X coordinate and assign the bolt section to the wrong part."
+        ),
+    }
+
+
 def _wrap_optional_block_once(text: str, start_regex: str, condition: str) -> tuple[str, int]:
     pattern = re.compile(rf"(?ms)(ALLSEL\s*\n\s*{start_regex}.*?LMESH\s*,\s*ALL)", flags=re.IGNORECASE)
 
@@ -1394,12 +1537,16 @@ def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str,
         r"(?<![\w.])0\.068\s*-\s*0\.05\b",
         flags=re.IGNORECASE,
     )
+    plain_l5_coupling_offset = re.compile(
+        r"(?i)^(\s*CPCYC\s*,.*?,\s*)L5\s*$",
+    )
 
     updated_lines: list[str] = []
     keypoint_replacements = 0
     line_replacements = 0
     z_offset_replacements = 0
     coupling_offset_replacements = 0
+    plain_l5_coupling_replacements = 0
     for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
         base = keypoint_base(line)
         if base in {502, 503, 1502, 1503}:
@@ -1413,9 +1560,17 @@ def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str,
         z_offset_replacements += count
         line, count = wide_source_coupling_offset.subn("L5-0.05", line)
         coupling_offset_replacements += count
+        line, count = plain_l5_coupling_offset.subn(r"\g<1>L5-0.05", line)
+        plain_l5_coupling_replacements += count
         updated_lines.append(line)
 
-    replacement_count = keypoint_replacements + line_replacements + z_offset_replacements + coupling_offset_replacements
+    replacement_count = (
+        keypoint_replacements
+        + line_replacements
+        + z_offset_replacements
+        + coupling_offset_replacements
+        + plain_l5_coupling_replacements
+    )
     return "\n".join(updated_lines), {
         "status": "rewritten" if replacement_count else "unchanged",
         "replacement_count": replacement_count,
@@ -1423,13 +1578,15 @@ def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str,
         "line_replacements": line_replacements,
         "z_offset_replacements": z_offset_replacements,
         "coupling_offset_replacements": coupling_offset_replacements,
+        "plain_l5_coupling_replacements": plain_l5_coupling_replacements,
         "source_ref": "small_tray_200_100_standard_family_partition",
         "policy": (
             "For single-width S2 tray widths <=200 mm, the reviewed 200/100 mm small-tray topology keeps "
             "L3 fixed at 0.15 m, places the first cantilever split keypoint 502/1502 at H1/2+L1-L3, and "
             "keeps the tray connection/CPCYC line at H1/2+L1-L2/2. If the reused wide-tray source hardcodes "
             "0.168 m tray offset or 0.068-0.05 coupling offset, it is normalized to the reviewed small-tray "
-            "0.1+L5 and L5-0.05 expressions with L5=0.074. "
+            "0.1+L5 and L5-0.05 expressions with L5=0.074. Plain CPCYC offsets at L5 are also normalized to "
+            "L5-0.05 because L5 alone reaches the arm/tray location instead of the bolt upper point. "
             "This applies only when a larger single-width family has to be reused for a small tray; 300 mm sources "
             "are left in their reviewed L2/2 bolt topology."
         ),
@@ -1442,20 +1599,66 @@ def _audit_small_tray_physical_bolt_modeling(
     tray_width_mm: int,
     has_back_side: bool,
 ) -> dict[str, Any]:
-    if tray_width_mm != 300:
+    if tray_width_mm not in {100, 200, 300}:
         return {
             "status": "not_required",
             "tray_width_mm": tray_width_mm,
-            "reason": "physical_bolt_gate_only_for_300_tray",
+            "reason": "physical_bolt_gate_only_for_100_200_300_trays",
             "policy": (
-                "The reviewed 300 mm tray command stream uses additional physical bolt/round-bar BEAM188 "
-                "elements. Reviewed 200/100 mm small-tray command streams use the small-tray arm partition "
-                "and coupling topology, so they are checked by small_tray_arm_partition instead of this gate."
+                "The physical bolt/round-bar gate applies to tray widths 100/200/300 mm. Wider 500/600 mm "
+                "families keep their reviewed wide-tray connection topology and are checked by the standard "
+                "family renderer/postprocessor gates."
             ),
         }
 
     def has(pattern: str) -> bool:
         return re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE) is not None
+
+    if tray_width_mm <= 200:
+        legacy_section10_geometry_selection = _has_legacy_section10_geometry_selection(text)
+        checks = {
+            "beam188_type_4": has(r"^\s*ET\s*,\s*4\s*,\s*(?:188|BEAM188)\b"),
+            "beam188_type_4_keyopts": has(r"^\s*KEYOPT\s*,\s*4\s*,\s*4\s*,\s*2\b")
+            and has(r"^\s*KEYOPT\s*,\s*4\s*,\s*1\s*,\s*1\b"),
+            "round_bar_section_10": has(r"^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b"),
+            "m8_round_bar_radius": has(r"^\s*SECDATA\s*,\s*0\.004\b"),
+            "front_k509_connector": has(r"^\s*K\s*,\s*509\s*\+\s*10\s*\*\s*I\b")
+            and has(r"^\s*L\s*,\s*503\s*\+\s*10\s*\*\s*I\b.*,\s*509\s*\+\s*10\s*\*\s*I\b"),
+            "back_k1509_connector": (not has_back_side)
+            or (
+                has(r"^\s*K\s*,\s*1509\s*\+\s*10\s*\*\s*I\b")
+                and has(r"^\s*L\s*,\s*1503\s*\+\s*10\s*\*\s*I\b.*,\s*1509\s*\+\s*10\s*\*\s*I\b")
+            ),
+            "component_selects_only_bolt_lines": has(r"^\s*CMSEL\s*,\s*S\s*,\s*CTAI_SMALL_BOLT_LINES\b"),
+            "section_10_latt_meshing": has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
+            "no_legacy_geometry_latt_pollution": not legacy_section10_geometry_selection,
+            "l5_minus_0p05_coupling": has(r"^\s*CPCYC\s*,.*L5\s*-\s*0\.05\s*$"),
+        }
+        required = [
+            "beam188_type_4",
+            "beam188_type_4_keyopts",
+            "round_bar_section_10",
+            "m8_round_bar_radius",
+            "front_k509_connector",
+            "back_k1509_connector",
+            "component_selects_only_bolt_lines",
+            "section_10_latt_meshing",
+            "no_legacy_geometry_latt_pollution",
+            "l5_minus_0p05_coupling",
+        ]
+        missing = [name for name in required if not checks.get(name)]
+        return {
+            "status": "pass" if not missing else "fail",
+            "tray_width_mm": tray_width_mm,
+            "checks": checks,
+            "missing": missing,
+            "source_ref": "100/200 small-tray physical bolt topology: M8 CSOLID + K509/K1509 + component-meshed section 10",
+            "policy": (
+                "100/200 mm trays must retain physical bolt/connector BEAM188 lines, use M8 section-10 radius "
+                "0.004, couple at L5-0.05, and mesh the bolt section through CTAI_SMALL_BOLT_LINES. A broad "
+                "KX(516)/KX(1516) geometry selection is rejected because it can also select tray or arm lines."
+            ),
+        }
 
     front_line_pairs = [
         (
@@ -1690,6 +1893,11 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         enabled=small_tray_partition_enabled,
         has_back_side=bool(back),
     )
+    rendered, small_tray_bolt_mesh_selection = _rewrite_small_tray_physical_bolt_mesh_selection(
+        rendered,
+        enabled=small_tray_partition_enabled,
+        has_back_side=bool(back),
+    )
     rendered, bolt_section_radius_audit = _rewrite_model_bolt_section_radius(rendered, unique_widths)
     rendered, physical_bolt_element_type_keyopts = _normalize_physical_bolt_element_type_keyopts(rendered)
     rendered, optional_mixed_mesh_guards = _guard_single_mixed_optional_mesh_blocks(rendered, source_mixed_shape)
@@ -1781,6 +1989,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "channel_secoffset_replacements": channel_secoffset_replacements,
         "small_tray_arm_partition": small_tray_partition_audit,
         "small_tray_physical_bolt_policy": small_tray_physical_bolt_policy,
+        "small_tray_bolt_mesh_selection": small_tray_bolt_mesh_selection,
         "bolt_section_radius": bolt_section_radius_audit,
         "physical_bolt_element_type_keyopts": physical_bolt_element_type_keyopts,
         "optional_mixed_mesh_guards": optional_mixed_mesh_guards,

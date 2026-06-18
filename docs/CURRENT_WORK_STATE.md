@@ -1,5 +1,32 @@
 # CableTrayAI ??????
 
+## 2026-06-18 100/200 small-tray bolt mesh-selection and candidate-summary closeout
+
+Current source/validation state:
+
+1. Fixed the user-reported single-200 physical bolt visual defect root cause. The generated 100/200 mm small-tray command stream no longer meshes section 10 through broad geometry selections such as `LSEL,S,LOC,X,KX(516)`, because that can also catch tray/cantilever lines at the same X coordinate.
+2. 100/200 mm physical bolt meshing now builds `CTAI_SMALL_BOLT_LINES` from the K509/K1509 connector lines and applies `LATT,1,,4,,,,10` only to that component. This preserves M8 `SECTYPE,10,BEAM,CSOLID` / `SECDATA,0.004` and prevents assigning bolt sections to tray or arm lines.
+3. The 100/200 mm modeling gate now validates ET4 KEYOPTs, M8 section radius, K509/K1509 connectors, `L5-0.05` coupling, component-based bolt meshing, and absence of the legacy `KX(516)/KX(1516) -> LATT,1,,4` pollution pattern.
+4. Mixed 100/200 tray jobs remain on the line-id path with `LS_BOLT(I)` and `BOLT_SEC(I)`; regression coverage now blocks fallback to the legacy geometry-selection bolt mesh.
+5. The web square-section candidate summary was changed back to show the overall controlling ratio from `evaluation_summary.json`, with the controlling check/component label, while preserving the section-selection ratio separately for the actual square-tube sizing decision.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/intake_standard_family_renderer.py core/optimizer/square_section_selector.py` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q` passed.
+3. `D:/miniconda3/python.exe -m pytest tests/unit/test_square_section_selector.py tests/unit/test_square_section_workflow_policy.py -q` passed.
+4. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+5. Frontend inline script syntax passed for `apps/web/index.html`.
+6. Real ANSYS18.2 production-path validation passed for rows 5 and 7 from `C:/Users/duxy/Desktop/1818 S2支架.xlsx` under `jobs/verify_small_tray_component_real_20260618_075550`. `18185NI-LXSJ4213` single 200 selected `100-100-6`, result validation `pass`, max evaluation ratio `0.9313729151561154`, and generated model has `CTAI_SMALL_BOLT_LINES`, M8 `SECDATA,0.004`, `L5-0.05`, and no legacy section-10 pollution. `18185NI-LXSJ4215` double 100+200 mixed selected `120-120-6`, result validation `pass`, max evaluation ratio `0.7488461481605604`, and generated model uses `LS_BOLT/BOLT_SEC` with no legacy pollution.
+
+Deployment closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `167A4BECD82F9E22E8CF39302324A48109594CEC9CABDA8F2FB69AED6561F2C9`.
+2. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `2D5D7D15AB170FA8D8DD290877D8CE036F763E42CDCC461A9C7DDBDFD8456D90`.
+3. Update applied to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260618_081041`.
+4. Local smoke passed on the actual installed port `8000`: `/health` returned `ok`, root page returned `200`, and `duxyb/cnpe123` login returned `pass`.
+5. Installed hashes match source for `apps/web/index.html`, `core/apdl/intake_standard_family_renderer.py`, and `core/optimizer/square_section_selector.py`.
+
 ## 2026-06-18 4219 mixed 500/600 TMAX and source-style modeling closeout
 
 Current source/validation state:

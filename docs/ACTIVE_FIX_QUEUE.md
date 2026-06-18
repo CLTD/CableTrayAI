@@ -1,5 +1,27 @@
 # CableTrayAI ??????
 
+## 2026-06-18 100/200 small-tray bolt mesh-selection and candidate-summary queue
+
+Resolved in source and real ANSYS:
+
+1. Web candidate summary now reports the overall maximum deterministic ratio and controlling item, not only the square-section sizing ratio. The sizing ratio remains separately displayed and still drives square-tube selection.
+2. Single 100/200 and double 100/200 small-tray physical bolts now mesh section 10 through `CTAI_SMALL_BOLT_LINES`, assembled from K509/K1509 connector lines, instead of broad `KX(516)/KX(1516)` geometry selections.
+3. The physical-bolt modeling gate now fails any 100/200 generated model that lacks M8 section-10 data, K509/K1509 connector topology, `L5-0.05` coupling, component-based section-10 meshing, or contains the legacy section-10 geometry-selection pollution pattern.
+4. Mixed 100/200 models are covered by regression tests that require `LS_BOLT(I)` / `BOLT_SEC(I)` line-id meshing and reject the old geometry-selection section-10 path.
+5. Verification passed: targeted tray-width tests, square-section selector/workflow tests, full `tests/unit`, frontend script syntax check, and real ANSYS18.2 rows 5/7 under `jobs/verify_small_tray_component_real_20260618_075550`.
+6. Real-run results: `18185NI-LXSJ4213` single 200 selected `100-100-6`, validation `pass`, max ratio `0.9313729151561154`; `18185NI-LXSJ4215` double 100+200 selected `120-120-6`, validation `pass`, max ratio `0.7488461481605604`.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `167A4BECD82F9E22E8CF39302324A48109594CEC9CABDA8F2FB69AED6561F2C9`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `2D5D7D15AB170FA8D8DD290877D8CE036F763E42CDCC461A9C7DDBDFD8456D90`.
+3. Update applied to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260618_081041`.
+4. Installed smoke passed on port `8000`: `/health` ok, root page 200, and `duxyb/cnpe123` login pass.
+
+Open:
+
+1. Commit and push this completed update.
+
 ## 2026-06-18 4219 mixed 500/600 source-style modeling and TMAX queue
 
 Resolved in source, real ANSYS, package, and local deployment:

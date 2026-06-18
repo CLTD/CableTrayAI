@@ -2156,7 +2156,7 @@
         }
       ],
       "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
-      "source_job_dir": "jobs\\verify_small_tray_bolt_matrix_real_20260618_rerun\\18185NI-LXSJ4213",
+      "source_job_dir": "jobs\\verify_small_tray_component_real_20260618_075550\\18185NI-LXSJ4213",
       "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
       "similarity_features": {
         "support_type": "s2",
@@ -2176,7 +2176,7 @@
         "tray_load_sum_kg_m": 70.0
       },
       "cache_version": "square-section-cache-v7-section-6-1-ratio",
-      "updated_at": "2026-06-17T18:00:24.120857+00:00"
+      "updated_at": "2026-06-17T23:56:36.216893+00:00"
     },
     "cc82f3b1ef4bc3e4a58d3f463e13118f12eb79a3ae88c28fa1c339bf423e1d64": {
       "status": "pass",
