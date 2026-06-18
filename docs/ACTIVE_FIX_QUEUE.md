@@ -1,5 +1,20 @@
 # CableTrayAI ??????
 
+## 2026-06-18 final installer-only queue
+
+Resolved in source and real ANSYS:
+
+1. 100/200 current-type physical connector section, short-line mesh isolation, reviewed-source solve-tail stripping, and square-section arm-family scoring are fixed.
+2. Modal MT strategy now uses learned/audited evidence for 4210-class mixed jobs and keeps pure estimates bounded; validated 4210 uses `MT=110`, not the insufficient `MT=70`.
+3. Full `tests/unit` and `git diff --check` passed.
+4. Real ANSYS18.2 validations passed for 4210, 4215, and 4218 with deterministic ratios below 1.0 and no result-publication blockers.
+
+Closeout:
+
+1. Rebuild the full installer package only at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Do not create or rely on an update package for this unit deployment; the unit should reinstall from the full package.
+3. Push the cleaned source state to Git after package verification.
+
 ## 2026-06-18 100/200 small-tray bolt mesh-selection and candidate-summary queue
 
 Resolved in source and real ANSYS:

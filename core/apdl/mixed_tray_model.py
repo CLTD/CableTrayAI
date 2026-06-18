@@ -139,10 +139,7 @@ def _tray_offset_m(width_mm: int, secondary_arm: str | None = None) -> float:
 
 
 def _bolt_radius_m_for_widths(widths_mm: list[int]) -> tuple[float, str]:
-    positive_widths = [int(width) for width in widths_mm if int(width) > 0]
-    if positive_widths and max(positive_widths) <= 200:
-        return 0.004, "tray_width_le_200_uses_m8_nominal_round_bar_radius"
-    return 0.006, "tray_width_gt_200_uses_m12_nominal_round_bar_radius"
+    return 0.006, "current_type_physical_bolt_connector_uses_reviewed_csolid_radius_0p006"
 
 
 def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float, secondary_arm: str) -> dict[str, Any]:
@@ -750,7 +747,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
             f"SECDATA,{_num(bolt_radius_m)}",
             "SECOFFSET,USER,",
             "SECTYPE,11,BEAM,CSOLID",
-            "SECDATA,0.004",
+            "SECDATA,0.006",
             "SECOFFSET,USER,",
             "MP,EX,1,2.04E11",
             "MP,PRXY,1,0.3",
@@ -904,9 +901,9 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         "physical_bolt_modeling": {
             "status": "pass",
             "section_10": f"M12/large-tray CSOLID radius {bolt_radius_m:g} m",
-            "section_11": "M8/small-tray CSOLID radius 0.004 m",
+            "section_11": "reviewed small-tray physical connector CSOLID radius 0.006 m",
             "bolt_radius_policy": bolt_radius_policy,
-            "policy": "Mixed jobs with both small and large trays keep separate M8/M12 bolt section numbers; each bolt line records the correct section before meshing.",
+            "policy": "Mixed jobs keep separate bolt section numbers for review traceability; each bolt line records the correct section before meshing, and current reviewed command streams use the 0.006 m CSOLID connector radius.",
         },
         "assigned": {
             "H1": round(h1, 6),
@@ -990,7 +987,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         f"SECDATA,{_num(bolt_radius_m)}",
         "SECOFFSET,USER,",
         "SECTYPE,11,BEAM,CSOLID",
-        "SECDATA,0.004",
+        "SECDATA,0.006",
         "SECOFFSET,USER,",
         "MP,EX,1,2.04E11",
         "MP,PRXY,1,0.3",

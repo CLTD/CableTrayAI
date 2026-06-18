@@ -20,9 +20,13 @@ MODAL_LEARNING_SIMILARITY_THRESHOLD = 0.78
 MODAL_LEARNING_MODE_MARGIN = 4
 AUTO_MODAL_MODE_COUNT_SOURCES = {
     "intake_rule_layer_count_modal_count",
+    "learned_similar_intake_modal_cache",
     "inferred_layer_count",
     "modal_policy",
     "default_initial_count",
+}
+LEARNED_MODAL_MODE_COUNT_SOURCES = {
+    "learned_similar_intake_modal_cache",
 }
 INITIAL_MODAL_MODE_COUNT_BY_LAYER_COUNT = {
     1: 20,
@@ -96,7 +100,12 @@ def modal_mode_count_from_layer_count(layer_count: Any) -> int:
 
 
 def _infer_layer_count_from_payload(payload: dict[str, Any] | None) -> int | None:
-    """Infer tray layer count from normalized intake payload fields."""
+    """Infer vertical tray level count from normalized intake payload fields.
+
+    For double-sided supports, modal MT tracks the number of vertical levels,
+    not the total number of tray runs.  A 5+5 double-sided row is therefore
+    treated as five levels, not ten.
+    """
 
     data = payload or {}
     support = data.get("support") if isinstance(data.get("support"), dict) else {}
@@ -108,7 +117,7 @@ def _infer_layer_count_from_payload(payload: dict[str, Any] | None) -> int | Non
         metadata.get("tray_layer_count"),
         metadata.get("layer_count"),
     ]
-    side_sum_values = [
+    side_count_values = [
         support.get("layers_front"),
         support.get("layers_back"),
         support.get("layers_third"),
@@ -116,19 +125,31 @@ def _infer_layer_count_from_payload(payload: dict[str, Any] | None) -> int | Non
         metadata.get("layers_back"),
         metadata.get("layers_third"),
     ]
-    parsed_sides = [_as_positive_int(value) or 0 for value in side_sum_values]
+    parsed_sides = [_as_positive_int(value) or 0 for value in side_count_values]
     if any(parsed_sides):
-        candidate_values.append(sum(parsed_sides))
+        candidate_values.append(max(parsed_sides))
 
     tray_layers = data.get("tray_layers")
     if isinstance(tray_layers, list) and tray_layers:
-        candidate_values.append(len(tray_layers))
+        by_side = [
+            _as_positive_int(item.get("layer_index"))
+            for item in tray_layers
+            if isinstance(item, dict)
+        ]
+        by_side = [value for value in by_side if value is not None]
+        candidate_values.append(max(by_side) if by_side else len(tray_layers))
 
     tray_mapping = metadata.get("tray_load_mapping")
     if isinstance(tray_mapping, dict):
         layers = tray_mapping.get("layers")
         if isinstance(layers, list) and layers:
-            candidate_values.append(len(layers))
+            by_side = [
+                _as_positive_int(item.get("layer_index"))
+                for item in layers
+                if isinstance(item, dict)
+            ]
+            by_side = [value for value in by_side if value is not None]
+            candidate_values.append(max(by_side) if by_side else len(layers))
         mapping_sides = [
             tray_mapping.get("front_layers"),
             tray_mapping.get("back_layers"),
@@ -136,7 +157,7 @@ def _infer_layer_count_from_payload(payload: dict[str, Any] | None) -> int | Non
         ]
         parsed_mapping_sides = [_as_positive_int(value) or 0 for value in mapping_sides]
         if any(parsed_mapping_sides):
-            candidate_values.append(sum(parsed_mapping_sides))
+            candidate_values.append(max(parsed_mapping_sides))
 
     parsed = [_as_positive_int(value) for value in candidate_values]
     parsed = [value for value in parsed if value is not None]
@@ -377,6 +398,28 @@ def source_modal_count_is_allowed_for_retry(source_count: int | None) -> bool:
     return source_count is not None and MIN_MODAL_MODE_COUNT <= source_count <= MAX_AUDITED_SOURCE_MODAL_MODE_COUNT
 
 
+def _source_modal_count_is_reasonable_initial(source_count: int | None, inferred_layers: int | None) -> bool:
+    _ = inferred_layers
+    return source_modal_count_is_safe_for_initial_solve(source_count)
+
+
+def _estimated_modal_count_is_reasonable_initial(count: int | None, inferred_layers: int | None) -> bool:
+    if not source_modal_count_is_safe_for_initial_solve(count):
+        return False
+    if inferred_layers is None:
+        return True
+    layer_count = modal_mode_count_from_layer_count(inferred_layers)
+    return int(count) <= layer_count + 20
+
+
+def _learned_modal_count_is_reasonable_initial(count: int | None) -> bool:
+    return source_modal_count_is_safe_for_initial_solve(count)
+
+
+def _auto_modal_count_is_reasonable_initial(count: int | None, inferred_layers: int | None) -> bool:
+    return _estimated_modal_count_is_reasonable_initial(count, inferred_layers)
+
+
 def modal_mode_count_from_payload(payload: dict[str, Any] | None, source_text: str | None = None) -> int:
     metadata = (payload or {}).get("metadata") or {}
     explicit = _as_positive_int(metadata.get("modal_mode_count"))
@@ -387,14 +430,23 @@ def modal_mode_count_from_payload(payload: dict[str, Any] | None, source_text: s
     learned = learned_modal_mode_count_from_payload(payload)
     if explicit is not None and not explicit_is_auto:
         return coerce_initial_modal_mode_count(explicit)
-    if learned.get("status") == "hit":
+    if learned.get("status") == "hit" and _learned_modal_count_is_reasonable_initial(
+        _as_positive_int(learned.get("recommended_modal_mode_count"))
+    ):
         return min(
             coerce_modal_mode_count(learned.get("recommended_modal_mode_count")),
             MAX_AUDITED_SOURCE_MODAL_MODE_COUNT,
         )
     if explicit is not None:
-        return coerce_initial_modal_mode_count(explicit)
-    if source_modal_count_is_safe_for_initial_solve(source_count):
+        if explicit_source in LEARNED_MODAL_MODE_COUNT_SOURCES:
+            if _learned_modal_count_is_reasonable_initial(explicit):
+                return coerce_initial_modal_mode_count(explicit)
+        elif explicit_is_auto:
+            if _auto_modal_count_is_reasonable_initial(explicit, inferred_layers):
+                return coerce_initial_modal_mode_count(explicit)
+        else:
+            return coerce_initial_modal_mode_count(explicit)
+    if _source_modal_count_is_reasonable_initial(source_count, inferred_layers):
         return coerce_initial_modal_mode_count(source_count)
     if inferred_layers is not None:
         return modal_mode_count_from_layer_count(inferred_layers)
@@ -421,18 +473,34 @@ def modal_policy_audit(payload: dict[str, Any] | None, source_text: str | None =
     source_count_used = (
         requested_count is None
         and learned.get("status") != "hit"
-        and source_modal_count_is_safe_for_initial_solve(source_count)
+        and _source_modal_count_is_reasonable_initial(source_count, inferred_layers)
         and assigned == source_count
     )
     if requested_count is not None and not requested_is_auto and assigned == coerce_initial_modal_mode_count(requested_count):
         assigned_source = "input_metadata"
-    elif learned.get("status") == "hit" and assigned == min(coerce_modal_mode_count(learned.get("recommended_modal_mode_count")), MAX_AUDITED_SOURCE_MODAL_MODE_COUNT):
+    elif (
+        learned.get("status") == "hit"
+        and _learned_modal_count_is_reasonable_initial(_as_positive_int(learned.get("recommended_modal_mode_count")))
+        and assigned == min(coerce_modal_mode_count(learned.get("recommended_modal_mode_count")), MAX_AUDITED_SOURCE_MODAL_MODE_COUNT)
+    ):
         assigned_source = "learned_similar_intake_cache"
-    elif requested_count is not None and requested_is_auto and assigned == coerce_initial_modal_mode_count(requested_count):
+    elif (
+        requested_count is not None
+        and requested_source in LEARNED_MODAL_MODE_COUNT_SOURCES
+        and _learned_modal_count_is_reasonable_initial(requested_count)
+        and assigned == coerce_initial_modal_mode_count(requested_count)
+    ):
+        assigned_source = "learned_similar_intake_metadata"
+    elif (
+        requested_count is not None
+        and requested_is_auto
+        and _auto_modal_count_is_reasonable_initial(requested_count, inferred_layers)
+        and assigned == coerce_initial_modal_mode_count(requested_count)
+    ):
         assigned_source = "auto_metadata_fallback"
     elif requested_count is None and source_count_used and assigned == source_count:
         assigned_source = "audited_source_safe_count"
-    elif requested_count is None and inferred_layers is not None and assigned == modal_mode_count_from_layer_count(inferred_layers):
+    elif inferred_layers is not None and assigned == modal_mode_count_from_layer_count(inferred_layers):
         assigned_source = "inferred_layer_count"
     else:
         assigned_source = "default_initial_count"

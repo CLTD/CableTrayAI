@@ -684,7 +684,8 @@ def test_4210_style_mirrored_mixed_renderer_uses_grouped_current_type_loops() ->
     assert "LSEL,S,LINE,,LS_BOLT(I)" in rendered
     assert "LATT,1,,4,,,,_BSEC" in rendered
     assert "SECTYPE,11,BEAM,CSOLID" in rendered
-    assert "SECDATA,0.004" in rendered
+    assert "SECDATA,0.006" in rendered
+    assert "SECDATA,0.004" not in rendered
     assert not _has_legacy_bolt_latt_pollution(rendered)
     assert "QCODE" not in rendered
     assert "QW(" not in rendered
@@ -1067,7 +1068,7 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
     assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
 
 
-def test_200_small_tray_keeps_physical_bolt_with_m8_section_and_type4_keyopts() -> None:
+def test_200_small_tray_keeps_physical_bolt_with_reviewed_section_and_type4_keyopts() -> None:
     source_text = "\n".join(
         [
             "ET,4,188",
@@ -1114,25 +1115,27 @@ def test_200_small_tray_keeps_physical_bolt_with_m8_section_and_type4_keyopts() 
     assert "KEYOPT,4,1,1" in rendered
     assert "KEYOPT,2,4,2\nKEYOPT,2,1,1\nSECTYPE,10" not in rendered
     assert "SECTYPE,10,BEAM,CSOLID" in rendered
-    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
-    assert "SECDATA,0.006" not in rendered
+    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.006" in rendered
+    assert "SECDATA,0.004" not in rendered
     assert "K,509+10*I+100*(J-1)" in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
-    assert "LSEL,U,LOC,Y,KY(519)" in rendered
-    assert "CTAI_SMALL_BOLT_LINES" in rendered
-    assert "CMSEL,S,CTAI_SMALL_BOLT_LINES" in rendered
+    assert "LSEL,U,LENG,,0.05" in rendered
+    assert "LSEL,S,LENG,,0.05" in rendered
+    assert "LSEL,U,LOC,Y,KY(519)" not in rendered
+    assert "CTAI_SMALL_BOLT_LINES" not in rendered
     assert "LATT,1,,4,,,,10" in rendered
     assert "LATT,2,,2,,,,4" in rendered
     assert not _has_legacy_bolt_latt_pollution(rendered)
     assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_bolt_mesh_selection"]["status"] == "rewritten"
     assert audit["physical_bolt_modeling"]["status"] == "pass"
-    assert audit["physical_bolt_modeling"]["checks"]["component_selects_only_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["tray_mesh_excludes_short_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["bolt_mesh_selects_short_bolt_lines"] is True
     assert audit["physical_bolt_modeling"]["checks"]["no_legacy_geometry_latt_pollution"] is True
     assert audit["physical_bolt_element_type_keyopts"]["status"] == "rewritten"
     assert audit["physical_bolt_element_type_keyopts"]["rewritten_count"] == 2
-    assert audit["bolt_section_radius"]["status"] == "rewritten"
-    assert audit["bolt_section_radius"]["radius_m"] == 0.004
+    assert audit["bolt_section_radius"]["status"] in {"already_present", "rewritten"}
+    assert audit["bolt_section_radius"]["radius_m"] == 0.006
     assert audit["bolt_section_radius"]["widths_mm"] == [200]
 
 
@@ -1184,15 +1187,18 @@ def test_current_type_single_200_meshes_only_physical_bolt_connector_lines() -> 
 
     assert not family["source"].endswith("single_300_square.PIP")
     assert "SECREAD,'200-75-2mm'" in rendered
-    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
-    assert "CTAI_SMALL_BOLT_LINES" in rendered
-    assert "CMSEL,S,CTAI_SMALL_BOLT_LINES" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.006" in rendered
+    assert "SECDATA,0.004" not in rendered
+    assert "LSEL,U,LENG,,0.05" in rendered
+    assert "LSEL,S,LENG,,0.05" in rendered
+    assert "CTAI_SMALL_BOLT_LINES" not in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert "CPCYC,UX,,,,,L5-0.05" in rendered
     assert not _has_legacy_bolt_latt_pollution(rendered)
     assert audit["small_tray_bolt_mesh_selection"]["status"] == "rewritten"
     assert audit["physical_bolt_modeling"]["status"] == "pass"
-    assert audit["physical_bolt_modeling"]["checks"]["component_selects_only_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["tray_mesh_excludes_short_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["bolt_mesh_selects_short_bolt_lines"] is True
     assert audit["physical_bolt_modeling"]["checks"]["no_legacy_geometry_latt_pollution"] is True
 
 
@@ -1209,26 +1215,162 @@ def test_double_200_small_tray_inserts_missing_physical_bolt_topology() -> None:
     assert "KEYOPT,4,4,2" in rendered
     assert "KEYOPT,4,1,1" in rendered
     assert "SECTYPE,10,BEAM,CSOLID" in rendered
-    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.004" in rendered
+    assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.006" in rendered
+    assert "SECDATA,0.004" not in rendered
     assert "K,509+10*I+100*(J-1)" in rendered
     assert "K,1509+10*I+100*(J-1)" in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
     assert "L,1503+10*I+100*(J-1),1509+10*I+100*(J-1)" in rendered
-    assert "LSEL,U,LOC,Y,KY(519)" in rendered
-    assert "LSEL,U,LOC,Y,KY(1519)" in rendered
-    assert "CTAI_SMALL_BOLT_LINES" in rendered
-    assert "CMSEL,S,CTAI_SMALL_BOLT_LINES" in rendered
+    assert "LSEL,U,LENG,,0.05" in rendered
+    assert "LSEL,S,LENG,,0.05" in rendered
+    assert "LSEL,U,LOC,Y,KY(519)" not in rendered
+    assert "LSEL,U,LOC,Y,KY(1519)" not in rendered
+    assert "CTAI_SMALL_BOLT_LINES" not in rendered
     assert "CPCYC,UX,,,,,L5-0.05" in rendered
     assert "LATT,1,,4,,,,10" in compact
     assert not _has_legacy_bolt_latt_pollution(rendered)
-    assert audit["small_tray_physical_bolt_policy"]["status"] == "inserted"
-    assert audit["small_tray_physical_bolt_policy"]["inserted"]["section_10_mesh_blocks"] == 1
+    assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_bolt_mesh_selection"]["status"] == "rewritten"
-    assert audit["bolt_section_radius"]["radius_m"] == 0.004
-    assert audit["physical_bolt_element_type_keyopts"]["status"] in {"already_correct", "inserted"}
+    assert audit["bolt_section_radius"]["radius_m"] == 0.006
+    assert audit["physical_bolt_element_type_keyopts"]["status"] in {"already_correct", "inserted", "rewritten"}
     assert audit["physical_bolt_modeling"]["status"] == "pass"
-    assert audit["physical_bolt_modeling"]["checks"]["component_selects_only_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["tray_mesh_excludes_short_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["bolt_mesh_selects_short_bolt_lines"] is True
     assert audit["physical_bolt_modeling"]["checks"]["no_legacy_geometry_latt_pollution"] is True
+
+
+def test_current_type_width_families_do_not_mix_100_200_300_or_500_600_topology() -> None:
+    def single_payload(width_mm: int, square_section: str = "100-100-6") -> dict:
+        payload = _single_two_layer_600_payload()
+        tray_section_id = f"tray-{width_mm}"
+        for layer in payload["tray_layers"]:
+            layer["tray_width_m"] = width_mm / 1000.0
+            layer["tray_section_id"] = tray_section_id
+        payload["sections"] = [
+            {"section_id": "square", "sect_file": f"{square_section}.SECT"},
+            {"section_id": tray_section_id, "sect_file": f"{width_mm}-75-2mm.SECT"},
+        ]
+        outer_mm = int(square_section.split("-")[0])
+        payload["support"]["square_tube_width_m"] = outer_mm / 1000.0
+        return payload
+
+    for width_mm in (100, 200):
+        payload = single_payload(width_mm)
+        family = select_standard_model_family(payload)
+        source_text, _ = read_text_with_encoding(Path(family["source"]))
+        rendered, audit = _render_model_from_family(source_text, payload)
+
+        assert family["source"].endswith("single_uniform_200_square.PIP")
+        assert f"SECREAD,'{width_mm}-75-2mm'" in rendered
+        assert "SECTYPE,10,BEAM,CSOLID\nSECDATA,0.006" in rendered
+        assert "L3=0.15" in rendered
+        assert "K,502+10*I+100*(J-1),H1/2+L1-L3" in rendered
+        assert "K,503+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
+        assert "LSEL,U,LENG,,0.05" in rendered
+        assert "LSEL,S,LENG,,0.05" in rendered
+        assert "LSEL,U,LOC,Y,KY(519)" not in rendered
+        assert "CTAI_SMALL_BOLT_LINES" not in rendered
+        assert audit["physical_bolt_modeling"]["status"] == "pass"
+
+    payload_300 = single_payload(300)
+    family_300 = select_standard_model_family(payload_300)
+    source_300, _ = read_text_with_encoding(Path(family_300["source"]))
+    rendered_300, audit_300 = _render_model_from_family(source_300, payload_300)
+
+    assert family_300["source"].endswith("single_300_square.PIP")
+    assert "L3=0.15" in rendered_300
+    assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered_300
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L3" in rendered_300
+    assert "K,507+10*I+100*(J-1),H1/2+L1-L3" in rendered_300
+    assert "K,508+10*I+100*(J-1),H1/2+L1-L3" in rendered_300
+    assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered_300
+    assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" not in rendered_300
+    assert audit_300["physical_bolt_modeling"]["status"] == "pass"
+
+    for width_mm in (500, 600):
+        payload = single_payload(width_mm)
+        family = select_standard_model_family(payload)
+        source_text, _ = read_text_with_encoding(Path(family["source"]))
+        rendered, audit = _render_model_from_family(source_text, payload)
+
+        assert family["source"].endswith("single_uniform_square.PIP")
+        assert f"L2={width_mm / 1000:g}" in rendered
+        assert "L3=0.2" in rendered
+        assert "K,502+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,506+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,507+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,508+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "K,509+10*I+100*(J-1),H1/2+L1-L2/2" in rendered
+        assert "SECOFFSET,user,,-0.03249\nSECREAD,'CAOGANG42DAN'" in rendered
+        assert audit["l3_policy"]["status"] == "square_outer_width_le_120_l3_0p20m"
+
+        yixing_payload = single_payload(width_mm, square_section="140-140-8")
+        yixing_family = select_standard_model_family(yixing_payload)
+        yixing_source, _ = read_text_with_encoding(Path(yixing_family["source"]))
+        yixing_rendered, yixing_audit = _render_model_from_family(yixing_source, yixing_payload)
+
+        assert yixing_family["source"].endswith("single_uniform_yixing.PIP")
+        assert "L3=0.15" in yixing_rendered
+        assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in yixing_rendered
+        assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in yixing_rendered
+        assert yixing_audit["l3_policy"]["status"] == "square_outer_width_gt_120_l3_0p15m"
+
+
+def test_standard_model_renderer_strips_embedded_modal_solve_tail_from_model_stream() -> None:
+    source_text = "\n".join(
+        [
+            "finish",
+            "/clear",
+            "/prep7",
+            "ET,1,188",
+            "KEYOPT,1,4,2",
+            "KEYOPT,1,1,1",
+            "ET,2,188",
+            "KEYOPT,2,4,2",
+            "KEYOPT,2,1,1",
+            "SECTYPE,1,BEAM,MESH",
+            "SECREAD,'100-100-6','SECT',,MESH",
+            "SECTYPE,2,BEAM,MESH",
+            "SECREAD,'50-42','SECT',,MESH",
+            "SECTYPE,3,BEAM,MESH",
+            "SECOFFSET,user,,-0.03249",
+            "SECREAD,'CAOGANG42DAN','SECT',,MESH",
+            "SECTYPE,4,BEAM,MESH",
+            "SECREAD,'600-75-2mm','SECT',,MESH",
+            "H1=0.1",
+            "H2=2.0",
+            "L1=0.55",
+            "L2=0.6",
+            "L3=0.2",
+            "L4=2.0",
+            "senum=2",
+            "ALLSEL",
+            "CM,YUESHU,NODE",
+            "! historical modal tail copied from reviewed 01/PIP source",
+            "/OUTPUT,'8TEG009010','TXT','',",
+            "FINISH",
+            "/SOL",
+            "ANTYPE,2",
+            "MODOPT,LANB,887",
+            "MXPAND,887,,,0",
+            "SOLVE",
+            "FINI",
+        ]
+    )
+
+    rendered, audit = _render_model_from_family(source_text, _single_two_layer_600_payload())
+
+    assert audit["embedded_analysis_tail"]["status"] == "stripped"
+    assert "CM,YUESHU,NODE" in rendered
+    assert "/SOL" not in rendered
+    assert "ANTYPE,2" not in rendered
+    assert "MODOPT,LANB,887" not in rendered
+    assert "MXPAND,887" not in rendered
+    assert re.search(r"(?im)^\s*SOLVE\b", rendered) is None
+    assert rendered.rstrip().endswith("FINISH")
 
 
 def test_300_modeling_gate_fails_when_only_coupling_exists_without_bolt_elements() -> None:
@@ -1289,6 +1431,10 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
             "CPCYC,UX,,,,,0.068-0.05",
             "ALLSEL",
             "LSEL,S,LOC,X,KX(516)",
+            "LATT,2,,2,,,,4",
+            "LMESH,ALL",
+            "ALLSEL",
+            "LSEL,S,LOC,X,KX(516)",
             "LATT,1,,4,,,,10",
             "LMESH,ALL",
             "SECREAD,'100-100-6'",
@@ -1314,12 +1460,16 @@ def test_200_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
     assert "0.068-0.05" not in rendered
     assert "K,509+10*I+100*(J-1)" in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
-    assert "CTAI_SMALL_BOLT_LINES" in rendered
+    assert "LSEL,U,LENG,,0.05" in rendered
+    assert "LSEL,S,LENG,,0.05" in rendered
+    assert "CTAI_SMALL_BOLT_LINES" not in rendered
     assert not _has_legacy_bolt_latt_pollution(rendered)
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
     assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_bolt_mesh_selection"]["status"] == "rewritten"
     assert audit["physical_bolt_modeling"]["status"] == "pass"
+    assert audit["physical_bolt_modeling"]["checks"]["tray_mesh_excludes_short_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["bolt_mesh_selects_short_bolt_lines"] is True
     assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
     assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"
@@ -1352,6 +1502,10 @@ def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
             "CPCYC,UX,,,,,0.068-0.05",
             "ALLSEL",
             "LSEL,S,LOC,X,KX(516)",
+            "LATT,2,,2,,,,4",
+            "LMESH,ALL",
+            "ALLSEL",
+            "LSEL,S,LOC,X,KX(516)",
             "LATT,1,,4,,,,10",
             "LMESH,ALL",
             "SECREAD,'100-100-6'",
@@ -1378,12 +1532,16 @@ def test_100_small_tray_reuses_reviewed_small_tray_arm_partition() -> None:
     assert "CPCYC,UX,,,,,L5-0.05" in rendered
     assert "0.068-0.05" not in rendered
     assert "L,503+10*I+100*(J-1),509+10*I+100*(J-1)" in rendered
-    assert "CTAI_SMALL_BOLT_LINES" in rendered
+    assert "LSEL,U,LENG,,0.05" in rendered
+    assert "LSEL,S,LENG,,0.05" in rendered
+    assert "CTAI_SMALL_BOLT_LINES" not in rendered
     assert not _has_legacy_bolt_latt_pollution(rendered)
     assert audit["small_tray_arm_partition"]["status"] == "rewritten"
     assert audit["small_tray_physical_bolt_policy"]["status"] == "already_present"
     assert audit["small_tray_bolt_mesh_selection"]["status"] == "rewritten"
     assert audit["physical_bolt_modeling"]["status"] == "pass"
+    assert audit["physical_bolt_modeling"]["checks"]["tray_mesh_excludes_short_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["bolt_mesh_selects_short_bolt_lines"] is True
     assert audit["small_tray_arm_partition"]["z_offset_replacements"] == 1
     assert audit["small_tray_arm_partition"]["coupling_offset_replacements"] == 1
     assert audit["l3_policy"]["status"] == "tray_width_le_300_l3_0p15m"

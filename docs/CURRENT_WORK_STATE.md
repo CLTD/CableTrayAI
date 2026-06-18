@@ -1,5 +1,30 @@
 # CableTrayAI ??????
 
+## 2026-06-18 final installer-only closeout
+
+Current source/validation state:
+
+1. 100/200 current-type physical connector modeling now follows the reviewed department 200 template: section-10 `BEAM,CSOLID` uses `SECDATA,0.006`, and short connector lines are isolated with `LSEL,U,LENG,,0.05` / `LSEL,S,LENG,,0.05` before assigning section 10. This supersedes the earlier M8-radius insertion attempt for this visual connector geometry.
+2. Reviewed model sources are sanitized before production solve assembly: embedded `/SOL`, `ANTYPE`, `MODOPT`, `MXPAND`, `SOLVE` tails are stripped from `generated_model.mac`, so modeling, solving, and extraction stay separated.
+3. Current-type source-family scoring now requires the arm family to match the selected square section policy: `<=120` uses `50-42 + CAOGANG42DAN` with `SECOFFSET,user,,-0.03249`; `>120` uses `YIXINGGANG150 + YIXINGGANG150DAN` with plain `SECOFFSET,user`.
+4. Modal MT selection now trusts real-run learned MT and audited standard-source MT, while keeping plain layer-count estimates bounded. This prevents 4210-class mixed 5+5 jobs from starting at an insufficient 70 modes; the validated learned entry starts at `MT=110` and still verifies `Mode.oup > 50 Hz`.
+5. The modal learning cache keeps a sanitized 4210 real-run entry with relative audit source, not a local desktop path. Square-section runtime cache changes from validation were not carried into the deployment package.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/intake_standard_family_renderer.py core/apdl/mixed_tray_model.py core/apdl/modal_policy.py` passed.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. `git diff --check` passed, with only CRLF normalization warnings.
+4. Real ANSYS18.2 production validation passed for `18185NI-LXSJ4210`: selected `140-140-8`, generated `MT=110`, first mode above 50 Hz is mode `102`, last frequency `54.44315136499 Hz`, `result_validation.status=pass`, max deterministic ratio `0.9672628568313631`.
+5. Real ANSYS18.2 production validation passed for `18185NI-LXSJ4215`: selected `120-120-6`, `result_validation.status=pass`, max deterministic ratio `0.7799357874652737`, and generated model uses the reviewed small-tray connector section `SECDATA,0.006`.
+6. Real ANSYS18.2 production validation passed for `18185NI-LXSJ4218`: selected `160-160-8` after automatic support-spacing recovery, static method has no main modal MT, `result_validation.status=pass`, max deterministic ratio `0.963156436189633`.
+
+Deployment closeout:
+
+1. Only the full installer deployment package is refreshed for the unit reinstall: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. No update package is part of this closeout.
+3. The package must be transferred with the adjacent `CableTrayAI.zip.sha256.txt` sidecar as hash authority.
+
 ## 2026-06-18 100/200 small-tray bolt mesh-selection and candidate-summary closeout
 
 Current source/validation state:

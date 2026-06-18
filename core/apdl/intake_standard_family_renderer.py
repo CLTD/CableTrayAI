@@ -397,6 +397,13 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
         )
     add("primary_arm_section", family.primary_arm_section.upper() == primary.upper(), 20, family.primary_arm_section, primary)
     add("secondary_arm_section", family.secondary_arm_section.upper() == secondary.upper(), 10, family.secondary_arm_section, secondary)
+    add(
+        "arm_family_matches_square_policy",
+        family.primary_arm_section.upper() == primary.upper() and family.secondary_arm_section.upper() == secondary.upper(),
+        80,
+        {"primary": family.primary_arm_section, "secondary": family.secondary_arm_section},
+        {"primary": primary, "secondary": secondary},
+    )
     add("mixed_widths", family.has_mixed_widths == mixed, 8, family.has_mixed_widths, mixed)
     if widths == [300]:
         add(
@@ -803,10 +810,7 @@ def _wide_tray_tail_m(widths: list[int], square_outer_mm: float, default: float 
 
 
 def _bolt_radius_m_for_widths(widths: list[int]) -> tuple[float, str]:
-    positive_widths = [int(width) for width in widths if int(width) > 0]
-    if positive_widths and max(positive_widths) <= 200:
-        return 0.004, "tray_width_le_200_uses_m8_nominal_round_bar_radius"
-    return 0.006, "tray_width_gt_200_uses_m12_nominal_round_bar_radius"
+    return 0.006, "current_type_physical_bolt_connector_uses_reviewed_csolid_radius_0p006"
 
 
 def _rewrite_model_bolt_section_radius(text: str, widths: list[int]) -> tuple[str, dict[str, Any]]:
@@ -822,7 +826,7 @@ def _rewrite_model_bolt_section_radius(text: str, widths: list[int]) -> tuple[st
         "widths_mm": sorted(set(int(width) for width in widths if int(width) > 0)),
         "replacement_count": count,
         "policy": policy,
-        "source_ref": "standard tray-support installation manual bolt size rule: 100/200 trays use M8; 300/500/600 trays use M12",
+        "source_ref": "current_type_command_flow_physical_bolt_connector_section",
     }
 
 
@@ -933,7 +937,8 @@ def _ensure_small_tray_physical_bolt_elements(
             "source_ref": "operator-confirmed physical bolt modeling requirement",
             "policy": (
                 "100/200 mm S2 small-tray jobs retain physical bolt/connector BEAM188 lines. "
-                "Subsequent normalization still verifies element type 4 KEYOPT settings and M8 section data."
+                "Subsequent normalization verifies element type 4 KEYOPT settings, the reviewed section-10 "
+                "CSOLID radius, and the mesh order that keeps short bolt lines out of the tray mesh."
             ),
         }
 
@@ -943,7 +948,7 @@ def _ensure_small_tray_physical_bolt_elements(
         "section_10_blocks": 0,
         "front_k509_and_connector": 0,
         "back_k1509_and_connector": 0,
-        "tray_center_unselect_lines": 0,
+        "tray_short_line_unselects": 0,
         "section_10_mesh_blocks": 0,
     }
 
@@ -969,7 +974,7 @@ def _ensure_small_tray_physical_bolt_elements(
             None,
         )
         if insert_at is not None:
-            lines[insert_at:insert_at] = ["SECTYPE,10,BEAM,CSOLID", "SECDATA,0.004", "SECOFFSET,USER,"]
+            lines[insert_at:insert_at] = ["SECTYPE,10,BEAM,CSOLID", "SECDATA,0.006", "SECOFFSET,USER,"]
             inserted["section_10_blocks"] = 1
 
     text_after_header = "\n".join(lines)
@@ -1009,27 +1014,20 @@ def _ensure_small_tray_physical_bolt_elements(
     pending_section10_after_lmesh = False
     for line in rebuilt:
         if re.match(r"\s*LATT\s*,\s*2\s*,\s*,\s*2\s*,\s*,\s*,\s*,\s*4\b", line, flags=re.IGNORECASE):
-            for keypoint in ("519", "619", "719"):
-                unselect = f"LSEL,U,LOC,Y,KY({keypoint})"
-                if unselect not in rebuilt2:
-                    rebuilt2.append(unselect)
-                    inserted["tray_center_unselect_lines"] += 1
-            if has_back_side:
-                for keypoint in ("1519", "1619", "1719"):
-                    unselect = f"LSEL,U,LOC,Y,KY({keypoint})"
-                    if unselect not in rebuilt2:
-                        rebuilt2.append(unselect)
-                        inserted["tray_center_unselect_lines"] += 1
+            if not any(
+                re.match(r"\s*LSEL\s*,\s*U\s*,\s*LENG\s*,\s*,\s*0\.05\b", item, flags=re.IGNORECASE)
+                for item in rebuilt2[-12:]
+            ):
+                rebuilt2.append("LSEL,U,LENG,,0.05")
+                inserted["tray_short_line_unselects"] += 1
             pending_section10_after_lmesh = need_section10_mesh
         rebuilt2.append(line)
         if pending_section10_after_lmesh and re.match(r"\s*LMESH\s*,\s*ALL\b", line, flags=re.IGNORECASE):
             bolt_mesh = [
                 "",
                 "ALLSEL",
-                "LSEL,S,LOC,X,KX(516)",
+                "LSEL,S,LENG,,0.05",
             ]
-            if has_back_side:
-                bolt_mesh.append("LSEL,A,LOC,X,KX(1516)")
             bolt_mesh.extend(
                 [
                     "LATT,1,,4,,,,10",
@@ -1051,68 +1049,51 @@ def _ensure_small_tray_physical_bolt_elements(
             "100/200 mm S2 small-tray jobs must model the physical bolt/connector beam. "
             "If the selected current-type source family lacks ET4/SECTYPE10/K509 connector lines, "
             "generated APDL inserts the missing physical-bolt topology before normalizing KEYOPT, section, "
-            "and M8 radius."
+            "section radius, and mesh order."
         ),
     }
 
 
-def _small_tray_physical_bolt_line_selection_block(*, has_back_side: bool) -> list[str]:
-    lines = [
+def _small_tray_short_bolt_mesh_block() -> list[str]:
+    return [
         "",
         "ALLSEL",
-        "! CableTrayAI: isolate 100/200 mm physical bolt connector lines before meshing.",
-        "_CTAI_BOLT_READY=0",
-        "*DO,J,1,3",
-        "*DO,I,1,senum",
+        "LSEL,S,LENG,,0.05",
+        "LATT,1,,4,,,,10",
+        "LESIZE,ALL,0.05,,,,,,,1",
+        "LMESH,ALL",
         "ALLSEL",
-        "LSEL,S,LOC,X,KX(509+10*I+100*(J-1))",
-        "LSEL,R,LOC,Z,KZ(509+10*I+100*(J-1))",
-        "*IF,_CTAI_BOLT_READY,EQ,0,THEN",
-        "CM,CTAI_SMALL_BOLT_LINES,LINE",
-        "_CTAI_BOLT_READY=1",
-        "*ELSE",
-        "CM,CTAI_SMALL_BOLT_TMP,LINE",
-        "CMSEL,S,CTAI_SMALL_BOLT_LINES",
-        "CMSEL,A,CTAI_SMALL_BOLT_TMP",
-        "CM,CTAI_SMALL_BOLT_LINES,LINE",
-        "*ENDIF",
-        "*ENDDO",
-        "*ENDDO",
     ]
-    if has_back_side:
-        lines.extend(
-            [
-                "*IF,senum1,GT,0,THEN",
-                "*DO,J,1,3",
-                "*DO,I,1,senum1",
-                "ALLSEL",
-                "LSEL,S,LOC,X,KX(1509+10*I+100*(J-1))",
-                "LSEL,R,LOC,Z,KZ(1509+10*I+100*(J-1))",
-                "*IF,_CTAI_BOLT_READY,EQ,0,THEN",
-                "CM,CTAI_SMALL_BOLT_LINES,LINE",
-                "_CTAI_BOLT_READY=1",
-                "*ELSE",
-                "CM,CTAI_SMALL_BOLT_TMP,LINE",
-                "CMSEL,S,CTAI_SMALL_BOLT_LINES",
-                "CMSEL,A,CTAI_SMALL_BOLT_TMP",
-                "CM,CTAI_SMALL_BOLT_LINES,LINE",
-                "*ENDIF",
-                "*ENDDO",
-                "*ENDDO",
-                "*ENDIF",
-            ]
-        )
-    lines.extend(
-        [
-            "ALLSEL",
-            "CMSEL,S,CTAI_SMALL_BOLT_LINES",
-            "LATT,1,,4,,,,10",
-            "LESIZE,ALL,0.05,,,,,,,1",
-            "LMESH,ALL",
-            "ALLSEL",
-        ]
-    )
-    return lines
+
+
+def _is_small_tray_tray_mesh_block(lines: list[str], start: int) -> int | None:
+    if not re.match(r"\s*ALLSEL\b", lines[start], flags=re.IGNORECASE):
+        return None
+    saw_latt = False
+    saw_tray_x_selection = False
+    for index in range(start + 1, min(len(lines), start + 60)):
+        line = lines[index]
+        if index > start + 1 and re.match(r"\s*ALLSEL\b", line, flags=re.IGNORECASE) and not saw_latt:
+            return None
+        if re.match(
+            r"\s*LSEL\s*,\s*[SA]\s*,\s*LOC\s*,\s*X\s*,\s*KX\s*\(\s*(?:516|1516)\s*\)",
+            line,
+            flags=re.IGNORECASE,
+        ):
+            saw_tray_x_selection = True
+        if re.match(r"\s*LATT\s*,\s*2\s*,\s*,\s*2\s*,\s*,\s*,\s*,\s*4\b", line, flags=re.IGNORECASE):
+            saw_latt = True
+        if saw_latt and re.match(r"\s*LMESH\s*,\s*ALL\b", line, flags=re.IGNORECASE):
+            return index if saw_tray_x_selection else None
+    return None
+
+
+def _small_tray_legacy_center_unselect(line: str) -> bool:
+    return re.match(
+        r"\s*LSEL\s*,\s*U\s*,\s*LOC\s*,\s*Y\s*,\s*KY\s*\(\s*(?:519|619|719|1519|1619|1719)\s*\)",
+        line,
+        flags=re.IGNORECASE,
+    ) is not None
 
 
 def _is_section_10_mesh_block(lines: list[str], start: int) -> int | None:
@@ -1147,6 +1128,52 @@ def _has_legacy_section10_geometry_selection(text: str) -> bool:
     return False
 
 
+def _small_tray_tray_mesh_excludes_short_bolt_lines(text: str) -> bool:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    for index in range(len(lines)):
+        end = _is_small_tray_tray_mesh_block(lines, index)
+        if end is None:
+            continue
+        block = lines[index : end + 1]
+        latt_index = next(
+            (
+                offset
+                for offset, line in enumerate(block)
+                if re.match(r"\s*LATT\s*,\s*2\s*,\s*,\s*2\s*,\s*,\s*,\s*,\s*4\b", line, flags=re.IGNORECASE)
+            ),
+            None,
+        )
+        if latt_index is not None and any(
+            re.match(r"\s*LSEL\s*,\s*U\s*,\s*LENG\s*,\s*,\s*0\.05\b", line, flags=re.IGNORECASE)
+            for line in block[:latt_index]
+        ):
+            return True
+    return False
+
+
+def _small_tray_bolt_mesh_selects_short_bolt_lines(text: str) -> bool:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    for index in range(len(lines)):
+        end = _is_section_10_mesh_block(lines, index)
+        if end is None:
+            continue
+        block = lines[index : end + 1]
+        latt_index = next(
+            (
+                offset
+                for offset, line in enumerate(block)
+                if re.match(r"\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b", line, flags=re.IGNORECASE)
+            ),
+            None,
+        )
+        if latt_index is not None and any(
+            re.match(r"\s*LSEL\s*,\s*S\s*,\s*LENG\s*,\s*,\s*0\.05\b", line, flags=re.IGNORECASE)
+            for line in block[:latt_index]
+        ):
+            return True
+    return False
+
+
 def _rewrite_small_tray_physical_bolt_mesh_selection(
     text: str,
     *,
@@ -1158,43 +1185,83 @@ def _rewrite_small_tray_physical_bolt_mesh_selection(
             "status": "not_required",
             "reason": "not_tray_width_le_200_single_width_family",
         }
-    if re.search(r"(?im)^\s*CMSEL\s*,\s*S\s*,\s*CTAI_SMALL_BOLT_LINES\b", text):
-        return text, {
-            "status": "already_present",
-            "source_ref": "small_tray_physical_bolt_component_selection",
-            "policy": "100/200 mm physical bolt lines are already meshed through an isolated line component.",
-        }
 
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    rewritten: list[str] = []
-    replaced = 0
+    without_old_bolt_blocks: list[str] = []
+    replaced_bolt_blocks = 0
     removed_duplicates = 0
     index = 0
-    component_block = _small_tray_physical_bolt_line_selection_block(has_back_side=has_back_side)
     while index < len(lines):
         end = _is_section_10_mesh_block(lines, index)
         if end is not None:
-            if replaced == 0:
-                rewritten.extend(component_block)
-                replaced += 1
+            if replaced_bolt_blocks == 0:
+                without_old_bolt_blocks.extend(_small_tray_short_bolt_mesh_block())
+                replaced_bolt_blocks += 1
             else:
                 removed_duplicates += 1
             index = end + 1
             continue
-        rewritten.append(lines[index])
+        without_old_bolt_blocks.append(lines[index])
         index += 1
 
-    status = "rewritten" if replaced else "not_found"
+    rewritten: list[str] = []
+    inserted_tray_short_line_unselects = 0
+    removed_legacy_center_unselects = 0
+    inserted_missing_bolt_block = 0
+    index = 0
+    while index < len(without_old_bolt_blocks):
+        end = _is_small_tray_tray_mesh_block(without_old_bolt_blocks, index)
+        if end is None:
+            rewritten.append(without_old_bolt_blocks[index])
+            index += 1
+            continue
+
+        block = without_old_bolt_blocks[index : end + 1]
+        cleaned: list[str] = []
+        for line in block:
+            if _small_tray_legacy_center_unselect(line):
+                removed_legacy_center_unselects += 1
+                continue
+            cleaned.append(line)
+        latt_index = next(
+            (
+                offset
+                for offset, line in enumerate(cleaned)
+                if re.match(r"\s*LATT\s*,\s*2\s*,\s*,\s*2\s*,\s*,\s*,\s*,\s*4\b", line, flags=re.IGNORECASE)
+            ),
+            None,
+        )
+        if latt_index is not None and not any(
+            re.match(r"\s*LSEL\s*,\s*U\s*,\s*LENG\s*,\s*,\s*0\.05\b", line, flags=re.IGNORECASE)
+            for line in cleaned[:latt_index]
+        ):
+            cleaned.insert(latt_index, "LSEL,U,LENG,,0.05")
+            inserted_tray_short_line_unselects += 1
+        rewritten.extend(cleaned)
+        if replaced_bolt_blocks == 0 and inserted_missing_bolt_block == 0:
+            rewritten.extend(_small_tray_short_bolt_mesh_block())
+            inserted_missing_bolt_block = 1
+        index = end + 1
+
+    status = (
+        "rewritten"
+        if replaced_bolt_blocks or inserted_tray_short_line_unselects or removed_legacy_center_unselects or inserted_missing_bolt_block
+        else "already_present"
+    )
     return "\n".join(rewritten), {
         "status": status,
-        "replacement_count": replaced,
+        "replacement_count": replaced_bolt_blocks,
+        "inserted_tray_short_line_unselects": inserted_tray_short_line_unselects,
+        "removed_legacy_center_unselects": removed_legacy_center_unselects,
+        "inserted_missing_bolt_block": inserted_missing_bolt_block,
         "removed_duplicate_blocks": removed_duplicates,
         "has_back_side": has_back_side,
-        "source_ref": "small_tray_physical_bolt_component_selection",
+        "source_ref": "operator_reviewed_200_small_tray_short_line_mesh_order",
         "policy": (
-            "For 100/200 mm small-tray physical bolts, section-10 meshing must select only the K509/K1509 "
-            "connector lines through CTAI_SMALL_BOLT_LINES. Geometry-only selections such as KX(516) can also "
-            "catch tray or cantilever lines at the same X coordinate and assign the bolt section to the wrong part."
+            "For 100/200 mm small-tray physical bolts, tray/cantilever meshing must first unselect the 0.05 m "
+            "connector lines with LSEL,U,LENG,,0.05; section-10 meshing then selects LSEL,S,LENG,,0.05. "
+            "Trying to remesh those lines after they were already meshed with the tray/arm section does not "
+            "change the existing element section and causes the wrong bolt appearance seen in ANSYS."
         ),
     }
 
@@ -1496,6 +1563,64 @@ def _ensure_standard_beam188_warping_keyopts(text: str) -> tuple[str, dict[str, 
     }
 
 
+def _strip_embedded_analysis_tail_from_model(text: str) -> tuple[str, dict[str, Any]]:
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    yueshu_index = None
+    for index, line in enumerate(lines):
+        if re.match(r"\s*CM\s*,\s*YUESHU\s*,\s*NODE\b", line, flags=re.IGNORECASE):
+            yueshu_index = index
+    if yueshu_index is None:
+        return text, {
+            "status": "not_found",
+            "reason": "model_constraint_component_not_found",
+            "policy": "No CM,YUESHU,NODE marker was found, so the model command stream was left unchanged.",
+        }
+
+    tail = lines[yueshu_index + 1 :]
+    analysis_markers = (
+        r"^\s*/SOL\b",
+        r"^\s*/OUTPUT\b",
+        r"^\s*ANTYPE\s*,",
+        r"^\s*MODOPT\s*,",
+        r"^\s*MXPAND\s*,",
+        r"^\s*SOLVE\b",
+        r"^\s*LSWRITE\b",
+        r"^\s*LSSOLVE\b",
+    )
+    marker_line = next(
+        (
+            offset
+            for offset, line in enumerate(tail, start=yueshu_index + 2)
+            if any(re.match(pattern, line, flags=re.IGNORECASE) for pattern in analysis_markers)
+        ),
+        None,
+    )
+    if marker_line is None:
+        return text, {
+            "status": "unchanged",
+            "reason": "no_embedded_solve_tail_after_constraints",
+            "policy": "The selected model source did not contain a solve/output tail after CM,YUESHU,NODE.",
+        }
+
+    kept = lines[: yueshu_index + 1]
+    if not any(re.match(r"\s*ALLSEL\b", line, flags=re.IGNORECASE) for line in kept[-3:]):
+        kept.append("ALLSEL")
+    if not any(re.match(r"\s*FINISH\b", line, flags=re.IGNORECASE) for line in kept[-3:]):
+        kept.append("FINISH")
+    return "\n".join(kept) + "\n", {
+        "status": "stripped",
+        "removed_line_count": len(lines) - len(kept),
+        "first_removed_line": marker_line,
+        "source_ref": "generated_model.mac:CM,YUESHU,NODE",
+        "policy": (
+            "Reviewed 01/PIP model sources often carry a historical modal or solve tail. generated_model.mac "
+            "must only build/mesh/constrain the model; generated_solve.mac owns modal, static, or response-spectrum "
+            "analysis. Stripping this tail prevents the model step from expanding hundreds of modes and generating "
+            "large rst/mode files before the real solve command runs."
+        ),
+    }
+
+
 def _rewrite_small_tray_arm_partition(text: str, *, enabled: bool) -> tuple[str, dict[str, Any]]:
     if not enabled:
         return text, {
@@ -1621,7 +1746,7 @@ def _audit_small_tray_physical_bolt_modeling(
             "beam188_type_4_keyopts": has(r"^\s*KEYOPT\s*,\s*4\s*,\s*4\s*,\s*2\b")
             and has(r"^\s*KEYOPT\s*,\s*4\s*,\s*1\s*,\s*1\b"),
             "round_bar_section_10": has(r"^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b"),
-            "m8_round_bar_radius": has(r"^\s*SECDATA\s*,\s*0\.004\b"),
+            "reviewed_round_bar_radius_0p006": has(r"^\s*SECDATA\s*,\s*0\.006\b"),
             "front_k509_connector": has(r"^\s*K\s*,\s*509\s*\+\s*10\s*\*\s*I\b")
             and has(r"^\s*L\s*,\s*503\s*\+\s*10\s*\*\s*I\b.*,\s*509\s*\+\s*10\s*\*\s*I\b"),
             "back_k1509_connector": (not has_back_side)
@@ -1629,7 +1754,8 @@ def _audit_small_tray_physical_bolt_modeling(
                 has(r"^\s*K\s*,\s*1509\s*\+\s*10\s*\*\s*I\b")
                 and has(r"^\s*L\s*,\s*1503\s*\+\s*10\s*\*\s*I\b.*,\s*1509\s*\+\s*10\s*\*\s*I\b")
             ),
-            "component_selects_only_bolt_lines": has(r"^\s*CMSEL\s*,\s*S\s*,\s*CTAI_SMALL_BOLT_LINES\b"),
+            "tray_mesh_excludes_short_bolt_lines": _small_tray_tray_mesh_excludes_short_bolt_lines(text),
+            "bolt_mesh_selects_short_bolt_lines": _small_tray_bolt_mesh_selects_short_bolt_lines(text),
             "section_10_latt_meshing": has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
             "no_legacy_geometry_latt_pollution": not legacy_section10_geometry_selection,
             "l5_minus_0p05_coupling": has(r"^\s*CPCYC\s*,.*L5\s*-\s*0\.05\s*$"),
@@ -1638,10 +1764,11 @@ def _audit_small_tray_physical_bolt_modeling(
             "beam188_type_4",
             "beam188_type_4_keyopts",
             "round_bar_section_10",
-            "m8_round_bar_radius",
+            "reviewed_round_bar_radius_0p006",
             "front_k509_connector",
             "back_k1509_connector",
-            "component_selects_only_bolt_lines",
+            "tray_mesh_excludes_short_bolt_lines",
+            "bolt_mesh_selects_short_bolt_lines",
             "section_10_latt_meshing",
             "no_legacy_geometry_latt_pollution",
             "l5_minus_0p05_coupling",
@@ -1652,11 +1779,12 @@ def _audit_small_tray_physical_bolt_modeling(
             "tray_width_mm": tray_width_mm,
             "checks": checks,
             "missing": missing,
-            "source_ref": "100/200 small-tray physical bolt topology: M8 CSOLID + K509/K1509 + component-meshed section 10",
+            "source_ref": "100/200 small-tray physical bolt topology: reviewed 200 PIP short-line mesh order",
             "policy": (
-                "100/200 mm trays must retain physical bolt/connector BEAM188 lines, use M8 section-10 radius "
-                "0.004, couple at L5-0.05, and mesh the bolt section through CTAI_SMALL_BOLT_LINES. A broad "
-                "KX(516)/KX(1516) geometry selection is rejected because it can also select tray or arm lines."
+                "100/200 mm trays must retain physical bolt/connector BEAM188 lines, use the reviewed section-10 "
+                "CSOLID radius 0.006, couple at L5-0.05, exclude 0.05 m connector lines from the tray mesh, "
+                "and then mesh those short lines with section 10. A broad KX(516)/KX(1516) section-10 selection "
+                "is rejected because the same X coordinate can include tray or arm lines."
             ),
         }
 
@@ -1912,6 +2040,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         ),
     }
     rendered, beam188_warping_keyopts = _ensure_standard_beam188_warping_keyopts(rendered)
+    rendered, embedded_analysis_tail = _strip_embedded_analysis_tail_from_model(rendered)
     keypoint_numbering = _standard_family_keypoint_numbering(front, back)
     rendered, keypoint_numbering = _apply_model_keypoint_numbering(rendered, keypoint_numbering)
     physical_bolt_modeling = _audit_small_tray_physical_bolt_modeling(
@@ -1996,6 +2125,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,
         "beam188_warping_keyopts": beam188_warping_keyopts,
+        "embedded_analysis_tail": embedded_analysis_tail,
         "assigned": {
             "H1": assigned_h1,
             "H2": assigned_h2,
