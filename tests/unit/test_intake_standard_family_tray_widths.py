@@ -668,11 +668,12 @@ def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_
     assert result["family"]["source"].replace("\\", "/").endswith(
         "single_mixed_600_500_300_200_100/single_mixed_600_500_300_200_100_universal.PIP"
     )
-    assert result["parameterization"]["source_family_model_status"] == "pass"
+    assert result["parameterization"]["source_family_model_status"] == "bypassed_for_mixed_tray_layer_renderer"
+    assert result["parameterization"]["model_source"] == "ctai_layered_mixed_tray_standard"
     assert result["parameterization"]["current_type_mixed_family_cover"]["status"] == "pass"
-    assert result["parameterization"]["platform_mixed_tray_renderer"]["status"] == "disabled_for_production_standard_family_baseline"
-    assert "ESEL,S,TYPE,,1" in post
-    assert "ESEL,U,SEC,,1" in post
+    assert (tmp_path / "single_five_width_render" / "apdl_topology_manifest.json").exists()
+    assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in (tmp_path / "single_five_width_render" / "generated_model.mac").read_text(encoding="utf-8")
+    assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in post
 
 
 def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:
@@ -780,7 +781,7 @@ def test_4210_style_mirrored_mixed_renderer_uses_grouped_current_type_loops() ->
 
     rendered, audit = render_mixed_tray_layer_model(payload)
 
-    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
     assert audit["assigned"]["senum1"] == 3
     assert audit["assigned"]["senum2"] == 2
     assert audit["assigned"]["senum3"] == 1
@@ -800,6 +801,10 @@ def test_4210_style_mirrored_mixed_renderer_uses_grouped_current_type_loops() ->
     assert "BOLT_SEC(NBOLT)=10" in rendered
     assert "LSEL,S,LINE,,LS_BOLT(I)" in rendered
     assert "LATT,1,,4,,,,_BSEC" in rendered
+    assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_ARM_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_TRAY_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_BOLT_ELEMS,ELEM" in rendered
     assert "SECTYPE,11,BEAM,CSOLID" in rendered
     assert "SECDATA,0.006" in rendered
     assert "SECDATA,0.004" not in rendered
@@ -817,7 +822,7 @@ def test_4219_style_mirrored_500_600_uses_source_style_variables_and_selected_h1
 
     rendered, audit = render_mixed_tray_layer_model(payload)
 
-    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
     assert audit["assigned"]["H1"] == 0.12
     assert "H1=0.12" in rendered
     assert "L1=0.67" in rendered
@@ -845,12 +850,12 @@ def test_4219_full_render_uses_section_based_tmax_for_grouped_500_600(tmp_path: 
     post = (tmp_path / "4219_grouped_render" / "generated_post.mac").read_text(encoding="utf-8")
 
     assert result["status"] == "pass"
-    assert result["parameterization"]["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert result["parameterization"]["model_source"] == "ctai_grouped_mirrored_mixed_standard"
     assert "H1=0.12" in rendered
     assert "H1/2+L1-L3/2" in rendered
     assert "H1/2+L2-L4/2" in rendered
-    assert "ESEL,S,SEC,,2" in post
-    assert "ESEL,A,SEC,,3" in post
+    assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in post
+    assert "CMSEL,A,CTAI_TRAY_ELEMS,ELEM" in post
     assert "10*I+2" not in post.split("*CREATE,TMAXBEAMSTRESS-WRITE,MAC", 1)[0]
 
 
@@ -859,7 +864,7 @@ def test_4210_style_five_width_mirrored_mixed_renderer_stays_grouped() -> None:
 
     rendered, audit = render_mixed_tray_layer_model(payload)
 
-    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
     assert audit["assigned"]["senum1"] == 5
     assert audit["assigned"]["senum2"] == 4
     assert audit["assigned"]["senum3"] == 3
@@ -881,7 +886,7 @@ def test_4210_full_command_render_uses_grouped_renderer_not_legacy_arrays(tmp_pa
 
     assert result["status"] == "pass"
     audit = result["parameterization"]
-    assert audit["model_source"] == "current_type_grouped_mirrored_mixed_renderer"
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
     assert "senum1=3" in rendered
     assert "senum2=2" in rendered
     assert "senum3=1" in rendered
@@ -914,12 +919,16 @@ def test_mixed_tray_layer_renderer_preserves_each_layer_width_and_bolt_topology(
     assert "K,506+KPOFF+10*I+KPFSTEP*(J-1)" in rendered
     assert "K,516" not in rendered
     assert audit["shared_max_width_geometry"]["status"] == "not_used"
-    assert audit["command_style"]["status"] == "loop_parameterized_line_id_grouped"
+    assert audit["command_style"]["status"] == "loop_parameterized_component_topology"
     assert "*DIM,LS_ARM,ARRAY" in rendered
     assert "*GET,_LNEW,LINE,0,NUM,MAX" in rendered
     assert "LS_TRAY(NTRAY)=_LNEW" in rendered
     assert "LS_BOLT(NBOLT)=_LNEW" in rendered
     assert "LSEL,S,LINE,,LS_ARM(I)" in rendered
+    assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_ARM_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_TRAY_ELEMS,ELEM" in rendered
+    assert "CM,CTAI_BOLT_ELEMS,ELEM" in rendered
     assert audit["secondary_arm_offset_policy"] == "channel_secondary_arm_offset_minus_0p03249"
     assert audit["model_geometry_widths_mm"] == [300, 600]
     bottom_layer = [item for item in audit["layer_geometry"] if item["model_layer_index"] == 1][0]

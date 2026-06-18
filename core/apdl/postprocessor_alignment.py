@@ -113,11 +113,11 @@ def _parameterized_cantilever_selector() -> str:
     return "\n".join(
         [
             "ALLSEL",
-            "! CableTrayAI audited cantilever selector for parameterized S2 models.",
-            "! 方钢 support is TYPE=1; tray arms are layer-specific BEAM188 types:",
+            "! CableTrayAI参数化S2模型托臂选择器。",
+            "! 方钢支架为TYPE=1；托臂为按层生成的BEAM188类型：",
             "!   front: 10*I+2 and 10*I+3",
             "!   back : 200*I+2 and 200*I+3",
-            "! This replaces the shared-source TYPE=1/SEC!=1 selector, which becomes an empty set after parameterization.",
+            "! 这里替代旧的TYPE=1且SEC不等于1选择方式，避免参数化建模后选空。",
             "ESEL,NONE",
             "*DO,I,1,qiancengshu,1",
             "ESEL,A,TYPE,,10*I+2",
@@ -141,6 +141,26 @@ def _section_based_cantilever_selector() -> str:
             "ESEL,A,SEC,,3",
         ]
     )
+
+
+def _component_based_cantilever_selector() -> str:
+    return "\n".join(
+        [
+            "ALLSEL",
+            "! CableTrayAI混合托盘标准流：托臂应力按建模阶段声明的组件提取。",
+            "! CTAI_ARM_ELEMS由generated_model.mac中的LS_ARM/ARM_SEC登记生成。",
+            "CMSEL,S,CTAI_ARM_ELEMS,ELEM",
+        ]
+    )
+
+
+def _model_uses_component_topology(job_dir: Path) -> bool:
+    model_path = job_dir / "generated_model.mac"
+    if not model_path.exists():
+        return False
+    model_text = model_path.read_text(encoding="utf-8", errors="ignore")
+    required = ("CTAI_SUPPORT_ELEMS", "CTAI_ARM_ELEMS", "CTAI_TRAY_ELEMS", "CTAI_BOLT_ELEMS")
+    return all(name in model_text for name in required)
 
 
 def _model_uses_source_type1_arm_topology(job_dir: Path) -> bool:
@@ -198,6 +218,9 @@ def _replace_or_inject_tmax_selector(prefix: str, selector: str) -> tuple[str, s
             if current == "ESEL,A,SEC,,3":
                 end = probe + 1
                 break
+            if current == "CMSEL,S,CTAI_ARM_ELEMS,ELEM":
+                end = probe + 1
+                break
         else:
             end = min(len(lines), index + 1)
         return replace_lines(lines, start, end), "parameterized_selector_replaced"
@@ -225,6 +248,7 @@ def _align_tmax_selector(
     *,
     preserve_source_type1_arm_topology: bool = False,
     use_section_based_arm_topology: bool = False,
+    use_component_topology: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     create = re.search(r"^\s*\*CREATE\s*,\s*TMAXBEAMSTRESS-WRITE\s*,\s*MAC\b", text, re.IGNORECASE | re.MULTILINE)
     if not create:
@@ -238,14 +262,26 @@ def _align_tmax_selector(
         }
     prefix = text[: create.start()]
     suffix = text[create.start() :]
-    selector = _section_based_cantilever_selector() if use_section_based_arm_topology else _parameterized_cantilever_selector()
+    if use_component_topology:
+        selector = _component_based_cantilever_selector()
+    elif use_section_based_arm_topology:
+        selector = _section_based_cantilever_selector()
+    else:
+        selector = _parameterized_cantilever_selector()
     updated_prefix, replacement_mode = _replace_or_inject_tmax_selector(prefix, selector)
     selector_ref = (
+        "generated_model.mac:CTAI_ARM_ELEMS component"
+        if use_component_topology
+        else (
         "generated_model.mac:grouped mixed tray arms use TYPE=2 with ARM_SEC 2/3"
         if use_section_based_arm_topology
         else "generated_model.mac:LATT assigns tray arms to TYPE 10*I+2/10*I+3 and 200*I+2/200*I+3"
+        )
     )
     new_selector = (
+        ["CMSEL,S,CTAI_ARM_ELEMS,ELEM"]
+        if use_component_topology
+        else (
         ["ESEL,S,SEC,,2", "ESEL,A,SEC,,3"]
         if use_section_based_arm_topology
         else [
@@ -255,6 +291,7 @@ def _align_tmax_selector(
             "ESEL,A,TYPE,,200*I+2",
             "ESEL,A,TYPE,,200*I+3",
         ]
+        )
     )
     return updated_prefix + suffix, {
         "status": "applied",
@@ -288,11 +325,23 @@ def _section_based_tbmodel_selector() -> str:
     )
 
 
+def _component_based_tbmodel_selector() -> str:
+    return "\n".join(
+        [
+            "! CableTrayAI混合托盘标准流：图5.2按组件显示托臂和托盘。",
+            "! 该选择来自generated_model.mac的拓扑组件，不依赖TYPE/SEC猜测。",
+            "CMSEL,S,CTAI_ARM_ELEMS,ELEM",
+            "CMSEL,A,CTAI_TRAY_ELEMS,ELEM",
+        ]
+    )
+
+
 def _align_tbmodel_selector(
     text: str,
     *,
     preserve_source_type1_arm_topology: bool = False,
     use_section_based_arm_topology: bool = False,
+    use_component_topology: bool = False,
 ) -> tuple[str, dict[str, Any]]:
     pattern = re.compile(
         r"ESEL\s*,\s*NONE\s*\n"
@@ -306,8 +355,17 @@ def _align_tbmodel_selector(
         r"\s*\*ENDDO",
         re.IGNORECASE,
     )
-    if use_section_based_arm_topology:
-        updated, count = pattern.subn(_section_based_tbmodel_selector(), text)
+    if use_component_topology or use_section_based_arm_topology:
+        replacement = _component_based_tbmodel_selector() if use_component_topology else _section_based_tbmodel_selector()
+        updated, count = pattern.subn(replacement, text)
+        if use_component_topology and not count and "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in text:
+            return text, {
+                "status": "already_component_topology",
+                "replaced_count": 0,
+                "selector": ["CMSEL,S,CTAI_ARM_ELEMS,ELEM", "CMSEL,A,CTAI_TRAY_ELEMS,ELEM"],
+                "source_ref": "generated_post.mac:TBMODEL selector already matches CableTrayAI topology components",
+                "policy": "图5.2按建模组件显示托臂和托盘，不使用旧的10*layer/200*layer TYPE猜选。",
+            }
         if not count and "ESEL,S,SEC,,2" in text and "ESEL,A,SEC,,4,9" in text:
             return text, {
                 "status": "already_section_topology",
@@ -315,6 +373,14 @@ def _align_tbmodel_selector(
                 "selector": ["ESEL,S,SEC,,2", "ESEL,A,SEC,,3", "ESEL,A,SEC,,4,9"],
                 "source_ref": "generated_post.mac:TBMODEL selector already matches grouped mixed section topology",
                 "policy": "Fig. 5.2 TBMODEL selection follows grouped mixed topology so MAPDL does not warn about undefined 10*layer/200*layer TYPE IDs.",
+            }
+        if use_component_topology:
+            return updated, {
+                "status": "component_topology_applied" if count else "not_found",
+                "replaced_count": count,
+                "selector": ["CMSEL,S,CTAI_ARM_ELEMS,ELEM", "CMSEL,A,CTAI_TRAY_ELEMS,ELEM"],
+                "source_ref": "generated_model.mac:CTAI_ARM_ELEMS/CTAI_TRAY_ELEMS",
+                "policy": "图5.2按CableTrayAI混合托盘拓扑组件选择托臂和托盘，避免TYPE/SEC或坐标错选。",
             }
         return updated, {
             "status": "section_topology_applied" if count else "not_found",
@@ -355,17 +421,20 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
     original = post_path.read_text(encoding="utf-8", errors="replace")
     text, branch_audit = _prepend_branch_parameters(original, payload)
     text, threshold_audit = _align_appendix_c_threshold(text)
+    use_component_topology = _model_uses_component_topology(job_dir)
     preserve_source_topology = _model_uses_source_type1_arm_topology(job_dir)
     use_section_based_topology = _model_uses_section_based_arm_topology(job_dir)
     text, tbmodel_audit = _align_tbmodel_selector(
         text,
         preserve_source_type1_arm_topology=preserve_source_topology,
         use_section_based_arm_topology=use_section_based_topology,
+        use_component_topology=use_component_topology,
     )
     text, selector_audit = _align_tmax_selector(
         text,
         preserve_source_type1_arm_topology=preserve_source_topology,
         use_section_based_arm_topology=use_section_based_topology,
+        use_component_topology=use_component_topology,
     )
     changed = text != original
     if changed:
@@ -375,6 +444,7 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         "post_path": str(post_path),
         "branch_parameters": branch_audit,
         "appendix_c_threshold": threshold_audit,
+        "component_topology": use_component_topology,
         "section_based_arm_topology": use_section_based_topology,
         "tbmodel_selector": tbmodel_audit,
         "tmax_selector": selector_audit,

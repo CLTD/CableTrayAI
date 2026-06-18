@@ -9,6 +9,14 @@ from core.optimizer.square_section_selector import parse_square_section_name
 
 SUPPORTED_MIXED_SIDES = {"front", "back"}
 
+TOPOLOGY_COMPONENTS = {
+    "support": "CTAI_SUPPORT_ELEMS",
+    "arm": "CTAI_ARM_ELEMS",
+    "tray": "CTAI_TRAY_ELEMS",
+    "bolt": "CTAI_BOLT_ELEMS",
+    "structural": "CTAI_STRUCTURAL_ELEMS",
+}
+
 
 def _section_stem(value: Any, default: str = "") -> str:
     text = str(value or default).strip()
@@ -223,7 +231,8 @@ def _append_side_keypoint_loop(lines: list[str], *, side: str, layer_count: int,
 
     lines.extend(
         [
-            f"! {side} mixed tray layers: looped keypoints keep small trays above wider trays.",
+            f"! CableTrayAI混合托盘-{side}侧建模：按层循环生成关键点，宽托盘在下、小托盘在上。",
+            "! 每一层保留自己的托盘宽度、托臂分段长度、托盘偏移和螺栓连接位置。",
             f"*DO,J,1,3",
             f"*DO,I,1,{layer_count}",
             "QZ=0.1+0.2*(I-1)",
@@ -338,7 +347,8 @@ def _append_side_coupling_loop(lines: list[str], *, side: str, layer_count: int,
 
     lines.extend(
         [
-            f"! {side} mixed tray layers: looped tray/bolt coupling by per-layer bolt position.",
+            f"! CableTrayAI混合托盘-{side}侧耦合：按每层螺栓位置耦合托盘与连接点。",
+            "! 耦合只补充连接关系；物理螺栓线单元仍单独建模并参与载荷提取。",
             f"*DO,I,1,{layer_count}",
             "QZ=0.1+0.2*(I-1)",
             f"QTRAYZ=QZ+{prefix}TOFF(I)",
@@ -360,7 +370,8 @@ def _append_side_coupling_loop(lines: list[str], *, side: str, layer_count: int,
 def _append_line_id_mesh_loops(lines: list[str]) -> None:
     lines.extend(
         [
-            "! Mesh by recorded line ids. This avoids geometry-location reselection ambiguity in mixed-width models.",
+            "! CableTrayAI标准网格划分：全部按建模时记录的线号划分网格。",
+            "! 这样可以避免混合托盘宽度下用坐标二次选择时误选托盘、托臂或螺栓线。",
             "ALLSEL",
             "LSEL,NONE",
             "*DO,I,1,NSUP",
@@ -399,6 +410,112 @@ def _append_line_id_mesh_loops(lines: list[str]) -> None:
             "*ENDDO",
         ]
     )
+
+
+def _append_topology_component_block(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "! CableTrayAI拓扑组件声明开始。",
+            "! 下列组件是建模命令流与结果提取命令流之间的正式接口。",
+            "! 后处理必须优先按这些组件选取，不允许再靠坐标或相近数值猜测。",
+            "ALLSEL",
+            "ESEL,S,SEC,,1",
+            "CM,CTAI_SUPPORT_ELEMS,ELEM",
+            "! 方钢支架组件：由截面1生成，用于支架应力和方钢专项应力提取。",
+            "ALLSEL",
+            "ESEL,NONE",
+            "*IF,NARM,GT,0,THEN",
+            "*DO,I,1,NARM",
+            "ESEL,A,SEC,,ARM_SEC(I)",
+            "*ENDDO",
+            "*ENDIF",
+            "CM,CTAI_ARM_ELEMS,ELEM",
+            "! 托臂组件：由LS_ARM/ARM_SEC登记，用于托臂应力及根部评定。",
+            "ALLSEL",
+            "ESEL,NONE",
+            "*IF,NTRAY,GT,0,THEN",
+            "*DO,I,1,NTRAY",
+            "ESEL,A,SEC,,TRAY_SEC(I)",
+            "*ENDDO",
+            "*ENDIF",
+            "CM,CTAI_TRAY_ELEMS,ELEM",
+            "! 托盘组件：由LS_TRAY/TRAY_SEC登记，只用于模型图和载荷路径审查。",
+            "ALLSEL",
+            "ESEL,NONE",
+            "*IF,NBOLT,GT,0,THEN",
+            "*DO,I,1,NBOLT",
+            "ESEL,A,SEC,,BOLT_SEC(I)",
+            "*ENDDO",
+            "*ENDIF",
+            "CM,CTAI_BOLT_ELEMS,ELEM",
+            "! 螺栓连接组件：由LS_BOLT/BOLT_SEC登记，用于连接载荷追溯。",
+            "ALLSEL",
+            "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM",
+            "CMSEL,A,CTAI_ARM_ELEMS,ELEM",
+            "CMSEL,A,CTAI_TRAY_ELEMS,ELEM",
+            "CM,CTAI_STRUCTURAL_ELEMS,ELEM",
+            "! 结构梁组件：方钢、托臂、托盘的合并集合，不包含螺栓连接单元。",
+            "ALLSEL",
+            "CMSEL,S,CTAI_BOLT_ELEMS,ELEM",
+            "NSLE,S",
+            "CM,CTAI_BOLT_NODES,NODE",
+            "! 螺栓节点组件：供连接载荷导出和人工复核使用。",
+            "ALLSEL",
+            "! CableTrayAI拓扑组件声明结束。",
+        ]
+    )
+
+
+def _topology_manifest(
+    *,
+    model_source: str,
+    widths: list[int],
+    layer_geometry: list[dict[str, Any]],
+    support_section: str,
+    primary_arm: str,
+    secondary_arm: str,
+    command_style: str,
+) -> dict[str, Any]:
+    return {
+        "schema": "cabletrayai_mixed_tray_topology_v1",
+        "model_source": model_source,
+        "command_style": command_style,
+        "encoding_policy": "APDL文件按UTF-8写出；中文只出现在注释和JSON说明中，变量名/组件名保持ASCII。",
+        "components": [
+            {
+                "name": TOPOLOGY_COMPONENTS["support"],
+                "kind": "support_square_tube",
+                "section": support_section,
+                "selection": "ESEL,S,SEC,,1",
+                "description": "方钢支架单元集合，用于支架应力和方钢专项应力提取。",
+            },
+            {
+                "name": TOPOLOGY_COMPONENTS["arm"],
+                "kind": "cantilever_arm",
+                "section": [primary_arm, secondary_arm],
+                "selection": "LS_ARM/ARM_SEC登记后按截面组合生成组件",
+                "description": "托臂单元集合，用于托臂应力云图和根部评定。",
+            },
+            {
+                "name": TOPOLOGY_COMPONENTS["tray"],
+                "kind": "tray",
+                "widths_mm": widths,
+                "selection": "LS_TRAY/TRAY_SEC登记后按截面组合生成组件",
+                "description": "托盘单元集合，用于模型展示和载荷路径审查。",
+            },
+            {
+                "name": TOPOLOGY_COMPONENTS["bolt"],
+                "kind": "connector_bolt",
+                "selection": "LS_BOLT/BOLT_SEC登记后按截面10/11生成组件",
+                "description": "螺栓连接单元集合，用于连接载荷追溯。",
+            },
+        ],
+        "layers": layer_geometry,
+        "policy": (
+            "混合托盘宽度采用CableTrayAI自有标准拓扑：建模阶段登记线号和组件，"
+            "后处理阶段按组件提取，避免不同托盘宽度共用TYPE/SEC或坐标选择导致提取错位。"
+        ),
+    }
 
 
 def _side_group_counts(layers: list[dict[str, Any]]) -> list[tuple[int, int]]:
@@ -507,8 +624,8 @@ def _append_grouped_width_loop(
     section_10_or_11 = "11" if width <= 200 else "10"
     lines.extend(
         [
-            f"! {side} grouped mixed tray width {width} mm.",
-            f"! Source-style width segment: total={total}, tray_half={half}, tail={tail}.",
+            f"! CableTrayAI分组混合托盘-{side}侧：当前宽度{width} mm。",
+            f"! 本宽度组参数：托臂总长={total}，托盘半宽={half}，端部短托臂={tail}。",
             f"*IF,{end_expr},GE,{start_expr},THEN",
             "*DO,J,1,3",
             f"*DO,I,{start_expr},{end_expr}",
@@ -639,12 +756,12 @@ def _source_style_dimension_terms(
         wide, narrow = widths
         assignment_lines.extend(
             [
-                "! Source-style two-width mixed tray parameters, learned from single 500+600 current-type PIP.",
-                f"L1={_num(arm_total(wide))}                        ! {wide} mm tray arm total length",
-                f"L2={_num(arm_total(narrow))}                        ! {narrow} mm tray arm total length",
-                f"L3={_num(wide / 1000.0)}                        ! {wide} mm tray width",
-                f"L4={_num(narrow / 1000.0)}                        ! {narrow} mm tray width",
-                f"L5={_num(common_tail)}                        ! secondary arm tail length",
+                "! CableTrayAI双宽度混合参数：保留科室500+600审查习惯的变量名。",
+                f"L1={_num(arm_total(wide))}                        ! {wide} mm托盘托臂总长",
+                f"L2={_num(arm_total(narrow))}                        ! {narrow} mm托盘托臂总长",
+                f"L3={_num(wide / 1000.0)}                        ! {wide} mm托盘宽度",
+                f"L4={_num(narrow / 1000.0)}                        ! {narrow} mm托盘宽度",
+                f"L5={_num(common_tail)}                        ! 端部短托臂长度",
             ]
         )
         terms[wide] = {"total": "L1", "tray": "L3", "tail": "L5"}
@@ -655,14 +772,14 @@ def _source_style_dimension_terms(
         first, second, third = widths
         assignment_lines.extend(
             [
-                "! Source-style three-width mixed tray parameters, learned from single 600+500+300 current-type PIP.",
-                f"L1={_num(arm_total(first))}                        ! {first} mm tray arm total length",
-                f"L2={_num(first / 1000.0)}                        ! {first} mm tray width",
-                f"L11={_num(arm_total(second))}                       ! {second} mm tray arm total length",
-                f"L12={_num(second / 1000.0)}                       ! {second} mm tray width",
-                f"L3={_num(arm_total(third))}                        ! {third} mm tray arm total length",
-                f"L4={_num(third / 1000.0)}                        ! {third} mm tray width",
-                f"L5={_num(common_tail)}                        ! secondary arm tail length",
+                "! CableTrayAI三宽度混合参数：保留科室600+500+300审查习惯的变量名。",
+                f"L1={_num(arm_total(first))}                        ! {first} mm托盘托臂总长",
+                f"L2={_num(first / 1000.0)}                        ! {first} mm托盘宽度",
+                f"L11={_num(arm_total(second))}                       ! {second} mm托盘托臂总长",
+                f"L12={_num(second / 1000.0)}                       ! {second} mm托盘宽度",
+                f"L3={_num(arm_total(third))}                        ! {third} mm托盘托臂总长",
+                f"L4={_num(third / 1000.0)}                        ! {third} mm托盘宽度",
+                f"L5={_num(common_tail)}                        ! 端部短托臂长度",
             ]
         )
         terms[first] = {"total": "L1", "tray": "L2", "tail": "L5"}
@@ -704,8 +821,9 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         "finish",
         "/clear",
         "/prep7",
-        "! CableTrayAI generated current-type grouped mixed tray model.",
-        "! Mirrored double-side mixed widths use senum boundary grouped loops instead of the legacy per-layer renderer.",
+        "! CableTrayAI自有标准化命令流：双侧镜像混合托盘宽度建模。",
+        "! 该命令流用senum分界循环表达不同托盘宽度，并在网格后声明拓扑组件。",
+        "! 组件名保持ASCII，中文只写在注释中，避免ANSYS解析变量时出现乱码风险。",
         "ET,1,188",
         "KEYOPT,1,4,2",
         "KEYOPT,1,1,1",
@@ -830,6 +948,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
 
     lines.extend(["NUMMRG,KP"])
     _append_line_id_mesh_loops(lines)
+    _append_topology_component_block(lines)
     lines.extend(
         [
             "*DO,J,1,3",
@@ -881,9 +1000,18 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         for side, layers in (("front", front_layers), ("back", back_layers))
         for layer in layers
     ]
+    topology_manifest = _topology_manifest(
+        model_source="ctai_grouped_mirrored_mixed_standard",
+        widths=widths,
+        layer_geometry=layer_geometry,
+        support_section=support_section,
+        primary_arm=primary_arm,
+        secondary_arm=secondary_arm,
+        command_style="senum_grouped_component_topology",
+    )
     return "\n".join(lines), {
         "status": "pass",
-        "model_source": "current_type_grouped_mirrored_mixed_renderer",
+        "model_source": "ctai_grouped_mirrored_mixed_standard",
         "support_section": support_section,
         "arm_primary_section": primary_arm,
         "arm_secondary_section": secondary_arm,
@@ -894,9 +1022,9 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         "source_geometry_widths_mm": widths,
         "grouped_width_counts": [{"width_mm": width, "count_per_side": count} for width, count in groups],
         "command_style": {
-            "status": "senum_grouped_current_type_loops",
+            "status": "senum_grouped_component_topology",
             "source_style_parameter_policy": source_style_policy,
-            "policy": "Mirrored mixed trays are rendered as grouped width loops using senum1/senum2/senum3 cutoffs. Where the current-type single-side mixed PIP provides a reviewed pattern, the generated double-side mirror keeps the same L1/L2/L3/L4/L5 variable form for human review while retaining line-id capture for deterministic post-processing.",
+            "policy": "双侧镜像混合托盘按宽度分组循环建模；命令流保留L1/L2/L3/L4/L5等审查习惯变量，同时用线号登记和拓扑组件保证后处理不靠坐标猜选。",
         },
         "physical_bolt_modeling": {
             "status": "pass",
@@ -922,6 +1050,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
             "back_base": 1500,
         },
         "layer_geometry": layer_geometry,
+        "topology_manifest": topology_manifest,
     }
 
 
@@ -962,8 +1091,9 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         "finish",
         "/clear",
         "/prep7",
-        "! CableTrayAI generated mixed tray layer model.",
-        "! Each tray layer keeps its own width, arm split, section, density, and bolt keypoints.",
+        "! CableTrayAI自有标准化命令流：逐层混合托盘宽度建模。",
+        "! 每层单独保存托盘宽度、托臂分段、截面、密度和螺栓关键点。",
+        "! 建模后会声明方钢、托臂、托盘和螺栓组件，供后处理按组件提取。",
         "ET,1,188",
         "KEYOPT,1,4,2",
         "KEYOPT,1,1,1",
@@ -1057,7 +1187,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
 
     lines.extend(
         [
-            "! Standardized support-column loop.",
+            "! CableTrayAI标准方钢立柱循环：三跨支架统一生成竖向方钢线。",
             "*DO,J,1,3",
             "K,500+KPFSTEP*(J-1),0,L4*(J-1),0",
             "*DO,I,1,senum",
@@ -1082,12 +1212,13 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         ]
     )
     _append_line_id_mesh_loops(lines)
+    _append_topology_component_block(lines)
     _append_side_coupling_loop(lines, side="front", layer_count=len(front_layers), prefix="Q")
     _append_side_coupling_loop(lines, side="back", layer_count=len(back_layers), prefix="H")
 
     lines.extend(
         [
-            "! Couple support-column nodes to same-elevation tray-arm root nodes.",
+            "! CableTrayAI根部耦合：将方钢立柱节点与同标高托臂根部节点耦合。",
             "*DO,J,1,3",
             "*DO,I,1,senum",
             "QZ=0.1+0.2*(I-1)",
@@ -1168,9 +1299,18 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         for side, layers in (("front", front_layers), ("back", back_layers))
         for layer in layers
     ]
+    topology_manifest = _topology_manifest(
+        model_source="ctai_layered_mixed_tray_standard",
+        widths=widths,
+        layer_geometry=layer_geometry,
+        support_section=support_section,
+        primary_arm=primary_arm,
+        secondary_arm=secondary_arm,
+        command_style="loop_parameterized_component_topology",
+    )
     audit = {
         "status": "pass",
-        "model_source": "deterministic_mixed_tray_layer_renderer",
+        "model_source": "ctai_layered_mixed_tray_standard",
         "support_section": support_section,
         "arm_primary_section": primary_arm,
         "arm_secondary_section": secondary_arm,
@@ -1184,8 +1324,8 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
             "policy": "For each side, mixed tray widths are modeled from wider lower layers to narrower upper layers; original layer indices are retained in layer_geometry.",
         },
         "command_style": {
-            "status": "loop_parameterized_line_id_grouped",
-            "policy": "K/L geometry, support-column lines, line-id capture, meshing, root coupling and per-layer coordinates are generated with APDL arrays and *DO loops; line ids are recorded with *GET and meshed by recorded groups instead of geometry-location guesses.",
+            "status": "loop_parameterized_component_topology",
+            "policy": "关键点、线、支架立柱、线号登记、网格划分、根部耦合和分层坐标全部由APDL数组与*DO循环生成；后处理使用拓扑组件，不再使用坐标二次猜选。",
         },
         "shared_max_width_geometry": {
             "status": "not_used",
@@ -1215,9 +1355,9 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
             "back_base": numbering["back_base"],
         },
         "layer_geometry": layer_geometry,
+        "topology_manifest": topology_manifest,
         "policy": (
-            "This renderer is used only for mixed tray widths. It preserves the reviewed S2 keypoint families "
-            "while assigning each layer its own tray section, density, arm split and connector location."
+            "该渲染器仅用于混合托盘宽度。它保留S2支架关键点族习惯，同时让每层拥有自己的托盘截面、密度、托臂分段和连接位置。"
         ),
     }
     return "\n".join(lines), audit

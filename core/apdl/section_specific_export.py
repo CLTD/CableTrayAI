@@ -110,7 +110,7 @@ def _square_segment(text: str) -> tuple[str, dict[str, Any]]:
         "derived_macro": SQUARE_MACRO,
         "selector": ["ESEL,S,TYPE,,1", "ESEL,R,SEC,,1"],
         "output": SQUARE_OUTPUT,
-        "source_policy": "Derived from the standard MAXBEAMSTRESS extraction block, narrowed by section 1 because the model command assigns 方钢 with LATT section 1.",
+        "source_policy": "从标准MAXBEAMSTRESS提取块派生，并按截面1收窄；建模命令流中方钢由LATT截面1定义。",
     }
     return segment, audit
 
@@ -136,12 +136,12 @@ def augment_square_support_export(post_path: Path | str) -> dict[str, Any]:
     block = "\n".join(
         [
             "",
-            "! CableTrayAI audited augmentation: 方钢 section-1-only stress export.",
-            "! Source: cloned from MAXBEAMSTRESS block and narrowed with ESEL,R,SEC,,1.",
+            "! CableTrayAI审查增强：方钢截面1专项应力导出。",
+            "! 来源：复制MAXBEAMSTRESS块，并用ESEL,R,SEC,,1收窄到方钢截面。",
             _cleanup_block(),
             segment,
             _cleanup_block(),
-            "! End CableTrayAI 方钢 section-1-only stress export.",
+            "! CableTrayAI方钢截面1专项应力导出结束。",
             "",
         ]
     )

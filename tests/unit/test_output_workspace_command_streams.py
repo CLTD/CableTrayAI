@@ -12,6 +12,7 @@ def test_command_stream_manifest_includes_spectrum_and_residual_mass_streams(tmp
         "generated_model.mac",
         "generated_solve.mac",
         "generated_post.mac",
+        "apdl_topology_manifest.json",
         "ansys_spectrum_sl1.mac",
         "ansys_spectrum_sl2.mac",
         "ansys_spectrum_workbook_format.mac",
@@ -29,6 +30,8 @@ def test_command_stream_manifest_includes_spectrum_and_residual_mass_streams(tmp
     assert roles["modeling"]["required"] is True
     assert roles["calculation"]["required"] is True
     assert roles["result_extraction"]["required"] is True
+    assert roles["model_topology_manifest"]["exists"] is True
+    assert roles["model_topology_manifest"]["required"] is False
     assert roles["spectrum_sl1_solve"]["exists"] is True
     assert roles["spectrum_sl2_solve"]["exists"] is True
     assert roles["spectrum_workbook_format_review"]["exists"] is True

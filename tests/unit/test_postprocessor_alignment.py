@@ -115,3 +115,64 @@ def test_grouped_mixed_tmax_selector_uses_arm_sections(tmp_path: Path) -> None:
     assert "ESEL,A,SEC,,3" in before_tmax
     assert "10*_CTAI_LAYER" not in before_tmax
     assert "10*I+2" not in before_tmax
+
+
+def test_ctai_mixed_component_topology_uses_declared_components(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        '{"support":{"square_tube_width_m":0.10},"metadata":{"square_section_outer_mm":100}}',
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "CM,CTAI_SUPPORT_ELEMS,ELEM",
+                "CM,CTAI_ARM_ELEMS,ELEM",
+                "CM,CTAI_TRAY_ELEMS,ELEM",
+                "CM,CTAI_BOLT_ELEMS,ELEM",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_post.mac").write_text(
+        "\n".join(
+            [
+                "ESEL,NONE",
+                "*DO,_CTAI_LAYER,1,10,1",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+2",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+3",
+                "  ESEL,A,TYPE,,10*_CTAI_LAYER+4",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+2",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+3",
+                "  ESEL,A,TYPE,,200*_CTAI_LAYER+4",
+                "*ENDDO",
+                "ALLSEL",
+                "! CableTrayAI audited cantilever selector for parameterized S2 models.",
+                "ESEL,NONE",
+                "*DO,I,1,qiancengshu,1",
+                "ESEL,A,TYPE,,10*I+2",
+                "ESEL,A,TYPE,,10*I+3",
+                "*ENDDO",
+                "*DO,I,1,houcengshu,1",
+                "ESEL,A,TYPE,,200*I+2",
+                "ESEL,A,TYPE,,200*I+3",
+                "*ENDDO",
+                "*CREATE,TMAXBEAMSTRESS-WRITE,MAC",
+                "*END",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = align_postprocessor_to_intake(job_dir)
+    text = (job_dir / "generated_post.mac").read_text(encoding="utf-8")
+    before_tmax = text.split("*CREATE,TMAXBEAMSTRESS-WRITE,MAC", 1)[0]
+
+    assert audit["component_topology"] is True
+    assert audit["tbmodel_selector"]["status"] == "component_topology_applied"
+    assert audit["tmax_selector"]["status"] == "applied"
+    assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in before_tmax
+    assert "CMSEL,A,CTAI_TRAY_ELEMS,ELEM" in before_tmax
+    assert "10*_CTAI_LAYER" not in before_tmax
+    assert "10*I+2" not in before_tmax

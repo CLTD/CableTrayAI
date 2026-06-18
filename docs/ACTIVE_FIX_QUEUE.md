@@ -1,5 +1,39 @@
 # CableTrayAI ??????
 
+## 2026-06-18 CableTrayAI mixed tray component-topology standard flow queue
+
+Resolved in source and unit tests:
+
+1. Mixed tray-width jobs now route to CableTrayAI-owned standardized APDL geometry instead of using a department mixed model as the production geometry.
+2. Department command-flow families remain as audited solve/post intent and manual review references, so the code still respects existing standards without forcing mismatched mixed geometry.
+3. Mixed generated models now declare `CTAI_SUPPORT_ELEMS`, `CTAI_ARM_ELEMS`, `CTAI_TRAY_ELEMS`, `CTAI_BOLT_ELEMS`, `CTAI_STRUCTURAL_ELEMS`, and `CTAI_BOLT_NODES` after meshing.
+4. Mixed generated post-processing now extracts cantilever stress and Fig. 5.2 display by those declared components, not by coordinate reselection, obsolete `10*_CTAI_LAYER` expressions, or stale TYPE/SEC assumptions.
+5. `apdl_topology_manifest.json` is written and published with the command streams so manual review can see the intended modeling/extraction interface.
+6. All new APDL comments for the standard flow are Chinese UTF-8 comments; APDL variables and component names remain ASCII to avoid ANSYS parser encoding issues.
+
+Verification:
+
+1. Python compile passed for touched APDL/result modules.
+2. Full `tests/unit` passed.
+3. `git diff --check` passed.
+4. Mixed render smokes passed for grouped mirrored mixed and single-side five-width mixed examples.
+5. UTF-8 Chinese comment checks passed.
+6. Real ANSYS18.2 validation passed for row 2 / `18185NI-LXSJ4210` at `jobs/verify_ctai_component_topology_real_20260618_211918`. It selected `160-160-8`, `ansys_run_status=success`, `result_validation.status=pass`, max deterministic ratio `0.8526662509801224`, and `TMAXBEAMSTRESS.LIS` maps to `ctai_cantilever_arm_component`.
+7. The modal MT and square-section learning caches were refreshed by the real run for this normalized 4210 key; this is intentional because the learned record now points to the component-topology validation job and aligned section-selection component.
+
+Closeout:
+
+1. Additional real ANSYS18.2 matrix validation passed for rows 5 and 7 at `jobs/verify_ctai_component_topology_matrix_20260618_214222`.
+2. `18185NI-LXSJ4213` selected `100-100-6`, ANSYS return code `0`, result validation `pass`, and final controlling ratio `0.8205337776189886`.
+3. `18185NI-LXSJ4215` selected `100-100-8`, ANSYS return code `0`, result validation `pass`, final controlling ratio `0.8284205670255151`, and command-stream publication includes `apdl_topology_manifest.json`.
+4. Full `tests/unit`, Python compile, recovery JSON validation, `git diff --check`, and `source_materials` clean checks passed. `git diff --check` only reports expected CRLF normalization warnings.
+5. Accessible source-tree Python caches were removed. Two old root pytest cache directories have unreadable ACLs, but they are ignored by Git and package-excluded.
+6. Server, desktop, and installer runtimes were rebuilt, the full installer package was refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`, package gate passed, and local `D:/CableTrayAI` install smoke passed with `/health`, root page, and `duxyb/cnpe123` login.
+
+Open:
+
+1. Commit and push the completed source/package-state update.
+
 ## 2026-06-18 single-side five-width mixed tray source-flow queue
 
 Resolved in source, real ANSYS, package, and local deployment:

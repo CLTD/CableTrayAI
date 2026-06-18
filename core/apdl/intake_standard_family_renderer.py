@@ -2765,15 +2765,12 @@ def render_intake_standard_family_commands(
     family_source_path = Path(family["source"])
     source_text, encoding = read_text_with_encoding(family_source_path)
     metadata = payload.get("metadata") or {}
-    allow_platform_mixed_renderer = bool(metadata.get("allow_platform_mixed_tray_renderer"))
     mixed_family_cover = _current_type_mixed_family_covers_payload(
         payload,
         source_text=source_text,
         source_path=family_source_path,
     )
-    use_platform_mixed_renderer = should_use_mixed_tray_layer_renderer(payload) and (
-        allow_platform_mixed_renderer or mixed_family_cover.get("status") != "pass"
-    )
+    use_platform_mixed_renderer = should_use_mixed_tray_layer_renderer(payload)
     if use_platform_mixed_renderer:
         rendered_model, parameter_audit = render_mixed_tray_layer_model(payload)
         parameter_audit["source_family_model_status"] = "bypassed_for_mixed_tray_layer_renderer"
@@ -2782,22 +2779,25 @@ def render_intake_standard_family_commands(
             "source": family["source"],
             "source_sha256": family.get("source_sha256"),
             "policy": (
-                "Mixed tray layer geometry is generated per layer when no current unit standard mixed family "
-                "exactly covers the payload. The selected source family remains the audited solve/post reference."
+                "混合托盘宽度统一使用CableTrayAI自有标准化建模命令流。选中的科室标准族保留为求解/后处理意图和人工审查参考，"
+                "但不再替代混合几何拓扑。"
             ),
         }
+        topology_manifest = parameter_audit.get("topology_manifest")
+        if topology_manifest:
+            (job_dir / "apdl_topology_manifest.json").write_text(
+                json.dumps(topology_manifest, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
     else:
         rendered_model, parameter_audit = _render_model_from_family(source_text, payload)
         parameter_audit["current_type_mixed_family_cover"] = mixed_family_cover
         if should_use_mixed_tray_layer_renderer(payload):
             parameter_audit["platform_mixed_tray_renderer"] = {
-                "status": "disabled_for_production_standard_family_baseline",
-                "allow_platform_mixed_tray_renderer": allow_platform_mixed_renderer,
+                "status": "disabled_unexpected",
                 "source_ref": family["source"],
                 "policy": (
-                    "Production mixed tray-width jobs preserve the current unit standard command-flow family by "
-                    "default. The platform-owned mixed renderer is retained only as an explicit experimental "
-                    "fallback after separate review."
+                    "混合托盘宽度应进入CableTrayAI自有标准化命令流；若看到此状态，说明分派逻辑需要复核。"
                 ),
             }
     required_tray_sections = _required_tray_sections_from_payload(payload)
