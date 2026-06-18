@@ -1,5 +1,35 @@
 # CableTrayAI ??????
 
+## 2026-06-18 single-side five-width mixed tray source-flow closeout
+
+Current source/validation state:
+
+1. Learned the uploaded department single-side five-layer `600/500/300/200/100` command-flow set from `C:/Users/duxy/Desktop/Desktopuxyb`: model, solve reference, and S2 post extraction.
+2. Curated the reviewed files under `resources/current_type_command_flows/single_mixed_600_500_300_200_100/`.
+3. Production standard-family selection now routes exact single-side five-width mixed intakes with small `100/200` tray blocks to this reviewed source family. Compact `500+600` mixed jobs still prefer the smaller reviewed family, so the broader five-width source does not steal simpler cases.
+4. The reviewed source post topology is preserved for this family: `MAXBEAMSTRESS`/`TMAX` source-style selection keeps `ESEL,S,TYPE,,1` and `ESEL,U,SEC,,1`. This fixes the root mismatch where a nonstandard mixed geometry plus source-style post stream could line up for NORMAL/UPSET but diverge in FAULTED `MAXBEAMSTRESS`.
+5. Fixed the square-section replacement follow-up defect: after auto-selection, reviewed single-side mixed wide-tray `L5` now follows the selected square tube branch. Selected square outer `>120 mm` writes `L5=0.15`; selected square outer `<=120 mm` keeps `L5=0.20`. Other mixed-family `L5` meanings are explicitly skipped so double-different side spans are not rewritten.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/optimizer/square_section_selector.py core/apdl/intake_standard_family_renderer.py tests/unit/test_square_section_workflow_policy.py tests/unit/test_intake_standard_family_tray_widths.py` passed.
+2. Targeted tests passed: `tests/unit/test_intake_standard_family_tray_widths.py`, `tests/unit/test_postprocessor_alignment.py`, and `tests/unit/test_square_section_workflow_policy.py`.
+3. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+4. `git diff --check` passed, with only line-ending normalization warnings.
+5. Real ANSYS18.2 validation passed for row 2 of `C:/Users/duxy/Desktop/1818 S2支架.xlsx` at `jobs/verify_single_five_l5sync_real_20260618/18185NI-LXSJ4210`. Final selected section is `160-160-8`, final model has `H1=0.160000` and `L5=0.15`, `ansys_run_audit.status=success`, `result_validation.status=pass`, and max deterministic ratio is `0.8483448948253757`.
+6. The verified `MAXBEAMSTRESS.LIS` values are:
+   - NORMAL: TENSION `1522859.1`, COMPRESS `-71109.2`, BEND `36690078.0`, SHEAR `5200814.5`.
+   - UPSET: TENSION `2028500.2`, COMPRESS `-730027.1`, BEND `62403138.0`, SHEAR `8589881.5`.
+   - FAULTED: TENSION `4645857.0`, COMPRESS `-4574748.0`, BEND `225734616.0`, SHEAR `22195337.4`.
+
+Deployment closeout:
+
+1. Full installer package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+3. Local `D:/CableTrayAI` installed from the refreshed full package.
+4. Local smoke passed: `/health` returned `ok`, root page returned HTTP `200`, and `duxyb/cnpe123` login returned `pass`.
+5. Installed tree has `resources/current_type_command_flows/single_mixed_600_500_300_200_100/`, no legacy nested package directories, and source/package/install hashes match for the touched runtime files and new resources.
+
 ## 2026-06-18 all-ratio square-section display and 4210 render verification
 
 Current source state:

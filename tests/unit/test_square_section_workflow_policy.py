@@ -56,6 +56,55 @@ def _write_section_catalog(source_root: Path, names: list[str]) -> None:
         (source_root / f"{name}.SECT").write_text("! test sect\n", encoding="utf-8")
 
 
+def _write_single_mixed_wide_tail_job(job_dir: Path, *, source_shape: str = "single_mixed_600_500_300_200_100_universal") -> None:
+    job_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {"analysis_method": "response_spectrum"},
+        "support": {
+            "allowed_square_section_ids": ["120-120-10", "160-160-8"],
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [{"section_id": "100-100-6", "sect_file": "100-100-6"}],
+        "tray_layers": [
+            {"side": "front", "tray_width_m": 0.6},
+            {"side": "front", "tray_width_m": 0.5},
+            {"side": "front", "tray_width_m": 0.3},
+            {"side": "front", "tray_width_m": 0.2},
+            {"side": "front", "tray_width_m": 0.1},
+        ],
+    }
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "intake_standard_family_traceability.json").write_text(
+        json.dumps({"parameterization": {"source_mixed_family_shape": source_shape}}),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "H1=0.100000",
+                "L3=0.35",
+                "L5=0.2",
+                "L6=2.0",
+                "senum1=5",
+                "senum2=4",
+                "senum3=3",
+                "senum4=2",
+                "senum5=1",
+                "SECREAD,100-100-6,SECT",
+                "SECREAD,600-75-2mm,SECT",
+                "SECREAD,500-75-2mm,SECT",
+                "SECREAD,300-75-2mm,SECT",
+                "SECREAD,200-75-2mm,SECT",
+                "SECREAD,100-75-2mm,SECT",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_trial_section_replacement_uses_same_arm_branch_as_final_model(tmp_path: Path) -> None:
     source_root = tmp_path / "source"
     _write_section_catalog(
@@ -159,6 +208,75 @@ def test_channel_trial_replacement_keeps_channel_secondary_offset(tmp_path: Path
     assert audit["arm_section_family"] == "square_le_120_standard_channel_family"
     assert audit["arm_section_replace_audit"]["yixing_secoffset_replacements"] == 0
     assert "SECOFFSET,user,,-0.03249\nSECREAD,CAOGANG42DAN" in text
+
+
+def test_trial_section_replacement_syncs_single_mixed_l5_for_yixing_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.15" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "updated"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["policy_status"] == "square_outer_width_gt_120_l5_0p15m"
+
+
+def test_trial_section_replacement_keeps_single_mixed_l5_for_channel_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-10",
+            "50-42",
+            "CAOGANG42DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "120-120-10", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.120000" in text
+    assert "L5=0.2" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "already_current"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["policy_status"] == "square_outer_width_le_120_l5_0p20m"
+
+
+def test_trial_section_replacement_does_not_rewrite_non_single_mixed_l5_span(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir, source_shape="double_mixed_one_width_per_side")
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.2" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "skipped"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["reason"] == "source_multi_width_L5_not_wide_tail_family"
 
 
 def test_trial_section_replacement_does_not_overwrite_tray_secreads(tmp_path: Path) -> None:

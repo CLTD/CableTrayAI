@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-06-18 single-side five-width mixed tray source-flow queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Added the reviewed department single-side five-layer `600/500/300/200/100` command-flow family under `resources/current_type_command_flows/single_mixed_600_500_300_200_100/`.
+2. Exact single-side mixed intakes containing `100/200` small-tray topology now select this reviewed source family and preserve its source-style post-processing selectors. This prevents using source `ESEL,S,TYPE,,1` / `ESEL,U,SEC,,1` against a nonstandard generated topology.
+3. Standard-family scoring still keeps compact `500+600` mixed jobs on the smaller reviewed source family.
+4. Square-section replacement now synchronizes reviewed single-side mixed wide-tray `L5` after final section selection: `>120 mm -> L5=0.15`, `<=120 mm -> L5=0.20`; unrelated `L5` semantics are skipped.
+5. Verification passed: py_compile, targeted APDL/post/square-section tests, full `tests/unit`, `git diff --check`, and a real ANSYS18.2 single-side five-width run.
+6. Real-run result: `18185NI-LXSJ4210` selected `160-160-8`, final model `H1=0.160000` and `L5=0.15`, `result_validation.status=pass`, max deterministic ratio `0.8483448948253757`.
+7. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+8. Local `D:/CableTrayAI` was installed from the full package; `/health`, root page, and `duxyb/cnpe123` login passed; installed resources are not nested and match source/package hashes.
+
+Open:
+
+1. Commit and push this completed update.
+
 ## 2026-06-18 all-ratio square-section display queue
 
 Resolved in source and unit tests:

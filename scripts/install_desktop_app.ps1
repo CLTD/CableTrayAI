@@ -64,16 +64,57 @@ function Copy-Package {
     }
     New-Item -ItemType Directory -Force -Path $destPath | Out-Null
 
+    Copy-DirectoryContents -Source $sourcePath -Destination $destPath
+}
+
+function Copy-DirectoryContents {
+    param(
+        [string]$Source,
+        [string]$Destination
+    )
     $excludeNames = @(".git", ".pytest_cache", "__pycache__", "jobs", "uploads", "outputs", "logs")
     $excludeFiles = @("*.pyc", "*.pyo")
-    $items = Get-ChildItem -LiteralPath $sourcePath -Force
-    foreach ($item in $items) {
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    foreach ($item in Get-ChildItem -LiteralPath $Source -Force) {
         if ($excludeNames -contains $item.Name) { continue }
         if (-not $item.PSIsContainer -and ($excludeFiles | Where-Object { $item.Name -like $_ })) { continue }
-        $target = Join-Path $destPath $item.Name
-        Copy-Item -LiteralPath $item.FullName -Destination $target -Recurse -Force
+        $target = Join-Path $Destination $item.Name
+        if ($item.PSIsContainer) {
+            Copy-DirectoryContents -Source $item.FullName -Destination $target
+        }
+        else {
+            Copy-Item -LiteralPath $item.FullName -Destination $target -Force
+        }
     }
+}
 
+function Remove-LegacyNestedPackageDirs {
+    param([string]$Root)
+    $topLevelDirs = @(
+        ".agents",
+        "apps",
+        "config",
+        "core",
+        "data",
+        "docs",
+        "resources",
+        "runtime",
+        "scripts",
+        "source_materials",
+        "templates"
+    )
+    $rootPath = [System.IO.Path]::GetFullPath($Root).TrimEnd("\")
+    foreach ($name in $topLevelDirs) {
+        $nested = Join-Path (Join-Path $rootPath $name) $name
+        if (-not (Test-Path -LiteralPath $nested)) { continue }
+        $nestedPath = [System.IO.Path]::GetFullPath($nested).TrimEnd("\")
+        if (-not $nestedPath.StartsWith($rootPath + "\", [System.StringComparison]::OrdinalIgnoreCase)) {
+            Write-InstallLog "Warning: skip unsafe nested cleanup path $nestedPath"
+            continue
+        }
+        Write-InstallLog "Removing legacy nested package directory $nestedPath"
+        Remove-Item -LiteralPath $nestedPath -Recurse -Force
+    }
 }
 
 function Get-PasswordHash {
@@ -197,6 +238,7 @@ Write-InstallLog "Install dir : $target"
 
 Stop-ExistingCableTrayAI
 Copy-Package -Destination $target
+Remove-LegacyNestedPackageDirs -Root $target
 $authSetup = Ensure-AuthLocal -Root $target
 $loginInfoPath = Ensure-LoginInfo -Root $target -AuthSetup $authSetup
 

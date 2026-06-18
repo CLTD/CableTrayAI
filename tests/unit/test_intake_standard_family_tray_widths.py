@@ -213,6 +213,46 @@ def _single_two_layer_mixed_500_600_payload() -> dict:
     return payload
 
 
+def _single_five_layer_mixed_600_500_300_200_100_payload() -> dict:
+    specs = [
+        (1, 600, 65423.0, 0.47, 0.20),
+        (2, 500, 56704.260652, 0.35, 0.20),
+        (3, 300, 44315.0, 0.20, 0.15),
+        (4, 200, 51095.0, 0.20, 0.15),
+        (5, 100, 38961.0, 0.20, 0.15),
+    ]
+    return {
+        "metadata": {"analysis_method": "response_spectrum"},
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 5,
+            "layers_back": 0,
+            "support_height_m": 2.1,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "100-100-6.SECT"},
+            *[
+                {"section_id": f"tray-{width}", "sect_file": f"{width}-75-2mm.SECT"}
+                for _, width, *_ in specs
+            ],
+        ],
+        "tray_layers": [
+            {
+                "side": "front",
+                "layer_index": index,
+                "tray_width_m": width / 1000.0,
+                "tray_density_kg_m3": density,
+                "tray_section_id": f"tray-{width}",
+                "arm_a_length_m": arm_a,
+                "arm_b_length_m": arm_b,
+            }
+            for index, width, density, arm_a, arm_b in specs
+        ],
+    }
+
+
 def _double_three_by_three_mirrored_mixed_100_300_500_payload() -> dict:
     tray_layers = []
     specs = [
@@ -586,6 +626,55 @@ def test_single_mixed_500_600_uses_current_type_standard_family_variables() -> N
     assert audit["optional_mixed_mesh_guards"]["status"] == "guarded"
 
 
+def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_path: Path) -> None:
+    payload = _single_five_layer_mixed_600_500_300_200_100_payload()
+    source = Path(
+        "resources/current_type_command_flows/single_mixed_600_500_300_200_100/"
+        "single_mixed_600_500_300_200_100_universal.PIP"
+    )
+    source_text, _ = read_text_with_encoding(source)
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert audit["source_mixed_family_shape"] == "single_mixed_600_500_300_200_100_universal"
+    assert audit["model_geometry_widths_mm"] == [600, 500, 300, 200, 100]
+    assert audit["material_slot_widths_mm"] == [600, 500, 300, 200, 100]
+    assert audit["assigned"]["senum5"] == 1
+    assert audit["assigned"]["senum4"] == 2
+    assert audit["assigned"]["senum3"] == 3
+    assert audit["assigned"]["senum2"] == 4
+    assert audit["assigned"]["senum1"] == 5
+    assert "senum5=1" in rendered
+    assert "senum4=2" in rendered
+    assert "senum3=3" in rendered
+    assert "senum2=4" in rendered
+    assert "senum1=5" in rendered
+    assert "L7=0.2" in rendered
+    assert "L8=0.1" in rendered
+    assert "L5=0.2" in rendered
+    assert "CPCYC,UX,,,,,M1-0.05" in rendered
+    for width in (600, 500, 300, 200, 100):
+        assert f"SECREAD,'{width}-75-2mm'" in rendered
+    assert "*IF,senum5,GT,0,THEN" in rendered
+    assert "*IF,senum4,GT,senum5,THEN" in rendered
+    assert "*IF,senum3,GT,senum4,THEN" in rendered
+    assert "*IF,senum2,GT,senum3,THEN" in rendered
+    assert "*IF,senum1,GT,senum2,THEN" in rendered
+
+    result = render_intake_standard_family_commands("single_five_width_render", payload, jobs_dir=tmp_path)
+    post = (tmp_path / "single_five_width_render" / "generated_post.mac").read_text(encoding="utf-8")
+
+    assert result["status"] == "pass"
+    assert result["family"]["source"].replace("\\", "/").endswith(
+        "single_mixed_600_500_300_200_100/single_mixed_600_500_300_200_100_universal.PIP"
+    )
+    assert result["parameterization"]["source_family_model_status"] == "pass"
+    assert result["parameterization"]["current_type_mixed_family_cover"]["status"] == "pass"
+    assert result["parameterization"]["platform_mixed_tray_renderer"]["status"] == "disabled_for_production_standard_family_baseline"
+    assert "ESEL,S,TYPE,,1" in post
+    assert "ESEL,U,SEC,,1" in post
+
+
 def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:
     source_text, _ = read_text_with_encoding(Path("resources/current_type_command_flows/single_mixed_500_600_yixing.PIP"))
     payload = _single_two_layer_mixed_500_600_payload()
@@ -623,6 +712,34 @@ def test_current_type_mixed_cover_accepts_4514_style_single_500_600() -> None:
 
     assert cover["status"] == "pass"
     assert cover["reason"] == "single_side_current_type_mixed_family_exact_cover"
+
+
+def test_current_type_mixed_cover_accepts_single_five_width_source_with_small_trays() -> None:
+    source = Path(
+        "resources/current_type_command_flows/single_mixed_600_500_300_200_100/"
+        "single_mixed_600_500_300_200_100_universal.PIP"
+    )
+    source_text, _ = read_text_with_encoding(source)
+
+    cover = _current_type_mixed_family_covers_payload(
+        _single_five_layer_mixed_600_500_300_200_100_payload(),
+        source_text=source_text,
+        source_path=source,
+    )
+
+    assert cover["status"] == "pass"
+    assert cover["source_shape"] == "single_mixed_600_500_300_200_100_universal"
+
+
+def test_compact_single_500_600_stays_on_three_width_source_family() -> None:
+    payload = _single_two_layer_mixed_500_600_payload()
+
+    family = select_standard_model_family(payload)
+
+    assert family["source"].replace("\\", "/").endswith("single_mixed_600_500_300_universal.PIP")
+    compact = [check for check in family["checks"] if check["check_id"] == "mixed_width_compact_cover"]
+    assert compact
+    assert compact[0]["extra_width_count"] == 1
 
 
 def test_current_type_mixed_cover_rejects_per_side_mixed_4210_style_payload() -> None:

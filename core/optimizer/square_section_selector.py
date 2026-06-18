@@ -1614,12 +1614,84 @@ def _single_tray_width_mm_from_payload(payload: dict[str, Any]) -> int | None:
     return widths[0] if len(widths) == 1 else None
 
 
+def _tray_widths_mm_from_payload(payload: dict[str, Any]) -> list[int]:
+    widths: list[int] = []
+    for layer in payload.get("tray_layers") or []:
+        if not isinstance(layer, dict):
+            continue
+        raw_width = layer.get("tray_width_m")
+        if raw_width is None:
+            raw_width = layer.get("width_m")
+        try:
+            width = int(round(float(raw_width) * 1000.0)) if raw_width is not None else 0
+        except (TypeError, ValueError):
+            width = 0
+        if width <= 0:
+            raw_width_mm = layer.get("tray_width_mm") or layer.get("width_mm")
+            try:
+                width = int(round(float(raw_width_mm))) if raw_width_mm is not None else 0
+            except (TypeError, ValueError):
+                width = 0
+        if width > 0 and width not in widths:
+            widths.append(width)
+    return widths
+
+
 def _single_width_l3_for_square_section(tray_width_mm: int, square_outer_mm: float) -> tuple[float, str]:
     if tray_width_mm <= 300:
         return 0.15, "tray_width_le_300_l3_0p15m"
     if square_outer_mm > 120.0:
         return 0.15, "square_outer_width_gt_120_l3_0p15m"
     return 0.20, "square_outer_width_le_120_l3_0p20m"
+
+
+def _wide_tray_tail_l5_for_square_section(widths_mm: list[int], square_outer_mm: float) -> tuple[float, str]:
+    if widths_mm and max(widths_mm) <= 300:
+        return 0.15, "tray_width_le_300_l5_0p15m"
+    if square_outer_mm > 120.0:
+        return 0.15, "square_outer_width_gt_120_l5_0p15m"
+    return 0.20, "square_outer_width_le_120_l5_0p20m"
+
+
+_SINGLE_MIXED_WIDE_TAIL_FAMILIES = {
+    "single_mixed_600_500_300_200_100_universal",
+    "single_mixed_600_500_300_universal",
+    "single_mixed_600_500_yixing",
+}
+
+
+def _source_mixed_family_shape_from_trace(job_dir: Path) -> str | None:
+    trace_path = job_dir / "intake_standard_family_traceability.json"
+    if not trace_path.exists():
+        return None
+    try:
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    parameterization = trace.get("parameterization") if isinstance(trace, dict) else None
+    if isinstance(parameterization, dict):
+        shape = parameterization.get("source_mixed_family_shape")
+        if shape:
+            return str(shape)
+    return None
+
+
+def _single_mixed_wide_tail_family_status(job_dir: Path, model_text: str) -> tuple[bool, str | None, str]:
+    shape = _source_mixed_family_shape_from_trace(job_dir)
+    if shape in _SINGLE_MIXED_WIDE_TAIL_FAMILIES:
+        return True, shape, "traceability_source_mixed_family_shape"
+    if shape:
+        return False, shape, "traceability_shape_not_single_mixed_wide_tail"
+
+    has_l6 = re.search(r"(?im)^\s*L6\s*=", model_text) is not None
+    has_l5 = re.search(r"(?im)^\s*L5\s*=", model_text) is not None
+    has_single_mixed_cutoffs = (
+        re.search(r"(?im)^\s*senum2\s*=", model_text) is not None
+        and re.search(r"(?im)^\s*senum3\s*=", model_text) is not None
+    )
+    if has_l6 and has_l5 and has_single_mixed_cutoffs:
+        return True, "inferred_single_mixed_wide_tail_family", "model_assignments_inferred"
+    return False, shape, "not_single_mixed_wide_tail_family"
 
 
 def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[str, Any]:
@@ -1660,6 +1732,7 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
     h1_updated = updated != text
 
     payload = _read_trial_input_payload(job_dir)
+    tray_widths_mm = _tray_widths_mm_from_payload(payload)
     tray_width_mm = _single_tray_width_mm_from_payload(payload)
     l3_audit: dict[str, Any]
     if re.search(r"(?im)^\s*L6\s*=", updated):
@@ -1693,6 +1766,52 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
             ),
         }
         updated = l3_updated
+
+    l5_audit: dict[str, Any]
+    is_single_mixed_wide_tail, source_mixed_shape, source_mixed_shape_source = _single_mixed_wide_tail_family_status(
+        job_dir,
+        updated,
+    )
+    if not re.search(r"(?im)^\s*L5\s*=", updated):
+        l5_audit = {"status": "skipped", "reason": "model_has_no_L5_assignment"}
+    elif not is_single_mixed_wide_tail:
+        l5_audit = {
+            "status": "skipped",
+            "reason": "source_multi_width_L5_not_wide_tail_family",
+            "source_mixed_family_shape": source_mixed_shape,
+            "source_mixed_family_shape_source": source_mixed_shape_source,
+            "policy": "Only reviewed single-side mixed wide-tray source families use L5 as the 500/600 tray tail controlled by square-section outer width. Other families may use L5 for another geometric span and must not be rewritten here.",
+        }
+    elif not tray_widths_mm:
+        l5_audit = {"status": "skipped", "reason": "missing_tray_widths_for_L5_sync"}
+    elif max(tray_widths_mm) <= 300:
+        l5_audit = {
+            "status": "skipped",
+            "reason": "no_wide_tray_requiring_square_section_L5_sync",
+            "tray_widths_mm": tray_widths_mm,
+        }
+    else:
+        l5_value, l5_policy = _wide_tray_tail_l5_for_square_section(tray_widths_mm, parsed.outer_mm)
+        l5_updated, l5_count = re.subn(
+            r"(?m)^(\s*L5\s*=\s*)[-+0-9.Ee]+",
+            rf"\g<1>{l5_value:.6g}",
+            updated,
+            count=1,
+        )
+        l5_audit = {
+            "status": "updated" if l5_updated != updated else "already_current",
+            "source_mixed_family_shape": source_mixed_shape,
+            "source_mixed_family_shape_source": source_mixed_shape_source,
+            "tray_widths_mm": tray_widths_mm,
+            "L5_m": l5_value,
+            "replaced_count": l5_count,
+            "policy_status": l5_policy,
+            "policy": (
+                "Single-side mixed 500/600-source L5 rule: max tray width <=300 mm uses 0.15 m; "
+                "wide-tray mixed families use 0.20 m for square outer <=120 mm and 0.15 m for square outer >120 mm."
+            ),
+        }
+        updated = l5_updated
     if updated != text:
         model_path.write_text(updated, encoding="utf-8", newline="\n")
     return {
@@ -1702,8 +1821,9 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
         "replaced_count": h1_count,
         "h1_status": "updated" if h1_updated else "already_current",
         "L3_sync": l3_audit,
+        "L5_sync": l5_audit,
         "source_ref": "square_section_name outer width -> generated_model.mac H1",
-        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1. Single-width L3 is also synchronized when the model is not a multi-width L6 family.",
+        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1. Single-width L3 is synchronized when the model is not a multi-width L6 family; reviewed single-side mixed wide-tray L5 is synchronized only for source families where L5 is the wide-tray tail.",
     }
 
 
