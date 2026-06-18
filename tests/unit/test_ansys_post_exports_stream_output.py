@@ -33,6 +33,57 @@ def test_figure_export_macro_exits_without_saving_database(tmp_path: Path) -> No
     assert "/EXIT,NOSAV" in macro_text
 
 
+def test_figure_export_tbmodel_uses_component_topology_when_available(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    for name in ("generated_post.mac", "CableTrayAI_Run.db", "CableTrayAI_Run.rst"):
+        (job_dir / name).write_text("FINISH\n", encoding="utf-8")
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "CM,CTAI_SUPPORT_ELEMS,ELEM",
+                "CM,CTAI_ARM_ELEMS,ELEM",
+                "CM,CTAI_TRAY_ELEMS,ELEM",
+                "CM,CTAI_BOLT_ELEMS,ELEM",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    figure_export.build_figure_export_macro(job_dir)
+    macro_text = (job_dir / "export_figures.mac").read_text(encoding="utf-8")
+
+    assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in macro_text
+    assert "CMSEL,A,CTAI_TRAY_ELEMS,ELEM" in macro_text
+    assert "ESEL,A,SEC,,10" not in macro_text
+    tbmodel_block = macro_text.split("*VWRITE,'TBMODEL'", 1)[0].rsplit("CMSEL,S,CTAI_ARM_ELEMS,ELEM", 1)[-1]
+    assert "/ESHAPE,1" in tbmodel_block
+    assert "/ESHAPE,0" not in tbmodel_block
+
+
+def test_figure_export_tbmodel_keeps_source_type1_selector_for_reviewed_source(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    for name in ("generated_post.mac", "CableTrayAI_Run.db", "CableTrayAI_Run.rst"):
+        (job_dir / name).write_text("FINISH\n", encoding="utf-8")
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "LATT,1,,1,,,,1",
+                "LATT,1,,1,,,,2",
+                "LATT,1,,1,,,,3",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    figure_export.build_figure_export_macro(job_dir)
+    macro_text = (job_dir / "export_figures.mac").read_text(encoding="utf-8")
+
+    assert "ESEL,S,TYPE,,1" in macro_text
+    assert "ESEL,U,SEC,,1" in macro_text
+
+
 def test_connection_node_export_macro_exits_without_saving_database(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     job_dir.mkdir()

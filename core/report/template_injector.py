@@ -1173,7 +1173,12 @@ def _replace_figures(
             str(item.get("target_file") or item.get("path") or ""),
         )
 
-    appendix_b = [figure for figure in figures if figure.get("appendix") == "B" and figure.get("component_scope") == "square_support"]
+    appendix_b = [
+        figure
+        for figure in figures
+        if figure.get("appendix") == "B"
+        and figure.get("component_scope") in {"mixed_beam_type_1", "source_beam_selection"}
+    ]
     appendix_b = sorted(appendix_b, key=figure_order)
     for index, figure in enumerate(appendix_b, start=1):
         path = job_dir / (figure.get("target_file") or figure.get("path") or "")
@@ -1184,7 +1189,7 @@ def _replace_figures(
                     f"图B-{index}",
                     path,
                     5.8,
-                    ensure_caption_text=f"图B-{index} 方钢应力图",
+                    ensure_caption_text=f"图B-{index} 支架应力图",
                 )
             )
 

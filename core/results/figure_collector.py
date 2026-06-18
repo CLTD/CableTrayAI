@@ -51,28 +51,30 @@ def _figure_metadata(path: Path) -> dict:
             "case": square_match.group(1),
             "stress_type": square_match.group(3),
             "component_scope": "square_support",
-            "appendix": "B",
+            "appendix": None,
         }
     match = re.match(r"^T?([ABD])[-_]?(\d?)(SDIR[12]?|SBEND\d?|SHEAR)", stem)
     if match:
         component_scope = "cantilever_arm" if stem.startswith("T") else "source_beam_selection"
+        appendix = "C" if component_scope == "cantilever_arm" else ("B" if match.group(1) in {"B", "D"} else None)
         return {
             "figure_type": "stress",
             "category": "stress",
             "case": match.group(1),
             "stress_type": match.group(3),
-            "component_scope": component_scope,
-            "appendix": "C" if component_scope == "cantilever_arm" else None,
+            "component_scope": component_scope if component_scope == "cantilever_arm" else "mixed_beam_type_1",
+            "appendix": appendix,
         }
     if stem.startswith(("A-", "B-", "D-", "A_", "B_", "D_")):
         parts = re.split(r"[-_]", stem, maxsplit=1)
+        case = stem[0]
         return {
             "figure_type": "stress",
             "category": "stress",
-            "case": stem[0],
+            "case": case,
             "stress_type": parts[1] if len(parts) > 1 else None,
-            "component_scope": "source_beam_selection",
-            "appendix": None,
+            "component_scope": "mixed_beam_type_1",
+            "appendix": "B" if case in {"B", "D"} else None,
         }
     return {
         "figure_type": "figure",
@@ -219,7 +221,7 @@ def collect_figures(job_dir: Path | str, output_manifest: bool = True) -> list[d
             if metadata["figure_type"] in {"model", "modal"}:
                 report_required_paths.append(path)
                 continue
-            if metadata["figure_type"] == "stress" and metadata["component_scope"] in {"square_support", "cantilever_arm"} and metadata["case"] in {"B", "D"}:
+            if metadata["figure_type"] == "stress" and metadata["component_scope"] in {"mixed_beam_type_1", "source_beam_selection", "cantilever_arm"} and metadata["case"] in {"B", "D"}:
                 report_required_paths.append(path)
         if report_required_paths:
             figure_paths = report_required_paths

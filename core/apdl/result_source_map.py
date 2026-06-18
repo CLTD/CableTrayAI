@@ -38,6 +38,8 @@ def _selector_window(lines: list[str], create_line_index: int) -> list[dict[str,
 
 def _component_scope(selectors: list[dict[str, Any]]) -> str:
     commands = "\n".join(item["command"].upper().replace(" ", "") for item in selectors)
+    if "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM" in commands and "CMSEL,A,CTAI_ARM_ELEMS,ELEM" in commands:
+        return "ctai_type1_component"
     if "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in commands:
         return "ctai_cantilever_arm_component"
     if "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM" in commands:
@@ -58,6 +60,8 @@ def _component_scope(selectors: list[dict[str, Any]]) -> str:
 
 
 def _report_component_hint(scope: str) -> str:
+    if scope == "ctai_type1_component":
+        return "mixed_beam_type_1"
     if scope == "ctai_cantilever_arm_component":
         return "cantilever_arm"
     if scope == "ctai_support_component":

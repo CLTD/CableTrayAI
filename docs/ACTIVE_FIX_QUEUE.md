@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-06-18 result-extraction component mapping queue
+
+Resolved in source, tests, and real ANSYS:
+
+1. Standard command-flow mapping is now explicit. `MAXBEAMSTRESS.LIS` and appendix-B `B*/D*` figures use the department `TYPE=1` equivalent scope: square support + tray arms, excluding trays and bolts. `SQUAREBEAMSTRESS.LIS` is square-support numeric-only. `TMAXBEAMSTRESS.LIS` is tray-arm-only. Fig. 5.2 / `TBMODEL.PNG` is model review only and selects arms + trays.
+2. Mixed component-topology models now publish `CTAI_TYPE1_ELEMS` as support + arms. `CTAI_STRUCTURAL_ELEMS` remains support + arms + trays for visual review and cannot drive `MAXBEAMSTRESS`.
+3. Square-section replacement now synchronizes component-topology `QL3A` and `apdl_topology_manifest.json` after final section selection. The tested L3 rule is: tray width `<=300 mm -> 0.15 m`; tray width `>300 mm` and square outer `<=120 mm -> 0.20 m`; tray width `>300 mm` and square outer `>120 mm -> 0.15 m`.
+4. `SQUAREBEAMSTRESS.LIS` export strips plot commands and no longer generates `SQ-*` figures. Appendix-B requires `B*/D*` main-stress figures from the support+arm scope.
+5. TMAX selector alignment is idempotent, so repeated formal section sync cannot duplicate `CMSEL,S,CTAI_ARM_ELEMS,ELEM`.
+6. Full test suite passed, and real ANSYS18.2 row 2 / `18185NI-LXSJ4210` passed at `jobs/verify_mapping_real_cleanpost_20260618`. The final model selected `160-160-8`, synchronized `QL3A(1..5)=0.15`, and result validation is publishable.
+7. Full installer package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `48427750AB6C42D593576926F36DBF206AD0F56CA3F872F0456742AE3845CE1B`.
+8. Package gate passed, local `D:/CableTrayAI` was installed from the rebuilt package, `/health` ok, root HTTP 200, and `duxyb/cnpe123` login pass.
+
+Open:
+
+1. Commit and push the completed update.
+
 ## 2026-06-18 CableTrayAI mixed tray component-topology standard flow queue
 
 Resolved in source and unit tests:

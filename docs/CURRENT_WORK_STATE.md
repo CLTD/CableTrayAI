@@ -1,5 +1,36 @@
 # CableTrayAI ??????
 
+## 2026-06-18 result-extraction component mapping closeout
+
+Current source state:
+
+1. The standard post-processing relationship is now explicit and tested:
+   - `MAXBEAMSTRESS.LIS` and appendix-B `B*/D*` figures select the department `TYPE=1` equivalent scope: square support + tray arms, excluding tray beams and bolt connector beams.
+   - `SQUAREBEAMSTRESS.LIS` selects square support only and is numeric-only. It does not generate or publish `SQ-*` figures.
+   - `TMAXBEAMSTRESS.LIS` selects tray arms only.
+   - Fig. 5.2 / `TBMODEL.PNG` selects tray arms + tray beams for model review, not for main stress ratios.
+2. Mixed component-topology models now declare and use `CTAI_TYPE1_ELEMS = CTAI_SUPPORT_ELEMS + CTAI_ARM_ELEMS`. `CTAI_STRUCTURAL_ELEMS` remains support + arm + tray for model review only and is not used for `MAXBEAMSTRESS`.
+3. Final square-section replacement now synchronizes mixed component-topology `QL3A` arrays and `apdl_topology_manifest.json` after section selection. Rule is locked by tests: tray width `<=300 mm` always uses `0.15 m`; tray width `>300 mm` uses `0.20 m` only for square outer `<=120 mm`, otherwise `0.15 m`.
+4. `section_specific_export.py` now derives `SQUAREBEAMSTRESS.LIS` from the numeric main-stress block only, strips all `PLLS` / `/IMAGE,SAVE` plot commands, and prevents stale `SQ-*` figures from substituting appendix-B figures.
+5. `postprocessor_alignment.py` is idempotent for component TMAX selectors, so repeated square-section sync does not duplicate `CMSEL,S,CTAI_ARM_ELEMS,ELEM` blocks.
+
+Verification:
+
+1. Full test suite passed: `D:/miniconda3/python.exe -m pytest tests -q`.
+2. Python compile passed for touched APDL/result modules.
+3. Real ANSYS18.2 validation passed for row 2 / `18185NI-LXSJ4210` at `jobs/verify_mapping_real_cleanpost_20260618`.
+4. Real run selected `160-160-8`; generated model has `H1=0.160000`, `SECREAD,'160-160-8'`, yixing secondary arms with plain `SECOFFSET,user`, and `QL3A(1..5)=0.15` for `600/500/300/200/100`.
+5. `result_source_map.json` shows `MAXBEAMSTRESS.LIS -> ctai_type1_component`, `SQUAREBEAMSTRESS.LIS -> ctai_support_component`, and `TMAXBEAMSTRESS.LIS -> ctai_cantilever_arm_component`.
+6. `result_validation.json` passed with `result_publishable=true`; required figures are `SHITI.PNG`, `TBMODEL.PNG`, `MOTAI-1..4.PNG`, and appendix-B `B1/B2/B3/B4/D1/D2/D3/D4` figures.
+
+Deployment closeout:
+
+1. Full installer package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `48427750AB6C42D593576926F36DBF206AD0F56CA3F872F0456742AE3845CE1B`.
+2. Package gate passed, including runtime XML support and no-expat spectrum smoke.
+3. Local `D:/CableTrayAI` was installed from the rebuilt package; server started as PID `32384`.
+4. Local smoke passed: `/health` returned ok, root page HTTP 200, and `duxyb/cnpe123` login returned pass.
+5. Source/package/install hashes match for the touched APDL/result modules and recovery state.
+
 ## 2026-06-18 CableTrayAI mixed tray component-topology standard flow
 
 Current source state:

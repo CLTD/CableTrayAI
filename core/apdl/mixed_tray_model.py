@@ -14,6 +14,7 @@ TOPOLOGY_COMPONENTS = {
     "arm": "CTAI_ARM_ELEMS",
     "tray": "CTAI_TRAY_ELEMS",
     "bolt": "CTAI_BOLT_ELEMS",
+    "type1": "CTAI_TYPE1_ELEMS",
     "structural": "CTAI_STRUCTURAL_ELEMS",
 }
 
@@ -146,16 +147,42 @@ def _tray_offset_m(width_mm: int, secondary_arm: str | None = None) -> float:
     return 0.068 if width_mm >= 500 else 0.074
 
 
+def _arm_tail_m_for_width(width_mm: int, square_outer_mm: float) -> float:
+    """Return the reviewed arm tail/L3 distance for the tray and square section."""
+
+    if int(width_mm) <= 300:
+        return 0.15
+    return 0.15 if float(square_outer_mm or 0.0) > 120.0 else 0.20
+
+
+def _layer_arm_tail_m(layer: dict[str, Any], square_outer_mm: float) -> float:
+    width = _width_mm(layer)
+    if width > 0:
+        return _arm_tail_m_for_width(width, square_outer_mm)
+    return float(layer.get("arm_b_length_m") or 0.0)
+
+
+def _layer_arm_total_m(layer: dict[str, Any], square_outer_mm: float) -> float:
+    return float(layer.get("arm_a_length_m") or 0.0) + _layer_arm_tail_m(layer, square_outer_mm)
+
+
 def _bolt_radius_m_for_widths(widths_mm: list[int]) -> tuple[float, str]:
     return 0.006, "current_type_physical_bolt_connector_uses_reviewed_csolid_radius_0p006"
 
 
-def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float, secondary_arm: str) -> dict[str, Any]:
+def _layer_geometry_audit(
+    layer: dict[str, Any],
+    *,
+    side: str,
+    h1: float,
+    secondary_arm: str,
+    square_outer_mm: float,
+) -> dict[str, Any]:
     sign = 1.0 if side == "front" else -1.0
     width = _width_mm(layer)
     tray_width_m = width / 1000.0
-    arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
-    arm_tail = float(layer.get("arm_b_length_m") or 0.0)
+    arm_total = _layer_arm_total_m(layer, square_outer_mm)
+    arm_tail = _layer_arm_tail_m(layer, square_outer_mm)
     z = 0.1 + 0.2 * (int(layer.get("layer_index") or 1) - 1)
     x_root = sign * (h1 / 2.0)
     x_bolt = sign * (h1 / 2.0 + arm_total - tray_width_m / 2.0)
@@ -177,7 +204,14 @@ def _layer_geometry_audit(layer: dict[str, Any], *, side: str, h1: float, second
     }
 
 
-def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str, Any]], secondary_arm: str) -> None:
+def _append_layer_arrays(
+    lines: list[str],
+    *,
+    prefix: str,
+    layers: list[dict[str, Any]],
+    secondary_arm: str,
+    square_outer_mm: float,
+) -> None:
     if not layers:
         return
     lines.extend(
@@ -195,7 +229,7 @@ def _append_layer_arrays(lines: list[str], *, prefix: str, layers: list[dict[str
     for index, layer in enumerate(layers, start=1):
         width = _width_mm(layer)
         arm_a = float(layer.get("arm_a_length_m") or 0.0)
-        arm_b = float(layer.get("arm_b_length_m") or 0.0)
+        arm_b = _layer_arm_tail_m(layer, square_outer_mm)
         lines.extend(
             [
                 f"{prefix}W({index})={_num(width / 1000.0)}",
@@ -452,9 +486,14 @@ def _append_topology_component_block(lines: list[str]) -> None:
             "ALLSEL",
             "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM",
             "CMSEL,A,CTAI_ARM_ELEMS,ELEM",
+            "CM,CTAI_TYPE1_ELEMS,ELEM",
+            "! 标准主应力组件：等价科室ESEL,S,TYPE,,1，只包含方钢和托臂，不包含托盘和螺栓。",
+            "ALLSEL",
+            "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM",
+            "CMSEL,A,CTAI_ARM_ELEMS,ELEM",
             "CMSEL,A,CTAI_TRAY_ELEMS,ELEM",
             "CM,CTAI_STRUCTURAL_ELEMS,ELEM",
-            "! 结构梁组件：方钢、托臂、托盘的合并集合，不包含螺栓连接单元。",
+            "! 全结构梁组件：方钢、托臂、托盘的合并集合，仅用于模型审查，不用于MAXBEAMSTRESS主应力评定。",
             "ALLSEL",
             "CMSEL,S,CTAI_BOLT_ELEMS,ELEM",
             "NSLE,S",
@@ -495,6 +534,12 @@ def _topology_manifest(
                 "section": [primary_arm, secondary_arm],
                 "selection": "LS_ARM/ARM_SEC登记后按截面组合生成组件",
                 "description": "托臂单元集合，用于托臂应力云图和根部评定。",
+            },
+            {
+                "name": TOPOLOGY_COMPONENTS["type1"],
+                "kind": "standard_type1_main_stress",
+                "selection": "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM + CMSEL,A,CTAI_ARM_ELEMS,ELEM",
+                "description": "标准MAXBEAMSTRESS主应力组件，等价科室后处理ESEL,S,TYPE,,1：方钢+托臂，不含托盘。",
             },
             {
                 "name": TOPOLOGY_COMPONENTS["tray"],
@@ -737,16 +782,17 @@ def _append_grouped_coupling_loop_with_terms(
 def _source_style_dimension_terms(
     groups: list[tuple[int, int]],
     representative: dict[int, dict[str, Any]],
+    square_outer_mm: float,
 ) -> tuple[list[str], dict[int, dict[str, str]], str]:
     widths = [width for width, _ in groups]
 
     def arm_total(width: int) -> float:
         layer = representative.get(width) or {}
-        return float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+        return _layer_arm_total_m(layer, square_outer_mm)
 
     def arm_tail(width: int) -> float:
         layer = representative.get(width) or {}
-        return float(layer.get("arm_b_length_m") or 0.0)
+        return _layer_arm_tail_m(layer, square_outer_mm)
 
     common_tail = max((arm_tail(width) for width in widths), default=0.0)
     assignment_lines: list[str] = []
@@ -793,6 +839,7 @@ def _source_style_dimension_terms(
 def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[tuple[int, int]], front_layers: list[dict[str, Any]], back_layers: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
     support = payload.get("support") or {}
     h1 = _selected_square_outer_m(payload)
+    square_outer_mm = _square_outer_width_mm_from_payload(payload) or h1 * 1000.0
     h2 = float(support.get("support_height_m") or 2.0)
     span = float(support.get("support_spacing_m") or 2.0)
     support_section = _support_section(payload)
@@ -800,7 +847,11 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
     secondary_offset_line, secondary_offset_policy = _secondary_arm_secoffset(secondary_arm)
     representative = _representative_layer_by_width(front_layers + back_layers)
     widths = [width for width, _ in groups]
-    source_style_assignments, source_style_terms, source_style_policy = _source_style_dimension_terms(groups, representative)
+    source_style_assignments, source_style_terms, source_style_policy = _source_style_dimension_terms(
+        groups,
+        representative,
+        square_outer_mm,
+    )
     bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
     total_layers = sum(count for _, count in groups)
     cumulative_counts: list[int] = []
@@ -914,8 +965,8 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
     ends = boundary_names
     for index, (width, _) in enumerate(groups):
         layer = representative.get(width) or {}
-        arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
-        arm_tail = float(layer.get("arm_b_length_m") or 0.0)
+        arm_total = _layer_arm_total_m(layer, square_outer_mm)
+        arm_tail = _layer_arm_tail_m(layer, square_outer_mm)
         terms = source_style_terms.get(width, {})
         _append_grouped_width_loop(
             lines,
@@ -961,7 +1012,7 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
     )
     for index, (width, _) in enumerate(groups):
         layer = representative.get(width) or {}
-        arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+        arm_total = _layer_arm_total_m(layer, square_outer_mm)
         terms = source_style_terms.get(width, {})
         _append_grouped_coupling_loop_with_terms(
             lines,
@@ -996,7 +1047,13 @@ def _render_mirrored_grouped_mixed_model(payload: dict[str, Any], groups: list[t
         ]
     )
     layer_geometry = [
-        _layer_geometry_audit(layer, side=side, h1=h1, secondary_arm=secondary_arm)
+        _layer_geometry_audit(
+            layer,
+            side=side,
+            h1=h1,
+            secondary_arm=secondary_arm,
+            square_outer_mm=square_outer_mm,
+        )
         for side, layers in (("front", front_layers), ("back", back_layers))
         for layer in layers
     ]
@@ -1065,6 +1122,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
     bolt_radius_m, bolt_radius_policy = _bolt_radius_m_for_widths(widths)
     support = payload.get("support") or {}
     h1 = _selected_square_outer_m(payload)
+    square_outer_mm = _square_outer_width_mm_from_payload(payload) or h1 * 1000.0
     h2 = float(support.get("support_height_m") or 2.0)
     span = float(support.get("support_spacing_m") or 2.0)
     max_layers = max(len(front_layers), len(back_layers), 1)
@@ -1124,8 +1182,20 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         "MP,DENS,1,7850",
     ]
 
-    _append_layer_arrays(lines, prefix="Q", layers=front_layers, secondary_arm=secondary_arm)
-    _append_layer_arrays(lines, prefix="H", layers=back_layers, secondary_arm=secondary_arm)
+    _append_layer_arrays(
+        lines,
+        prefix="Q",
+        layers=front_layers,
+        secondary_arm=secondary_arm,
+        square_outer_mm=square_outer_mm,
+    )
+    _append_layer_arrays(
+        lines,
+        prefix="H",
+        layers=back_layers,
+        secondary_arm=secondary_arm,
+        square_outer_mm=square_outer_mm,
+    )
     lines.extend(
         [
             f"*DIM,LS_SUP,ARRAY,{support_line_capacity}",
@@ -1249,7 +1319,7 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
         for layer in layers:
             index = int(layer.get("layer_index") or 1)
             width = _width_mm(layer)
-            arm_total = float(layer.get("arm_a_length_m") or 0.0) + float(layer.get("arm_b_length_m") or 0.0)
+            arm_total = _layer_arm_total_m(layer, square_outer_mm)
             x_bolt = sign * (h1 / 2.0 + arm_total - width / 2000.0)
             z_bolt = 0.15 + 0.2 * (index - 1)
             name = f"LS{index if side == 'front' else index + 10}"
@@ -1295,7 +1365,13 @@ def render_mixed_tray_layer_model(payload: dict[str, Any]) -> tuple[str, dict[st
     lines.extend(["ALLSEL", "FINISH", ""])
 
     layer_geometry = [
-        _layer_geometry_audit(layer, side=side, h1=h1, secondary_arm=secondary_arm)
+        _layer_geometry_audit(
+            layer,
+            side=side,
+            h1=h1,
+            secondary_arm=secondary_arm,
+            square_outer_mm=square_outer_mm,
+        )
         for side, layers in (("front", front_layers), ("back", back_layers))
         for layer in layers
     ]

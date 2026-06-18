@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from core.validation.result_requirements import CANTILEVER_FIGURES, MODAL_FIGURES, MODEL_FIGURES, SQUARE_SUPPORT_FIGURES
+from core.validation.result_requirements import CANTILEVER_FIGURES, MAIN_STRESS_FIGURES, MODAL_FIGURES, MODEL_FIGURES
 
 SQUARE_SECTION_CANTILEVER_CLOUD_MAX_OUTER_MM = 120.0
 SQUARE_SECTION_WELD_PRINCIPLE_GT_OUTER_MM = 120.0
@@ -257,7 +257,7 @@ def classify_scope_from_input(input_payload: dict[str, Any]) -> dict[str, Any]:
     modal_required = bool(analysis_method != "static" and modal_figures_required)
     if modal_figures_required:
         required_figures.extend(MODAL_FIGURES)
-    required_figures.extend(SQUARE_SUPPORT_FIGURES)
+    required_figures.extend(MAIN_STRESS_FIGURES)
     if cantilever_clouds:
         required_figures.extend(CANTILEVER_FIGURES)
 

@@ -2251,7 +2251,7 @@
         "source_kind": "local_sect",
         "controlling_ratio": 0.8526662509801224,
         "overall_controlling_ratio": 0.8526662509801224,
-        "section_selection_ratio": 0.6482962605691917,
+        "section_selection_ratio": 0.6575471914217829,
         "final_chapter6_controlling_ratio": 0.8526662509801224,
         "square_support_ratio": 0.6482962605691917,
         "result_gate_status": "pass",
@@ -2262,8 +2262,8 @@
         "dominant_component": null,
         "overall_dominant_check_id": "weld_force_raw_faulted_weld_equivalent",
         "overall_dominant_component": null,
-        "section_selection_dominant_check_id": "square_support.support_tension_bending_combined_accident",
-        "section_selection_dominant_component": "square_support",
+        "section_selection_dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+        "section_selection_dominant_component": "mixed_beam_type_1",
         "failed_non_ratio_checks": [],
         "status": "pass",
         "run_status": "pass"
@@ -2276,7 +2276,7 @@
           "source_kind": "local_sect",
           "controlling_ratio": 0.8526662509801224,
           "overall_controlling_ratio": 0.8526662509801224,
-          "section_selection_ratio": 0.6482962605691917,
+          "section_selection_ratio": 0.6575471914217829,
           "final_chapter6_controlling_ratio": 0.8526662509801224,
           "square_support_ratio": 0.6482962605691917,
           "result_gate_status": "pass",
@@ -2287,15 +2287,15 @@
           "dominant_component": null,
           "overall_dominant_check_id": "weld_force_raw_faulted_weld_equivalent",
           "overall_dominant_component": null,
-          "section_selection_dominant_check_id": "square_support.support_tension_bending_combined_accident",
-          "section_selection_dominant_component": "square_support",
+          "section_selection_dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+          "section_selection_dominant_component": "mixed_beam_type_1",
           "failed_non_ratio_checks": [],
           "status": "pass",
           "run_status": "pass"
         }
       ],
       "policy": "Select the candidate inside the production economy band 0.60 <= ratio <= 0.9999, closest to the upper economic limit. Area is only a tie-breaker.",
-      "source_job_dir": "jobs\\verify_ctai_component_topology_real_20260618_211918\\18185NI-LXSJ4210",
+      "source_job_dir": "jobs\\verify_mapping_real_cleanpost_20260618\\18185NI-LXSJ4210",
       "source_ref": "real ANSYS square-section trial for identical normalized intake payload",
       "similarity_features": {
         "support_type": "s2",
@@ -2318,7 +2318,7 @@
         "tray_load_sum_kg_m": 311.0
       },
       "cache_version": "square-section-cache-v8-final-all-ratio",
-      "updated_at": "2026-06-18T13:21:16.180462+00:00"
+      "updated_at": "2026-06-18T15:59:52.230238+00:00"
     },
     "6fc7f2f5200a9f4c5bdebdef6bad0de6a385214ede404268c1bfdf995b8fe351": {
       "status": "pass",

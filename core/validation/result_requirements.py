@@ -8,15 +8,15 @@ from typing import Any
 
 MODEL_FIGURES = ["SHITI.PNG", "TBMODEL.PNG"]
 MODAL_FIGURES = [f"MOTAI-{index}.PNG" for index in range(1, 5)]
-SQUARE_SUPPORT_FIGURES = [
-    "SQ-B1SDIR1.PNG",
-    "SQ-B2SDIR2.PNG",
-    "SQ-B3SBEND.PNG",
-    "SQ-B4SHEAR.PNG",
-    "SQ-D1SDIR1.PNG",
-    "SQ-D2SDIR2.PNG",
-    "SQ-D3SBEND.PNG",
-    "SQ-D4SHEAR.PNG",
+MAIN_STRESS_FIGURES = [
+    "B1SDIR1.PNG",
+    "B2SDIR2.PNG",
+    "B3SBEND.PNG",
+    "B4SHEAR.PNG",
+    "D1SDIR1.PNG",
+    "D2SDIR2.PNG",
+    "D3SBEND.PNG",
+    "D4SHEAR.PNG",
 ]
 CANTILEVER_FIGURES = [
     "TB1SDIR1.PNG",
@@ -68,7 +68,7 @@ def classify_report_requirements(report_path: Path | str) -> dict[str, Any]:
     if has_appendix_a:
         required_figures.extend(MODAL_FIGURES)
     if has_appendix_b:
-        required_figures.extend(SQUARE_SUPPORT_FIGURES)
+        required_figures.extend(MAIN_STRESS_FIGURES)
     if has_appendix_c:
         required_figures.extend(CANTILEVER_FIGURES)
 
@@ -83,7 +83,7 @@ def classify_report_requirements(report_path: Path | str) -> dict[str, Any]:
         "uses_response_spectrum": uses_spectrum,
         "method_conflict_requires_review": method_conflict,
         "has_appendix_a_modal": has_appendix_a,
-        "has_appendix_b_square_support": has_appendix_b,
+        "has_appendix_b_main_stress": has_appendix_b,
         "has_appendix_c_cantilever": has_appendix_c,
         "requires": {
             "modal_analysis": bool(has_appendix_a and analysis_method != "static"),

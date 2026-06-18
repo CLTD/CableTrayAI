@@ -1653,6 +1653,137 @@ def _wide_tray_tail_l5_for_square_section(widths_mm: list[int], square_outer_mm:
     return 0.20, "square_outer_width_le_120_l5_0p20m"
 
 
+def _mixed_component_l3_for_square_section(tray_width_mm: int, square_outer_mm: float) -> tuple[float, str]:
+    if tray_width_mm <= 300:
+        return 0.15, "tray_width_le_300_ql3a_0p15m"
+    if square_outer_mm > 120.0:
+        return 0.15, "wide_tray_square_outer_gt_120_ql3a_0p15m"
+    return 0.20, "wide_tray_square_outer_le_120_ql3a_0p20m"
+
+
+def _sync_component_topology_ql3a_to_square_section(job_dir: Path, section_name: str) -> dict[str, Any]:
+    parsed = parse_square_section_name(section_name)
+    model_path = job_dir / "generated_model.mac"
+    if parsed is None:
+        return {"status": "skipped", "reason": "section_name is not a parsed square tube"}
+    if not model_path.exists():
+        return {"status": "skipped", "reason": "generated_model.mac missing"}
+    text = model_path.read_text(encoding="utf-8", errors="replace")
+    if "QL3A(" not in text or "QCODE(" not in text:
+        return {"status": "skipped", "reason": "model_has_no_component_topology_ql3a"}
+
+    qcodes: dict[int, int] = {}
+    for match in re.finditer(r"(?im)^\s*QCODE\((\d+)\)\s*=\s*(\d+)\s*$", text):
+        qcodes[int(match.group(1))] = int(match.group(2))
+    if not qcodes:
+        return {"status": "skipped", "reason": "no_qcode_entries"}
+
+    changes: list[dict[str, Any]] = []
+
+    def repl(match: re.Match[str]) -> str:
+        index = int(match.group(1))
+        existing = float(match.group(2))
+        width = qcodes.get(index)
+        if width is None:
+            return match.group(0)
+        value, policy = _mixed_component_l3_for_square_section(width, parsed.outer_mm)
+        if abs(existing - value) > 1e-9:
+            changes.append(
+                {
+                    "index": index,
+                    "tray_width_mm": width,
+                    "before_m": existing,
+                    "after_m": value,
+                    "policy_status": policy,
+                }
+            )
+        return f"QL3A({index})={value:.6g}"
+
+    updated = re.sub(r"(?im)^\s*QL3A\((\d+)\)\s*=\s*([-+0-9.Ee]+)\s*$", repl, text)
+    if updated != text:
+        model_path.write_text(updated, encoding="utf-8", newline="\n")
+    return {
+        "status": "updated" if updated != text else "already_current",
+        "section_name": section_name,
+        "square_outer_mm": parsed.outer_mm,
+        "updated_count": len(changes),
+        "changes": changes,
+        "source_ref": "generated_model.mac QCODE/QL3A component-topology arrays",
+        "policy": "Mixed tray component-topology QL3A rule: tray width <=300 mm uses 0.15 m; tray width >300 mm uses 0.20 m for square outer <=120 mm and 0.15 m for square outer >120 mm.",
+    }
+
+
+def _sync_topology_manifest_to_square_section(
+    job_dir: Path,
+    section_name: str,
+    *,
+    arm_primary: str,
+    arm_secondary: str,
+) -> dict[str, Any]:
+    parsed = parse_square_section_name(section_name)
+    manifest_path = job_dir / "apdl_topology_manifest.json"
+    if parsed is None:
+        return {"status": "skipped", "reason": "section_name is not a parsed square tube"}
+    if not manifest_path.exists():
+        return {"status": "skipped", "reason": "apdl_topology_manifest.json missing"}
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"status": "skipped", "reason": f"manifest_read_failed: {exc}"}
+
+    for component in manifest.get("components") or []:
+        if not isinstance(component, dict):
+            continue
+        if component.get("name") == "CTAI_SUPPORT_ELEMS":
+            component["section"] = section_name
+        elif component.get("name") == "CTAI_ARM_ELEMS":
+            component["section"] = [arm_primary, arm_secondary]
+    layer_changes: list[dict[str, Any]] = []
+    for layer in manifest.get("layers") or []:
+        if not isinstance(layer, dict):
+            continue
+        try:
+            width = int(round(float(layer.get("width_mm"))))
+        except (TypeError, ValueError):
+            continue
+        value, policy = _mixed_component_l3_for_square_section(width, parsed.outer_mm)
+        before = layer.get("l3_tail_m")
+        try:
+            before_float = float(before)
+        except (TypeError, ValueError):
+            before_float = None
+        layer["l3_tail_m"] = value
+        layer["l3_tail_policy"] = policy
+        if before_float is None or abs(before_float - value) > 1e-9:
+            layer_changes.append(
+                {
+                    "model_layer_index": layer.get("model_layer_index"),
+                    "width_mm": width,
+                    "before_m": before,
+                    "after_m": value,
+                    "policy_status": policy,
+                }
+            )
+    manifest["square_section_sync"] = {
+        "status": "pass",
+        "section_name": section_name,
+        "square_outer_mm": parsed.outer_mm,
+        "arm_sections": [arm_primary, arm_secondary],
+        "layer_l3_change_count": len(layer_changes),
+        "layer_l3_changes": layer_changes,
+        "source_ref": "square_section_selector.replace_square_and_arm_sections_in_model",
+    }
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {
+        "status": "updated",
+        "section_name": section_name,
+        "square_outer_mm": parsed.outer_mm,
+        "layer_l3_change_count": len(layer_changes),
+        "layer_l3_changes": layer_changes,
+        "source_ref": str(manifest_path),
+    }
+
+
 _SINGLE_MIXED_WIDE_TAIL_FAMILIES = {
     "single_mixed_600_500_300_200_100_universal",
     "single_mixed_600_500_300_universal",
@@ -1845,12 +1976,19 @@ def replace_square_and_arm_sections_in_model(
     parsed = parse_square_section_name(section_name)
     replace_audit = replace_square_section_in_model(job_dir, section_name, source_root=source_root)
     model_h1_sync_audit = _sync_model_h1_to_square_section(job_dir, section_name)
+    component_topology_l3_sync_audit = _sync_component_topology_ql3a_to_square_section(job_dir, section_name)
     arm_primary, arm_secondary, arm_policy = _arm_sections_for_square_outer(parsed.outer_mm if parsed else None)
     arm_replace_audit = replace_arm_sections_in_model(
         job_dir,
         arm_primary,
         arm_secondary,
         source_root=source_root,
+    )
+    topology_manifest_sync_audit = _sync_topology_manifest_to_square_section(
+        job_dir,
+        section_name,
+        arm_primary=arm_primary,
+        arm_secondary=arm_secondary,
     )
     tray_section_preservation_audit = _assert_required_tray_sections_preserved(job_dir)
     trial_input_sync_audit = _sync_trial_input_to_square_section(job_dir, section_name, arm_policy)
@@ -1859,7 +1997,9 @@ def replace_square_and_arm_sections_in_model(
         "section_name": section_name,
         "replace_audit": replace_audit,
         "model_h1_sync_audit": model_h1_sync_audit,
+        "component_topology_l3_sync_audit": component_topology_l3_sync_audit,
         "arm_section_replace_audit": arm_replace_audit,
+        "topology_manifest_sync_audit": topology_manifest_sync_audit,
         "tray_section_preservation_audit": tray_section_preservation_audit,
         "trial_input_sync_audit": trial_input_sync_audit,
         "arm_section_family": arm_policy,

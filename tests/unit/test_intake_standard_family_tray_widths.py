@@ -838,6 +838,33 @@ def test_4219_style_mirrored_500_600_uses_source_style_variables_and_selected_h1
     assert "ARM_SEC(NARM)=3" in rendered
 
 
+def test_mirrored_mixed_wide_tray_l3_tracks_selected_square_section() -> None:
+    payload = _double_two_by_two_mirrored_mixed_500_600_payload()
+    payload["metadata"]["square_section_selected"] = "140-140-8"
+    payload["metadata"]["square_section_outer_mm"] = 140
+    payload["sections"][0]["sect_file"] = "140-140-8.SECT"
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
+    assert "L5=0.15" in rendered
+    assert "H1/2+L1-L3/2" in rendered
+    assert "H1/2+L1-L5" in rendered
+    assert audit["topology_manifest"]["layers"][0]["l3_tail_m"] == 0.15
+
+
+def test_mirrored_mixed_small_tray_l3_stays_0p15_even_for_100_square() -> None:
+    payload = _double_three_by_three_mirrored_mixed_100_300_500_payload()
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
+    small_layers = [row for row in audit["topology_manifest"]["layers"] if row["width_mm"] in {100, 300}]
+    assert small_layers
+    assert {row["l3_tail_m"] for row in small_layers} == {0.15}
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'CAOGANG42DAN'" in rendered
+
+
 def test_4219_full_render_uses_section_based_tmax_for_grouped_500_600(tmp_path: Path) -> None:
     payload = _double_two_by_two_mirrored_mixed_500_600_payload()
     payload["metadata"]["square_section_selected"] = "120-120-10"

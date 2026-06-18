@@ -86,31 +86,107 @@ def _find_line(lines: list[str], pattern: str) -> int:
     raise ValueError(f"Cannot find APDL line matching {pattern!r}")
 
 
-def _square_segment(text: str) -> tuple[str, dict[str, Any]]:
-    lines = text.splitlines()
-    start = _find_line(lines, r"^\s*/PREP7\s*$")
-    create = _find_line(lines, r"^\s*\*CREATE\s*,\s*MAXBEAMSTRESS-WRITE\s*,\s*MAC\b")
-    call = _find_line(lines[create:], r"^\s*MAXBEAMSTRESS-WRITE\s*$") + create
-    segment_lines = lines[start : call + 1]
-    segment = "\n".join(segment_lines)
-    segment = re.sub(
+def _normalize_square_selector(segment: str) -> tuple[str, list[str]]:
+    component_selector = "\n".join(
+        [
+            "ALLSEL",
+            "! CableTrayAI square-support selector for component-topology models.",
+            "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM",
+        ]
+    )
+    updated, count = re.subn(
+        r"(?ims)^\s*ALLSEL\s*\n"
+        r"\s*! CableTrayAI mixed tray standard flow: MAXBEAMSTRESS selects declared structural elements\..*?"
+        r"^\s*CMSEL\s*,\s*S\s*,\s*CTAI_STRUCTURAL_ELEMS\s*,\s*ELEM\s*$",
+        component_selector,
+        segment,
+        count=1,
+    )
+    if count:
+        return updated, ["CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM"]
+
+    updated, count = re.subn(
+        r"(?ims)^\s*ALLSEL\s*\n"
+        r"\s*! CableTrayAI mixed tray standard flow: MAXBEAMSTRESS selects the TYPE=1-equivalent component\..*?"
+        r"^\s*CMSEL\s*,\s*A\s*,\s*CTAI_ARM_ELEMS\s*,\s*ELEM\s*$",
+        component_selector,
+        segment,
+        count=1,
+    )
+    if count:
+        return updated, ["CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM"]
+
+    section_selector = "ALLSEL\nESEL,S,TYPE,,1\nESEL,R,SEC,,1"
+    updated, count = re.subn(
+        r"(?ims)^\s*ALLSEL\s*\n"
+        r"\s*! CableTrayAI grouped mixed MAXBEAMSTRESS selector\..*?"
+        r"^\s*ESEL\s*,\s*A\s*,\s*SEC\s*,\s*,\s*3\s*$",
+        section_selector,
+        segment,
+        count=1,
+    )
+    if count:
+        return updated, ["ESEL,S,TYPE,,1", "ESEL,R,SEC,,1"]
+
+    updated, count = re.subn(
         r"^\s*ESEL\s*,\s*S\s*,\s*TYPE\s*,\s*,\s*1\s*$",
         "ESEL,S,TYPE,,1\nESEL,R,SEC,,1",
         segment,
         count=1,
         flags=re.IGNORECASE | re.MULTILINE,
     )
+    if count:
+        return updated, ["ESEL,S,TYPE,,1", "ESEL,R,SEC,,1"]
+
+    return segment, ["unknown"]
+
+
+def _strip_square_audit_plots(segment: str) -> tuple[str, int]:
+    """Keep square-support numeric extraction but suppress derived cloud figures."""
+
+    kept: list[str] = []
+    removed = 0
+    for line in segment.splitlines():
+        stripped = line.strip().upper()
+        if stripped.startswith("PLLS") or stripped.startswith("/IMAGE,SAVE"):
+            removed += 1
+            continue
+        kept.append(line)
+    return "\n".join(kept), removed
+
+
+def _square_segment(text: str) -> tuple[str, dict[str, Any]]:
+    lines = text.splitlines()
+    create = _find_line(lines, r"^\s*\*CREATE\s*,\s*MAXBEAMSTRESS-WRITE\s*,\s*MAC\b")
+    call = _find_line(lines[create:], r"^\s*MAXBEAMSTRESS-WRITE\s*$") + create
+    elas_index = None
+    for index in range(create - 1, -1, -1):
+        if re.search(r"^\s*ElasM\s*=", lines[index], re.IGNORECASE):
+            elas_index = index
+            break
+    if elas_index is None:
+        start = _find_line(lines, r"^\s*/PREP7\s*$")
+    else:
+        start = elas_index
+        for index in range(elas_index, -1, -1):
+            if re.search(r"^\s*/PREP7\s*$", lines[index], re.IGNORECASE):
+                start = index
+                break
+    segment_lines = lines[start : call + 1]
+    segment = "\n".join(segment_lines)
+    segment, selector = _normalize_square_selector(segment)
     segment = segment.replace("MAXBEAMSTRESS-WRITE", SQUARE_MACRO)
     segment = re.sub(r"\*CFOPEN\s*,\s*MAXBEAMSTRESS\s*,\s*LIS", "*CFOPEN,SQUAREBEAMSTRESS,LIS", segment, flags=re.IGNORECASE)
-    segment = re.sub(r"(/image\s*,\s*save\s*,\s*)", r"\1SQ-", segment, flags=re.IGNORECASE)
+    segment, removed_plot_commands = _strip_square_audit_plots(segment)
     audit = {
         "source_start_line": start + 1,
         "source_end_line": call + 1,
         "base_macro": "MAXBEAMSTRESS-WRITE",
         "derived_macro": SQUARE_MACRO,
-        "selector": ["ESEL,S,TYPE,,1", "ESEL,R,SEC,,1"],
+        "selector": selector,
         "output": SQUARE_OUTPUT,
-        "source_policy": "从标准MAXBEAMSTRESS提取块派生，并按截面1收窄；建模命令流中方钢由LATT截面1定义。",
+        "removed_plot_commands": removed_plot_commands,
+        "source_policy": "Derived from the reviewed MAXBEAMSTRESS numeric block and narrowed to square support only. It writes SQUAREBEAMSTRESS.LIS for deterministic evaluation and deliberately exports no SQ-* stress figures.",
     }
     return segment, audit
 

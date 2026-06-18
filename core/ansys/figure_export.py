@@ -294,7 +294,91 @@ def _named_model_png_lines(image_name: str, setup_lines: list[str], *, note: str
     ]
 
 
-def _model_figure_export_lines() -> list[str]:
+def _generated_model_text(job_dir: Path) -> str:
+    model_path = job_dir / "generated_model.mac"
+    if not model_path.exists():
+        return ""
+    return model_path.read_text(encoding="utf-8", errors="ignore")
+
+
+def _model_uses_component_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    required = ("CTAI_SUPPORT_ELEMS", "CTAI_ARM_ELEMS", "CTAI_TRAY_ELEMS", "CTAI_BOLT_ELEMS")
+    return all(name in model_text for name in required)
+
+
+def _model_uses_section_based_arm_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    return (
+        "current-type grouped mixed tray model" in model_text
+        or re.search(r"(?im)^\s*ARM_ET\s*\(\s*NARM\s*\)\s*=\s*2\s*$", model_text) is not None
+    ) and re.search(r"(?im)^\s*ARM_SEC\s*\(\s*NARM\s*\)\s*=\s*[23]\s*$", model_text) is not None
+
+
+def _model_uses_source_type1_arm_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    has_source_arm_latt = bool(re.search(r"LATT\s*,\s*1\s*,\s*,\s*1\s*,\s*,\s*,\s*,\s*[23]\b", model_text, re.IGNORECASE))
+    has_parameterized_arm_type = bool(re.search(r"10\s*\*\s*I\s*\+\s*[23]|200\s*\*\s*I\s*\+\s*[23]", model_text, re.IGNORECASE))
+    return has_source_arm_latt and not has_parameterized_arm_type
+
+
+def _tbmodel_selection_lines(job_dir: Path) -> list[str]:
+    if _model_uses_component_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: component-topology model; select cantilever arms and trays declared by generated_model.mac.",
+            "CMSEL,S,CTAI_ARM_ELEMS,ELEM",
+            "CMSEL,A,CTAI_TRAY_ELEMS,ELEM",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    if _model_uses_section_based_arm_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: grouped mixed model; select arm sections 2/3 and tray sections 4..9.",
+            "ESEL,S,SEC,,2",
+            "ESEL,A,SEC,,3",
+            "ESEL,A,SEC,,4,9",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    if _model_uses_source_type1_arm_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: reviewed source-family topology; TYPE=1 contains support and arm/tray elements, SEC=1 is square support.",
+            "ESEL,S,TYPE,,1",
+            "ESEL,U,SEC,,1",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    return [
+        "ALLSEL,ALL",
+        "! Fig. 5.2 fallback: select common arm/tray section range, then fall back to whole model if empty.",
+        "ESEL,S,SEC,,2",
+        "ESEL,A,SEC,,3",
+        "ESEL,A,SEC,,4,9",
+        "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+        "  ALLSEL,ALL",
+        "*ELSE",
+        "  NSLE,S",
+        "*ENDIF",
+    ]
+
+
+def _model_figure_export_lines(job_dir: Path) -> list[str]:
     """Export report Fig. 5.1/5.2 before result contour commands run.
 
     The standard post command stream later creates many line-stress cloud plots.
@@ -304,38 +388,14 @@ def _model_figure_export_lines() -> list[str]:
     the converted post macro skips their original /IMAGE,SAVE commands.
     """
 
-    select_cantilever_types = [
-        "ALLSEL,ALL",
-        "ESEL,NONE",
-        "! Fig. 5.2 is the tray-arm/cantilever model.  Select by section IDs",
-        "! assigned in generated_model.mac (SEC 2/3 arm and SEC 10 auxiliary rods).",
-        "! Do not include SEC 4 tray/cable elements here; report Fig. 5.2 is",
-        "! the cantilever finite-element model, not a copy of the full tray model.",
-        "ESEL,S,SEC,,2",
-        "ESEL,A,SEC,,3",
-        "ESEL,A,SEC,,10",
-        "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
-        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
-        "  ! Fallback by coordinates: tray-arm elements are outside the square tube centerline.",
-        "  ESEL,S,CENT,X,H1/2,H1/2+L1",
-        "  ESEL,U,SEC,,1",
-        "  ESEL,U,SEC,,4",
-        "  *GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
-        "*ENDIF",
-        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
-        "  ! Final fallback keeps Fig. 5.2 non-empty, and the audit flags SHITI/TBMODEL similarity.",
-        "  ALLSEL,ALL",
-        "*ELSE",
-        "  NSLE,S",
-        "*ENDIF",
-    ]
+    select_cantilever_types = _tbmodel_selection_lines(job_dir)
     report_model_view = [
         "! Match the audited S2 post-PIP model figure style used in reports.",
         "! The original source exports SHITI after /VIEW + /ANG rotations and",
         "! indexed white/black plotting colors.  We intentionally suppress the",
         "! source /REPLOT and /REP,FAST intermediate frames here, then issue a",
         "! single EPLOT per figure so names map deterministically to PNG files.",
-        "/ESHAPE,0",
+        "/ESHAPE,1",
         "/RGB,INDEX,100,100,100,0",
         "/RGB,INDEX,80,80,80,13",
         "/RGB,INDEX,60,60,60,14",
@@ -371,7 +431,7 @@ def _model_figure_export_lines() -> list[str]:
         *_named_model_png_lines(
             "TBMODEL",
             [*select_cantilever_types, *report_model_view],
-            note="! Fig. 5.2: cantilever/tray-arm finite-element model from section IDs, source-PIP view/style.",
+            note="! Fig. 5.2: cantilever/tray finite-element model from the model topology, source-PIP view/style.",
         ),
         "/PNGR,COLOR,2",
         "/COLOR,DEFA",
@@ -567,7 +627,7 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         "/REPLOT",
         "! Register existing load-case files because this is a fresh post-only MAPDL session.",
         *loadcase_lines,
-        *_model_figure_export_lines(),
+        *_model_figure_export_lines(job_dir),
         *_stress_figure_display_lines(),
         "! generated_post_figure_export.mac opens /SHOW,PNG only at each saved plot.",
         f"! Run the named-image copy of generated_post.mac; selections and plots remain source-derived.",
@@ -709,6 +769,8 @@ def _read_exported_names(job_dir: Path) -> list[str]:
 
 def _normalise_recorded_name(name: str) -> str:
     upper = name.upper().rstrip("+-")
+    # Legacy compatibility only. New production post streams do not generate SQ-* figures;
+    # square-support evaluation is numeric-only through SQUAREBEAMSTRESS.LIS.
     replacements = {
         "SQ-A1SDI": "SQ-A1SDIR1",
         "SQ-B1SDI": "SQ-B1SDIR1",
@@ -782,7 +844,7 @@ def _normalise_named_pngs(job_dir: Path, job_name: str, started: datetime) -> di
 def _cleanup_previous_generic_pngs(job_dir: Path, job_name: str) -> list[str]:
     """Remove stale MAPDL auto-numbered PNGs before a new figure export.
 
-    Named output images such as SHITI.PNG and SQ-B1SDIR1.PNG are preserved and
+    Named output images such as SHITI.PNG and B1SDIR1.PNG are preserved and
     overwritten after export.  Only the transient CableTrayAI_Run###.png files
     are removed so the normaliser maps this run's images, not leftovers.
     """

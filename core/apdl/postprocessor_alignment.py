@@ -154,6 +154,50 @@ def _component_based_cantilever_selector() -> str:
     )
 
 
+def _parameterized_structural_selector() -> str:
+    return "\n".join(
+        [
+            "ALLSEL",
+            "! CableTrayAI parameterized MAXBEAMSTRESS selector.",
+            "! Match department TYPE=1 semantics: square support plus tray arms; trays and bolt connector types are excluded.",
+            "ESEL,S,TYPE,,1",
+            "*DO,I,1,qiancengshu,1",
+            "ESEL,A,TYPE,,10*I+2",
+            "ESEL,A,TYPE,,10*I+3",
+            "*ENDDO",
+            "*DO,I,1,houcengshu,1",
+            "ESEL,A,TYPE,,200*I+2",
+            "ESEL,A,TYPE,,200*I+3",
+            "*ENDDO",
+        ]
+    )
+
+
+def _section_based_structural_selector() -> str:
+    return "\n".join(
+        [
+            "ALLSEL",
+            "! CableTrayAI grouped mixed MAXBEAMSTRESS selector.",
+            "! Match department TYPE=1 semantics: square support SEC=1 plus tray arms SEC=2/3; tray SEC=4..9 and bolts are excluded.",
+            "ESEL,S,SEC,,1",
+            "ESEL,A,SEC,,2",
+            "ESEL,A,SEC,,3",
+        ]
+    )
+
+
+def _component_based_structural_selector() -> str:
+    return "\n".join(
+        [
+            "ALLSEL",
+            "! CableTrayAI mixed tray standard flow: MAXBEAMSTRESS selects the TYPE=1-equivalent component.",
+            "! Equivalent to the department TYPE=1 selector: square support plus tray arms, no trays/bolts.",
+            "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM",
+            "CMSEL,A,CTAI_ARM_ELEMS,ELEM",
+        ]
+    )
+
+
 def _model_uses_component_topology(job_dir: Path) -> bool:
     model_path = job_dir / "generated_model.mac"
     if not model_path.exists():
@@ -184,6 +228,124 @@ def _model_uses_section_based_arm_topology(job_dir: Path) -> bool:
     ) and re.search(r"(?im)^\s*ARM_SEC\s*\(\s*NARM\s*\)\s*=\s*[23]\s*$", model_text) is not None
 
 
+def _replace_last_regex(text: str, pattern: str, replacement: str, *, flags: int = 0) -> tuple[str, int]:
+    matches = list(re.finditer(pattern, text, flags))
+    if not matches:
+        return text, 0
+    match = matches[-1]
+    return text[: match.start()] + replacement + text[match.end() :], 1
+
+
+def _replace_or_inject_maxbeam_selector(prefix: str, selector: str) -> tuple[str, str]:
+    def with_trailing_newline(value: str) -> str:
+        return value if not value or value.endswith(("\n", "\r")) else value + "\n"
+
+    compact_prefix = re.sub(r"\s+", "", prefix).upper()
+    compact_selector = re.sub(r"\s+", "", selector).upper()
+    if compact_selector in compact_prefix:
+        return with_trailing_newline(prefix), "already_aligned"
+
+    generated_patterns = [
+        (
+            r"(?ims)^\s*ALLSEL\s*\n"
+            r"\s*! CableTrayAI mixed tray standard flow: MAXBEAMSTRESS selects declared structural elements\..*?"
+            r"^\s*CMSEL\s*,\s*S\s*,\s*CTAI_STRUCTURAL_ELEMS\s*,\s*ELEM\s*$",
+            "generated_structural_selector_replaced",
+        ),
+        (
+            r"(?ims)^\s*ALLSEL\s*\n"
+            r"\s*! CableTrayAI mixed tray standard flow: MAXBEAMSTRESS selects the TYPE=1-equivalent component\..*?"
+            r"^\s*CMSEL\s*,\s*A\s*,\s*CTAI_ARM_ELEMS\s*,\s*ELEM\s*$",
+            "generated_type1_selector_replaced",
+        ),
+        (
+            r"(?ims)^\s*ALLSEL\s*\n"
+            r"\s*! CableTrayAI grouped mixed MAXBEAMSTRESS selector\..*?"
+            r"^\s*ESEL\s*,\s*A\s*,\s*SEC\s*,\s*,\s*3\s*$",
+            "generated_section_selector_replaced",
+        ),
+        (
+            r"(?ims)^\s*ALLSEL\s*\n"
+            r"\s*! CableTrayAI parameterized MAXBEAMSTRESS selector\..*?"
+            r"^\s*\*ENDDO\s*$",
+            "generated_parameterized_selector_replaced",
+        ),
+    ]
+    for pattern, mode in generated_patterns:
+        updated, count = _replace_last_regex(prefix, pattern, selector)
+        if count:
+            return with_trailing_newline(updated), mode
+
+    section_pattern = (
+        r"(?ims)^\s*ESEL\s*,\s*S\s*,\s*SEC\s*,\s*,\s*1\s*$\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*SEC\s*,\s*,\s*2\s*$\n"
+        r"\s*ESEL\s*,\s*A\s*,\s*SEC\s*,\s*,\s*3\s*$"
+    )
+    updated, count = _replace_last_regex(prefix, section_pattern, selector)
+    if count:
+        return with_trailing_newline(updated), "section_selector_replaced"
+
+    updated, count = _replace_last_regex(
+        prefix,
+        r"(?im)^\s*ESEL\s*,\s*S\s*,\s*TYPE\s*,\s*,\s*1\s*$",
+        selector,
+    )
+    if count:
+        return with_trailing_newline(updated), "legacy_type1_replaced"
+
+    return prefix + ("" if prefix.endswith("\n") or not prefix else "\n") + selector + "\n", "selector_injected_before_maxbeam"
+
+
+def _align_maxbeam_selector(
+    text: str,
+    *,
+    preserve_source_type1_arm_topology: bool = False,
+    use_section_based_arm_topology: bool = False,
+    use_component_topology: bool = False,
+) -> tuple[str, dict[str, Any]]:
+    create = re.search(r"^\s*\*CREATE\s*,\s*MAXBEAMSTRESS-WRITE\s*,\s*MAC\b", text, re.IGNORECASE | re.MULTILINE)
+    if not create:
+        return text, {"status": "not_found", "reason": "MAXBEAMSTRESS-WRITE not found"}
+    if preserve_source_type1_arm_topology:
+        return text, {
+            "status": "source_topology_preserved",
+            "source_ref": "generated_model.mac:LATT source-family topology assigns support and tray arms to TYPE=1",
+            "selector": ["ESEL,S,TYPE,,1"],
+            "policy": "Reviewed department source models keep TYPE=1 as the audited support-plus-arm selector for MAXBEAMSTRESS; tray elements are TYPE=2 and are not selected.",
+        }
+
+    prefix = text[: create.start()]
+    suffix = text[create.start() :]
+    if use_component_topology:
+        selector = _component_based_structural_selector()
+        selector_ref = "generated_model.mac:CTAI_TYPE1_ELEMS semantics via CTAI_SUPPORT_ELEMS + CTAI_ARM_ELEMS"
+        new_selector = ["CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM", "CMSEL,A,CTAI_ARM_ELEMS,ELEM"]
+    elif use_section_based_arm_topology:
+        selector = _section_based_structural_selector()
+        selector_ref = "generated_model.mac:grouped mixed TYPE=1-equivalent sections 1/2/3"
+        new_selector = ["ESEL,S,SEC,,1", "ESEL,A,SEC,,2", "ESEL,A,SEC,,3"]
+    else:
+        selector = _parameterized_structural_selector()
+        selector_ref = "generated_model.mac:TYPE=1 support plus layer-specific arm types"
+        new_selector = [
+            "ESEL,S,TYPE,,1",
+            "ESEL,A,TYPE,,10*I+2",
+            "ESEL,A,TYPE,,10*I+3",
+            "ESEL,A,TYPE,,200*I+2",
+            "ESEL,A,TYPE,,200*I+3",
+        ]
+
+    updated_prefix, replacement_mode = _replace_or_inject_maxbeam_selector(prefix, selector)
+    return updated_prefix + suffix, {
+        "status": "already_aligned" if replacement_mode == "already_aligned" else "applied",
+        "replacement_mode": replacement_mode,
+        "source_ref": selector_ref,
+        "old_selector": ["ESEL,S,TYPE,,1"],
+        "new_selector": new_selector,
+        "policy": "MAXBEAMSTRESS must follow the generated model topology and match the department TYPE=1 scope: square support plus tray arms, excluding trays and bolts.",
+    }
+
+
 def _replace_or_inject_tmax_selector(prefix: str, selector: str) -> tuple[str, str]:
     def compact(line: str) -> str:
         return re.sub(r"\s+", "", line).upper()
@@ -193,6 +355,11 @@ def _replace_or_inject_tmax_selector(prefix: str, selector: str) -> tuple[str, s
 
     def replace_lines(lines: list[str], start: int, end: int) -> str:
         return rebuild(lines[:start] + selector.splitlines() + lines[end:])
+
+    compact_prefix = re.sub(r"\s+", "", prefix).upper()
+    compact_selector = re.sub(r"\s+", "", selector).upper()
+    if compact_selector in compact_prefix:
+        return prefix if prefix.endswith(("\n", "\r")) else prefix + "\n", "already_aligned"
 
     lines = prefix.splitlines()
     for index in range(len(lines) - 1, -1, -1):
@@ -430,6 +597,12 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         use_section_based_arm_topology=use_section_based_topology,
         use_component_topology=use_component_topology,
     )
+    text, maxbeam_audit = _align_maxbeam_selector(
+        text,
+        preserve_source_type1_arm_topology=preserve_source_topology,
+        use_section_based_arm_topology=use_section_based_topology,
+        use_component_topology=use_component_topology,
+    )
     text, selector_audit = _align_tmax_selector(
         text,
         preserve_source_type1_arm_topology=preserve_source_topology,
@@ -447,8 +620,9 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         "component_topology": use_component_topology,
         "section_based_arm_topology": use_section_based_topology,
         "tbmodel_selector": tbmodel_audit,
+        "maxbeam_selector": maxbeam_audit,
         "tmax_selector": selector_audit,
-        "policy": "Do not hide all-zero TMAX output. Prevent it by selecting the actual parameterized tray-arm element types and by injecting the intake square-section branch parameter.",
+        "policy": "Result extraction selectors must follow the generated model topology: MAX equals the department TYPE=1 scope (square support plus tray arms, no trays/bolts), SQUARE is square support only, TMAX is cantilever arms only.",
     }
     (job_dir / "postprocessor_alignment_audit.json").write_text(
         json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8"
