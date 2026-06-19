@@ -1807,7 +1807,27 @@ def _source_mixed_family_shape_from_trace(job_dir: Path) -> str | None:
     return None
 
 
+def _model_source_from_trace(job_dir: Path) -> str | None:
+    trace_path = job_dir / "intake_standard_family_traceability.json"
+    if not trace_path.exists():
+        return None
+    try:
+        trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    parameterization = trace.get("parameterization") if isinstance(trace, dict) else None
+    if isinstance(parameterization, dict):
+        source = parameterization.get("model_source")
+        if source:
+            return str(source)
+    return None
+
+
 def _single_mixed_wide_tail_family_status(job_dir: Path, model_text: str) -> tuple[bool, str | None, str]:
+    model_source = _model_source_from_trace(job_dir)
+    if model_source == "ctai_grouped_mirrored_mixed_standard":
+        return True, model_source, "traceability_model_source"
+
     shape = _source_mixed_family_shape_from_trace(job_dir)
     if shape in _SINGLE_MIXED_WIDE_TAIL_FAMILIES:
         return True, shape, "traceability_source_mixed_family_shape"
@@ -1911,7 +1931,7 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
             "reason": "source_multi_width_L5_not_wide_tail_family",
             "source_mixed_family_shape": source_mixed_shape,
             "source_mixed_family_shape_source": source_mixed_shape_source,
-            "policy": "Only reviewed single-side mixed wide-tray source families use L5 as the 500/600 tray tail controlled by square-section outer width. Other families may use L5 for another geometric span and must not be rewritten here.",
+            "policy": "Only reviewed mixed wide-tray model families use L5 as the 500/600 tray tail controlled by square-section outer width. Other families may use L5 for another geometric span and must not be rewritten here.",
         }
     elif not tray_widths_mm:
         l5_audit = {"status": "skipped", "reason": "missing_tray_widths_for_L5_sync"}
@@ -1938,7 +1958,7 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
             "replaced_count": l5_count,
             "policy_status": l5_policy,
             "policy": (
-                "Single-side mixed 500/600-source L5 rule: max tray width <=300 mm uses 0.15 m; "
+                "Mixed 500/600-source L5 rule: max tray width <=300 mm uses 0.15 m; "
                 "wide-tray mixed families use 0.20 m for square outer <=120 mm and 0.15 m for square outer >120 mm."
             ),
         }
@@ -1954,7 +1974,7 @@ def _sync_model_h1_to_square_section(job_dir: Path, section_name: str) -> dict[s
         "L3_sync": l3_audit,
         "L5_sync": l5_audit,
         "source_ref": "square_section_name outer width -> generated_model.mac H1",
-        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1. Single-width L3 is synchronized when the model is not a multi-width L6 family; reviewed single-side mixed wide-tray L5 is synchronized only for source families where L5 is the wide-tray tail.",
+        "policy": "For square tubes 100/120/140/160, model H1 equals the outer side length in meters; thickness does not affect H1. Single-width L3 is synchronized when the model is not a multi-width L6 family; reviewed mixed wide-tray L5 is synchronized only for source families where L5 is the wide-tray tail.",
     }
 
 

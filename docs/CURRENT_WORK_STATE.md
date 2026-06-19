@@ -1,5 +1,33 @@
 # CableTrayAI ??????
 
+## 2026-06-19 4218 grouped mirrored 500/600 L5 sync closeout
+
+Current source state:
+
+1. Fixed the grouped mirrored 500/600 final square-section replacement path for `ctai_grouped_mirrored_mixed_standard` models.
+2. For the reviewed 4218-class grouped source-style APDL, `L3=0.6` and `L4=0.5` are tray-width variables, while `L5` is the wide-tray short arm/tail length that must follow the selected square section.
+3. The locked rule is unchanged: tray width `<=300 mm -> 0.15 m`; tray width `>300 mm` with square outer `<=120 mm -> 0.20 m`; tray width `>300 mm` with square outer `>120 mm -> 0.15 m`.
+4. The final selected `160-160-8` branch now rewrites `L5=0.15` for grouped mirrored 500/600 jobs, while preserving `L3=0.6` and `L4=0.5`.
+5. Web model preview height, projection scale and legend wrapping were adjusted so the ANSYS model/command review area is easier to inspect and the legend no longer overlaps.
+
+Verification:
+
+1. Targeted square-section replacement regression passed for grouped mirrored 500/600 final selection.
+2. Full unit suite passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. Frontend inline JavaScript syntax check passed for `apps/web/index.html`.
+4. Real ANSYS18.2 validation passed for row 10 / `18185NI-LXSJ4218` at `jobs/verify_4218_l5_fix_20260619_104624`.
+5. Real run selected `160-160-8`, generated `H1=0.160000`, `L3=0.6`, `L4=0.5`, `L5=0.15`, ANSYS status `success`, result validation `pass`, and controlling ratio `0.963156436189633`.
+
+Closeout:
+
+1. Full server, desktop, and installer runtimes were rebuilt.
+2. Full installer package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C770DDD3DB13CE8EDA4BC923C294C7E4CFE456F6F3A13F4F7C63803DDADBE372`, size `79349643` bytes.
+3. Package gate passed, including runtime XML support and no-expat spectrum smoke.
+4. Local `D:/CableTrayAI` was installed from the rebuilt full package; old `_internal_update` and package-folder installer logs were removed.
+5. Local smoke passed: active server PID `19240`, `/health` returned `ok`, root page returned HTTP `200`, and `duxyb/cnpe123` login returned `pass`.
+6. Source/package/install hashes match for the touched optimizer, web, learning-cache and recovery-doc files, plus rebuilt server, desktop and installer runtimes.
+7. Git commit and push remain the final closeout step.
+
 ## 2026-06-18 result-extraction component mapping closeout
 
 Current source state:

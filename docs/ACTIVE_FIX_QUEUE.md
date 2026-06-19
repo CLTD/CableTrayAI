@@ -1,5 +1,21 @@
 # CableTrayAI ??????
 
+## 2026-06-19 4218 grouped mirrored 500/600 L5 sync queue
+
+Resolved in source, tests, and real ANSYS:
+
+1. Root cause: grouped mirrored 500/600 jobs kept source-style `L5=0.2` after final section selection because `ctai_grouped_mirrored_mixed_standard` was skipped by the previous single-side-only L5 sync guard.
+2. Fix: final square-section replacement now recognizes this model source from `intake_standard_family_traceability.json` and synchronizes `L5` using the wide-tray rule. For final `160-160-8`, `L5=0.15`.
+3. Guardrail: `L3=0.6` and `L4=0.5` remain tray-width variables and are not rewritten by this fix.
+4. Regression test added for grouped mirrored 500/600 replacement: `H1=0.160000`, `L5=0.15`, `L3=0.6`, and `L4=0.5`.
+5. Web preview was made taller and the legend now wraps cleanly, improving the visual review panel without changing APDL semantics.
+6. Real ANSYS18.2 validation passed for `18185NI-LXSJ4218` under `jobs/verify_4218_l5_fix_20260619_104624`; selected `160-160-8`, result validation passed, controlling ratio `0.963156436189633`.
+
+Open:
+
+1. No package/local-deployment blocker remains. Full installer package is `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C770DDD3DB13CE8EDA4BC923C294C7E4CFE456F6F3A13F4F7C63803DDADBE372`. Local `D:/CableTrayAI` is synced from that package, server PID `19240`, `/health` ok, root HTTP `200`, and `duxyb/cnpe123` login pass.
+2. Commit and push this completed source/package-state update.
+
 ## 2026-06-18 result-extraction component mapping queue
 
 Resolved in source, tests, and real ANSYS:

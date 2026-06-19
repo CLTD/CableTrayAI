@@ -105,6 +105,53 @@ def _write_single_mixed_wide_tail_job(job_dir: Path, *, source_shape: str = "sin
     )
 
 
+def _write_grouped_mirrored_wide_tail_job(job_dir: Path) -> None:
+    job_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {"analysis_method": "static"},
+        "support": {
+            "allowed_square_section_ids": ["120-120-10", "160-160-8"],
+            "square_tube_width_m": 0.12,
+        },
+        "sections": [{"section_id": "120-120-10", "sect_file": "120-120-10"}],
+        "tray_layers": [
+            {"side": "front", "tray_width_m": 0.5},
+            {"side": "front", "tray_width_m": 0.6},
+            {"side": "back", "tray_width_m": 0.5},
+            {"side": "back", "tray_width_m": 0.6},
+        ],
+    }
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "intake_standard_family_traceability.json").write_text(
+        json.dumps({"parameterization": {"model_source": "ctai_grouped_mirrored_mixed_standard"}}),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "H1=0.120000",
+                "L1=0.67",
+                "L2=0.55",
+                "L3=0.6",
+                "L4=0.5",
+                "L5=0.2",
+                "L6=0.8",
+                "senum1=2",
+                "senum2=1",
+                "SECREAD,120-120-10,SECT",
+                "SECREAD,600-75-2mm,SECT",
+                "SECREAD,500-75-2mm,SECT",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+                "K,503,H1/2+L1-L5,0,0.1",
+                "K,1503,-(H1/2+L1-L5),0,0.1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_trial_section_replacement_uses_same_arm_branch_as_final_model(tmp_path: Path) -> None:
     source_root = tmp_path / "source"
     _write_section_catalog(
@@ -254,6 +301,34 @@ def test_trial_section_replacement_keeps_single_mixed_l5_for_channel_branch(tmp_
     assert "L5=0.2" in text
     assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "already_current"
     assert audit["model_h1_sync_audit"]["L5_sync"]["policy_status"] == "square_outer_width_le_120_l5_0p20m"
+
+
+def test_trial_section_replacement_syncs_grouped_mirrored_500_600_l5_for_yixing_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_grouped_mirrored_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.15" in text
+    assert "L3=0.6" in text
+    assert "L4=0.5" in text
+    l5_sync = audit["model_h1_sync_audit"]["L5_sync"]
+    assert l5_sync["status"] == "updated"
+    assert l5_sync["source_mixed_family_shape"] == "ctai_grouped_mirrored_mixed_standard"
+    assert l5_sync["source_mixed_family_shape_source"] == "traceability_model_source"
+    assert l5_sync["policy_status"] == "square_outer_width_gt_120_l5_0p15m"
 
 
 def test_trial_section_replacement_does_not_rewrite_non_single_mixed_l5_span(tmp_path: Path) -> None:

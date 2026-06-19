@@ -548,9 +548,9 @@
       }
 
       .model-wrap {
-        min-height: 660px;
+        min-height: 720px;
         display: grid;
-        grid-template-rows: auto minmax(520px, 1fr) auto;
+        grid-template-rows: auto minmax(600px, 1fr) auto;
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
@@ -571,7 +571,8 @@
       #modelCanvas {
         display: block;
         width: 100%;
-        min-height: 520px;
+        min-height: 600px;
+        height: clamp(600px, 64vh, 820px);
         background:
           linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,247,250,.9)),
           repeating-linear-gradient(135deg, rgba(182,198,211,.18) 0, rgba(182,198,211,.18) 1px, transparent 1px, transparent 28px);
@@ -595,7 +596,7 @@
       }
 
       .command-panel {
-        min-height: 660px;
+        min-height: 720px;
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
         border: 1px solid var(--line);
@@ -3278,8 +3279,8 @@
         const z1 = point.z;
         const y2 = y1 * cp - z1 * sp;
         const z2 = y1 * sp + z1 * cp;
-        const scale = Math.max(58, Math.min(102, width / 9.2, height / 5.4));
-        return { x: width / 2 + x1 * scale, y: height * 0.6 - z2 * scale + y2 * 12, depth: y2 };
+        const scale = Math.max(54, Math.min(98, width / 9.6, height / 5.9));
+        return { x: width / 2 + x1 * scale, y: height * 0.58 - z2 * scale + y2 * 12, depth: y2 };
       }
 
       function normalizedNodes(nodes) {
@@ -3521,12 +3522,16 @@
           ["connector", `连接/短撑 ${(counts.connector || 0) + (counts.vertical_connector || 0)}`],
         ];
         let x = 18;
-        const y = 74;
+        let y = 74;
         items.forEach(([kind, label]) => {
           const style = elementStyle(kind);
           ctx.fillStyle = "rgba(255, 255, 255, .82)";
           ctx.strokeStyle = "rgba(148, 163, 184, .5)";
           const boxWidth = Math.max(142, ctx.measureText(label).width + 52);
+          if (x + boxWidth > width - 18) {
+            x = 18;
+            y += 34;
+          }
           ctx.beginPath();
           ctx.roundRect(x - 7, y - 16, boxWidth, 28, 8);
           ctx.fill();
@@ -3541,7 +3546,6 @@
           ctx.font = "12px Segoe UI";
           ctx.fillText(label, x + 35, y + 4);
           x += boxWidth + 10;
-          if (x > width - 180) x = 18;
         });
       }
 
