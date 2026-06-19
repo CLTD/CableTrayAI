@@ -165,9 +165,10 @@ def _connection_nodes_to_bolt_rows(rows: list[dict]) -> list[dict]:
 
     Some standard PIP variants can leave the legacy two-line LS-FORCE.LIS at
     zero when the actual tray-arm connection element forces are available in
-    LS-FORCE-NODES.LIS.  The fallback remains source-driven: it groups by the
-    exported load case and takes the absolute envelope of each force/moment
-    component from the explicitly exported connection keypoints.
+    LS-FORCE-NODES.LIS.  The fallback is limited to the standard suffix-9
+    LS-FORCE keypoint family used by the shared S2 post stream. Other exported
+    connection nodes remain diagnostic evidence and must not replace the
+    published tray-arm connection-load selector.
     """
 
     selected_rows, topology_selection = _select_connection_node_rows_for_bolt_envelope(rows)
@@ -219,11 +220,10 @@ def _connection_nodes_to_bolt_rows(rows: list[dict]) -> list[dict]:
 def _select_connection_node_rows_for_bolt_envelope(rows: list[dict]) -> tuple[list[dict], dict[str, Any]]:
     """Choose the source-command bolt keypoint family before enveloping.
 
-    The standard LS-FORCE block builds the tray-arm bolt surrogate family with
-    suffix-9 keypoints, then falls back to -3 if that keypoint is absent.
-    High-layer generated models may expand frame spacing and add a multiple-of-10
-    offset, so selection follows the suffix topology instead of fixed
-    500-800/1500-1800 numeric windows.
+    The standard LS-FORCE block builds the tray-arm connection family with
+    suffix-9 keypoints. Physical bolt keypoints such as suffix 6/7/8 and CP
+    interface points are exported for diagnosis only; using them as a published
+    replacement can hide a model/post topology mismatch.
     """
 
     usable = [row for row in rows if _metric_number(row.get("fx")) is not None]
@@ -246,25 +246,30 @@ def _select_connection_node_rows_for_bolt_envelope(rows: list[dict]) -> tuple[li
                 selected.append(row)
         return selected
 
-    for suffixes, policy in (
-        ((9,), "standard_kyals_suffix_9"),
-        ((6,), "standard_kyals_minus_3_suffix_6"),
-        ((2,), "tray_arm_cp_interface_suffix_2"),
-    ):
-        selected = _select_by_suffix(suffixes)
-        if selected:
-            return selected, {
-                "status": "pass",
-                "policy": policy,
-                "selected_suffixes": list(suffixes),
-                "selected_keypoints": sorted({_kp(row) for row in selected}),
-                "source_ref": "generated_post.mac:KYALS / LS-FORCE-NODES.LIS",
-            }
-    return usable, {
-        "status": "fallback_all_connection_rows",
-        "policy": "No standard suffix-9/-6/-2 bolt keypoint family was present; enveloped all exported non-zero connection nodes.",
-        "selected_keypoints": sorted({_kp(row) for row in usable}),
-        "source_ref": "LS-FORCE-NODES.LIS",
+    selected = _select_by_suffix((9,))
+    if selected:
+        selected_all_zero = _all_force_rows_zero(selected)
+        return selected, {
+            "status": "pass" if not selected_all_zero else "selected_all_zero",
+            "policy": "standard_kyals_suffix_9",
+            "selected_suffixes": [9],
+            "selected_keypoints": sorted({_kp(row) for row in selected}),
+            "diagnostic_keypoints": sorted({_kp(row) for row in usable if _kp(row) % 10 != 9}),
+            "selected_all_zero": selected_all_zero,
+            "source_ref": "generated_post.mac:KYALS / LS-FORCE-NODES.LIS",
+        }
+    return [], {
+        "status": "missing_standard_suffix9",
+        "policy": (
+            "No non-zero suffix-9 LS-FORCE-NODES rows were exported. Suffix 6/7/8 physical bolt "
+            "geometry or suffix-2 CP interface rows are diagnostic only and are not publishable as "
+            "tray-arm connection loads."
+        ),
+        "selected_suffixes": [9],
+        "selected_keypoints": [],
+        "diagnostic_keypoints": sorted({_kp(row) for row in usable}),
+        "selected_all_zero": True,
+        "source_ref": "generated_post.mac:KYALS / LS-FORCE-NODES.LIS",
     }
 
 
@@ -297,6 +302,7 @@ def assemble_result(job_dir: Path | str) -> dict:
         "connection_node_rows": len(connection_node_rows),
     }
     if _all_force_rows_zero(bolt_rows) and not _all_force_rows_zero(connection_node_rows):
+        _, topology_selection = _select_connection_node_rows_for_bolt_envelope(connection_node_rows)
         bolt_rows = _connection_nodes_to_bolt_rows(connection_node_rows)
         bolt_source_selection.update(
             {
@@ -304,6 +310,7 @@ def assemble_result(job_dir: Path | str) -> dict:
                 "fallback_used": True,
                 "fallback_reason": "LS-FORCE.LIS parsed as all zero while LS-FORCE-NODES.LIS contains non-zero connection loads.",
                 "envelope_rows": len(bolt_rows),
+                "topology_selection": topology_selection,
             }
         )
     foundation_rows = _parse_if_exists(job_dir / "JCZH.LIS", parse_foundation_load_lis)

@@ -104,7 +104,6 @@ def _layer_signature(layer: dict[str, Any]) -> tuple[Any, ...]:
     return (
         int(layer.get("layer_index") or 0),
         _metric_value(layer.get("tray_width_mm")),
-        str(layer.get("cable_type") or "").strip().lower(),
         _metric_value(layer.get("load_kg_per_m")),
         _metric_value(layer.get("arm_a_length_m")),
         _metric_value(layer.get("arm_b_length_m")),
@@ -506,15 +505,23 @@ def validate_result_outputs(job_dir: Path | str, *, raw: dict[str, Any], result:
                 checks,
                 "connection_load_values",
                 "pass",
-                "Connection load extraction contains non-zero LS-FORCE values.",
+                "Connection load extraction contains a non-zero published bolt-force envelope.",
+                {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
+            )
+        elif bolt_rows and bolt_rows_zero and connection_node_rows and not connection_node_rows_zero:
+            _check(
+                checks,
+                "connection_load_values",
+                "fail",
+                "Selected tray-arm connection load rows are all zero while raw connection-node export contains non-zero values; LS-FORCE topology selection is not aligned with the model.",
                 {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
             )
         elif connection_node_rows and not connection_node_rows_zero:
             _check(
                 checks,
                 "connection_load_values",
-                "pass",
-                "LS-FORCE rows are zero, but connection-node topology export contains non-zero values and is used as the traceable fallback.",
+                "fail",
+                "Connection-node export contains non-zero diagnostic rows, but no non-zero published bolt-force envelope was assembled.",
                 {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
             )
         elif connection_node_rows:

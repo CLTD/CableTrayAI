@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from core.apdl.ls_force_topology import audit_standard_ls_force_topology
+
 
 POST_HEADER_MARKER = "! CableTrayAI postprocessor branch parameters"
 
@@ -226,6 +228,56 @@ def _model_uses_section_based_arm_topology(job_dir: Path) -> bool:
         "current-type grouped mixed tray model" in model_text
         or re.search(r"(?im)^\s*ARM_ET\s*\(\s*NARM\s*\)\s*=\s*2\s*$", model_text) is not None
     ) and re.search(r"(?im)^\s*ARM_SEC\s*\(\s*NARM\s*\)\s*=\s*[23]\s*$", model_text) is not None
+
+
+def _post_uses_standard_ls_force_suffix9(text: str) -> bool:
+    return (
+        re.search(r"(?im)^\s*KYALS.*=\s*509\s*\+\s*I\s*\*\s*10\b", text) is not None
+        or re.search(r"(?im)^\s*KYALS.*=\s*1509\s*\+\s*J\s*\*\s*10\b", text) is not None
+    )
+
+
+def _payload_or_model_has_back_side(payload: dict[str, Any], model_text: str) -> bool:
+    support = payload.get("support") or {}
+    for key in ("layers_back", "back_layers", "houcengshu", "senum1"):
+        try:
+            if int(float(support.get(key) or payload.get(key) or 0)) > 0:
+                return True
+        except (TypeError, ValueError):
+            pass
+    return bool(re.search(r"(?im)^\s*K\s*,\s*(?:1509|KPBKBASE\s*\+\s*9)\b", model_text))
+
+
+def _audit_ls_force_selector_topology(
+    job_dir: Path,
+    post_text: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if not _post_uses_standard_ls_force_suffix9(post_text):
+        return {
+            "status": "skipped",
+            "reason": "generated_post.mac does not use the standard suffix-9 LS-FORCE KYALS selector",
+            "source_ref": "generated_post.mac:LS-FORCE selector",
+        }
+    model_path = job_dir / "generated_model.mac"
+    if not model_path.exists():
+        return {"status": "fail", "reason": "generated_model.mac missing; cannot verify LS-FORCE topology"}
+    model_text = model_path.read_text(encoding="utf-8", errors="ignore")
+    topology = audit_standard_ls_force_topology(
+        model_text,
+        has_back_side=_payload_or_model_has_back_side(payload, model_text),
+    )
+    return {
+        "status": topology.get("status"),
+        "post_selector": "standard_suffix_9_kyals",
+        "model_topology": topology,
+        "source_ref": "generated_post.mac:KYALS suffix-9 / generated_model.mac:509/1509 connector topology",
+        "policy": (
+            "LS-FORCE.LIS is publishable only when the post selector and model expose the same "
+            "suffix-9 tray-arm connection interface. Falling back to nearby 506/507/508 physical "
+            "bolt geometry is diagnostic-only and must not be treated as a production match."
+        ),
+    }
 
 
 def _replace_last_regex(text: str, pattern: str, replacement: str, *, flags: int = 0) -> tuple[str, int]:
@@ -609,6 +661,7 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         use_section_based_arm_topology=use_section_based_topology,
         use_component_topology=use_component_topology,
     )
+    ls_force_audit = _audit_ls_force_selector_topology(job_dir, text, payload)
     changed = text != original
     if changed:
         post_path.write_text(text, encoding="utf-8", newline="\n")
@@ -622,6 +675,7 @@ def align_postprocessor_to_intake(job_dir: Path | str, payload: dict[str, Any] |
         "tbmodel_selector": tbmodel_audit,
         "maxbeam_selector": maxbeam_audit,
         "tmax_selector": selector_audit,
+        "ls_force_selector": ls_force_audit,
         "policy": "Result extraction selectors must follow the generated model topology: MAX equals the department TYPE=1 scope (square support plus tray arms, no trays/bolts), SQUARE is square support only, TMAX is cantilever arms only.",
     }
     (job_dir / "postprocessor_alignment_audit.json").write_text(

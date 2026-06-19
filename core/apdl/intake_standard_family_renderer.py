@@ -15,6 +15,7 @@ from core.apdl.audit import audit_rendered_apdl
 from core.apdl.command_aliases import write_command_aliases
 from core.apdl.intake_template_context import build_standard_s2_template_context
 from core.apdl.keypoint_guard import guard_undefined_keypoint_coordinate_refs
+from core.apdl.ls_force_topology import audit_standard_ls_force_topology
 from core.apdl.modal_policy import (
     modal_mode_count_from_payload,
     modal_policy_audit,
@@ -317,6 +318,7 @@ def _has_reviewed_300_physical_bolt_modeling(text: str, *, has_back_side: bool) 
         has(r"^\s*L\s*,\s*1506\s*\+\s*10\s*\*\s*I\b.*,\s*1507\s*\+\s*10\s*\*\s*I\b")
         and has(r"^\s*L\s*,\s*1507\s*\+\s*10\s*\*\s*I\b.*,\s*1508\s*\+\s*10\s*\*\s*I\b")
     )
+    ls_force_topology = audit_standard_ls_force_topology(text, has_back_side=has_back_side)
     return all(
         [
             has(r"^\s*ET\s*,\s*4\s*,\s*(?:188|BEAM188)\b"),
@@ -325,6 +327,7 @@ def _has_reviewed_300_physical_bolt_modeling(text: str, *, has_back_side: bool) 
             has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
             front_line_pairs,
             back_line_pairs,
+            ls_force_topology.get("status") == "pass",
         ]
     )
 
@@ -440,7 +443,7 @@ def _score_family(family: CommandFamily, payload: dict[str, Any]) -> tuple[int, 
             _has_reviewed_300_physical_bolt_modeling(family.text, has_back_side=family.has_back_side),
             45,
             family.path.name,
-            "ET,4 + SECTYPE,10 CSOLID + LATT,1,,4,,,,10 + 506/507/508 physical bolt lines",
+            "ET,4 + SECTYPE,10 CSOLID + LATT,1,,4,,,,10 + 506/507/508 physical bolt lines + 509/1509 LS-FORCE connectors",
         )
     if source_senum is not None and expected_primary_layers:
         add("primary_layer_count", int(source_senum) == int(expected_primary_layers), 16, int(source_senum), int(expected_primary_layers))
@@ -1882,6 +1885,7 @@ def _audit_small_tray_physical_bolt_modeling(
         has(r"^\s*L\s*,\s*1506\s*\+\s*10\s*\*\s*I\b.*,\s*1507\s*\+\s*10\s*\*\s*I\b"),
         has(r"^\s*L\s*,\s*1507\s*\+\s*10\s*\*\s*I\b.*,\s*1508\s*\+\s*10\s*\*\s*I\b"),
     ]
+    ls_force_topology = audit_standard_ls_force_topology(text, has_back_side=has_back_side)
     checks = {
         "beam188_type_4": has(r"^\s*ET\s*,\s*4\s*,\s*(?:188|BEAM188)\b"),
         "round_bar_section_10": has(r"^\s*SECTYPE\s*,\s*10\s*,\s*BEAM\s*,\s*CSOLID\b"),
@@ -1889,6 +1893,7 @@ def _audit_small_tray_physical_bolt_modeling(
         "section_10_latt_meshing": has(r"^\s*LATT\s*,\s*1\s*,\s*,\s*4\s*,\s*,\s*,\s*,\s*10\b"),
         "front_physical_bolt_lines": all(front_line_pairs),
         "back_physical_bolt_lines": (not has_back_side) or all(back_line_pairs),
+        "standard_ls_force_topology": ls_force_topology.get("status") == "pass",
         "has_coupling_only_as_supplement": has(r"\b(?:CP|CPCYC)\s*,"),
     }
     required = [
@@ -1898,6 +1903,7 @@ def _audit_small_tray_physical_bolt_modeling(
         "section_10_latt_meshing",
         "front_physical_bolt_lines",
         "back_physical_bolt_lines",
+        "standard_ls_force_topology",
     ]
     missing = [name for name in required if not checks.get(name)]
     return {
@@ -1905,10 +1911,12 @@ def _audit_small_tray_physical_bolt_modeling(
         "tray_width_mm": tray_width_mm,
         "checks": checks,
         "missing": missing,
+        "ls_force_topology": ls_force_topology,
         "source_ref": "300 tray standard APDL family: ET,4 + SECTYPE,10 CSOLID + LATT,1,,4,,,,10",
         "policy": (
-            "The 300 mm tray standard family must contain physical bolt/round-bar beam elements. CP/CPCYC "
-            "coupling is only a supplementary node coupling and cannot by itself satisfy the 300 mm modeling gate."
+            "The 300 mm tray standard family must contain physical bolt/round-bar beam elements and the "
+            "standard suffix-9 LS-FORCE connector interface. CP/CPCYC coupling is only a supplementary "
+            "node coupling and cannot by itself satisfy the 300 mm modeling gate."
         ),
     }
 
@@ -2934,8 +2942,14 @@ def render_intake_standard_family_commands(
     section_failures = [item for item in sections if item.get("status") != "copied"]
     solve_parameterization_failed = solve_parameterization_audit.get("status") == "fail"
     model_parameterization_failed = (parameter_audit.get("physical_bolt_modeling") or {}).get("status") == "fail"
+    postprocessor_alignment_failed = (post_alignment_audit.get("ls_force_selector") or {}).get("status") == "fail"
     payload_out = {
-        "status": "pass" if not section_failures and not solve_parameterization_failed and not model_parameterization_failed else "fail",
+        "status": "pass"
+        if not section_failures
+        and not solve_parameterization_failed
+        and not model_parameterization_failed
+        and not postprocessor_alignment_failed
+        else "fail",
         "job_id": job_id,
         "job_dir": str(job_dir),
         "family": {**family, "source_encoding": encoding},

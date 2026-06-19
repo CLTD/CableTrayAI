@@ -1,0 +1,3082 @@
+{
+  "status": "pass",
+  "selected_count": 6,
+  "blocked_count": 0,
+  "selected": [
+    {
+      "report_no": "18185NI-LXSJ4120",
+      "intake_row_number": 17,
+      "intake_serial": 16,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4120\\18185NI-LXSJ4120.docx",
+      "score": 31,
+      "tie_count": 1,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4120\\18185NI-LXSJ4120.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2m，截面大小为160*160*8mm，支架的最大间距为2m，双侧5+2层，500mm托盘，托臂长度为550mm，托盘自重加电缆载荷为90.5kg/m。",
+        "support_height_m": 2.0,
+        "support_spacing_m": 2.0,
+        "square_section_spec": "160-160-8",
+        "side_word": "双侧",
+        "layer_counts": [
+          5,
+          2
+        ],
+        "tray_width_mm": 500,
+        "tray_widths_mm": [
+          500
+        ],
+        "tray_load_kg_per_m": 90.5,
+        "tray_loads_kg_per_m": [
+          90.5
+        ],
+        "static_spectrum_elevations": [
+          7.5
+        ],
+        "report_spectrum_elevations": [
+          7.5
+        ],
+        "command_spectrum_elevations": [],
+        "command_spectrum_source_refs": [],
+        "spectrum_elevation_source": "report_text",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 17,
+        "intake_serial": 16,
+        "report_number": "18185NI-LXSJ4120",
+        "description": "双侧5+2层 \n中低压500\n中低压500\n中低压500\n控制测量500+控制测量500\n控制测量500+控制测量500",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "160-160-8",
+            "expected": "160-160-8"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              7.5
+            ],
+            "expected": [
+              7.5
+            ],
+            "source": {
+              "source": "report_text",
+              "source_refs": [],
+              "report_spectrum_elevations": [
+                7.5
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              500
+            ],
+            "expected": 500
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              500
+            ],
+            "expected": [
+              500
+            ]
+          },
+          {
+            "check_id": "double_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              5,
+              2
+            ],
+            "expected": [
+              5,
+              2
+            ]
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              90.5
+            ],
+            "expected": 90.5
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              90.5
+            ],
+            "expected": [
+              90.5
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 5,
+          "back_layers": 2,
+          "declared_layers": [
+            5,
+            2
+          ],
+          "widths": [
+            500,
+            500,
+            500,
+            500,
+            500,
+            500,
+            500
+          ],
+          "unique_widths": [
+            500
+          ],
+          "loads": [
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5
+          ],
+          "unique_loads": [
+            90.5
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 17,
+          "intake_serial": 16,
+          "report_number": "18185NI-LXSJ4120",
+          "description": "双侧5+2层 \n中低压500\n中低压500\n中低压500\n控制测量500+控制测量500\n控制测量500+控制测量500",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "160-160-8",
+              "expected": "160-160-8"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                7.5
+              ],
+              "expected": [
+                7.5
+              ],
+              "source": {
+                "source": "report_text",
+                "source_refs": [],
+                "report_spectrum_elevations": [
+                  7.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "double_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                5,
+                2
+              ],
+              "expected": [
+                5,
+                2
+              ]
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 5,
+            "back_layers": 2,
+            "declared_layers": [
+              5,
+              2
+            ],
+            "widths": [
+              500,
+              500,
+              500,
+              500,
+              500,
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    },
+    {
+      "report_no": "18185NI-LXSJ4123",
+      "intake_row_number": 27,
+      "intake_serial": 26,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\18185NI-LXSJ4123.docx",
+      "score": 31,
+      "tie_count": 2,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\18185NI-LXSJ4123.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2m，截面大小为100*100*8mm，支架的最大间距为2m，单侧2层，500mm托盘，托臂长度为550mm，托盘自重加电缆载荷为90.5kg/m。",
+        "support_height_m": 2.0,
+        "support_spacing_m": 2.0,
+        "square_section_spec": "100-100-8",
+        "side_word": "单侧",
+        "layer_counts": [
+          2
+        ],
+        "tray_width_mm": 500,
+        "tray_widths_mm": [
+          500
+        ],
+        "tray_load_kg_per_m": 90.5,
+        "tray_loads_kg_per_m": [
+          90.5
+        ],
+        "static_spectrum_elevations": [
+          7.5
+        ],
+        "report_spectrum_elevations": [
+          7.5
+        ],
+        "command_spectrum_elevations": [
+          7.5
+        ],
+        "command_spectrum_source_refs": [
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\计算文件\\02静力法-计算文件 7.5m.PIP",
+            "line": null,
+            "text": "02静力法-计算文件 7.5m.PIP",
+            "elevations": [
+              7.5
+            ],
+            "evidence": "static_calculation_filename"
+          }
+        ],
+        "spectrum_elevation_source": "static_calculation_filename",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 27,
+        "intake_serial": 26,
+        "report_number": "18185NI-LXSJ4123",
+        "description": "单侧2层 \n控制测量500\n控制测量500",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "100-100-8",
+            "expected": "100-100-8"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              7.5
+            ],
+            "expected": [
+              7.5
+            ],
+            "source": {
+              "source": "static_calculation_filename",
+              "source_refs": [
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\计算文件\\02静力法-计算文件 7.5m.PIP",
+                  "line": null,
+                  "text": "02静力法-计算文件 7.5m.PIP",
+                  "elevations": [
+                    7.5
+                  ],
+                  "evidence": "static_calculation_filename"
+                }
+              ],
+              "report_spectrum_elevations": [
+                7.5
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              500
+            ],
+            "expected": 500
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              500
+            ],
+            "expected": [
+              500
+            ]
+          },
+          {
+            "check_id": "single_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": 2,
+            "expected": 2
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              90.5
+            ],
+            "expected": 90.5
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              90.5
+            ],
+            "expected": [
+              90.5
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 2,
+          "back_layers": 0,
+          "declared_layers": [
+            2
+          ],
+          "widths": [
+            500,
+            500
+          ],
+          "unique_widths": [
+            500
+          ],
+          "loads": [
+            90.5,
+            90.5
+          ],
+          "unique_loads": [
+            90.5
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 27,
+          "intake_serial": 26,
+          "report_number": "18185NI-LXSJ4123",
+          "description": "单侧2层 \n控制测量500\n控制测量500",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "100-100-8",
+              "expected": "100-100-8"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                7.5
+              ],
+              "expected": [
+                7.5
+              ],
+              "source": {
+                "source": "static_calculation_filename",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\计算文件\\02静力法-计算文件 7.5m.PIP",
+                    "line": null,
+                    "text": "02静力法-计算文件 7.5m.PIP",
+                    "elevations": [
+                      7.5
+                    ],
+                    "evidence": "static_calculation_filename"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  7.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": 2,
+              "expected": 2
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 2,
+            "back_layers": 0,
+            "declared_layers": [
+              2
+            ],
+            "widths": [
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        },
+        {
+          "score": 31,
+          "row_number": 29,
+          "intake_serial": 28,
+          "report_number": "18185NI-LXSJ4123",
+          "description": "单侧2层 \n（全部）200\n控制测量500",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "100-100-8",
+              "expected": "100-100-8"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                7.5
+              ],
+              "expected": [
+                7.5
+              ],
+              "source": {
+                "source": "static_calculation_filename",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4123\\计算文件\\02静力法-计算文件 7.5m.PIP",
+                    "line": null,
+                    "text": "02静力法-计算文件 7.5m.PIP",
+                    "elevations": [
+                      7.5
+                    ],
+                    "evidence": "static_calculation_filename"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  7.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                200,
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                200,
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": 2,
+              "expected": 2
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                35.0,
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                35.0,
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 2,
+            "back_layers": 0,
+            "declared_layers": [
+              2
+            ],
+            "widths": [
+              200,
+              500
+            ],
+            "unique_widths": [
+              200,
+              500
+            ],
+            "loads": [
+              35.0,
+              90.5
+            ],
+            "unique_loads": [
+              35.0,
+              90.5
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    },
+    {
+      "report_no": "18185NI-LXSJ4135",
+      "intake_row_number": 77,
+      "intake_serial": 76,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\18185NI-LXSJ4135.docx",
+      "score": 31,
+      "tie_count": 1,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\18185NI-LXSJ4135.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2m，截面大小为100*100*6mm，支架的最大间距为1.5m，单侧5层，300mm托盘，托臂长度为350mm，托盘自重加电缆载荷为53kg/m。",
+        "support_height_m": 2.0,
+        "support_spacing_m": 1.5,
+        "square_section_spec": "100-100-6",
+        "side_word": "单侧",
+        "layer_counts": [
+          5
+        ],
+        "tray_width_mm": 300,
+        "tray_widths_mm": [
+          300
+        ],
+        "tray_load_kg_per_m": 53.0,
+        "tray_loads_kg_per_m": [
+          53.0
+        ],
+        "static_spectrum_elevations": [
+          13.5
+        ],
+        "report_spectrum_elevations": [
+          13.5
+        ],
+        "command_spectrum_elevations": [
+          13.5
+        ],
+        "command_spectrum_source_refs": [
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\计算文件\\02静力法-计算文件 13.5m.PIP",
+            "line": null,
+            "text": "02静力法-计算文件 13.5m.PIP",
+            "elevations": [
+              13.5
+            ],
+            "evidence": "static_calculation_filename"
+          }
+        ],
+        "spectrum_elevation_source": "static_calculation_filename",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 77,
+        "intake_serial": 76,
+        "report_number": "18185NI-LXSJ4135",
+        "description": "单侧5层\n（全部）300\n（全部）300\n（全部）300\n（全部）300\n（全部）300",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 1.5,
+            "expected": 1.5
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "100-100-6",
+            "expected": "100-100-6"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              13.5
+            ],
+            "expected": [
+              13.5
+            ],
+            "source": {
+              "source": "static_calculation_filename",
+              "source_refs": [
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\计算文件\\02静力法-计算文件 13.5m.PIP",
+                  "line": null,
+                  "text": "02静力法-计算文件 13.5m.PIP",
+                  "elevations": [
+                    13.5
+                  ],
+                  "evidence": "static_calculation_filename"
+                }
+              ],
+              "report_spectrum_elevations": [
+                13.5
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              300
+            ],
+            "expected": 300
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              300
+            ],
+            "expected": [
+              300
+            ]
+          },
+          {
+            "check_id": "single_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": 5,
+            "expected": 5
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              53.0
+            ],
+            "expected": 53.0
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              53.0
+            ],
+            "expected": [
+              53.0
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 5,
+          "back_layers": 0,
+          "declared_layers": [
+            5
+          ],
+          "widths": [
+            300,
+            300,
+            300,
+            300,
+            300
+          ],
+          "unique_widths": [
+            300
+          ],
+          "loads": [
+            53.0,
+            53.0,
+            53.0,
+            53.0,
+            53.0
+          ],
+          "unique_loads": [
+            53.0
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 77,
+          "intake_serial": 76,
+          "report_number": "18185NI-LXSJ4135",
+          "description": "单侧5层\n（全部）300\n（全部）300\n（全部）300\n（全部）300\n（全部）300",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.5,
+              "expected": 1.5
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "100-100-6",
+              "expected": "100-100-6"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                13.5
+              ],
+              "expected": [
+                13.5
+              ],
+              "source": {
+                "source": "static_calculation_filename",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\计算文件\\02静力法-计算文件 13.5m.PIP",
+                    "line": null,
+                    "text": "02静力法-计算文件 13.5m.PIP",
+                    "elevations": [
+                      13.5
+                    ],
+                    "evidence": "static_calculation_filename"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  13.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                300
+              ],
+              "expected": 300
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                300
+              ],
+              "expected": [
+                300
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": 5,
+              "expected": 5
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                53.0
+              ],
+              "expected": 53.0
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                53.0
+              ],
+              "expected": [
+                53.0
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 5,
+            "back_layers": 0,
+            "declared_layers": [
+              5
+            ],
+            "widths": [
+              300,
+              300,
+              300,
+              300,
+              300
+            ],
+            "unique_widths": [
+              300
+            ],
+            "loads": [
+              53.0,
+              53.0,
+              53.0,
+              53.0,
+              53.0
+            ],
+            "unique_loads": [
+              53.0
+            ]
+          }
+        },
+        {
+          "score": 28,
+          "row_number": 86,
+          "intake_serial": 85,
+          "report_number": "18185NI-LXSJ4135",
+          "description": "单侧4层\n（全部）300\n（全部）300\n（全部）300\n（全部）300",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.5,
+              "expected": 1.5
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "100-100-6",
+              "expected": "100-100-6"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                13.5
+              ],
+              "expected": [
+                13.5
+              ],
+              "source": {
+                "source": "static_calculation_filename",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\计算文件\\02静力法-计算文件 13.5m.PIP",
+                    "line": null,
+                    "text": "02静力法-计算文件 13.5m.PIP",
+                    "elevations": [
+                      13.5
+                    ],
+                    "evidence": "static_calculation_filename"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  13.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                300
+              ],
+              "expected": 300
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                300
+              ],
+              "expected": [
+                300
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "fail",
+              "weight": 3,
+              "value": 4,
+              "expected": 5
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                53.0
+              ],
+              "expected": 53.0
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                53.0
+              ],
+              "expected": [
+                53.0
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 1,
+          "failed_required_checks": [
+            {
+              "check_id": "single_side_layer_count",
+              "status": "fail",
+              "weight": 3,
+              "value": 4,
+              "expected": 5
+            }
+          ],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 4,
+            "back_layers": 0,
+            "declared_layers": [
+              4
+            ],
+            "widths": [
+              300,
+              300,
+              300,
+              300
+            ],
+            "unique_widths": [
+              300
+            ],
+            "loads": [
+              53.0,
+              53.0,
+              53.0,
+              53.0
+            ],
+            "unique_loads": [
+              53.0
+            ]
+          }
+        },
+        {
+          "score": 28,
+          "row_number": 88,
+          "intake_serial": 87,
+          "report_number": "18185NI-LXSJ4135",
+          "description": "单侧3层\n（全部）300\n（全部）300\n（全部）300",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.5,
+              "expected": 1.5
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "100-100-6",
+              "expected": "100-100-6"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                13.5
+              ],
+              "expected": [
+                13.5
+              ],
+              "source": {
+                "source": "static_calculation_filename",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4135\\计算文件\\02静力法-计算文件 13.5m.PIP",
+                    "line": null,
+                    "text": "02静力法-计算文件 13.5m.PIP",
+                    "elevations": [
+                      13.5
+                    ],
+                    "evidence": "static_calculation_filename"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  13.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                300
+              ],
+              "expected": 300
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                300
+              ],
+              "expected": [
+                300
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "fail",
+              "weight": 3,
+              "value": 3,
+              "expected": 5
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                53.0
+              ],
+              "expected": 53.0
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                53.0
+              ],
+              "expected": [
+                53.0
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 1,
+          "failed_required_checks": [
+            {
+              "check_id": "single_side_layer_count",
+              "status": "fail",
+              "weight": 3,
+              "value": 3,
+              "expected": 5
+            }
+          ],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 3,
+            "back_layers": 0,
+            "declared_layers": [
+              3
+            ],
+            "widths": [
+              300,
+              300,
+              300
+            ],
+            "unique_widths": [
+              300
+            ],
+            "loads": [
+              53.0,
+              53.0,
+              53.0
+            ],
+            "unique_loads": [
+              53.0
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    },
+    {
+      "report_no": "18185NI-LXSJ4152",
+      "intake_row_number": 160,
+      "intake_serial": 159,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\18185NI-LXSJ4152.docx",
+      "score": 31,
+      "tie_count": 1,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\18185NI-LXSJ4152.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2.3m，截面大小为140*140*8mm，支架的最大间距为1.8m，双侧5+2层，500mm托盘，托臂长度为550mm，托盘自重加电缆载荷为90.5kg/m。",
+        "support_height_m": 2.3,
+        "support_spacing_m": 1.8,
+        "square_section_spec": "140-140-8",
+        "side_word": "双侧",
+        "layer_counts": [
+          5,
+          2
+        ],
+        "tray_width_mm": 500,
+        "tray_widths_mm": [
+          500
+        ],
+        "tray_load_kg_per_m": 90.5,
+        "tray_loads_kg_per_m": [
+          90.5
+        ],
+        "static_spectrum_elevations": [
+          4.8
+        ],
+        "report_spectrum_elevations": [
+          4.8
+        ],
+        "command_spectrum_elevations": [
+          4.8
+        ],
+        "command_spectrum_source_refs": [
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 46,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 68,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 89,
+            "text": "!SL-1(Z) 7%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 121,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 142,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 163,
+            "text": "!SL-2(Z) 10%  Envelop:(NL_1818,4.8)",
+            "elevations": [
+              4.8
+            ],
+            "evidence": "command_envelope_line"
+          }
+        ],
+        "spectrum_elevation_source": "command_envelope_line",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 160,
+        "intake_serial": 159,
+        "report_number": "18185NI-LXSJ4152",
+        "description": "双侧5+2层\n 中低压500+中低压500\n 中低压500+控制测量500 \n 中低压500+0\n 中低压500（高）+0\n控制测量500（高）+0",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.3,
+            "expected": 2.3
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 1.8,
+            "expected": 1.8
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "140-140-8",
+            "expected": "140-140-8"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              4.8
+            ],
+            "expected": [
+              4.8
+            ],
+            "source": {
+              "source": "command_envelope_line",
+              "source_refs": [
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 46,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 68,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 89,
+                  "text": "!SL-1(Z) 7%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 121,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 142,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 163,
+                  "text": "!SL-2(Z) 10%  Envelop:(NL_1818,4.8)",
+                  "elevations": [
+                    4.8
+                  ],
+                  "evidence": "command_envelope_line"
+                }
+              ],
+              "report_spectrum_elevations": [
+                4.8
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              500
+            ],
+            "expected": 500
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              500
+            ],
+            "expected": [
+              500
+            ]
+          },
+          {
+            "check_id": "double_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              5,
+              2
+            ],
+            "expected": [
+              5,
+              2
+            ]
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              90.5
+            ],
+            "expected": 90.5
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              90.5
+            ],
+            "expected": [
+              90.5
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 5,
+          "back_layers": 2,
+          "declared_layers": [
+            5,
+            2
+          ],
+          "widths": [
+            500,
+            500,
+            500,
+            500,
+            500,
+            500,
+            500
+          ],
+          "unique_widths": [
+            500
+          ],
+          "loads": [
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5
+          ],
+          "unique_loads": [
+            90.5
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 160,
+          "intake_serial": 159,
+          "report_number": "18185NI-LXSJ4152",
+          "description": "双侧5+2层\n 中低压500+中低压500\n 中低压500+控制测量500 \n 中低压500+0\n 中低压500（高）+0\n控制测量500（高）+0",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.3,
+              "expected": 2.3
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.8,
+              "expected": 1.8
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "140-140-8",
+              "expected": "140-140-8"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                4.8
+              ],
+              "expected": [
+                4.8
+              ],
+              "source": {
+                "source": "command_envelope_line",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 46,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 68,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 89,
+                    "text": "!SL-1(Z) 7%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 121,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 142,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4152\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 163,
+                    "text": "!SL-2(Z) 10%  Envelop:(NL_1818,4.8)",
+                    "elevations": [
+                      4.8
+                    ],
+                    "evidence": "command_envelope_line"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  4.8
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "double_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                5,
+                2
+              ],
+              "expected": [
+                5,
+                2
+              ]
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 5,
+            "back_layers": 2,
+            "declared_layers": [
+              5,
+              2
+            ],
+            "widths": [
+              500,
+              500,
+              500,
+              500,
+              500,
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    },
+    {
+      "report_no": "18185NI-LXSJ4153",
+      "intake_row_number": 162,
+      "intake_serial": 161,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\18185NI-LXSJ4153.docx",
+      "score": 31,
+      "tie_count": 1,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\18185NI-LXSJ4153.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2m，截面大小为120*120*6mm，支架的最大间距为1.8m，双侧2层，500mm托盘，托臂长度为550mm，托盘自重加电缆载荷为90.5kg/m。",
+        "support_height_m": 2.0,
+        "support_spacing_m": 1.8,
+        "square_section_spec": "120-120-6",
+        "side_word": "双侧",
+        "layer_counts": [
+          2
+        ],
+        "tray_width_mm": 500,
+        "tray_widths_mm": [
+          500
+        ],
+        "tray_load_kg_per_m": 90.5,
+        "tray_loads_kg_per_m": [
+          90.5
+        ],
+        "static_spectrum_elevations": [
+          8.5
+        ],
+        "report_spectrum_elevations": [
+          8.5
+        ],
+        "command_spectrum_elevations": [
+          8.5
+        ],
+        "command_spectrum_source_refs": [
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 46,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 69,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 92,
+            "text": "!SL-1(Z) 7%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 123,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 144,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 165,
+            "text": "!SL-2(Z) 10%  Envelop:(NL_1818,8.5)",
+            "elevations": [
+              8.5
+            ],
+            "evidence": "command_envelope_line"
+          }
+        ],
+        "spectrum_elevation_source": "command_envelope_line",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 162,
+        "intake_serial": 161,
+        "report_number": "18185NI-LXSJ4153",
+        "description": "双侧2+2层\n中低压500+中低压500（高）\n中低压500+中低压500（高）",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 1.8,
+            "expected": 1.8
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "120-120-6",
+            "expected": "120-120-6"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              8.5
+            ],
+            "expected": [
+              8.5
+            ],
+            "source": {
+              "source": "command_envelope_line",
+              "source_refs": [
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 46,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 69,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 92,
+                  "text": "!SL-1(Z) 7%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 123,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 144,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 165,
+                  "text": "!SL-2(Z) 10%  Envelop:(NL_1818,8.5)",
+                  "elevations": [
+                    8.5
+                  ],
+                  "evidence": "command_envelope_line"
+                }
+              ],
+              "report_spectrum_elevations": [
+                8.5
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              500
+            ],
+            "expected": 500
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              500
+            ],
+            "expected": [
+              500
+            ]
+          },
+          {
+            "check_id": "double_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              2,
+              2
+            ],
+            "expected": [
+              2,
+              2
+            ]
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              90.5
+            ],
+            "expected": 90.5
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              90.5
+            ],
+            "expected": [
+              90.5
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 2,
+          "back_layers": 2,
+          "declared_layers": [
+            2,
+            2
+          ],
+          "widths": [
+            500,
+            500,
+            500,
+            500
+          ],
+          "unique_widths": [
+            500
+          ],
+          "loads": [
+            90.5,
+            90.5,
+            90.5,
+            90.5
+          ],
+          "unique_loads": [
+            90.5
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 162,
+          "intake_serial": 161,
+          "report_number": "18185NI-LXSJ4153",
+          "description": "双侧2+2层\n中低压500+中低压500（高）\n中低压500+中低压500（高）",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.8,
+              "expected": 1.8
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "120-120-6",
+              "expected": "120-120-6"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                8.5
+              ],
+              "expected": [
+                8.5
+              ],
+              "source": {
+                "source": "command_envelope_line",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 46,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 69,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 92,
+                    "text": "!SL-1(Z) 7%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 123,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 144,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4153\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 165,
+                    "text": "!SL-2(Z) 10%  Envelop:(NL_1818,8.5)",
+                    "elevations": [
+                      8.5
+                    ],
+                    "evidence": "command_envelope_line"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  8.5
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "double_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                2,
+                2
+              ],
+              "expected": [
+                2,
+                2
+              ]
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 2,
+            "back_layers": 2,
+            "declared_layers": [
+              2,
+              2
+            ],
+            "widths": [
+              500,
+              500,
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5,
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    },
+    {
+      "report_no": "18185NI-LXSJ4154",
+      "intake_row_number": 170,
+      "intake_serial": 169,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\18185NI-LXSJ4154.docx",
+      "score": 31,
+      "tie_count": 1,
+      "report_features": {
+        "report_path": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\18185NI-LXSJ4154.docx",
+        "design_sentence": "2.2 结构设计参数\n支架方钢长度为2m，截面大小为120*120*10mm，支架的最大间距为1.8m，单侧5层，500mm托盘，托臂长度为550mm，托盘自重加电缆载荷为90.5kg/m。",
+        "support_height_m": 2.0,
+        "support_spacing_m": 1.8,
+        "square_section_spec": "120-120-10",
+        "side_word": "单侧",
+        "layer_counts": [
+          5
+        ],
+        "tray_width_mm": 500,
+        "tray_widths_mm": [
+          500
+        ],
+        "tray_load_kg_per_m": 90.5,
+        "tray_loads_kg_per_m": [
+          90.5
+        ],
+        "static_spectrum_elevations": [
+          22.0
+        ],
+        "report_spectrum_elevations": [
+          22.0
+        ],
+        "command_spectrum_elevations": [
+          22.0
+        ],
+        "command_spectrum_source_refs": [
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 46,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 68,
+            "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 89,
+            "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 119,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 142,
+            "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          },
+          {
+            "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+            "line": 165,
+            "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22)",
+            "elevations": [
+              22.0
+            ],
+            "evidence": "command_envelope_line"
+          }
+        ],
+        "spectrum_elevation_source": "command_envelope_line",
+        "report_command_spectrum_conflict": false
+      },
+      "selected_score": {
+        "score": 31,
+        "row_number": 170,
+        "intake_serial": 169,
+        "report_number": "18185NI-LXSJ4154",
+        "description": "单侧5层\n中低压500\n中低压500\n中低压500\n中低压500\n控制测量500",
+        "checks": [
+          {
+            "check_id": "support_height_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 2.0,
+            "expected": 2.0
+          },
+          {
+            "check_id": "support_spacing_m",
+            "status": "pass",
+            "weight": 4,
+            "value": 1.8,
+            "expected": 1.8
+          },
+          {
+            "check_id": "square_section_spec",
+            "status": "pass",
+            "weight": 4,
+            "value": "120-120-10",
+            "expected": "120-120-10"
+          },
+          {
+            "check_id": "spectrum_elevation_m",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              22.0
+            ],
+            "expected": [
+              22.0
+            ],
+            "source": {
+              "source": "command_envelope_line",
+              "source_refs": [
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 46,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 68,
+                  "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 89,
+                  "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 119,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 142,
+                  "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                },
+                {
+                  "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                  "line": 165,
+                  "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22)",
+                  "elevations": [
+                    22.0
+                  ],
+                  "evidence": "command_envelope_line"
+                }
+              ],
+              "report_spectrum_elevations": [
+                22.0
+              ],
+              "report_command_spectrum_conflict": false
+            }
+          },
+          {
+            "check_id": "tray_width_mm",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              500
+            ],
+            "expected": 500
+          },
+          {
+            "check_id": "tray_widths_mm",
+            "status": "pass",
+            "weight": 4,
+            "value": [
+              500
+            ],
+            "expected": [
+              500
+            ]
+          },
+          {
+            "check_id": "single_side_layer_count",
+            "status": "pass",
+            "weight": 3,
+            "value": 5,
+            "expected": 5
+          },
+          {
+            "check_id": "tray_load_kg_per_m",
+            "status": "pass",
+            "weight": 2,
+            "value": [
+              90.5
+            ],
+            "expected": 90.5
+          },
+          {
+            "check_id": "tray_loads_kg_per_m",
+            "status": "pass",
+            "weight": 3,
+            "value": [
+              90.5
+            ],
+            "expected": [
+              90.5
+            ]
+          }
+        ],
+        "required_check_count": 9,
+        "failed_required_check_count": 0,
+        "failed_required_checks": [],
+        "tray_features": {
+          "status": "pass",
+          "front_layers": 5,
+          "back_layers": 0,
+          "declared_layers": [
+            5
+          ],
+          "widths": [
+            500,
+            500,
+            500,
+            500,
+            500
+          ],
+          "unique_widths": [
+            500
+          ],
+          "loads": [
+            90.5,
+            90.5,
+            90.5,
+            90.5,
+            90.5
+          ],
+          "unique_loads": [
+            90.5
+          ]
+        }
+      },
+      "candidate_scores": [
+        {
+          "score": 31,
+          "row_number": 170,
+          "intake_serial": 169,
+          "report_number": "18185NI-LXSJ4154",
+          "description": "单侧5层\n中低压500\n中低压500\n中低压500\n中低压500\n控制测量500",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.8,
+              "expected": 1.8
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "120-120-10",
+              "expected": "120-120-10"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                22.0
+              ],
+              "expected": [
+                22.0
+              ],
+              "source": {
+                "source": "command_envelope_line",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 46,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 68,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 89,
+                    "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 119,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 142,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 165,
+                    "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  22.0
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": 5,
+              "expected": 5
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 0,
+          "failed_required_checks": [],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 5,
+            "back_layers": 0,
+            "declared_layers": [
+              5
+            ],
+            "widths": [
+              500,
+              500,
+              500,
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        },
+        {
+          "score": 27,
+          "row_number": 169,
+          "intake_serial": 168,
+          "report_number": "18185NI-LXSJ4154",
+          "description": "单侧5层\n中低压500(高)\n中低压500(高)\n中低压500(高)\n中低压500(高)\n中低压500(高)",
+          "checks": [
+            {
+              "check_id": "support_height_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 2.0,
+              "expected": 2.0
+            },
+            {
+              "check_id": "support_spacing_m",
+              "status": "pass",
+              "weight": 4,
+              "value": 1.8,
+              "expected": 1.8
+            },
+            {
+              "check_id": "square_section_spec",
+              "status": "pass",
+              "weight": 4,
+              "value": "120-120-10",
+              "expected": "120-120-10"
+            },
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "fail",
+              "weight": 4,
+              "value": [
+                16.95
+              ],
+              "expected": [
+                22.0
+              ],
+              "source": {
+                "source": "command_envelope_line",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 46,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 68,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 89,
+                    "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 119,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 142,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 165,
+                    "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  22.0
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            },
+            {
+              "check_id": "tray_width_mm",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                500
+              ],
+              "expected": 500
+            },
+            {
+              "check_id": "tray_widths_mm",
+              "status": "pass",
+              "weight": 4,
+              "value": [
+                500
+              ],
+              "expected": [
+                500
+              ]
+            },
+            {
+              "check_id": "single_side_layer_count",
+              "status": "pass",
+              "weight": 3,
+              "value": 5,
+              "expected": 5
+            },
+            {
+              "check_id": "tray_load_kg_per_m",
+              "status": "pass",
+              "weight": 2,
+              "value": [
+                90.5
+              ],
+              "expected": 90.5
+            },
+            {
+              "check_id": "tray_loads_kg_per_m",
+              "status": "pass",
+              "weight": 3,
+              "value": [
+                90.5
+              ],
+              "expected": [
+                90.5
+              ]
+            }
+          ],
+          "required_check_count": 9,
+          "failed_required_check_count": 1,
+          "failed_required_checks": [
+            {
+              "check_id": "spectrum_elevation_m",
+              "status": "fail",
+              "weight": 4,
+              "value": [
+                16.95
+              ],
+              "expected": [
+                22.0
+              ],
+              "source": {
+                "source": "command_envelope_line",
+                "source_refs": [
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 46,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 68,
+                    "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 89,
+                    "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 119,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 142,
+                    "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  },
+                  {
+                    "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4154\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                    "line": 165,
+                    "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22)",
+                    "elevations": [
+                      22.0
+                    ],
+                    "evidence": "command_envelope_line"
+                  }
+                ],
+                "report_spectrum_elevations": [
+                  22.0
+                ],
+                "report_command_spectrum_conflict": false
+              }
+            }
+          ],
+          "tray_features": {
+            "status": "pass",
+            "front_layers": 5,
+            "back_layers": 0,
+            "declared_layers": [
+              5
+            ],
+            "widths": [
+              500,
+              500,
+              500,
+              500,
+              500
+            ],
+            "unique_widths": [
+              500
+            ],
+            "loads": [
+              90.5,
+              90.5,
+              90.5,
+              90.5,
+              90.5
+            ],
+            "unique_loads": [
+              90.5
+            ]
+          }
+        }
+      ],
+      "selection_conflict_status": "pass",
+      "selection_conflict_reason": null,
+      "failed_required_checks": [],
+      "selection_policy": "Select by report design facts versus intake fields only; ANSYS results and numerical closeness are not used."
+    }
+  ],
+  "blocked": [],
+  "policy": "Report-number validation uses one representative intake row per baseline report, selected from report narrative design features and intake fields.",
+  "intake_path": "C:\\Users\\duxy\\Desktop\\2\\1818\\1818 S2支架需求补充-7.28.xlsx",
+  "source_root": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\matched_non_recent_validation_20260619_192023\\source_mirror",
+  "available_report_count": 6,
+  "intake_row_count": 174
+}

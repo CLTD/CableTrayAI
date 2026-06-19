@@ -175,6 +175,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 import os
+import time
 
 from core.intake.intake_excel_reader import read_tabular_intake_rows
 from core.pipeline.one_click import run_operator_one_click
@@ -210,9 +211,23 @@ def write_status(payload):
 
 def atomic_write_text(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    tmp.replace(path)
+    last_error = None
+    for attempt in range(20):
+        tmp = path.with_name(f"{path.name}.{os.getpid()}.{attempt}.tmp")
+        try:
+            tmp.write_text(text, encoding="utf-8")
+            tmp.replace(path)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            time.sleep(min(0.5, 0.05 * (attempt + 1)))
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"Could not write status file: {path}")
 
 def progress(event):
     event = dict(event)

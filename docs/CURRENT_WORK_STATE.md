@@ -1,5 +1,164 @@
 # CableTrayAI ??????
 
+## 2026-06-19 generic S2 post-extraction topology validation
+
+Current source state:
+
+1. User provided `C:/Users/duxy/Desktop/Desktopuxyb/03 导出数据-S2.PIP` as the generic S2 result-extraction stream. Its SHA256 is `39FC214B136A101F104559173A33081112338D7D60C9E2335C019F04D6E6E24A`, byte-identical to `resources/current_type_command_flows/single_mixed_600_500_300_200_100/03_extract_s2.PIP`.
+2. The generated post template now keeps LS-FORCE on the standard suffix-9 `KYALS%I%` selector only. The unsafe `KYSEL` fallback to `KYALS%I%-3` and `KYALS%I%-101` was removed.
+3. `core/results/result_assembler.py` now treats `LS-FORCE-NODES.LIS` suffix-6/7/8 physical bolt rows and suffix-2 CP interface rows as diagnostic only. Only suffix-9 rows may form a published tray-arm connection-load envelope. If suffix-9 is absent, publication remains blocked by the result gate.
+4. Static command-flow audit matrix was written to `jobs/type_mix_command_audit_20260619_200315/summary.json`. It covers double same 100/200/300/500/600, single mixed 300+600, single mixed 600+500+300+200+100, double grouped 500+600 with 120/160 square sections, and double grouped 100+200+300+500+600.
+5. Matrix outcome: source-family same-width jobs preserve `TYPE=1` / `TYPE=1 minus SEC=1` extraction; mixed jobs use `CTAI_TYPE1_ELEMS`, `CTAI_ARM_ELEMS`, and `CTAI_TRAY_ELEMS` component extraction. All cases had `ls_force_selector.status=pass` and no `KYSEL` / `KYALS%I%-3` / `KYALS%I%-101` tokens.
+
+Verification:
+
+1. Targeted post/result/tray-width tests passed: `78 passed`.
+2. Full unit tests passed: `269 passed`.
+3. `py_compile` passed for touched APDL/result/validation modules.
+4. `git diff --check` passed with only pre-existing CRLF/LF normalization warnings on already modified files.
+5. Detailed evidence is in `docs/GENERAL_POST_EXTRACT_TOPOLOGY_VALIDATION_20260619.md`.
+6. Final recheck at `2026-06-19T20:12:16+08:00` passed targeted topology tests, full `tests/unit`, JSON integrity checks for the audit summaries, and confirmed `source_materials` remains unchanged.
+
+Decision:
+
+1. Keep the strict suffix-9 LS-FORCE publication policy. Do not publish suffix-6/7/8 physical bolt points or suffix-2 CP interface rows as formal connection loads.
+2. If a future model lacks the suffix-9 interface required by the generic S2 post stream, the correct production behavior is to fail traceability/publication and retain diagnostic outputs.
+
+Deployment closeout:
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `D0B3223213FC41DE1A6143648AA7E30AF9927A1B169B48E733C36A27C79C7022`, size `79361379` bytes.
+2. Package gate passed: forbidden paths absent, runtime XML support files present, and no-expat spectrum smoke passed.
+3. Zip content scan passed: no `jobs/uploads/outputs/logs`, no cache directories, no `.pyc/.pyo`, and no local auth/ANSYS config files.
+4. Local `D:/CableTrayAI` was installed from the rebuilt package, service started from `D:/CableTrayAI/runtime/CableTrayAI_Server/CableTrayAI_Server.exe`, `/health` returned ok, root page returned HTTP 200, and `duxyb/cnpe123` login passed.
+5. Source/package/install hashes match for the touched APDL template, result assembler, post alignment, LS-FORCE topology audit, intake renderer, and result gate.
+
+## 2026-06-19 LS-FORCE hardening coverage validation
+
+Current validation state:
+
+1. Rechecked the 4126 LS-FORCE hardening after implementation. Direct topology audit shows the historical `18185NI-LXSJ4126_full_input` source model fails the standard suffix-9 interface check because `509/1509` are missing while legacy `506/507/508` physical bolt geometry is present. Current generated models for `18185NI-LXSJ4120` and production `18185NI-LXSJ4153` pass the same check.
+2. Important boundary: the current hardening is useful for preventing a model/post mismatch and for blocking all-zero selected bolt-force envelopes, but it does not prove the historical 4126 `LS-FORCE.LIS` report values. The diagnostic `*09 -> *07` selector produced nonzero values but still did not match the report, so `507` must not be adopted as a production rule without the original department `03` post stream.
+3. Re-summarized non-recent input-matched real ANSYS replays at a 5% gate in `jobs/input_matched_coverage_summary_20260619.json`. Accepted coverage includes `4115` 500 mm, `4118` 300 mm, `4156` 200 mm, `4249` 600 mm, `4151` 500+600 mixed, and `4228` historical 500 mm replay. `4126_full_input` remains failed only on `LS-FORCE.LIS`.
+4. Current-code reparse check was run under `jobs/reparse_validation_20260619`. It copied existing real-output LIS files for `4126_full_input`, `4156` 200 mm, and `4151` 500+600 mixed, then reassembled them with the current parser/gate. `connection_load_values` passed with nonzero published `bolt_force_results` in all three copies; total result gates can still fail in these numeric replay copies only because full report figures were not copied/exported.
+5. Verification passed: targeted LS-FORCE/tray-width/post/result tests returned 75 passed, full `tests/unit` passed, py_compile passed for touched modules, and `git diff --check` reported only pre-existing CRLF/LF normalization warnings.
+6. Detailed evidence is in `docs/LS_FORCE_TOPOLOGY_AND_COVERAGE_VALIDATION_20260619.md`.
+
+Decision:
+
+1. Keep the current LS-FORCE hardening because it prevents the class of mismatched extraction errors and does not show evidence of confusing 100/200, 300, 500/600 logic.
+2. Do not mark 4126 historical LS-FORCE as fully reproduced until the exact department `03` result-extraction stream or equivalent authoritative extraction point is available.
+
+## 2026-06-19 4126 LS-FORCE topology hardening
+
+Current source state:
+
+1. Investigated the remaining `18185NI-LXSJ4126` full-input replay discrepancy. Main stress, modal and `JCZH.LIS` foundation loads already match the historical report; the unresolved item is only `LS-FORCE.LIS` tray-arm connection loads.
+2. Root cause is not RCC-M evaluation or the main ANSYS solve. It is the model/post-processing interface: the historical 300 tray source model has physical bolt geometry through `506/507/508` and `1506/1507/1508`, but it does not expose the standard suffix-9 `509/1509` keypoint connector interface used by the shared S2 `KYALS` LS-FORCE selector.
+3. Added `core/apdl/ls_force_topology.py` to audit the standard `509/1509` LS-FORCE interface independently from physical bolt geometry.
+4. The 300 tray family score and physical-bolt audit now require both the `506/507/508` physical bolt lines and the standard `509/1509` LS-FORCE connector topology.
+5. `postprocessor_alignment` now writes an `ls_force_selector` audit. If `generated_post.mac` uses the standard suffix-9 `KYALS` selector and `generated_model.mac` lacks the matching `509/1509` topology, traceability is failed instead of silently publishing a mismatched extraction.
+6. `result_assembler` now marks an all-zero selected connection-node keypoint family as `selected_all_zero`; it no longer lets unrelated nonzero raw diagnostic nodes prove the selected published envelope is valid.
+7. `result_validity_gate` now requires the final `bolt_force_results` envelope itself to be nonzero. Nonzero `LS-FORCE-NODES.LIS` rows with zero published bolt rows are treated as a topology mismatch and block publication.
+
+Verification:
+
+1. Direct 4126 source-model topology audit returns `fail`: missing `front_ls_force_keypoint_509`, `front_ls_force_connector_to_509`, `back_ls_force_keypoint_1509`, and `back_ls_force_connector_to_1509`; `legacy_physical_bolt_506_508_present=true`.
+2. Targeted tests passed for 300 tray physical-bolt topology, LS-FORCE post alignment, connection-node selection, and result validation.
+3. Full unit suite passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+4. `py_compile` passed for touched APDL/result/validation modules.
+5. `git diff --check` returned only pre-existing CRLF warnings on already modified docs/cache/script files.
+
+Decision:
+
+1. Do not patch production LS-FORCE extraction to `507` for 4126. That diagnostic produced nonzero values but still did not match the historical report.
+2. Treat the old 4126 source model as a historical source/post mismatch until the exact historical `03` post stream is available.
+3. Current production must use model and post streams as a matched pair; mismatched LS-FORCE topology is now blocked generically.
+
+## 2026-06-19 full input-matched high-error replay
+
+Current validation state:
+
+1. User requested the remaining high-error cases to be rerun with calculation inputs fully consistent and judged against an approximate `5%` acceptance idea.
+2. Diagnostic batch root is `jobs/full_input_matched_high_error_20260619_180420`.
+3. The diagnostic used desktop historical `01` model sources as `generated_model.mac`, desktop historical `02` solve sources as `generated_solve.mac`, stripped embedded solve tails from source models when present, and used the current standard S2 post stream aligned to the source model topology.
+4. Real ANSYS18.2 completed successfully for `18185NI-LXSJ4126`, `4151`, and `4228`.
+5. `18185NI-LXSJ4151` passes both `5%` and `1%` report comparison after full input matching. The previous mismatch was caused by comparing a current `500-only` generated model with a historical `600+500` source model.
+6. `18185NI-LXSJ4228` passes both `5%` and `1%` report comparison after full input matching. The previous residual was caused by the historical report model using `L3=0.15`, while current production policy uses `L3=0.20` for `500 mm` tray with `120-120-8`.
+7. `18185NI-LXSJ4126` main stress/modal/foundation values match after full input matching: stress max relative error is about `0.0327%`, modal max relative error is about `0.00002%`. It still fails due to `LS-FORCE.LIS` tray-arm connection loads.
+8. `4126` LS-FORCE root cause is selector mismatch. Generic S2 post selected `*09` keypoints that do not exist in the source `300` model, giving all-zero LS-FORCE. A diagnostic-only patch to `*07` keypoints produced nonzero LS-FORCE, but still did not match the report, so the exact historical extraction point remains unresolved without the source `03` post stream.
+9. Summary written to `docs/FULL_INPUT_MATCH_VALIDATION_20260619.md`.
+
+Decision:
+
+1. Treat `4151` and `4228` as input-matched precision accepted for this diagnostic.
+2. Do not mark `4126` fully accepted until the source-family-specific `LS-FORCE` selector is corrected or the exact historical `03` extraction stream is available.
+3. No production-code change or deployment package refresh was performed for this diagnostic.
+
+## 2026-06-19 high-error input-matched baseline replay
+
+Current validation state:
+
+1. User requested the same input-matched method to be applied to other large-error desktop-folder-2 cases.
+2. Diagnostic batch root is `jobs/input_matched_high_error_20260619_174851`.
+3. Real ANSYS18.2 source-solve replays were run for `18185NI-LXSJ4115`, `4118`, `4156`, `4126`, `4151`, and `4228`.
+4. `4115`, `4118`, and `4156` now pass strict baseline comparison after replaying the desktop source solve stream. Their previous large differences were calculation-input mismatches, not current deterministic evaluation errors.
+5. `4126` remains failed because the generated model includes mixed `300/200` tray sections and CTAI mixed topology, while the historical source model/report is a `300-75-2mm` source-style model.
+6. `4151` remains failed because the generated model is `500-75-2mm` only, while the historical source model/report is a `600-75-2mm + 500-75-2mm` mixed model with different layer/geometry variables.
+7. `4228` improved from `64` failed comparisons to `16`, but the remaining difference traces to a historical source-model conflict: the report model uses `L3=0.15` for `500-75-2mm` with `120-120-8`, while current production rules lock this case to `L3=0.20`.
+8. Summary written to `docs/HIGH_ERROR_INPUT_MATCH_VALIDATION_20260619.md`.
+
+Decision:
+
+1. The response-spectrum subset `4115/4118/4156` plus NR `4249` supports the conclusion that large historical stress mismatches disappear when calculation input is made consistent.
+2. Do not claim all desktop-folder-2 baselines are clean. `4126`, `4151`, and `4228` need either input/model reconciliation or a developer-only historical replay policy.
+3. No deployment/package refresh was performed for this diagnostic-only run.
+
+## 2026-06-19 NR input-matched baseline replay
+
+Current validation state:
+
+1. User requested an NR-only rerun with calculation inputs made consistent before judging the remaining baseline difference.
+2. The NR baseline sample used for this narrowed check is `18185NI-LXSJ4249`, because it is the NR case in the current representative desktop-folder-2 validation set with a report and source calculation stream.
+3. Diagnostic job: `jobs/nr_input_matched_20260619_170940/18185NI-LXSJ4249_source_solve`.
+4. The model input was checked against `C:/Users/duxy/Desktop/2/18185NI-LXSJ4249/计算文件/01双侧同类型电缆桥架-方钢托臂.PIP`; governing values match: `H1=0.14`, `H2=1.4`, `L1=0.67`, `L2=0.6`, `L3=0.15`, `L4=2.0`, `140-140-8`, `YIXINGGANG150/YIXINGGANG150DAN`, and `600-75-2mm`.
+5. The diagnostic replayed the desktop source solve stream `02计算用命令流AR  8.55 7-10.mac`, which uses `MT=60` and embedded simplified `NR_1818@26.2` spectrum blocks, while production had used the controlled solve template with full workbook spectrum and `MT=80`.
+6. Real ANSYS18.2 completed successfully. Numeric post outputs were assembled; figure export was intentionally skipped for this numeric replay, so `result_validation.json` fails only the required-figures gate.
+7. With the source solve replay, governing stress/ratio values align with the report: faulted bending `289.308 MPa` vs report `289.32 MPa`, faulted tension+bending ratio `0.8167` vs report `0.82`.
+8. The remaining comparison failures are limited to several SL-1 load-table components at about `3%` to `4%`, e.g. JCZH FY/MX and HF/LS FY. The desktop 4249 folder has no historical LIS files or separate `03` post command stream, so this residual cannot yet be proven as a current post-processing bug.
+9. A dedicated summary was written to `docs/NR_INPUT_MATCH_VALIDATION_20260619.md`.
+
+Decision:
+
+1. For NR 4249, the large historical-report stress difference is caused by calculation-input mismatch, not by model generation or RCC-M evaluation.
+2. The earlier "spectrum file does not satisfy" blocker is not an NR 4249 issue; it applies to the NB sample whose requested elevation has no acceptable common spectrum elevation in the selected workbook under the current no-snap-down policy.
+3. Do not publish the full desktop-folder-2 baseline as fully accepted until historical LIS/post streams are available or the residual SL-1 load-table deltas are explicitly accepted as historical export drift.
+
+## 2026-06-19 Desktop folder 2 baseline validation
+
+Current validation state:
+
+1. Used `C:/Users/duxy/Desktop/2` as the manual/unit-run baseline source and selected representative rows covering response spectrum, static method, same-width trays, mixed trays, 200/300/500/600 widths, and multiple square sections.
+2. The aligned validation workbook/spectrum inputs were recorded under `jobs/baseline_desktop2_20260619_151733`.
+3. Real ANSYS ran for rows `18,96,173,131,156,123,125,154` with provided square sections frozen so baseline comparison would not be distorted by the current smart selector.
+4. Production real-run status after fixes:
+   - Initial pass: `18185NI-LXSJ4115`, `4118`, `4126`, `4249`, `4156`.
+   - Re-run pass after fixes: `18185NI-LXSJ4151`, `4228` at `jobs/baseline_desktop2_fixverify_20260619_154504`.
+   - Input blocked: `18185NI-LXSJ4227` because the selected spectrum workbook has no common NB elevation satisfying the configured `>= +19.50m` policy.
+5. Fixed a Windows status-file race in `scripts/run_production_full_intake_compute.ps1`; status JSON writes now use PID-suffixed temporary files with retry/backoff.
+6. Fixed a result-gate false positive for symmetric double-side self-weight cases. `core/validation/result_validity_gate.py` no longer treats front/back cable label text as part of the self-weight symmetry signature, so vertical-only DW foundation reactions are accepted when geometry/load stacks match.
+7. Added regression coverage in `tests/unit/test_result_validity_square_section.py`; targeted test passed with `9 passed`.
+
+Baseline comparison status:
+
+1. Strict historical report numeric comparison is not clean yet. Summary files are:
+   - `jobs/baseline_desktop2_20260619_151733/baseline_validation_summary.json`
+   - `jobs/baseline_desktop2_20260619_151733/baseline_validation_summary.md`
+2. The comparison status is `fail` at `1%` tolerance for the sampled report set. This should not be reported as "no error".
+3. Root cause is not ANSYS crash or missing post files in the fixed samples. The main mismatch is that some historical reports/standard command streams do not use the same input policy as current production:
+   - Static reports such as `4126` and `4228` contain audited `ACEL` coefficients in their standard solve command streams that differ from the current workbook/current-elevation equivalent-static selection.
+   - Response-spectrum report `4151` used a historical `MT=90`, while current production retried to `MT=100` to satisfy the `>50 Hz` Mode.oup gate.
+4. Do not rebuild or publish a "fully baseline-matched" package from this validation alone. The next decision is whether to add a developer-only historical-baseline replay mode that freezes standard command-stream `ACEL`/`MT`, or to keep current production policy and record these historical report comparisons as input-policy conflicts.
+
 ## 2026-06-19 4218 grouped mirrored 500/600 L5 sync closeout
 
 Current source state:

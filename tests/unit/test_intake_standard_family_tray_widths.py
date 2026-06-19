@@ -1190,8 +1190,10 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
             "K,506+10*I+100*(J-1),H1/2+L1-L3,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
             "K,507+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+L5+0.2*(I-1)",
             "K,508+10*I+100*(J-1),H1/2+L1-L3,L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,509+10*I+100*(J-1),H1/2+L1-L2/2,0+L4*(J-1),0.15+0.2*(I-1)",
             "L,506+10*I+100*(J-1),507+10*I+100*(J-1)",
             "L,507+10*I+100*(J-1),508+10*I+100*(J-1)",
+            "L,502+10*I+100*(J-1),509+10*I+100*(J-1)",
             "*ENDDO",
             "*ENDDO",
             "ALLSEL",
@@ -1218,6 +1220,45 @@ def test_300_standard_family_has_physical_bolt_round_bar_elements_not_only_coupl
     assert "LATT,1,,4,,,,10" in rendered
     assert "CPCYC,UX" in rendered
     assert audit["physical_bolt_modeling"]["status"] == "pass"
+    assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
+    assert audit["physical_bolt_modeling"]["checks"]["standard_ls_force_topology"] is True
+
+
+def test_300_physical_bolt_gate_fails_without_ls_force_connector_topology() -> None:
+    source_text = "\n".join(
+        [
+            "ET,4,188",
+            "SECTYPE,10,BEAM,CSOLID",
+            "SECDATA,0.006",
+            "H1=0.10",
+            "L1=0.35",
+            "L2=0.3",
+            "L3=0.15",
+            "L4=2.0",
+            "L5=0.074",
+            "senum=2",
+            "*DO,I,1,senum",
+            "K,506+10*I+100*(J-1),H1/2+L1-L3,-L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,507+10*I+100*(J-1),H1/2+L1-L3,0+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "K,508+10*I+100*(J-1),H1/2+L1-L3,L4/2+L4*(J-1),0.1+L5+0.2*(I-1)",
+            "L,506+10*I+100*(J-1),507+10*I+100*(J-1)",
+            "L,507+10*I+100*(J-1),508+10*I+100*(J-1)",
+            "*ENDDO",
+            "LATT,1,,4,,,,10",
+            "CPCYC,UX,,,,,L5-0.05",
+        ]
+    )
+    payload = _single_two_layer_600_payload()
+    for layer in payload["tray_layers"]:
+        layer["tray_width_m"] = 0.3
+        layer["tray_section_id"] = "tray-300"
+    payload["sections"][1]["section_id"] = "tray-300"
+    payload["sections"][1]["sect_file"] = "300-75-2mm.SECT"
+
+    _rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert audit["physical_bolt_modeling"]["status"] == "fail"
+    assert "standard_ls_force_topology" in audit["physical_bolt_modeling"]["missing"]
     assert audit["physical_bolt_modeling"]["checks"]["front_physical_bolt_lines"] is True
 
 

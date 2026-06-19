@@ -427,3 +427,79 @@ def test_source_topology_maxbeam_preserves_type1_selector(tmp_path: Path) -> Non
     assert audit["maxbeam_selector"]["status"] == "source_topology_preserved"
     assert "ESEL,S,TYPE,,1" in before_max
     assert "CTAI_STRUCTURAL_ELEMS" not in before_max
+
+
+def test_ls_force_alignment_fails_when_standard_selector_lacks_509_model_topology(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        '{"support":{"layers_front":2,"layers_back":0}}',
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "ET,4,188",
+                "SECTYPE,10,BEAM,CSOLID",
+                "SECDATA,0.006",
+                "L,506+10*I,507+10*I",
+                "L,507+10*I,508+10*I",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_post.mac").write_text(
+        "\n".join(
+            [
+                "/PREP7",
+                "KYALS%3*(I-1)+1%=509+I*10",
+                "*CREATE,MAXBEAMSTRESS-WRITE,MAC",
+                "*END",
+                "*CREATE,TMAXBEAMSTRESS-WRITE,MAC",
+                "*END",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = align_postprocessor_to_intake(job_dir)
+
+    assert audit["ls_force_selector"]["status"] == "fail"
+    missing = audit["ls_force_selector"]["model_topology"]["missing"]
+    assert "front_ls_force_keypoint_509" in missing
+    assert "front_ls_force_connector_to_509" in missing
+
+
+def test_ls_force_alignment_passes_with_standard_509_model_topology(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(
+        '{"support":{"layers_front":2,"layers_back":0}}',
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "K,509+10*I,H1/2+L1-L2/2,0,0.15+0.2*(I-1)",
+                "L,502+10*I,509+10*I",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_post.mac").write_text(
+        "\n".join(
+            [
+                "/PREP7",
+                "KYALS%3*(I-1)+1%=509+I*10",
+                "*CREATE,MAXBEAMSTRESS-WRITE,MAC",
+                "*END",
+                "*CREATE,TMAXBEAMSTRESS-WRITE,MAC",
+                "*END",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = align_postprocessor_to_intake(job_dir)
+
+    assert audit["ls_force_selector"]["status"] == "pass"

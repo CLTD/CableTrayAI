@@ -138,6 +138,54 @@ def test_result_gate_allows_vertical_only_dw_for_symmetric_double_side_counts(tm
     assert payload["status"] == "pass"
 
 
+def test_result_gate_allows_vertical_only_dw_for_symmetric_double_side_stack_with_different_labels(
+    tmp_path: Path, monkeypatch
+) -> None:
+    job_dir = tmp_path / "symmetric-dw-explicit-stack"
+    job_dir.mkdir()
+    layer_base = {
+        "tray_width_mm": 500,
+        "load_kg_per_m": 90.5,
+        "arm_a_length_m": 0.35,
+        "arm_b_length_m": 0.2,
+        "tray_section_file": "500-75-2mm",
+    }
+    (job_dir / "input.json").write_text(
+        json.dumps(
+            {
+                "support": {"support_type": "S2", "side_count": 2, "layers_front": 2, "layers_back": 2},
+                "metadata": {
+                    "tray_load_mapping": {
+                        "side_count": 2,
+                        "front_layers": 2,
+                        "back_layers": 2,
+                        "third_layers": 0,
+                        "layers": [
+                            {"side": "front", "layer_index": 1, "cable_type": "medium_low_voltage", **layer_base},
+                            {"side": "front", "layer_index": 2, "cable_type": "control_measurement", **layer_base},
+                            {"side": "back", "layer_index": 1, "cable_type": "control_measurement", **layer_base},
+                            {"side": "back", "layer_index": 2, "cable_type": "medium_low_voltage", **layer_base},
+                        ],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS"):
+        (job_dir / file_name).write_text("placeholder", encoding="utf-8")
+    monkeypatch.setattr(gate, "classify_job_requirements", lambda _job_dir: _foundation_requirements())
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=_dw_vertical_only_result())
+
+    symmetry = [item for item in payload["checks"] if item["check_id"] == "foundation_dw_self_weight_symmetry"]
+    assert symmetry
+    assert symmetry[0]["status"] == "pass"
+    assert symmetry[0]["evidence"]["symmetry"]["layer_stack_evidence"] == "explicit_stack_match"
+    assert not [item for item in payload["checks"] if item["check_id"] == "foundation_dw_moment_zero"]
+    assert payload["status"] == "pass"
+
+
 def test_result_gate_blocks_vertical_only_dw_for_asymmetric_double_side_counts(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "asymmetric-dw"
     job_dir.mkdir()
@@ -354,3 +402,52 @@ def test_result_gate_allows_learned_formal_validation_without_trial_ratio_compar
     assert learned[0]["status"] == "pass"
     assert not mismatch
     assert payload["status"] == "pass"
+
+
+def test_result_gate_blocks_zero_published_bolt_envelope_even_when_connection_nodes_nonzero(
+    tmp_path: Path, monkeypatch
+) -> None:
+    job_dir = tmp_path / "bolt-topology-mismatch"
+    job_dir.mkdir()
+    (job_dir / "input.json").write_text(json.dumps({"support": {"support_type": "S2"}}), encoding="utf-8")
+    for file_name in ("MAXBEAMSTRESS.LIS", "JCZH.LIS", "LS-FORCE.LIS"):
+        (job_dir / file_name).write_text("placeholder", encoding="utf-8")
+    monkeypatch.setattr(
+        gate,
+        "classify_job_requirements",
+        lambda _job_dir: {
+            "status": "pass",
+            "support_type": "S2",
+            "requires": {
+                "modal_analysis": False,
+                "modal_frequency_table": False,
+                "square_support_stress_eval": True,
+                "cantilever_stress_eval": False,
+                "cantilever_root_weld_eval": False,
+                "foundation_loads": False,
+                "tray_arm_connection_loads": True,
+                "bolt_stress_eval": False,
+            },
+            "required_figures": [],
+        },
+    )
+
+    result = {
+        "beam_stress_results": [{"value_mpa": 12.0}],
+        "foundation_loads": [],
+        "bolt_force_results": [
+            {"load_case": "UPSET", "fx": 0.0, "fy": 0.0, "fz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0}
+        ],
+        "connection_node_force_results": [
+            {"load_case": "UPSET", "keypoint": 516, "fx": 12.0, "fy": 0.0, "fz": 0.0, "mx": 0.0, "my": 0.0, "mz": 0.0}
+        ],
+        "evaluation_summary": [{"check_id": "square_support.support_bending", "ratio": 0.8, "allowable_value": 234.3}],
+    }
+
+    payload = gate.validate_result_outputs(job_dir, raw={"missing_expected_files": []}, result=result)
+
+    connection_gate = [item for item in payload["checks"] if item["check_id"] == "connection_load_values"]
+    assert connection_gate
+    assert connection_gate[0]["status"] == "fail"
+    assert "topology selection is not aligned" in connection_gate[0]["message"]
+    assert payload["status"] == "fail"
