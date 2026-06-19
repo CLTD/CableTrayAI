@@ -14,7 +14,7 @@ Resolved in source, tests, and real ANSYS:
 Open:
 
 1. No package/local-deployment blocker remains. Full installer package is `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C770DDD3DB13CE8EDA4BC923C294C7E4CFE456F6F3A13F4F7C63803DDADBE372`. Local `D:/CableTrayAI` is synced from that package, server PID `19240`, `/health` ok, root HTTP `200`, and `duxyb/cnpe123` login pass.
-2. Commit and push this completed source/package-state update.
+2. Commit and push completed at `01e31c0` on `origin/codex/unit-deployment-hardening-20260610`.
 
 ## 2026-06-18 result-extraction component mapping queue
 

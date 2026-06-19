@@ -26,7 +26,7 @@ Closeout:
 4. Local `D:/CableTrayAI` was installed from the rebuilt full package; old `_internal_update` and package-folder installer logs were removed.
 5. Local smoke passed: active server PID `19240`, `/health` returned `ok`, root page returned HTTP `200`, and `duxyb/cnpe123` login returned `pass`.
 6. Source/package/install hashes match for the touched optimizer, web, learning-cache and recovery-doc files, plus rebuilt server, desktop and installer runtimes.
-7. Git commit and push remain the final closeout step.
+7. Git commit and push completed at `01e31c0` on `origin/codex/unit-deployment-hardening-20260610`.
 
 ## 2026-06-18 result-extraction component mapping closeout
 
