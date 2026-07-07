@@ -1,5 +1,57 @@
 # CableTrayAI ??????
 
+## 2026-07-07 mixed tray 500/600 versus 100/200/300 tail rule fix
+
+Current source state:
+
+1. User clarified the active physical tail rule: for `500-75-2` and `600-75-2`, square sections up to and including `120-120-10` use `50-42 + CAOGANG42DAN` with tail `0.20 m`; square sections above that use `YIXINGGANG150 + YIXINGGANG150DAN` with tail `0.15 m`.
+2. For `100-75-2`, `200-75-2`, and `300-75-2`, the reviewed short-tail behavior remains `0.15 m` for both arm families.
+3. Root cause found in the grouped source-style mixed renderer for `600/500/300`: the 300 mm group was incorrectly bound to the shared wide-tray `L5` variable. When the square section was `<=120`, this could make the 300 mm mixed group follow `L5=0.20` instead of its required `0.15`.
+4. Fixed `core/apdl/mixed_tray_model.py` so the `600/500/300` grouped source-style path keeps `L5` only for 600/500 groups and lets 300 mm use its own numeric `0.15` tail.
+5. Added explicit mixed source tail audit in `core/apdl/intake_standard_family_renderer.py` so reviewed single-side mixed source families record that `L5` applies only to 500/600, while 100/200/300 keep 0.15 even when APDL variable names differ by source family.
+
+Verification:
+
+1. Targeted tests passed for single five-width source audit, yixing branch, grouped 600/500/300 120-branch, grouped 600/500/300 yixing branch, and QL3A sync.
+2. Full unit tests passed: `tests/unit` all green with the existing Pillow deprecation warnings only.
+3. `py_compile` passed for touched APDL modules.
+4. Render smoke confirmed: single five-width 120 branch has `L5=0.2` only for 600/500 policy, 300/200/100 tails audit as 0.15; grouped 600/500/300 renders `H1/2+L3-0.15` and no longer renders `H1/2+L3-L5`.
+5. `git diff --check` reported only pre-existing CRLF normalization warnings in already dirty files.
+
+Deployment closeout:
+
+1. Full deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `EBEE944A440CCB433DA3CD2479F371811E973DA7CEBC9CF4CA7E3F78EF701D88`, size `75.73 MB`.
+2. Package gate passed after rebuild: forbidden paths absent, runtime XML support files present, and no-expat spectrum smoke passed.
+3. The desktop expanded package is clean after local install: no `jobs/uploads/outputs/logs`, no `docs/paper`, no runtime auth session, and no local ANSYS/access-control config.
+4. Local installed software at `D:/CableTrayAI` was refreshed from the package. Installed service smoke passed: `/health` returned `ok`, root HTTP returned `200`, and `duxyb/cnpe123` login returned `pass`.
+5. Source/package/installed hashes match for the touched APDL renderer modules and deployment scripts.
+
+Follow-up matrix validation:
+
+1. Created static generated-command validation jobs under `jobs/mixed_tray_matrix_20260707_170849`.
+2. Covered 20 mixed tray cases: single-side 100+200, 300+600, 500+600, 600+500+300, 600+500+300+200+100; double mirrored 100+200, 500+600, 300+500+600, 100+200+300+500+600; and double unbalanced 300+600 versus 100+500. Each case was rendered with both `120-120-10` and `160-160-8`.
+3. Validation gates checked tray `SECREAD`, arm family, `SECOFFSET`, topology-manifest tail values, `Q/H CODE-L3A` arrays, the `H1/2+L3-L5` contamination guard for 300 mm groups, connector radius, and nonblank generated models.
+4. Result: 20/20 cases passed. Summary is in `jobs/mixed_tray_matrix_20260707_170849/summary.json`; human-readable audit is in `jobs/mixed_tray_matrix_20260707_170849/MIXED_TRAY_TAIL_RULE_MATRIX_20260707.md`.
+
+## 2026-06-19 4126 LS-FORCE clarification after user correction
+
+Current clarification:
+
+1. The user correction is accepted: `18185NI-LXSJ4126` should be treated as using the same generic S2 result-extraction stream, not as a case with a separate missing `03` command stream.
+2. Rechecked `C:/Users/duxy/Desktop/Desktopuxyb/03 导出数据-S2.PIP`: it is still byte-identical to the curated generic `resources/current_type_command_flows/single_mixed_600_500_300_200_100/03_extract_s2.PIP`.
+3. Rechecked the saved desktop 4126 model sources:
+   - `C:/Users/duxy/Desktop/2/18185NI-LXSJ4126/计算文件/01双侧同类型电缆桥架-方钢300.PIP`
+   - `C:/Users/duxy/Desktop/2/18185NI-LXSJ4126/计算文件/01双侧同类型电缆桥架-方钢300.PIP.bak`
+   Both define physical bolt/round-bar keypoints `506/507/508` and `1506/1507/1508`, but do not define the generic post stream's suffix-9 LS-FORCE interface `509/609/709` and `1509/1609/1709`.
+4. Therefore the unresolved 4126 load-table issue is not "actual production uses one post stream while validation uses another". It is a saved-model versus generic-post topology mismatch for the historical 4126 evidence currently available.
+5. With the strict generic suffix-9 selector, the 4126 diagnostic snapshot gives zero LS-FORCE rows. A diagnostic-only `*09 -> *07` patch gives nonzero rows but still does not match the report load table. So `507/1507` must not be adopted as a production rule.
+
+Decision:
+
+1. Current production behavior remains correct: if a generated model lacks the suffix-9 interface required by the generic S2 post stream, traceability/publication must be blocked.
+2. Do not claim that historical 4126 tray-arm connection loads are reproduced. The report values are present in the Word report, but the original raw LIS/DB evidence that produced them is not available in `C:/Users/duxy/Desktop/2/18185NI-LXSJ4126`.
+3. Existing current-production coverage for representative 500, 300, 200, 600 and mixed-width cases remains accepted; 4126 remains an unresolved historical load-table reproduction case only.
+
 ## 2026-06-19 generic S2 post-extraction topology validation
 
 Current source state:

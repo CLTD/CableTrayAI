@@ -45,7 +45,7 @@ function Should-SkipPath {
         if ($isTopLevelEntry -and $topLevelName -in @("jobs", "uploads", "outputs", "logs", "_internal_update", "_review_pre_real")) {
             return $true
         }
-        if ($relativePath -match '^docs[\\/](web_runs|production_runs|precision_gate)([\\/]|$)') {
+        if ($relativePath -match '^docs[\\/](web_runs|production_runs|precision_gate|paper)([\\/]|$)') {
             return $true
         }
         if ($relativePath -match '^docs[\\/](web_error_log\.jsonl|ansys_discovery\.json)$') {

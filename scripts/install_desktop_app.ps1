@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $PackageRoot = Split-Path -Parent $PSScriptRoot
-$LogDir = Join-Path $PackageRoot "logs"
+$LogDir = Join-Path ([System.IO.Path]::GetTempPath()) "CableTrayAIInstallLogs"
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $LogPath = Join-Path $LogDir "install_desktop_app.log"
 
@@ -232,6 +232,10 @@ $target = if ($InstallDir) { $InstallDir } else { Select-InstallFolder -InitialP
 if (-not $target) {
     throw "No install folder selected."
 }
+
+$LogDir = Join-Path $target "logs"
+New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
+$LogPath = Join-Path $LogDir "install_desktop_app.log"
 
 Write-InstallLog "Package root: $PackageRoot"
 Write-InstallLog "Install dir : $target"

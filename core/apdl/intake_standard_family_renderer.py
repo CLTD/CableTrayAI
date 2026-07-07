@@ -865,6 +865,62 @@ def _wide_tray_tail_m(widths: list[int], square_outer_mm: float, default: float 
     return 0.20
 
 
+def _tray_tail_policy_m(width_mm: int, square_outer_mm: float) -> tuple[float, str]:
+    if int(width_mm) <= 300:
+        return 0.15, "tray_width_le_300_tail_0p15m"
+    if float(square_outer_mm or 0.0) > 120.0:
+        return 0.15, "wide_tray_square_outer_gt_120_tail_0p15m"
+    return 0.20, "wide_tray_square_outer_le_120_tail_0p20m"
+
+
+def _mixed_source_tail_policy_audit(
+    source_mixed_shape: str,
+    widths_mm: list[int],
+    square_outer_mm: float,
+    assigned_l5: float | None,
+) -> dict[str, Any]:
+    reviewed_shapes = {
+        "single_mixed_600_500_300_200_100_universal",
+        "single_mixed_600_500_300_universal",
+        "single_mixed_600_500_yixing",
+    }
+    if source_mixed_shape not in reviewed_shapes:
+        return {
+            "status": "not_required",
+            "source_shape": source_mixed_shape,
+            "reason": "not_a_reviewed_single_side_source_style_mixed_family",
+        }
+    unique_widths = sorted({int(width) for width in widths_mm if int(width) > 0}, reverse=True)
+    per_width = {}
+    for width in unique_widths:
+        value, policy = _tray_tail_policy_m(width, square_outer_mm)
+        per_width[str(width)] = {"tail_m": value, "policy_status": policy}
+    l5_widths = [width for width in unique_widths if width >= 500]
+    return {
+        "status": "applied",
+        "source_shape": source_mixed_shape,
+        "square_outer_width_mm": square_outer_mm,
+        "wide_tail_variable": "L5",
+        "wide_tail_m": assigned_l5,
+        "wide_tail_applies_to_widths_mm": l5_widths,
+        "per_width_tail_policy": per_width,
+        "variable_semantics": {
+            "L5": "reviewed source-style short-tail variable for 500/600 mm tray groups only",
+            "L3": (
+                "not a global short-tail variable in reviewed multi-width source families; "
+                "for five-width source it is the 300 mm arm total/span variable"
+            ),
+            "L4_L7_L8": "reviewed width/location variables for 300/200/100 mm tray groups",
+        },
+        "policy": (
+            "Tray widths 500/600 use 0.20 m only when square outer width is <=120 mm, otherwise 0.15 m. "
+            "Tray widths 100/200/300 always use the reviewed 0.15 m short-tail behavior. "
+            "The APDL variable name can differ by reviewed source family, so validation follows the "
+            "physical tray-width rule instead of assuming every L3/L5 name has the same meaning."
+        ),
+    }
+
+
 def _bolt_radius_m_for_widths(widths: list[int]) -> tuple[float, str]:
     return 0.006, "current_type_physical_bolt_connector_uses_reviewed_csolid_radius_0p006"
 
@@ -2189,6 +2245,12 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         tray_width_mm=primary_width,
         has_back_side=bool(back),
     )
+    mixed_source_tail_policy = _mixed_source_tail_policy_audit(
+        source_mixed_shape,
+        unique_widths,
+        square_outer_mm,
+        assigned_l5,
+    )
 
     audit = {
         "support_section": support_section,
@@ -2267,6 +2329,7 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
         "bolt_section_radius": bolt_section_radius_audit,
         "physical_bolt_element_type_keyopts": physical_bolt_element_type_keyopts,
         "optional_mixed_mesh_guards": optional_mixed_mesh_guards,
+        "mixed_source_tail_policy": mixed_source_tail_policy,
         "single_width_connection_offset": connection_offset_audit,
         "physical_bolt_modeling": physical_bolt_modeling,
         "beam188_warping_keyopts": beam188_warping_keyopts,
@@ -2292,15 +2355,17 @@ def _render_model_from_family(text: str, payload: dict[str, Any]) -> tuple[str, 
             "senum5": extra_assignments.get("senum5"),
         },
         "l3_policy": {
-            "status": section_l3_policy if not has_source_span_l6 else "source_multi_width_l3_tracks_primary_tray_width",
+            "status": section_l3_policy if not has_source_span_l6 else "source_multi_width_source_variable_semantics_preserved",
             "square_outer_width_mm": square_outer_mm,
             "primary_tray_width_mm": primary_width,
             "applied_to": "L3" if not has_source_span_l6 else None,
             "policy": (
                 "For single-width/no-L6 standard S2 model families, tray widths <=300 mm use reviewed small-tray "
                 "geometry with L3=0.15 m independent of square-tube section. Wider trays keep the existing square "
-                "tube outer-width policy: <=120 mm uses 0.20 m and >120 mm uses 0.15 m. Multi-width source "
-                "families keep L3/L4 as tray-width parameters."
+                "tube outer-width policy: <=120 mm uses 0.20 m and >120 mm uses 0.15 m. Reviewed multi-width "
+                "source families preserve their own variable semantics: L5 is the reviewed 500/600 short-tail "
+                "variable in source-style families, while 100/200/300 mm tray groups keep the reviewed 0.15 m "
+                "short-tail behavior through their source-specific width/location variables."
             ),
         },
         "keypoint_numbering": keypoint_numbering,

@@ -830,7 +830,7 @@ def _source_style_dimension_terms(
         )
         terms[first] = {"total": "L1", "tray": "L2", "tail": "L5"}
         terms[second] = {"total": "L11", "tray": "L12", "tail": "L5"}
-        terms[third] = {"total": "L3", "tray": "L4", "tail": "L5"}
+        terms[third] = {"total": "L3", "tray": "L4"}
         return assignment_lines, terms, "source_style_three_width_600_500_300"
 
     return assignment_lines, terms, "numeric_grouped_width_terms"

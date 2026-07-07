@@ -1,5 +1,50 @@
 # CableTrayAI ??????
 
+## 2026-07-07 mixed tray tail-rule queue
+
+Resolved/verified:
+
+1. Clarified and locked the active rule:
+   - `500/600` trays with square section `<=120-120-10`: `CAOGANG42DAN` tail `0.20 m`;
+   - `500/600` trays with square section above `120-120-10`: `YIXINGGANG150DAN` tail `0.15 m`;
+   - `100/200/300` trays: reviewed short-tail behavior stays `0.15 m` for both arm families.
+2. Fixed grouped source-style `600/500/300` mixed rendering so the 300 mm group does not reuse the shared 600/500 `L5` tail. The 300 group now renders its own `0.15` tail expression.
+3. Added mixed-source tail audit for reviewed single-side source-style mixed families, explicitly mapping `L5` to 500/600 and 0.15 tails to 100/200/300.
+4. Added regression tests for 120-120-10 and 160-160-8 branches, plus QL3A topology sync coverage.
+
+Verified:
+
+1. Targeted tests passed for the affected APDL paths and topology sync.
+2. Full `tests/unit` passed.
+3. `py_compile` passed for touched APDL modules.
+4. Render smoke confirmed the corrected expressions.
+
+Deployment closeout:
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `EBEE944A440CCB433DA3CD2479F371811E973DA7CEBC9CF4CA7E3F78EF701D88`, size `75.73 MB`.
+2. Package gate passed: forbidden paths absent, runtime XML support files present, and no-expat spectrum smoke passed.
+3. Local `D:/CableTrayAI` was refreshed from the package; `/health` returned `ok`, root HTTP returned `200`, and `duxyb/cnpe123` login returned `pass`.
+4. Source/package/installed hashes match for the touched APDL renderer modules and deployment scripts.
+
+## 2026-06-19 4126 LS-FORCE clarification queue
+
+Resolved/verified:
+
+1. Accepted the user's correction: `18185NI-LXSJ4126` should not be described as requiring a different missing `03` result-extraction command stream. The available generic `03 导出数据-S2.PIP` is the shared stream and remains byte-identical to the curated repo resource.
+2. Rechecked the saved 4126 desktop `01` model and `.bak`: both contain physical bolt/round-bar topology `506/507/508` and `1506/1507/1508`; neither contains the generic suffix-9 LS-FORCE interface `509/609/709` and `1509/1609/1709`.
+3. Rechecked diagnostic results: strict suffix-9 extraction gives zero LS-FORCE values for the saved 4126 model; a diagnostic `507/1507` selector gives nonzero values but still does not match the Word report. This confirms `507` is not an acceptable production replacement.
+4. Targeted post/topology/result tests passed after the clarification:
+   - `tests/unit/test_postprocessor_alignment.py`
+   - `tests/unit/test_result_validity_square_section.py`
+   - `tests/unit/test_ansys_post_exports_stream_output.py`
+   - `tests/unit/test_result_assembler_connection_nodes.py`
+   - `tests/unit/test_apdl_post_extract_template.py`
+
+Open:
+
+1. Historical 4126 tray-arm connection load reproduction remains unresolved, but the open item is now precisely scoped: the saved 4126 `01` model does not expose the interface selected by the shared generic `03`, and the original raw LIS/DB evidence behind the Word report is unavailable.
+2. Current production should continue to block suffix-9 topology mismatches instead of publishing all-zero loads or suffix-6/7/8 diagnostic physical bolt values.
+
 ## 2026-06-19 generic S2 post-extraction topology queue
 
 Resolved in source and tests:

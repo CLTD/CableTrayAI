@@ -331,6 +331,46 @@ def _double_two_by_two_mirrored_mixed_500_600_payload() -> dict:
     }
 
 
+def _double_three_by_three_mirrored_mixed_300_500_600_payload() -> dict:
+    tray_layers = []
+    specs = [
+        (1, 300, 44315.0, 0.20, 0.15),
+        (2, 500, 56704.260652, 0.35, 0.20),
+        (3, 600, 65423.0, 0.47, 0.20),
+    ]
+    for side in ("front", "back"):
+        for index, width, density, arm_a, arm_b in specs:
+            tray_layers.append(
+                {
+                    "side": side,
+                    "layer_index": index,
+                    "tray_width_m": width / 1000.0,
+                    "tray_density_kg_m3": density,
+                    "tray_section_id": f"tray-{width}",
+                    "arm_a_length_m": arm_a,
+                    "arm_b_length_m": arm_b,
+                }
+            )
+    return {
+        "support": {
+            "support_section_id": "square",
+            "layers_front": 3,
+            "layers_back": 3,
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+            "square_tube_width_m": 0.12,
+        },
+        "sections": [
+            {"section_id": "square", "sect_file": "120-120-10.SECT"},
+            {"section_id": "tray-300", "sect_file": "300-75-2mm.SECT"},
+            {"section_id": "tray-500", "sect_file": "500-75-2mm.SECT"},
+            {"section_id": "tray-600", "sect_file": "600-75-2mm.SECT"},
+        ],
+        "tray_layers": tray_layers,
+        "metadata": {"analysis_method": "response_spectrum"},
+    }
+
+
 def _double_five_by_five_mirrored_mixed_100_200_300_500_600_payload() -> dict:
     tray_layers = []
     specs = [
@@ -652,6 +692,15 @@ def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_
     assert "L7=0.2" in rendered
     assert "L8=0.1" in rendered
     assert "L5=0.2" in rendered
+    tail_policy = audit["mixed_source_tail_policy"]
+    assert tail_policy["status"] == "applied"
+    assert tail_policy["wide_tail_variable"] == "L5"
+    assert tail_policy["wide_tail_applies_to_widths_mm"] == [600, 500]
+    assert tail_policy["per_width_tail_policy"]["600"]["tail_m"] == 0.2
+    assert tail_policy["per_width_tail_policy"]["500"]["tail_m"] == 0.2
+    assert tail_policy["per_width_tail_policy"]["300"]["tail_m"] == 0.15
+    assert tail_policy["per_width_tail_policy"]["200"]["tail_m"] == 0.15
+    assert tail_policy["per_width_tail_policy"]["100"]["tail_m"] == 0.15
     assert "CPCYC,UX,,,,,M1-0.05" in rendered
     for width in (600, 500, 300, 200, 100):
         assert f"SECREAD,'{width}-75-2mm'" in rendered
@@ -674,6 +723,27 @@ def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_
     assert (tmp_path / "single_five_width_render" / "apdl_topology_manifest.json").exists()
     assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in (tmp_path / "single_five_width_render" / "generated_model.mac").read_text(encoding="utf-8")
     assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in post
+
+
+def test_single_mixed_five_width_yixing_branch_sets_all_source_tail_rules_to_0p15() -> None:
+    payload = _single_five_layer_mixed_600_500_300_200_100_payload()
+    payload["support"]["square_tube_width_m"] = 0.16
+    payload["sections"][0]["sect_file"] = "160-160-8.SECT"
+    source = Path(
+        "resources/current_type_command_flows/single_mixed_600_500_300_200_100/"
+        "single_mixed_600_500_300_200_100_universal.PIP"
+    )
+    source_text, _ = read_text_with_encoding(source)
+
+    rendered, audit = _render_model_from_family(source_text, payload)
+
+    assert "L5=0.15" in rendered
+    assert "SECREAD,'YIXINGGANG150DAN'" in rendered
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,'YIXINGGANG150DAN'" not in rendered
+    tail_policy = audit["mixed_source_tail_policy"]
+    assert tail_policy["status"] == "applied"
+    assert tail_policy["wide_tail_m"] == 0.15
+    assert {row["tail_m"] for row in tail_policy["per_width_tail_policy"].values()} == {0.15}
 
 
 def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:
@@ -851,6 +921,40 @@ def test_mirrored_mixed_wide_tray_l3_tracks_selected_square_section() -> None:
     assert "H1/2+L1-L3/2" in rendered
     assert "H1/2+L1-L5" in rendered
     assert audit["topology_manifest"]["layers"][0]["l3_tail_m"] == 0.15
+
+
+def test_grouped_three_width_mixed_300_does_not_reuse_wide_l5_tail() -> None:
+    payload = _double_three_by_three_mirrored_mixed_300_500_600_payload()
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert audit["model_source"] == "ctai_grouped_mirrored_mixed_standard"
+    assert audit["command_style"]["source_style_parameter_policy"] == "source_style_three_width_600_500_300"
+    assert "L5=0.2" in rendered
+    assert "H1/2+L1-L5" in rendered
+    assert "H1/2+L11-L5" in rendered
+    assert "H1/2+L3-0.15" in rendered
+    assert "H1/2+L3-L5" not in rendered
+    layers_by_width = {row["width_mm"]: row for row in audit["topology_manifest"]["layers"]}
+    assert layers_by_width[600]["l3_tail_m"] == 0.2
+    assert layers_by_width[500]["l3_tail_m"] == 0.2
+    assert layers_by_width[300]["l3_tail_m"] == 0.15
+
+
+def test_grouped_three_width_mixed_yixing_branch_keeps_all_tails_0p15() -> None:
+    payload = _double_three_by_three_mirrored_mixed_300_500_600_payload()
+    payload["support"]["square_tube_width_m"] = 0.16
+    payload["metadata"]["square_section_selected"] = "160-160-8"
+    payload["metadata"]["square_section_outer_mm"] = 160
+    payload["sections"][0]["sect_file"] = "160-160-8.SECT"
+
+    rendered, audit = render_mixed_tray_layer_model(payload)
+
+    assert "L5=0.15" in rendered
+    assert "H1/2+L3-0.15" in rendered
+    assert "SECOFFSET,user\nSECREAD,'YIXINGGANG150DAN'" in rendered
+    layers_by_width = {row["width_mm"]: row for row in audit["topology_manifest"]["layers"]}
+    assert {layers_by_width[width]["l3_tail_m"] for width in (600, 500, 300)} == {0.15}
 
 
 def test_mirrored_mixed_small_tray_l3_stays_0p15_even_for_100_square() -> None:

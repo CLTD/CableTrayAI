@@ -41,6 +41,41 @@ def test_component_topology_ql3a_tracks_selected_square_outer_width(tmp_path: Pa
     assert "QL3A(4)=0.15" in text
 
 
+def test_component_topology_ql3a_keeps_wide_tail_0p20_for_120_square_and_small_tail_0p15(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    model = job_dir / "generated_model.mac"
+    model.write_text(
+        "\n".join(
+            [
+                "QCODE(1)=600",
+                "QL3A(1)=0.15",
+                "QCODE(2)=500",
+                "QL3A(2)=0.15",
+                "QCODE(3)=300",
+                "QL3A(3)=0.2",
+                "QCODE(4)=200",
+                "QL3A(4)=0.2",
+                "QCODE(5)=100",
+                "QL3A(5)=0.2",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    audit = _sync_component_topology_ql3a_to_square_section(job_dir, "120-120-10")
+    text = model.read_text(encoding="utf-8")
+
+    assert audit["status"] == "updated"
+    assert audit["updated_count"] == 5
+    assert "QL3A(1)=0.2" in text
+    assert "QL3A(2)=0.2" in text
+    assert "QL3A(3)=0.15" in text
+    assert "QL3A(4)=0.15" in text
+    assert "QL3A(5)=0.15" in text
+
+
 def test_topology_manifest_tracks_selected_square_section_and_l3(tmp_path: Path) -> None:
     job_dir = tmp_path / "job"
     job_dir.mkdir()

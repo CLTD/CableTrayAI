@@ -136,6 +136,7 @@ def main() -> int:
             "uploads",
             "outputs",
             "logs",
+            "docs/paper",
             "runtime/auth_sessions.json",
             "config/ansys.local.toml",
             "config/access_control.local.json",
