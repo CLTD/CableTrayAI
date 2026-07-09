@@ -1,5 +1,26 @@
 # CableTrayAI ??????
 
+## 2026-07-09 mixed five-layer tray total arm length fix
+
+Current source state:
+
+1. User reported that the unit-copied deployment still generated wrong distances for the single-side mixed five-layer tray model.
+2. Root cause was found in `ctai_layered_mixed_tray_standard`: the previous fix corrected the dynamic tail/L3 rule, but `QALEN` was still computed as `arm_a + dynamic_tail`. For 160-class sections this incorrectly shortened the total arm length of 600 mm trays from `0.67 m` to `0.62 m`, and 500 mm trays from `0.55 m` to `0.50 m`.
+3. Fixed `core/apdl/mixed_tray_model.py` so explicit source total length is preserved first, and the branch-specific tail only changes the split between `QA` and `QL3A`.
+4. Fixed `core/optimizer/square_section_selector.py` so final square-section replacement also refreshes topology-manifest `x_tail_m` when `l3_tail_m` changes.
+5. Added regression assertions in `tests/unit/test_intake_standard_family_tray_widths.py` for both `120-120-10` and `160-160-8` branches.
+
+Verification:
+
+1. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+2. Installed-directory render verification from `D:/CableTrayAI` passed:
+   - `120-120-10`: 600 `QA=0.47`, `QALEN=0.67`, `QL3A=0.20`; 500 `QA=0.35`, `QALEN=0.55`, `QL3A=0.20`; 300/200/100 `QALEN=0.35`, `QL3A=0.15`.
+   - `160-160-8`: 600 `QA=0.52`, `QALEN=0.67`, `QL3A=0.15`; 500 `QA=0.40`, `QALEN=0.55`, `QL3A=0.15`; 300/200/100 `QALEN=0.35`, `QL3A=0.15`.
+3. Full deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `A12F08B273C042368E7B4B0A78F99DFD9C9F2E36F1C8F30B067D8951289E294A`, size `75.73 MB`.
+4. Package gate passed: forbidden generated paths absent, runtime XML support files present, and no-expat spectrum smoke passed.
+5. Local `D:/CableTrayAI` was refreshed from the rebuilt package. Service smoke passed: `/health` returned `ok`, and `duxyb/cnpe123` login returned `pass`.
+6. Source, desktop package, and installed hashes match for the touched business files.
+
 ## 2026-07-07 mixed tray 500/600 versus 100/200/300 tail rule fix
 
 Current source state:

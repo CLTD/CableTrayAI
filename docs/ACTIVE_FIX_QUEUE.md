@@ -1,5 +1,26 @@
 # CableTrayAI ??????
 
+## 2026-07-09 mixed five-layer total-distance queue
+
+Resolved/verified:
+
+1. Confirmed the user's unit-deployment symptom: mixed five-layer tray models could still show wrong distances after copying the previous package.
+2. Root cause: the 2026-07-07 fix only corrected branch-specific L3/tail values. The single five-width CTAI renderer still recalculated `QALEN` from `arm_a + dynamic_tail`, so 160-class sections shortened 600 and 500 tray total arm lengths.
+3. Fixed total-length preservation:
+   - 600 keeps total `QALEN=0.67` for both 120 and 160 branches.
+   - 500 keeps total `QALEN=0.55` for both 120 and 160 branches.
+   - 160 branch changes only the tail split: 600 `QA=0.52`, `QL3A=0.15`; 500 `QA=0.40`, `QL3A=0.15`.
+   - 120 branch remains: 600 `QA=0.47`, `QL3A=0.20`; 500 `QA=0.35`, `QL3A=0.20`.
+   - 100/200/300 stay `QALEN=0.35`, `QL3A=0.15`.
+4. Updated topology manifest sync so UI/model trace distances follow the final section replacement.
+5. Regression tests cover the 120 and 160 branches; full `tests/unit` passed.
+6. Deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `A12F08B273C042368E7B4B0A78F99DFD9C9F2E36F1C8F30B067D8951289E294A`.
+7. Local install `D:/CableTrayAI` was refreshed from that package, `/health` passed, and `duxyb/cnpe123` login passed.
+
+Open:
+
+1. No active code/package blocker remains for the mixed five-layer distance issue. Unit deployment must use the new `CableTrayAI.zip`, not the older `CableTrayAI0708.zip`.
+
 ## 2026-07-07 mixed tray tail-rule queue
 
 Resolved/verified:

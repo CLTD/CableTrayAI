@@ -721,11 +721,18 @@ def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_
     assert result["parameterization"]["model_source"] == "ctai_layered_mixed_tray_standard"
     assert result["parameterization"]["current_type_mixed_family_cover"]["status"] == "pass"
     assert (tmp_path / "single_five_width_render" / "apdl_topology_manifest.json").exists()
-    assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in (tmp_path / "single_five_width_render" / "generated_model.mac").read_text(encoding="utf-8")
+    generated_model = (tmp_path / "single_five_width_render" / "generated_model.mac").read_text(encoding="utf-8")
+    assert "CM,CTAI_SUPPORT_ELEMS,ELEM" in generated_model
+    assert "QALEN(1)=0.67" in generated_model
+    assert "QL3A(1)=0.2" in generated_model
+    assert "QALEN(2)=0.55" in generated_model
+    assert "QL3A(2)=0.2" in generated_model
+    assert "QALEN(3)=0.35" in generated_model
+    assert "QL3A(3)=0.15" in generated_model
     assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in post
 
 
-def test_single_mixed_five_width_yixing_branch_sets_all_source_tail_rules_to_0p15() -> None:
+def test_single_mixed_five_width_yixing_branch_sets_all_source_tail_rules_to_0p15(tmp_path: Path) -> None:
     payload = _single_five_layer_mixed_600_500_300_200_100_payload()
     payload["support"]["square_tube_width_m"] = 0.16
     payload["sections"][0]["sect_file"] = "160-160-8.SECT"
@@ -744,6 +751,20 @@ def test_single_mixed_five_width_yixing_branch_sets_all_source_tail_rules_to_0p1
     assert tail_policy["status"] == "applied"
     assert tail_policy["wide_tail_m"] == 0.15
     assert {row["tail_m"] for row in tail_policy["per_width_tail_policy"].values()} == {0.15}
+
+    result = render_intake_standard_family_commands("single_five_width_yixing_render", payload, jobs_dir=tmp_path)
+    generated_model = (tmp_path / "single_five_width_yixing_render" / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert result["status"] == "pass"
+    assert result["parameterization"]["model_source"] == "ctai_layered_mixed_tray_standard"
+    assert "QALEN(1)=0.67" in generated_model
+    assert "QA(1)=0.52" in generated_model
+    assert "QL3A(1)=0.15" in generated_model
+    assert "QALEN(2)=0.55" in generated_model
+    assert "QA(2)=0.4" in generated_model
+    assert "QL3A(2)=0.15" in generated_model
+    assert "QALEN(3)=0.35" in generated_model
+    assert "QL3A(3)=0.15" in generated_model
 
 
 def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:

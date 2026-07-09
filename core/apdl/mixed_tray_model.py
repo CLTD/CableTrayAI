@@ -163,7 +163,15 @@ def _layer_arm_tail_m(layer: dict[str, Any], square_outer_mm: float) -> float:
 
 
 def _layer_arm_total_m(layer: dict[str, Any], square_outer_mm: float) -> float:
-    return float(layer.get("arm_a_length_m") or 0.0) + _layer_arm_tail_m(layer, square_outer_mm)
+    arm_a = float(layer.get("arm_a_length_m") or 0.0)
+    raw_tail = layer.get("arm_b_length_m")
+    try:
+        raw_tail_value = float(raw_tail)
+    except (TypeError, ValueError):
+        raw_tail_value = 0.0
+    if raw_tail_value > 0.0:
+        return arm_a + raw_tail_value
+    return arm_a + _layer_arm_tail_m(layer, square_outer_mm)
 
 
 def _bolt_radius_m_for_widths(widths_mm: list[int]) -> tuple[float, str]:
@@ -228,14 +236,15 @@ def _append_layer_arrays(
     )
     for index, layer in enumerate(layers, start=1):
         width = _width_mm(layer)
-        arm_a = float(layer.get("arm_a_length_m") or 0.0)
         arm_b = _layer_arm_tail_m(layer, square_outer_mm)
+        arm_total = _layer_arm_total_m(layer, square_outer_mm)
+        arm_a = max(0.0, arm_total - arm_b)
         lines.extend(
             [
                 f"{prefix}W({index})={_num(width / 1000.0)}",
                 f"{prefix}A({index})={_num(arm_a)}",
                 f"{prefix}B({index})={_num(arm_b)}",
-                f"{prefix}ALEN({index})={_num(arm_a + arm_b)}",
+                f"{prefix}ALEN({index})={_num(arm_total)}",
                 f"{prefix}L3A({index})={_num(arm_b)}",
                 f"{prefix}DENS({index})={_num(float(layer.get('tray_density_kg_m3') or 0.0))}",
                 f"{prefix}TOFF({index})={_num(_tray_offset_m(width, secondary_arm))}",

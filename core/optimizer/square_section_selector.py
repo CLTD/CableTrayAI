@@ -1754,6 +1754,13 @@ def _sync_topology_manifest_to_square_section(
             before_float = None
         layer["l3_tail_m"] = value
         layer["l3_tail_policy"] = policy
+        try:
+            arm_total = float(layer.get("arm_total_m"))
+            x_root = float(layer.get("x_root_m") or 0.0)
+            sign = -1.0 if x_root < 0 else 1.0
+            layer["x_tail_m"] = round(sign * (abs(x_root) + arm_total - value), 6)
+        except (TypeError, ValueError):
+            pass
         if before_float is None or abs(before_float - value) > 1e-9:
             layer_changes.append(
                 {
