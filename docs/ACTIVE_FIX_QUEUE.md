@@ -1,5 +1,24 @@
 # CableTrayAI ??????
 
+## 2026-07-09 mixed five-layer short-section segment queue
+
+Resolved/verified:
+
+1. Confirmed the user-visible issue on `160-160-8`: the 500/600 tray `YIXINGGANG150DAN` short-section appeared too long even though `QALEN` and `QL3A` arrays were already correct.
+2. Root cause: in `ctai_layered_mixed_tray_standard`, the 500/600 segment `502 -> 503` was incorrectly registered as the short-section arm type. It should remain the main arm; only `503 -> 504` is the short tail.
+3. Fixed `core/apdl/mixed_tray_model.py` with a width branch:
+   - `500/600`: `502 -> 503` is main arm, `503 -> 504` is short tail.
+   - `100/200`: existing two-part short-tail split remains unchanged.
+   - `300`: existing special path remains unchanged.
+4. Added regression assertions in `tests/unit/test_intake_standard_family_tray_widths.py`.
+5. Verification passed: targeted mixed-tray tests and full `tests/unit`.
+6. Fresh review command streams are under `C:/Users/duxy/Desktop/mixed_five_tray_code_review_20260709_segment_fix`.
+7. Real ANSYS18.2 model-only validation passed for 10 representative generated-model cases under `jobs/model_only_matrix_20260709_2230`. The matrix covers single-layer, double-layer, single-side, double-side, same-width 200/300/500/600, mixed 100+200, mixed 500+600, and five-width mixed 100/200/300/500/600. Only `generated_model.mac` was executed; solve and post were not executed. All cases had ANSYS error count `0` and nonzero element counts.
+
+Open:
+
+1. No source/package/deployment blocker remains after the model-only validation. Unit transfer should use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `447F5F4D2A1BC4E41D22C6449D24F2B040E416EB665F78F0A0809DE3383E1A85`, not the older `CableTrayAI0708.zip`.
+
 ## 2026-07-09 mixed five-layer total-distance queue
 
 Resolved/verified:

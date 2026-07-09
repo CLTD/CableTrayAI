@@ -729,6 +729,8 @@ def test_single_mixed_five_width_uses_department_five_width_standard_family(tmp_
     assert "QL3A(2)=0.2" in generated_model
     assert "QALEN(3)=0.35" in generated_model
     assert "QL3A(3)=0.15" in generated_model
+    assert "! 500/600托盘的螺栓点到短段起点仍属于主托臂；100/200该段属于短段。" in generated_model
+    assert "*IF,QW(I),LE,0.2,THEN\nARM_ET(NARM)=QET+3\nARM_SEC(NARM)=QET+3\n*ELSE\nARM_ET(NARM)=QET+2\nARM_SEC(NARM)=QET+2\n*ENDIF" in generated_model
     assert "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in post
 
 
@@ -765,6 +767,8 @@ def test_single_mixed_five_width_yixing_branch_sets_all_source_tail_rules_to_0p1
     assert "QL3A(2)=0.15" in generated_model
     assert "QALEN(3)=0.35" in generated_model
     assert "QL3A(3)=0.15" in generated_model
+    assert "! 500/600托盘的螺栓点到短段起点仍属于主托臂；100/200该段属于短段。" in generated_model
+    assert "*IF,QW(I),LE,0.2,THEN\nARM_ET(NARM)=QET+3\nARM_SEC(NARM)=QET+3\n*ELSE\nARM_ET(NARM)=QET+2\nARM_SEC(NARM)=QET+2\n*ENDIF" in generated_model
 
 
 def test_single_mixed_500_600_yixing_keeps_yixing_standard_offsets() -> None:

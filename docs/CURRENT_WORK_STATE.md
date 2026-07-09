@@ -1,5 +1,28 @@
 # CableTrayAI ??????
 
+## 2026-07-09 mixed five-layer wide-tray short-segment section fix
+
+Current source state:
+
+1. User reviewed the `160-160-8` mixed five-layer model and found the 500/600 tray short arm segment still appeared as about `300 mm` instead of the expected `150 mm`.
+2. Root cause was a second-level segment-assignment error in `core/apdl/mixed_tray_model.py`: `QALEN` and `QL3A` were already correct, but for 500/600 trays the line segment from bolt point `502` to short-tail start `503` was also assigned the short-section element type (`YIXINGGANG150DAN` / `CAOGANG42DAN`). Therefore the visible short-section length became bolt-to-end instead of tail-start-to-end.
+3. Fixed the segmented arm assignment so:
+   - for 500/600 trays, `502 -> 503` remains the main arm section and only `503 -> 504` is the short tail;
+   - for 100/200 trays, the existing short-tail split stays unchanged;
+   - for 300 trays, the existing special two-segment path stays unchanged.
+
+Verification:
+
+1. Targeted mixed-tray tests passed: `D:/miniconda3/python.exe -m pytest tests/unit/test_intake_standard_family_tray_widths.py -q`.
+2. Full unit tests passed: `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+3. Fresh generated review files were written to `C:/Users/duxy/Desktop/mixed_five_tray_code_review_20260709_segment_fix`.
+4. Segment summary now shows:
+   - `160-160-8`: 600 short tail `0.15 m`, 500 short tail `0.15 m`, 300/200/100 short tail `0.15 m`.
+   - `120-120-10`: 600 short tail `0.20 m`, 500 short tail `0.20 m`, 300/200/100 short tail `0.15 m`.
+5. Real ANSYS18.2 model-only validation passed for 10 representative cases under `jobs/model_only_matrix_20260709_2230`: single-side single-layer 200, single-side double-layer 300, 600 with 120 and 160 square branches, double-side same-width 500 and 300, single-side mixed 500+600, single-side mixed 100+200, single-side five-width mixed 600+500+300+200+100, and double-side five-width mixed 100+200+300+500+600. Each job ran only `generated_model.mac`; `generated_solve.mac` and `generated_post.mac` were intentionally not called. All 10 produced nodes/elements with ANSYS error count `0`.
+6. Deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `447F5F4D2A1BC4E41D22C6449D24F2B040E416EB665F78F0A0809DE3383E1A85`, size `79,411,267` bytes. Package gate passed, including forbidden-path scan, runtime XML support files, and no-expat spectrum smoke.
+7. Local `D:/CableTrayAI` was refreshed from the rebuilt package. Installed service smoke passed with `/health` returning `ok` and `duxyb/cnpe123` login returning `pass`. Source, desktop package, and installed hashes match for `core/apdl/mixed_tray_model.py`.
+
 ## 2026-07-09 mixed five-layer tray total arm length fix
 
 Current source state:
