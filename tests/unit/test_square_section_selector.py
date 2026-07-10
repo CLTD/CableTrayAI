@@ -517,7 +517,7 @@ def test_smart_jump_skips_only_after_failed_square_support_ratio(tmp_path: Path)
     assert selection["selected"]["section_name"] == "120-120-10"
 
 
-def test_two_trial_economy_search_checks_materially_cheaper_candidate_even_inside_utilization_band(tmp_path: Path) -> None:
+def test_two_trial_economy_search_checks_materially_lighter_candidate_even_inside_utilization_band(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     _write_minimal_job(base_job)
     source_root = tmp_path / "source"
@@ -555,7 +555,7 @@ def test_two_trial_economy_search_checks_materially_cheaper_candidate_even_insid
     assert selection["status"] == "pass"
     assert selection["selected"]["section_name"] == "120-120-6"
     assert selection["selected_economic_status"] == "economic"
-    assert selection["selected_economy_status"] == "lowest_material_cost_fresh_deterministic_pass"
+    assert selection["selected_economy_status"] == "lowest_material_quantity_fresh_deterministic_pass"
     assert selection["evaluated_candidate_count"] == 2
 
 
@@ -947,7 +947,7 @@ def test_low_ratio_recovery_candidate_downshifts_one_allowed_section(tmp_path: P
     assert selection["selected"]["section_name"] == "140-140-8"
     assert selection["evaluated_candidate_count"] == 4
     assert selection["effective_evaluated_candidate_budget"] == 4
-    assert selection["economy_corrections"][-1]["direction"] == "lower_cost"
+    assert selection["economy_corrections"][-1]["direction"] == "lower_material_quantity"
     assert selection["economy_corrections"][-1]["after_section"] == "160-160-8"
     assert selection["economy_corrections"][-1]["next_section"] == "140-140-8"
 
@@ -1045,11 +1045,11 @@ def test_select_best_square_section_chooses_minimum_when_all_feasible_are_low_ut
 
     assert selection["status"] == "pass"
     assert selection["selected"]["section_name"] == "100-100-6"
-    assert "lowest traceable square-tube material-cost" in selection["policy"]
+    assert "lowest theoretical square-tube material-quantity" in selection["policy"]
     assert selection["selected_economic_status"] == "below_economic_range"
 
 
-def test_select_best_square_section_chooses_lowest_material_cost_not_ratio_closest_to_one() -> None:
+def test_select_best_square_section_chooses_lowest_material_quantity_not_ratio_closest_to_one() -> None:
     selection = select_best_square_section(
         [
             {

@@ -137,13 +137,39 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "estimated_area_mm2": candidate.estimated_area_mm2 if candidate else None,
         "estimated_mass_kg_per_m": candidate.estimated_mass_kg_per_m if candidate else None,
         "estimated_square_material_cost_cny_per_m": (
-            candidate.estimated_square_material_cost_cny_per_m if candidate else None
+            (selected or {}).get("estimated_square_material_cost_cny_per_m")
+            if isinstance(selected, dict) and "estimated_square_material_cost_cny_per_m" in selected
+            else candidate.estimated_square_material_cost_cny_per_m if candidate else None
+        ),
+        "estimated_outer_surface_area_m2_per_m": (
+            (selected or {}).get("estimated_outer_surface_area_m2_per_m")
+            if isinstance(selected, dict) and "estimated_outer_surface_area_m2_per_m" in selected
+            else candidate.economy_metrics.get("estimated_outer_surface_area_m2_per_m") if candidate else None
         ),
         "economy_selection_scope": (
             candidate.economy_metrics.get("economy_selection_scope") if candidate else None
         ),
         "economy_price_reference_date": (
-            candidate.economy_metrics.get("economy_price_reference_date") if candidate else None
+            (selected or {}).get("economy_price_reference_date")
+            if isinstance(selected, dict)
+            else None
+        ),
+        "economy_ranking_basis": (
+            (selected or {}).get("economy_ranking_basis")
+            if isinstance(selected, dict) and (selected or {}).get("economy_ranking_basis")
+            else candidate.economy_metrics.get("economy_ranking_basis") if candidate else None
+        ),
+        "pricing_status": (
+            (selected or {}).get("pricing_status")
+            if isinstance(selected, dict) and (selected or {}).get("pricing_status")
+            else candidate.economy_metrics.get("pricing_status") if candidate else None
+        ),
+        "price_book_table_id": (selected or {}).get("price_book_table_id") if isinstance(selected, dict) else None,
+        "price_book_revision": (selected or {}).get("price_book_revision") if isinstance(selected, dict) else None,
+        "comprehensive_cost_status": (
+            (selected or {}).get("comprehensive_cost_status")
+            if isinstance(selected, dict) and (selected or {}).get("comprehensive_cost_status")
+            else candidate.economy_metrics.get("comprehensive_cost_status") if candidate else None
         ),
         "controlling_ratio": controlling_ratio,
         "final_controlling_ratio": final_chapter6_controlling_ratio,
@@ -164,7 +190,7 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
             previous_selection.get("policy")
             or (
                 "If intake column I is empty, use a bounded fresh-ANSYS search and select the lowest traceable "
-                "square-tube material-cost pass inside the allowed SECT list. The 0.60-0.9999 interval is only "
+                "square-tube material-quantity pass inside the allowed SECT list. The 0.60-0.9999 interval is only "
                 "a utilization review band, not a feasibility or economy gate."
             )
         ),

@@ -86,3 +86,37 @@ def test_square_section_summary_uses_formal_ratio_for_legacy_flat_ratio_mismatch
     assert summary["status"] == "pass"
     assert summary["selection_acceptance"] == "pass"
     assert summary["is_design_acceptable"] is True
+
+
+def test_square_section_summary_preserves_job_price_snapshot_without_repricing(tmp_path: Path) -> None:
+    job_dir = tmp_path / "priced-job"
+    job_dir.mkdir()
+    (job_dir / "generated_model.mac").write_text("SECREAD,140-140-8,SECT\n", encoding="utf-8")
+    (job_dir / "input.json").write_text("{}", encoding="utf-8")
+    (job_dir / "square_section_selection.json").write_text(
+        json.dumps(
+            {
+                "status": "pass",
+                "selected": {
+                    "section_name": "140-140-8",
+                    "controlling_ratio": 0.8,
+                    "estimated_square_material_cost_cny_per_m": 130.25,
+                    "pricing_status": "approved_active",
+                    "price_book_table_id": "UNIT-PRICE-01",
+                    "price_book_revision": "R2",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (job_dir / "evaluation_summary.json").write_text(
+        json.dumps([{"check_id": "square_support.support_bending", "ratio": 0.8}]),
+        encoding="utf-8",
+    )
+
+    summary = write_square_section_selection_summary(job_dir)
+
+    assert summary["estimated_square_material_cost_cny_per_m"] == 130.25
+    assert summary["pricing_status"] == "approved_active"
+    assert summary["price_book_table_id"] == "UNIT-PRICE-01"
+    assert summary["price_book_revision"] == "R2"

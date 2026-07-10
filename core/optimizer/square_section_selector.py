@@ -64,12 +64,12 @@ SECTION_RATIO_POLICY = (
     "history/cache/report numbers may order candidates but never decide the section. "
     "The 0.60 <= ratio <= 0.9999 interval is a utilization review band only. It is not "
     "a feasibility gate and does not by itself prove economy. Candidate economy is ordered "
-    "by traceable square-tube material cost per metre (or theoretical mass when no matching "
-    "price is configured), while every selected section must pass a fresh deterministic ANSYS "
+    "by theoretical square-tube material quantity unless an active unit-approved price book "
+    "is configured, while every selected section must pass a fresh deterministic ANSYS "
     "trial. The bounded search should normally finish within two candidate trials; if both are "
     "deterministic over-limit, the search may run up to two larger intake-allowed sections "
     "before reporting failure. A second economy trial is run only when another intake-allowed "
-    "section has a materially lower cost proxy and is a plausible candidate; if it fails, keep "
+    "section has materially lower material quantity and is a plausible candidate; if it fails, keep "
     "the already passing section. Support spacing and support length remain fixed."
 )
 SECTION_RATIO_BASIS = (
@@ -79,14 +79,21 @@ SECTION_RATIO_BASIS = (
 
 
 def _section_ratio_audit_fields() -> dict[str, str]:
+    economy_config = load_square_section_economy_config()
+    configured_basis = str(economy_config.get("selection_basis") or "theoretical_mass")
+    economy_objective = (
+        "lowest_unit_approved_square_tube_material_cost_among_fresh_deterministic_passes"
+        if configured_basis == "unit_approved_material_price"
+        else "lowest_theoretical_square_tube_material_quantity_among_fresh_deterministic_passes"
+    )
     return {
         "ratio_policy": SECTION_RATIO_POLICY,
         "ratio_basis": SECTION_RATIO_BASIS,
         "chapter6_ratio_basis": "same_source_as_final_chapter6_evaluation",
         "economic_ratio_range": f"{ECONOMIC_RATIO_MIN:.2f} <= ratio <= {ECONOMIC_RATIO_MAX:.4f}",
         "economic_ratio_range_role": "utilization_review_only_not_a_hard_gate",
-        "economy_objective": "lowest_traceable_square_tube_material_cost_among_fresh_deterministic_passes",
-        "economy_scope": "square_tube_material_only; fabrication/arm/weld/coating/transport costs are unconfigured",
+        "economy_objective": economy_objective,
+        "economy_scope": "main_square_tube_quantity_only; nuclear-project comprehensive cost requires a unit-approved price book",
         "geometry_recovery_policy": "support_spacing_and_support_length_are_fixed; no automatic geometry reduction",
         "max_economic_section_trials": str(MAX_ECONOMIC_SECTION_TRIALS),
         "overlimit_recovery_section_trials": str(OVERLIMIT_RECOVERY_SECTION_TRIALS),
@@ -921,7 +928,11 @@ def _economic_downshift_candidate(
     except (TypeError, ValueError):
         current_cost_value = float("inf")
     config = load_square_section_economy_config()
-    minimum_saving = float(config.get("minimum_cost_improvement_ratio_for_extra_trial") or 0.02)
+    minimum_saving = float(
+        config.get("minimum_material_improvement_ratio_for_extra_trial")
+        or config.get("minimum_cost_improvement_ratio_for_extra_trial")
+        or 0.02
+    )
     dominant = str(result.get("section_selection_dominant_check_id") or result.get("dominant_check_id") or "")
     dominant_component = result.get("section_selection_dominant_component") or result.get("dominant_component")
     section_controlled = (not dominant) or is_section_selection_evaluation_row(
@@ -970,7 +981,7 @@ def _economic_downshift_candidate(
     candidate_metrics = _candidate_economy_fields(candidate)
     return {
         "status": "planned",
-        "direction": "lower_cost",
+        "direction": "lower_material_quantity",
         "after_section": current.section_name,
         "next_section": candidate.section_name,
         "current_ratio": ratio,
@@ -982,10 +993,10 @@ def _economic_downshift_candidate(
         "next_mass_kg_per_m": candidate_metrics.get("estimated_mass_kg_per_m"),
         "current_material_cost_cny_per_m": current_metrics.get("estimated_square_material_cost_cny_per_m"),
         "next_material_cost_cny_per_m": candidate_metrics.get("estimated_square_material_cost_cny_per_m"),
-        "minimum_cost_improvement_ratio": minimum_saving,
+        "minimum_material_improvement_ratio": minimum_saving,
         "geometry_policy": "support_spacing_and_support_length_fixed",
         "source_ref": (
-            "versioned square-tube mass/price advisory + fresh deterministic ANSYS verification; "
+            "versioned square-tube quantity basis + fresh deterministic ANSYS verification; "
             "ratio review band is not an economy gate"
         ),
     }
@@ -1233,7 +1244,7 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
                 "economic_ratio_min": ECONOMIC_RATIO_MIN,
                 "economic_ratio_max": ECONOMIC_RATIO_MAX,
                 "selected_economic_status": _economic_ratio_status(float(selected["controlling_ratio"])),
-                "selected_economy_status": "lowest_material_cost_formal_validation_candidate",
+                "selected_economy_status": "lowest_material_quantity_formal_validation_candidate",
                 "candidate_results": results,
             }
         return {
@@ -1248,11 +1259,12 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
         }
     selected = sorted(feasible, key=_result_economy_key)[0]
     policy = (
-        "Select the lowest traceable square-tube material-cost candidate among fresh deterministic passes. "
-        "If a matching published price is unavailable, theoretical mass then section area is used. The "
+        "Select the lowest theoretical square-tube material-quantity candidate among fresh deterministic passes. "
+        "An active unit-approved price book may replace mass as the ranking basis, but no public regional "
+        "steel price is treated as nuclear-project cost. The "
         f"{ECONOMIC_RATIO_MIN:.2f}-{ECONOMIC_RATIO_MAX:.4f} interval is reported only as a utilization review band; "
         "it is not a pass/fail or economy gate. Fabrication, arm, weld, coating, transport and contract prices are "
-        "not configured, so the estimate is explicitly limited to square-tube material."
+        "not configured, so the default comparison is explicitly limited to square-tube section area and theoretical mass."
     )
     return {
         **_section_ratio_audit_fields(),
@@ -1264,7 +1276,7 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
         "economic_ratio_min": ECONOMIC_RATIO_MIN,
         "economic_ratio_max": ECONOMIC_RATIO_MAX,
         "selected_economic_status": _economic_ratio_status(float(selected["controlling_ratio"])),
-        "selected_economy_status": "lowest_material_cost_fresh_deterministic_pass",
+        "selected_economy_status": "lowest_material_quantity_fresh_deterministic_pass",
     }
 
 

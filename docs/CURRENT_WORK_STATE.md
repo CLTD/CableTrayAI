@@ -1,5 +1,26 @@
 # CableTrayAI ??????
 
+## 2026-07-10 nuclear cost boundary and engineering-review UI correction
+
+Current source state:
+
+1. Removed the ordinary regional square-tube market-price snapshot from runtime selection. It was not nuclear-project comprehensive cost evidence and could mislead operators even though it did not change stress calculations.
+2. Default candidate economy ranking now uses deterministic square-tube section material area and estimated theoretical mass. Currency values remain null unless a local price book is explicitly enabled with unit approval status, table id, revision, approval reference and exact section match.
+3. The economic UI shows material area and estimated theoretical mass by default, explicitly states that these values are not nuclear-project comprehensive cost, and only shows CNY when `pricing_status=approved_active` with table/revision traceability.
+4. The engineering-review command panel now fills its grid track and ends at the same bottom edge as the model panel. The responsive single-column layout has bounded model/command heights, and narrow-screen canvas backing dimensions follow CSS dimensions.
+5. The command-derived model preview now provides an explicitly labelled mesh-review schematic mode. It reports APDL keypoints/geometric lines, not ANSYS mesh nodes/elements; real ANSYS mesh and result figures remain authoritative.
+6. Fixed model-preview component classification. `LS_SUP`, `LS_ARM`, `LS_TRAY` and `LS_BOLT` command registrations are used before fallback geometry heuristics. Browser verification of the 4210 command stream now reports square support `18`, arm `42`, tray `30` and bolt `15`.
+
+Verification:
+
+1. Full `tests/unit` and `tests/integration` passed with only the existing Pillow deprecation warnings; `compileall` passed for `core`, `apps` and `scripts`.
+2. Desktop browser: model and command panels have zero bottom-edge delta; the code block leaves only the one-pixel panel border; no console errors.
+3. Mobile browser at `390 x 844`: no horizontal overflow, canvas CSS/backing widths match, and no page errors.
+4. Economy-display branch test: unapproved data shows `4224 mm2` and `33.16 kg/m` with no CNY; approved test data shows CNY only with price-book table/revision.
+5. Mechanical APDL, solve, extraction and evaluation formulas were not changed. The previously completed fresh real ANSYS18.2 4210 run remains the mechanical regression evidence.
+6. Full deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; package gate passed, including forbidden-path scan, runtime XML support and no-expat spectrum smoke. Use the adjacent SHA256 sidecar as transfer authority.
+7. Local `D:/CableTrayAI` was refreshed and restarted. `/health` is `ok`, `duxyb/cnpe123` login is `pass`, and source/package/installed hashes match for all changed runtime files.
+
 ## 2026-07-10 cost-aware square-section selection and unit-browser UX hardening
 
 Current source state:

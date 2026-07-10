@@ -1,5 +1,22 @@
 # CableTrayAI ??????
 
+## 2026-07-10 nuclear-cost and engineering-review UI queue
+
+Resolved/verified:
+
+1. Removed the unsupported `118.38 CNY/m` ordinary-market value from default runtime output and candidate ordering.
+2. Default economy evidence is now square-tube material area and estimated theoretical mass only. Nuclear-project comprehensive cost remains `not_configured` until a unit-approved price book is supplied.
+3. Recorded the official NEA quota-management framework and 2025 nuclear-island budget-quota notice as governance references; no public item price is inferred from them.
+4. Fixed right-side command-panel blank space and desktop bottom alignment; verified one-pixel terminal border gap and zero panel bottom delta.
+5. Fixed preview semantics and component mapping. The page now says keypoints/geometric lines, labels its segmented wireframe as a mesh-review schematic, and uses `LS_SUP/LS_ARM/LS_TRAY/LS_BOLT` registrations.
+6. 4210 browser verification reports square support `18`, arm `42`, tray `30`, bolt `15`; desktop/mobile browser errors are zero and 390px layout has no horizontal overflow.
+7. Full unit/integration and compile checks passed.
+
+Open:
+
+1. No source blocker remains. A true CNY comprehensive-cost comparison still requires the unit to provide an approved nuclear-project quota/price data set covering the required cost scopes; the platform correctly refuses to invent it.
+2. No source/package/local-install blocker remains. Git closeout records this exact source state.
+
 ## 2026-07-10 economic selection and browser compatibility queue
 
 Resolved/verified:

@@ -12,7 +12,7 @@ Policy:
 - When blank, the job records `auto_selection_required`.
 - CableTrayAI must run square steel section candidates from local `*.SECT` files and select a candidate whose controlling stress ratio is `<= 1.0`.
 - `0.60 <= ratio <= 0.9999` is a utilization review band only. It is not a feasibility gate or proof of economy. Feasibility requires every valid deterministic ratio to be `<= 1.0`.
-- Among fresh deterministic passes, the selector prefers the lowest traceable square-tube material cost per metre, falling back to theoretical mass when no matching published reference price exists. The configured estimate excludes fabrication, arm, weld, coating, transport and contract pricing.
+- Among fresh deterministic passes, the default selector prefers the lowest theoretical square-tube material quantity. Public regional steel prices are not nuclear-project cost evidence and are not used. Currency values are enabled only by an active unit-approved price book with a traceable table id and revision.
 - Support spacing and support length are fixed by upstream layout and are never changed automatically. If all allowed sections fail, an operator may explicitly revise tray line load and rerun; the platform does not silently reduce load.
 - The selected section must not be larger than necessary. Similar-intake learning and section-modulus estimates may choose the first candidate, but they cannot accept a result without current real ANSYS and deterministic evaluation.
 - No production result may claim final section optimization until the selected candidate has been run through real ANSYS and deterministic evaluation.
@@ -57,8 +57,8 @@ When `metadata.square_section_selection_status = auto_selection_required`, the o
 2. replace only the first square-support `SECREAD` with each candidate square `*.SECT`;
 3. run real ANSYS and deterministic evaluation for the first learned/estimated candidate;
 4. if the first candidate is over limit, use the controlling component and section-modulus trend to choose the next stronger allowed candidate;
-5. if the first candidate passes and another allowed candidate has a materially lower square-tube material cost and a plausible passing estimate, run exactly one lower-cost candidate; if it fails, keep the already passing section;
-6. choose the lowest traceable material-cost candidate among fresh deterministic passes; report the utilization band separately;
+5. if the first candidate passes and another allowed candidate has materially lower square-tube material quantity and a plausible passing estimate, run exactly one lower-quantity candidate; if it fails, keep the already passing section;
+6. choose the lowest theoretical material-quantity candidate among fresh deterministic passes, unless an active unit-approved price book is configured; report the utilization band separately;
 7. apply the selected section back to `input.json` and `generated_model.mac`;
 8. run the final real calculation once with the selected section.
 

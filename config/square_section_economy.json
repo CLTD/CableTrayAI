@@ -1,26 +1,52 @@
 {
-  "schema_version": "square-section-economy-v1",
-  "currency": "CNY",
+  "schema_version": "square-section-economy-v2",
   "steel_density_kg_m3": 7850.0,
-  "selection_scope": "square_tube_material_only",
-  "authority": "advisory_candidate_ordering_only",
-  "minimum_cost_improvement_ratio_for_extra_trial": 0.02,
+  "selection_basis": "theoretical_mass",
+  "selection_scope": "main_square_tube_material_quantity_only",
+  "authority": "deterministic_quantity_proxy_not_project_cost",
+  "minimum_material_improvement_ratio_for_extra_trial": 0.02,
   "utilization_review_lower": 0.6,
   "utilization_review_upper": 0.9999,
-  "price_reference": {
-    "title": "Baoji construction material market reference, issue 02/2026",
-    "publisher": "Baoji Housing and Urban-Rural Development Bureau",
-    "quotation_date": "2026-04-23",
-    "publication_date": "2026-06-05",
-    "url": "https://zjj.baoji.gov.cn/col1025/col1078/202606/P020260605549308610374.pdf",
-    "tax_included": true,
-    "freight_included": false,
-    "limitations": "Published market reference only. Steel grade, fabrication, arm, weld, coating, transport and procurement contract costs are not configured."
+  "comprehensive_costing": {
+    "status": "not_configured",
+    "reason": "No unit-approved nuclear-project price book is configured. Public regional steel market prices must not be presented as nuclear cable-tray support cost.",
+    "required_cost_scopes": [
+      "square_tube_material",
+      "cantilever_arm_material_and_fabrication",
+      "tray_and_accessories",
+      "physical_bolts_and_connectors",
+      "welding_and_nondestructive_examination",
+      "coating_or_corrosion_protection",
+      "quality_assurance_and_inspection",
+      "transport",
+      "installation_labor_and_machinery"
+    ],
+    "official_framework_references": [
+      {
+        "title": "Interim Measures for Nuclear Power Engineering Quota Management",
+        "publisher": "National Energy Administration",
+        "issued_date": "2025-04-28",
+        "url": "https://www.nea.gov.cn/20250521/11fddeb91fe0424c92a9e8c8fb9cc14a/c.html"
+      },
+      {
+        "title": "Nuclear Island Engineering Budget Quota (2025 Edition)",
+        "publisher": "National Energy Administration",
+        "issued_date": "2025-07-31",
+        "url": "https://www.nea.gov.cn/20250811/c61925a8e7e141b5801dcdcc4c139d3a/c.html"
+      }
+    ]
   },
-  "price_cny_per_tonne_by_outer_mm": {
-    "100": 3370.0,
-    "120": 3420.0,
-    "140": 3570.0,
-    "160": 3570.0
+  "unit_approved_price_book": {
+    "enabled": false,
+    "table_id": null,
+    "revision": null,
+    "approval_status": "not_configured",
+    "approval_ref": null,
+    "effective_from": null,
+    "effective_to": null,
+    "currency": "CNY",
+    "tax_included": null,
+    "freight_included": null,
+    "prices_cny_per_tonne_by_section": {}
   }
 }

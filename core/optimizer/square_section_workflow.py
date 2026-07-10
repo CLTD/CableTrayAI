@@ -33,7 +33,7 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v9-load-path-spectrum-cost"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v10-load-path-spectrum-quantity"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
@@ -535,8 +535,11 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "reference_price_cny_per_tonne",
         "economy_selection_scope",
         "economy_authority",
-        "economy_price_reference_date",
-        "economy_price_reference_url",
+        "economy_ranking_basis",
+        "pricing_status",
+        "price_book_table_id",
+        "price_book_revision",
+        "estimated_outer_surface_area_m2_per_m",
         "economy_price_limitations",
         "arm_family",
         "source_kind",
@@ -768,7 +771,7 @@ def _learned_formal_validation_selection(
                 "High-similarity learned evidence may apply the section directly to the formal job, but it never "
                 "reuses historical results. The current formal ANSYS run and deterministic Chapter 6 evaluation "
                 "remain the only publishable result. Current-version learning includes layer/load-path, selected-spectrum "
-                "and square-tube material-cost features; the utilization review band is not used as a pass/fail gate."
+                "and square-tube material-quantity features; the utilization review band is not used as a pass/fail gate."
             ),
         },
         "policy": (
@@ -1684,7 +1687,7 @@ def select_and_apply_square_section(
         "overall ratio <= 1.0 within that intake-allowed list. The 0.60 <= ratio <= 0.9999 interval is a utilization "
         "review band only. Section selection normally completes within two fresh ANSYS candidate trials: one "
         "learned/estimated first trial plus one section-modulus or materially lower-cost correction if needed. "
-        "Economy ranking is limited to traceable square-tube material cost/theoretical mass; support spacing and "
+        "Economy ranking is limited to theoretical square-tube material quantity unless a unit-approved price book is active; support spacing and "
         "support length stay fixed. Candidate order may not use "
         "local catalog fallback or historical results to add unlisted candidates or accept a section without current "
         "ANSYS evidence. Generated APDL HREC candidates are disabled by default and only allowed when "
