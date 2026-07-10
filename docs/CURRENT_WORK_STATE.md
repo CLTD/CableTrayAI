@@ -1,5 +1,23 @@
 # CableTrayAI ??????
 
+## 2026-07-10 cost-aware square-section selection and unit-browser UX hardening
+
+Current source state:
+
+1. Replaced the former `0.60-0.9999` economy gate with a strict two-stage policy. Formal feasibility still requires fresh ANSYS output, valid result sources, and every applicable deterministic ratio `<=1.0`; `0.60-0.9999` is now only a utilization-review hint and cannot pass or reject a section by itself.
+2. Added `config/square_section_economy.json` and `core/optimizer/square_section_economy.py`. Passing candidates are ranked by traceable square-tube material reference cost per metre, with theoretical mass per metre as fallback. The price snapshot is advisory, versioned, and limited to square-tube material; it does not claim fabrication, weld, bolt, coating, transport, or lifecycle cost.
+3. Similar-job learning now uses tray width/load path, support geometry, allowed candidates, spectrum workbook hash, peak acceleration and ZPA intensity only to order candidates. It never reuses an old stress ratio as the current result; the selected section must pass a fresh ANSYS solve and deterministic evaluation.
+4. Removed automatic support-spacing and support-height/length adjustment from the production recovery path. Those values remain fixed by the intake baseline. Line-load adjustment remains an operator-confirmed new calculation only; the software does not silently reduce load to obtain a passing conclusion.
+5. Hardened the dashboard and related pages for older/high-contrast unit browsers. Primary green buttons now keep explicit foreground/background colors on hover and focus, including forced-colors support. Result review returns with `job_id`, and the dashboard restores the server-side job even when browser `sessionStorage` is absent.
+
+Verification:
+
+1. Full `tests/unit` passed with only the existing Pillow deprecation warnings; `tests/integration` returned `4 passed`; `compileall` passed for `core`, `apps`, and `scripts`.
+2. Desktop/mobile browser verification passed: green buttons remain visible on hover, mobile width has no horizontal overflow, result-review return restores the selected job, and the final browser console had no errors.
+3. Fresh real ANSYS18.2 validation used the existing single-side five-layer mixed-width 4210 task and tested the lower-cost `140-140-8` candidate. It passed with controlling deterministic ratio `0.8072080946405193`; square-support ratio was `0.6997905586890436`. Since the lower-cost candidate passed, `160-160-8` was correctly not run.
+4. Full deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `B7BB2002662141BB5F744B69C39449306570EB90C0D6904823A3765EC110C1D9`, size `79,411,218` bytes. Package gate passed, including runtime XML files and no-expat spectrum smoke.
+5. Local `D:/CableTrayAI` was refreshed from that package. `/health` returned `ok`, `duxyb/cnpe123` login returned `pass`, and source/package/installed hashes match for the selector, economy config/module, workflow, one-click pipeline, dashboard, and result-review page.
+
 ## 2026-07-09 mixed five-layer wide-tray short-segment section fix
 
 Current source state:

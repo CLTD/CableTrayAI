@@ -31,12 +31,6 @@ from core.optimizer.square_section_workflow import (
     square_section_auto_selection_required,
     upgrade_square_section_after_ratio_fail,
 )
-from core.optimizer.support_spacing_recovery import (
-    MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS,
-    apply_support_spacing_recovery,
-    plan_support_spacing_recovery_from_final_ratio,
-    plan_support_spacing_recovery_from_selection,
-)
 from core.pipeline.exact_result_cache import (
     copy_exact_cached_outputs,
     find_exact_cached_result,
@@ -48,6 +42,7 @@ from core.spectra.config_wizard import confirm_spectrum_config
 from core.spectra.response_spectrum_writer import write_segmented_response_spectrum_mac
 
 MODAL_RETRY_MAX_FORMAL_RERUNS = 4
+AUTO_SUPPORT_GEOMETRY_RECOVERY_ENABLED = False
 ANSYS_FORMAL_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
 ANSYS_LICENSE_FAILURE_TOKENS = (
     "ansys license manager error",
@@ -124,8 +119,6 @@ def _progress_stage_cap(stage: str) -> int:
         "rerunning_ansys_after_section_upgrade": 84,
         "final_ratio_section_recovery": 94,
         "rerunning_ansys_after_final_ratio_recovery": 84,
-        "adjust_support_spacing": 84,
-        "rerunning_ansys_after_spacing_recovery": 84,
         "ansys_output_monitor": 85,
         "exporting_connection_nodes": 86,
         "exporting_figures": 88,
@@ -583,6 +576,66 @@ def _write_spectrum_mac_if_needed(
     )
 
 
+def _persist_spectrum_selection_features(
+    job_dir: Path,
+    spectrum_audit: dict[str, Any],
+    analysis_method: str,
+) -> dict[str, Any]:
+    """Persist compact spectrum/load-intensity features for candidate ordering only."""
+
+    input_path = job_dir / "input.json"
+    payload = _read_json(input_path)
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    zpa = spectrum_audit.get("static_acceleration_source")
+    if not isinstance(zpa, dict):
+        zpa = metadata.get("static_acceleration_source") if isinstance(metadata.get("static_acceleration_source"), dict) else {}
+    peaks: dict[str, float] = {}
+    points_path = job_dir / "spectrum_points.json"
+    if analysis_method != "static" and points_path.exists():
+        points_payload = _read_json(points_path)
+        for step in points_payload.get("load_steps") or []:
+            if not isinstance(step, dict):
+                continue
+            key = f"{str(step.get('level') or '').lower()}_{str(step.get('direction') or '').lower()}"
+            values = []
+            for point in step.get("points") or []:
+                if not isinstance(point, dict):
+                    continue
+                try:
+                    values.append(abs(float(point.get("acceleration_g"))))
+                except (TypeError, ValueError):
+                    continue
+            if values:
+                peaks[key] = round(max(values), 9)
+    workbook_sha = zpa.get("workbook_sha256")
+    features = {
+        "schema_version": "spectrum-selection-features-v1",
+        "analysis_method": analysis_method,
+        "workbook_sha256": workbook_sha,
+        "sheet": spectrum_audit.get("sheet") or zpa.get("sheet"),
+        "requested_elevation_m": spectrum_audit.get("requested_elevation") or zpa.get("requested_elevation"),
+        "selected_elevation_m": spectrum_audit.get("selected_elevation") or zpa.get("selected_elevation"),
+        "peak_acceleration_g_by_level_direction": peaks,
+        "peak_acceleration_g": round(max(peaks.values()), 9) if peaks else None,
+        "zpa_obe_max_g": max(
+            [float(zpa.get(key) or 0.0) for key in ("zpa_obe_x_g", "zpa_obe_y_g", "zpa_obe_z_g")],
+            default=0.0,
+        ),
+        "zpa_sse_max_g": max(
+            [float(zpa.get(key) or 0.0) for key in ("zpa_sse_x_g", "zpa_sse_y_g", "zpa_sse_z_g")],
+            default=0.0,
+        ),
+        "source_ref": "spectrum_audit.json + spectrum_points.json; candidate ordering only",
+        "authority": "ordering_feature_only_not_a_calculation_result",
+    }
+    metadata["spectrum_selection_features"] = features
+    payload["metadata"] = metadata
+    input_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return features
+
+
 def _read_validation_status(job_dir: Path) -> dict[str, Any]:
     path = job_dir / "result_validation.json"
     if not path.exists():
@@ -787,7 +840,8 @@ def run_operator_one_click(
             "analysis_method": analysis_method,
             "status": "created",
         }
-        support_spacing_adjustments: list[dict[str, Any]] = []
+        row_result["geometry_recovery_policy"] = "support_spacing_and_support_length_fixed"
+        row_result["overlimit_operator_action"] = "revise_confirmed_tray_line_load_and_rerun"
         try:
             if not spectrum_text:
                 raise ValueError("Every production job requires an operator-selected project spectrum workbook; static jobs use it to derive audited equivalent-static acceleration coefficients.")
@@ -808,6 +862,11 @@ def run_operator_one_click(
                 progress("write_spectrum", f"{item['job_id']}：生成 ansys_spectrum.mac 和 ZPA 参数", base_progress + 10, job_id=item["job_id"])
                 spectrum_audit = _write_spectrum_mac_if_needed(job_dir, spectrum_text, analysis_method, source_root=source_root)
                 row_result["spectrum_status"] = spectrum_audit.get("status")
+                row_result["spectrum_selection_features"] = _persist_spectrum_selection_features(
+                    job_dir,
+                    spectrum_audit,
+                    analysis_method,
+                )
             else:
                 row_result["spectrum_status"] = "deferred_until_real_run"
             progress("render_commands", f"{item['job_id']}：生成建模/计算/提取三份命令流", base_progress + 18, job_id=item["job_id"])
@@ -836,73 +895,6 @@ def run_operator_one_click(
                         process_running=event.get("process_running"),
                         ansys_pid=event.get("ansys_pid"),
                     )
-
-                def rerender_after_support_spacing_change(plan: dict[str, Any]) -> dict[str, Any]:
-                    apply_audit = apply_support_spacing_recovery(
-                        job_dir,
-                        plan,
-                    )
-                    cleanup_audit = _clean_regenerable_outputs_for_rerun(job_dir, include_command_streams=True)
-                    spacing_message = (
-                        f"{item['job_id']}: max allowed square section {plan.get('max_allowed_square_section')} "
-                        f"ratio {float(plan.get('failed_ratio') or 0.0):.3f} is over limit; "
-                        f"reduce support spacing from {plan.get('current_support_spacing_m')}m "
-                        f"to {plan.get('new_support_spacing_m')}m and regenerate APDL."
-                    )
-                    progress(
-                        "adjust_support_spacing",
-                        spacing_message,
-                        min(base_progress + 78, 92),
-                        job_id=item["job_id"],
-                    )
-                    rerender_audit = _render_commands(
-                        job_dir,
-                        jobs_dir,
-                        source_package_id,
-                        source_root=Path(source_root),
-                        template_dir=Path(template_dir),
-                    )
-                    update_job_state(job_dir, "apdl_rendered", "support spacing reduced; APDL command streams regenerated")
-                    return {
-                        "plan": plan,
-                        "apply": apply_audit,
-                        "cleanup": cleanup_audit,
-                        "render": rerender_audit,
-                    }
-
-                def recover_spacing_after_selection_failure(selection_payload: dict[str, Any]) -> dict[str, Any]:
-                    current_selection = selection_payload
-                    while (
-                        current_selection.get("status") != "pass"
-                        and len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS
-                    ):
-                        plan = plan_support_spacing_recovery_from_selection(
-                            job_dir,
-                            current_selection,
-                            source_root=source_root,
-                            attempt_index=len(support_spacing_adjustments) + 1,
-                        )
-                        if plan.get("status") != "pass":
-                            current_selection["support_spacing_recovery_plan"] = plan
-                            break
-                        recovery_audit = rerender_after_support_spacing_change(plan)
-                        retry_selection = select_and_apply_square_section(
-                            job_dir,
-                            config=config,
-                            config_path=config_path,
-                            confirm_user=confirm_user,
-                            source_root=source_root,
-                            limit=square_section_candidate_limit,
-                            progress_callback=forward_section_progress,
-                            force_reselect=True,
-                        )
-                        selected_retry = retry_selection.get("selected") or {}
-                        recovery_audit["selection_status"] = retry_selection.get("status")
-                        recovery_audit["selected_section"] = selected_retry.get("section_name")
-                        recovery_audit["selected_ratio"] = selected_retry.get("controlling_ratio")
-                        support_spacing_adjustments.append(recovery_audit)
-                        current_selection = retry_selection
-                    return current_selection
 
                 if square_section_auto_selection_required(job_dir):
                     progress("select_square_section", f"{item['job_id']}：候选方钢截面自动选型", base_progress + 30, job_id=item["job_id"])
@@ -937,16 +929,11 @@ def run_operator_one_click(
                         limit=square_section_candidate_limit,
                         progress_callback=section_progress,
                     )
-                    if selection.get("status") != "pass" and not provided_square_section_frozen:
-                        selection = recover_spacing_after_selection_failure(selection)
                     row_result["square_section_selection_status"] = selection.get("status")
                     selected = selection.get("selected") or {}
                     if selected:
                         row_result["square_section_selected"] = selected.get("section_name")
                         row_result["square_section_selected_ratio"] = selected.get("controlling_ratio")
-                    if support_spacing_adjustments:
-                        row_result["support_spacing_adjustments"] = support_spacing_adjustments
-                        row_result["support_spacing_recovery_status"] = "applied"
                     if selection.get("status") != "pass":
                         raise RuntimeError(_square_section_selection_failure_message(selection))
                 progress("running_ansys", f"{item['job_id']}：正在运行 ANSYS，耗时取决于模型规模和机器核数", base_progress + 45, job_id=item["job_id"])
@@ -1251,7 +1238,6 @@ def run_operator_one_click(
                         )
                         run_formal_ansys_once("(after clean square-section reselection)")
                     row_result["square_section_clean_reselection_attempts"] = clean_reselection_attempts
-                    final_ratio_spacing_attempts: list[dict[str, Any]] = []
                     for upgrade_attempt in range(1, 4):
                         section_ratio_recovery = result_validation_needs_square_section_upgrade(job_dir)
                         final_ratio_recovery = result_validation_needs_final_ratio_section_recovery(job_dir)
@@ -1309,56 +1295,18 @@ def run_operator_one_click(
                             row_result["square_section_selected"] = selected_upgrade.get("section_name")
                             row_result["square_section_selected_ratio"] = selected_upgrade.get("controlling_ratio")
                         if upgrade.get("status") != "pass":
-                            if len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS:
-                                spacing_plan = plan_support_spacing_recovery_from_final_ratio(
-                                    job_dir,
-                                    source_root=source_root,
-                                    attempt_index=len(support_spacing_adjustments) + 1,
-                                )
-                            else:
-                                spacing_plan = {
-                                    "status": "skipped",
-                                    "reason": "support_spacing_recovery_attempt_limit_reached",
-                                    "max_attempts": MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS,
-                                }
-                            if spacing_plan.get("status") != "pass":
-                                upgrade["support_spacing_recovery_plan"] = spacing_plan
-                                raise RuntimeError(f"Square section upgrade failed after final ratio gate: {upgrade.get('reason') or upgrade.get('status')}")
-                            spacing_recovery_audit = rerender_after_support_spacing_change(spacing_plan)
-                            spacing_selection = select_and_apply_square_section(
-                                job_dir,
-                                config=config,
-                                config_path=config_path,
-                                confirm_user=confirm_user,
-                                source_root=source_root,
-                                limit=square_section_candidate_limit,
-                                progress_callback=forward_section_progress,
-                                force_reselect=True,
+                            row_result["support_spacing_recovery_status"] = "disabled_by_fixed_geometry_policy"
+                            row_result["operator_recovery"] = {
+                                "status": "input_revision_required",
+                                "fixed_fields": ["support_spacing_m", "support_height_m"],
+                                "allowed_action": "revise_confirmed_tray_line_load_and_rerun",
+                                "reason": upgrade.get("reason") or upgrade.get("status"),
+                            }
+                            raise RuntimeError(
+                                "All applicable square-section recovery attempts failed while support spacing and support "
+                                "length are fixed by upstream layout. Automatic spacing/length reduction is disabled. "
+                                "Review and explicitly revise the tray line load in the calculation workspace, then rerun."
                             )
-                            selected_spacing = spacing_selection.get("selected") or {}
-                            spacing_recovery_audit["selection_status"] = spacing_selection.get("status")
-                            spacing_recovery_audit["selected_section"] = selected_spacing.get("section_name")
-                            spacing_recovery_audit["selected_ratio"] = selected_spacing.get("controlling_ratio")
-                            spacing_recovery_audit["triggering_upgrade_status"] = upgrade.get("status")
-                            support_spacing_adjustments.append(spacing_recovery_audit)
-                            row_result["support_spacing_adjustments"] = support_spacing_adjustments
-                            row_result["support_spacing_recovery_status"] = "applied"
-                            if spacing_selection.get("status") != "pass":
-                                raise RuntimeError(_square_section_selection_failure_message(spacing_selection))
-                            row_result["square_section_selected"] = selected_spacing.get("section_name")
-                            row_result["square_section_selected_ratio"] = selected_spacing.get("controlling_ratio")
-                            cleanup_heavy_solver_artifacts(job_dir)
-                            progress(
-                                "rerunning_ansys_after_spacing_recovery",
-                                (
-                                    f"{item['job_id']}: support spacing was reduced and "
-                                    f"{selected_spacing.get('section_name')} was selected; rerun formal ANSYS."
-                                ),
-                                min(base_progress + 80, 94),
-                                job_id=item["job_id"],
-                            )
-                            run_formal_ansys_once("(support spacing recovery)")
-                            continue
                         cleanup_heavy_solver_artifacts(job_dir)
                         progress(
                             rerun_stage,
@@ -1380,71 +1328,6 @@ def run_operator_one_click(
                         raise RuntimeError("Square section upgrade loop ended but final square-support ratio is still above 1.0.")
                     if result_validation_needs_final_ratio_section_recovery(job_dir):
                         raise RuntimeError("Final ratio section-recovery loop ended while a larger allowed section was still available.")
-                    while len(support_spacing_adjustments) < MAX_SUPPORT_SPACING_RECOVERY_ATTEMPTS:
-                        validation = _read_validation_status(job_dir)
-                        if validation.get("status") == "pass":
-                            break
-                        if provided_square_section_frozen:
-                            final_ratio_spacing_attempts.append(
-                                {
-                                    "status": "skipped_frozen_provided_section",
-                                    "reason": "Fixed intake/report square sections and spacing are not changed automatically.",
-                                }
-                            )
-                            break
-                        spacing_plan = plan_support_spacing_recovery_from_final_ratio(
-                            job_dir,
-                            source_root=source_root,
-                            attempt_index=len(support_spacing_adjustments) + 1,
-                        )
-                        if spacing_plan.get("status") != "pass":
-                            final_ratio_spacing_attempts.append(
-                                {
-                                    "status": "skipped",
-                                    "plan": spacing_plan,
-                                    "validation_status": validation.get("status"),
-                                }
-                            )
-                            break
-                        spacing_recovery_audit = rerender_after_support_spacing_change(spacing_plan)
-                        spacing_selection = select_and_apply_square_section(
-                            job_dir,
-                            config=config,
-                            config_path=config_path,
-                            confirm_user=confirm_user,
-                            source_root=source_root,
-                            limit=square_section_candidate_limit,
-                            progress_callback=forward_section_progress,
-                            force_reselect=True,
-                        )
-                        selected_spacing = spacing_selection.get("selected") or {}
-                        spacing_recovery_audit["selection_status"] = spacing_selection.get("status")
-                        spacing_recovery_audit["selected_section"] = selected_spacing.get("section_name")
-                        spacing_recovery_audit["selected_ratio"] = selected_spacing.get("controlling_ratio")
-                        spacing_recovery_audit["triggering_validation_status"] = validation.get("status")
-                        spacing_recovery_audit["triggering_validation_fail_count"] = validation.get("fail_count")
-                        support_spacing_adjustments.append(spacing_recovery_audit)
-                        final_ratio_spacing_attempts.append(spacing_recovery_audit)
-                        row_result["support_spacing_adjustments"] = support_spacing_adjustments
-                        row_result["support_spacing_recovery_status"] = "applied"
-                        if spacing_selection.get("status") != "pass":
-                            raise RuntimeError(_square_section_selection_failure_message(spacing_selection))
-                        row_result["square_section_selected"] = selected_spacing.get("section_name")
-                        row_result["square_section_selected_ratio"] = selected_spacing.get("controlling_ratio")
-                        cleanup_heavy_solver_artifacts(job_dir)
-                        progress(
-                            "rerunning_ansys_after_spacing_recovery",
-                            (
-                                f"{item['job_id']}: final deterministic ratio gate is still over limit; "
-                                f"support spacing was reduced to {spacing_plan.get('new_support_spacing_m')}m "
-                                f"and {selected_spacing.get('section_name')} was selected; rerun formal ANSYS."
-                            ),
-                            min(base_progress + 80, 94),
-                            job_id=item["job_id"],
-                        )
-                        run_formal_ansys_once("(final ratio support spacing recovery)")
-                    if final_ratio_spacing_attempts:
-                        row_result["support_spacing_final_ratio_attempts"] = final_ratio_spacing_attempts
                     _ensure_publishable_result(job_dir)
                     _sync_square_section_row_result_from_summary(row_result, job_dir)
                     modal_learning = record_modal_mode_count_learning(job_dir)

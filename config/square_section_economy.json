@@ -1,0 +1,26 @@
+{
+  "schema_version": "square-section-economy-v1",
+  "currency": "CNY",
+  "steel_density_kg_m3": 7850.0,
+  "selection_scope": "square_tube_material_only",
+  "authority": "advisory_candidate_ordering_only",
+  "minimum_cost_improvement_ratio_for_extra_trial": 0.02,
+  "utilization_review_lower": 0.6,
+  "utilization_review_upper": 0.9999,
+  "price_reference": {
+    "title": "Baoji construction material market reference, issue 02/2026",
+    "publisher": "Baoji Housing and Urban-Rural Development Bureau",
+    "quotation_date": "2026-04-23",
+    "publication_date": "2026-06-05",
+    "url": "https://zjj.baoji.gov.cn/col1025/col1078/202606/P020260605549308610374.pdf",
+    "tax_included": true,
+    "freight_included": false,
+    "limitations": "Published market reference only. Steel grade, fabrication, arm, weld, coating, transport and procurement contract costs are not configured."
+  },
+  "price_cny_per_tonne_by_outer_mm": {
+    "100": 3370.0,
+    "120": 3420.0,
+    "140": 3570.0,
+    "160": 3570.0
+  }
+}

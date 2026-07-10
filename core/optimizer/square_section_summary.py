@@ -135,6 +135,16 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "outer_mm": candidate.outer_mm if candidate else None,
         "thickness_mm": candidate.thickness_mm if candidate else None,
         "estimated_area_mm2": candidate.estimated_area_mm2 if candidate else None,
+        "estimated_mass_kg_per_m": candidate.estimated_mass_kg_per_m if candidate else None,
+        "estimated_square_material_cost_cny_per_m": (
+            candidate.estimated_square_material_cost_cny_per_m if candidate else None
+        ),
+        "economy_selection_scope": (
+            candidate.economy_metrics.get("economy_selection_scope") if candidate else None
+        ),
+        "economy_price_reference_date": (
+            candidate.economy_metrics.get("economy_price_reference_date") if candidate else None
+        ),
         "controlling_ratio": controlling_ratio,
         "final_controlling_ratio": final_chapter6_controlling_ratio,
         "final_section_selection_ratio": final_section_selection_ratio,
@@ -152,7 +162,11 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "selection_status": metadata.get("square_section_selection_status") or previous_selection.get("status") or "reported_or_source_command",
         "selection_policy": (
             previous_selection.get("policy")
-            or "If intake column I is empty, use no more than two fresh ANSYS candidate trials to target 0.60 <= ratio <= 0.9999 inside the allowed square SECT list."
+            or (
+                "If intake column I is empty, use a bounded fresh-ANSYS search and select the lowest traceable "
+                "square-tube material-cost pass inside the allowed SECT list. The 0.60-0.9999 interval is only "
+                "a utilization review band, not a feasibility or economy gate."
+            )
         ),
         "source_ref": "generated_model.mac SECREAD / input.json metadata / square_section_selection.json",
     }

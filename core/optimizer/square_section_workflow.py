@@ -33,7 +33,7 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v8-final-all-ratio"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v9-load-path-spectrum-cost"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
 LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
@@ -87,6 +87,7 @@ def _selection_cache_key(payload: dict[str, Any]) -> str:
         "load_cases": payload.get("load_cases") or [],
         "analysis_method": metadata.get("analysis_method"),
         "tray_load_mapping": metadata.get("tray_load_mapping"),
+        "spectrum_selection_features": metadata.get("spectrum_selection_features"),
         "allowed_square_section_ids": _allowed_square_section_ids_from_payload(payload),
         "static_acceleration": {
             key: metadata.get(key)
@@ -299,6 +300,8 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
     design_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
+    layer_signatures: list[str] = []
+    side_load_moments: dict[str, float] = {}
     for layer in design_layers:
         width = _layer_width_mm(layer)
         if width is not None:
@@ -306,7 +309,25 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
         load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
+        side = _as_text(layer.get("side") or "front") or "front"
+        layer_index = int(_as_float(layer.get("layer_index")) or 0)
+        layer_signatures.append(
+            f"{side}:{layer_index}:{round(width or 0.0, 3)}:{round(load or 0.0, 6)}"
+        )
+        arm_length = _as_float(layer.get("arm_total_length_m"))
+        if arm_length is None:
+            arm_a = _as_float(layer.get("arm_a_length_m")) or 0.0
+            arm_b = _as_float(layer.get("arm_b_length_m")) or 0.0
+            arm_length = arm_a + arm_b
+        if load is not None:
+            side_load_moments[side] = side_load_moments.get(side, 0.0) + load * max(arm_length or 0.0, 0.0)
     payload_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    spectrum_features = (
+        metadata.get("spectrum_selection_features")
+        if isinstance(metadata.get("spectrum_selection_features"), dict)
+        else {}
+    )
+    support_material = _as_text(support.get("material_id") or metadata.get("default_material_id"))
     return {
         "support_type": _as_text(support.get("support_type")),
         "analysis_method": _as_text(metadata.get("analysis_method")),
@@ -319,7 +340,18 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
         "layers_back": int(_as_float(support.get("layers_back")) or 0),
         "layer_count": len(payload_layers) or len(design_layers),
         "tray_widths_mm": sorted(round(width, 3) for width in widths),
+        "tray_layer_signature": sorted(layer_signatures),
         "tray_load_sum_kg_m": round(sum(loads), 6) if loads else None,
+        "tray_load_max_kg_m": round(max(loads), 6) if loads else None,
+        "max_side_load_moment_proxy_kg": round(max(side_load_moments.values()), 6) if side_load_moments else None,
+        "side_load_moment_signature_kg": {
+            key: round(value, 6) for key, value in sorted(side_load_moments.items())
+        },
+        "support_material": support_material,
+        "allowed_square_sections": _allowed_square_section_ids_from_payload(payload),
+        "spectrum_workbook_sha256": spectrum_features.get("workbook_sha256"),
+        "spectrum_peak_acceleration_g": _as_float(spectrum_features.get("peak_acceleration_g")),
+        "spectrum_zpa_sse_max_g": _as_float(spectrum_features.get("zpa_sse_max_g")),
     }
 
 
@@ -375,12 +407,19 @@ def _selection_similarity_score(current: dict[str, Any], cached: dict[str, Any])
         ("layers_front", 1.0),
         ("layers_back", 1.0),
         ("layer_count", 1.0),
+        ("support_material", 1.0),
     ):
         add_exact(key, points)
     add_close("elevation_m", 1.0, 0.08)
     add_close("support_spacing_m", 1.0, 0.10)
     add_close("support_height_m", 1.0, 0.10)
     add_close("tray_load_sum_kg_m", 1.0, 0.12)
+    add_close("tray_load_max_kg_m", 1.0, 0.12)
+    add_close("max_side_load_moment_proxy_kg", 2.0, 0.12)
+    add_close("spectrum_peak_acceleration_g", 2.0, 0.10)
+    add_close("spectrum_zpa_sse_max_g", 1.0, 0.10)
+    add_exact("spectrum_workbook_sha256", 1.0)
+    add_exact("allowed_square_sections", 1.0)
 
     # Tray width and total tray load are load-path features.  Legacy cache
     # entries that do not record them must not look "perfectly similar" to a
@@ -401,6 +440,17 @@ def _selection_similarity_score(current: dict[str, Any], cached: dict[str, Any])
             matched.append("tray_widths_mm")
         else:
             mismatched.append("tray_widths_mm")
+    if current.get("tray_layer_signature") or cached.get("tray_layer_signature"):
+        weight += 4.0
+        if (
+            current.get("tray_layer_signature")
+            and cached.get("tray_layer_signature")
+            and current["tray_layer_signature"] == cached["tray_layer_signature"]
+        ):
+            score += 4.0
+            matched.append("tray_layer_signature")
+        else:
+            mismatched.append("tray_layer_signature")
 
     return {
         "score": round(score / weight, 6) if weight else 0.0,
@@ -453,6 +503,9 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
                         "dominant_check_id",
                         "result_gate_status",
                         "effective_validation_status",
+                        "estimated_mass_kg_per_m",
+                        "estimated_square_material_cost_cny_per_m",
+                        "economy_selection_scope",
                     )
                 }
                 for item in entry.get("candidate_results", [])
@@ -477,6 +530,15 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "section_name",
         "estimated_area_mm2",
         "estimated_bending_section_modulus_mm3",
+        "estimated_mass_kg_per_m",
+        "estimated_square_material_cost_cny_per_m",
+        "reference_price_cny_per_tonne",
+        "economy_selection_scope",
+        "economy_authority",
+        "economy_price_reference_date",
+        "economy_price_reference_url",
+        "economy_price_limitations",
+        "arm_family",
         "source_kind",
         "controlling_ratio",
         "overall_controlling_ratio",
@@ -605,50 +667,6 @@ def _learned_allowed_candidate_start(
     }
 
 
-def _historical_immediate_lower_failed(
-    candidates: list[SquareSectionCandidate],
-    selected_section: str,
-    historical_results: list[dict[str, Any]],
-) -> dict[str, Any]:
-    selected_index = next((idx for idx, item in enumerate(candidates) if item.section_name == selected_section), None)
-    if selected_index is None:
-        return {"status": "not_applicable", "reason": "selected_section_not_in_allowed_list"}
-    if selected_index <= 0:
-        return {"status": "not_applicable", "reason": "selected_section_is_minimum_allowed"}
-    lower = candidates[selected_index - 1]
-    for item in historical_results:
-        if not isinstance(item, dict) or str(item.get("section_name") or "") != lower.section_name:
-            continue
-        ratio = _as_float(
-            item.get("overall_controlling_ratio")
-            or item.get("final_chapter6_controlling_ratio")
-            or item.get("controlling_ratio")
-            or item.get("section_selection_ratio")
-        )
-        if ratio is not None and ratio > 1.0 and str(item.get("run_status") or "") == "pass":
-            return {
-                "status": "pass",
-                "lower_section": lower.section_name,
-                "historical_ratio": ratio,
-                "historical_status": item.get("status"),
-                "historical_run_status": item.get("run_status"),
-                "source_ref": "square_section_selection_cache.json:historical_candidate_results",
-            }
-        return {
-            "status": "fail",
-            "lower_section": lower.section_name,
-            "historical_ratio": ratio,
-            "historical_status": item.get("status"),
-            "historical_run_status": item.get("run_status"),
-            "reason": "immediate lower section was not proven over limit by a successful historical ANSYS Chapter 6.1 trial",
-        }
-    return {
-        "status": "missing",
-        "lower_section": lower.section_name,
-        "reason": "no historical result for the immediate lower allowed section",
-    }
-
-
 def _learned_formal_validation_selection(
     *,
     candidates: list[SquareSectionCandidate],
@@ -694,7 +712,7 @@ def _learned_formal_validation_selection(
     section_selection_ratio = _as_float(
         selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio")
     )
-    if selected_ratio is None or not (0.60 <= selected_ratio <= 0.9999):
+    if selected_ratio is None or selected_ratio <= 0.0 or selected_ratio > 1.0:
         return None
     final_gate_ratio = _as_float(
         selected_history.get("overall_controlling_ratio")
@@ -704,15 +722,15 @@ def _learned_formal_validation_selection(
         return None
     if str(selected_history.get("run_status") or "") != "pass":
         return None
-    lower_failure_audit: dict[str, Any] = {"status": "not_required", "reason": "selected ratio is already above 0.75"}
-    if selected_ratio <= 0.75:
-        lower_failure_audit = _historical_immediate_lower_failed(candidates, selected_section, historical_results)
-        if lower_failure_audit.get("status") != "pass":
-            return None
+    lower_failure_audit: dict[str, Any] = {
+        "status": "covered_by_current_cache_version",
+        "reason": "v9 records are produced by the cost-aware fresh-ANSYS selection policy",
+    }
     selected_payload = {
         "section_name": selected_candidate.section_name,
         "estimated_area_mm2": selected_candidate.estimated_area_mm2,
         "estimated_bending_section_modulus_mm3": selected_candidate.estimated_bending_section_modulus_mm3,
+        **selected_candidate.economy_metrics,
         "source_kind": selected_candidate.source_kind,
         "controlling_ratio": selected_ratio,
         "overall_controlling_ratio": selected_ratio,
@@ -749,9 +767,8 @@ def _learned_formal_validation_selection(
             "policy": (
                 "High-similarity learned evidence may apply the section directly to the formal job, but it never "
                 "reuses historical results. The current formal ANSYS run and deterministic Chapter 6 evaluation "
-                "remain the only publishable result. When the learned ratio is 0.60-0.75, the immediate lower "
-                "allowed section must already have a successful historical ANSYS over-limit result; otherwise the "
-                "normal one-step economy downshift trial is still run."
+                "remain the only publishable result. Current-version learning includes layer/load-path, selected-spectrum "
+                "and square-tube material-cost features; the utilization review band is not used as a pass/fail gate."
             ),
         },
         "policy": (
@@ -1072,9 +1089,11 @@ def _first_candidate_at_or_above(
 
 def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
     tray_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
+    side_moment_proxy: dict[str, float] = {}
     for layer in tray_layers:
         width = _layer_width_mm(layer)
         if width is not None:
@@ -1082,7 +1101,19 @@ def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
+            side = _as_text(layer.get("side") or "front") or "front"
+            arm_length = _as_float(layer.get("arm_total_length_m"))
+            if arm_length is None:
+                arm_length = (_as_float(layer.get("arm_a_length_m")) or 0.0) + (
+                    _as_float(layer.get("arm_b_length_m")) or 0.0
+                )
+            side_moment_proxy[side] = side_moment_proxy.get(side, 0.0) + load * max(arm_length, 0.0)
     declared_layers = len(tray_layers) or int(_as_float(support.get("layers_front")) or 0) + int(_as_float(support.get("layers_back")) or 0)
+    spectrum_features = (
+        metadata.get("spectrum_selection_features")
+        if isinstance(metadata.get("spectrum_selection_features"), dict)
+        else {}
+    )
     return {
         "layer_count": declared_layers,
         "max_width_mm": max(widths) if widths else None,
@@ -1090,6 +1121,14 @@ def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         "max_line_load_kg_m": max(loads) if loads else None,
         "support_height_m": _as_float(support.get("support_height_m")),
         "support_spacing_m": _as_float(support.get("support_spacing_m")),
+        "max_side_load_moment_proxy_kg": max(side_moment_proxy.values()) if side_moment_proxy else None,
+        "load_path_index": (
+            max(side_moment_proxy.values()) * float(_as_float(support.get("support_spacing_m")) or 0.0)
+            if side_moment_proxy
+            else None
+        ),
+        "spectrum_peak_acceleration_g": _as_float(spectrum_features.get("peak_acceleration_g")),
+        "spectrum_zpa_sse_max_g": _as_float(spectrum_features.get("zpa_sse_max_g")),
     }
 
 
@@ -1112,12 +1151,18 @@ def _estimated_square_anchor_from_payload(
     load_sum = float(metrics["tray_load_sum_kg_m"] or 0.0)
     max_load = float(metrics["max_line_load_kg_m"] or 0.0)
     support_height = float(metrics["support_height_m"] or 0.0)
+    support_spacing = float(metrics["support_spacing_m"] or 0.0)
+    load_path_index = float(metrics["load_path_index"] or 0.0)
+    spectrum_peak = float(metrics["spectrum_peak_acceleration_g"] or metrics["spectrum_zpa_sse_max_g"] or 0.0)
     score = 0.0
     score += max(0, layer_count - 2) * 0.9
     score += max(0.0, max_width - 400.0) / 140.0
     score += max(0.0, load_sum - 180.0) / 170.0
     score += max(0.0, max_load - 90.0) / 70.0
     score += max(0.0, support_height - 1.0) * 1.2
+    score += max(0.0, support_spacing - 1.5) * 0.8
+    score += max(0.0, load_path_index - 120.0) / 160.0
+    score += max(0.0, spectrum_peak - 0.5) / 1.5
 
     if score >= 7.0 or layer_count >= 8 or load_sum >= 760:
         target_name = "140-140-8"
@@ -1140,7 +1185,8 @@ def _estimated_square_anchor_from_payload(
         "metrics": metrics,
         "policy": (
             "Blank-column-I candidate search starts from a deterministic engineering anchor based on layer count, "
-            "tray width, tray load and support height. This only orders candidates; final acceptability still comes "
+            "tray width, per-side load path, support geometry and selected-spectrum intensity. This only orders "
+            "candidates; final acceptability still comes "
             "from real ANSYS + deterministic ratio gates."
         ),
         "source_ref": "square_section_workflow._estimated_square_anchor_from_payload",
@@ -1538,9 +1584,9 @@ def select_and_apply_square_section(
             "policy": (
                 "For intake calculation-note sections, only listed/reviewed candidates are allowed. "
                 "A high-similarity learned cache or deterministic engineering estimate may choose the first trial "
-                "inside the current allowed list. If the fresh ratio is outside the 0.60-0.9999 economy band, one "
-                "section-modulus correction trial is allowed. The search normally stops within two fresh ANSYS "
-                "candidate trials; larger listed sections are not swept after an economic pass."
+                "inside the current allowed list. One section-modulus or materially lower-cost correction trial is "
+                "allowed. The search normally stops within two fresh ANSYS candidate trials; 0.60-0.9999 is reported "
+                "only as a utilization review band."
             ),
         }
     elif preferred_section is None:
@@ -1551,10 +1597,9 @@ def select_and_apply_square_section(
     effective_limit = limit
     if allowed_filter_applied:
         # The intake calculation note is the governing candidate boundary.  A
-        # first passing section is the economical stop because allowed
-        # candidates are sorted by section modulus/area.  After a real failed
-        # square-support ratio, smart jumps may avoid obviously under-sized
-        # allowed candidates while recording exactly what was skipped.
+        # A first pass may still trigger one materially lower-cost fresh trial.
+        # After a real failed square-support ratio, smart jumps may avoid
+        # obviously under-sized candidates while recording what was skipped.
         effective_limit = None if effective_limit is None else max(int(effective_limit), len(candidates))
     elif effective_limit is None and using_default_runner:
         effective_limit = 4
@@ -1636,9 +1681,11 @@ def select_and_apply_square_section(
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
         "overall stress ratios including weld, bolt, support and cantilever checks; the selected section must have "
-        "overall ratio <= 1.0 within that intake-allowed list. The production economy band is "
-        "0.60 <= ratio <= 0.9999, and section selection normally completes within two fresh ANSYS candidate trials: "
-        "one learned/estimated first trial plus one section-modulus correction if needed. Candidate order may not use "
+        "overall ratio <= 1.0 within that intake-allowed list. The 0.60 <= ratio <= 0.9999 interval is a utilization "
+        "review band only. Section selection normally completes within two fresh ANSYS candidate trials: one "
+        "learned/estimated first trial plus one section-modulus or materially lower-cost correction if needed. "
+        "Economy ranking is limited to traceable square-tube material cost/theoretical mass; support spacing and "
+        "support length stay fixed. Candidate order may not use "
         "local catalog fallback or historical results to add unlisted candidates or accept a section without current "
         "ANSYS evidence. Generated APDL HREC candidates are disabled by default and only allowed when "
         "allow_native_hrec_generated=true is explicitly set for a reviewed engineering run. No nearest-report-value "

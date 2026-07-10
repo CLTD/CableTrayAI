@@ -1,5 +1,20 @@
 # CableTrayAI ??????
 
+## 2026-07-10 economic selection and browser compatibility queue
+
+Resolved/verified:
+
+1. `0.60-0.9999` is no longer a formal or economic gate. It is an operator-facing utilization-review range only; all applicable deterministic ratios must remain `<=1.0`.
+2. Economic choice is made only among fresh ANSYS-passing candidates, using versioned square-tube material reference cost per metre and theoretical mass fallback. Similar-job history affects order only.
+3. Support spacing and square-support height/length are fixed intake conditions and are not changed automatically after an over-limit result. Line-load adjustment requires explicit operator input and a new solve.
+4. Green-button hover visibility and cross-page job restoration were fixed for unit-browser differences.
+5. Full unit/integration/compile/browser checks passed. Real ANSYS18.2 mixed five-layer 4210 validation passed at `140-140-8` with controlling ratio `0.8072080946405193`.
+6. New full package: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `B7BB2002662141BB5F744B69C39449306570EB90C0D6904823A3765EC110C1D9`. Local `D:/CableTrayAI` health/login and source-package-install hash checks passed.
+
+Open:
+
+1. No source, package, or local-install blocker remains for this queue. Unit deployment should replace the old installation with the new full package. Project-specific purchase prices may later replace the public reference snapshot without changing the deterministic mechanical gate.
+
 ## 2026-07-09 mixed five-layer short-section segment queue
 
 Resolved/verified:

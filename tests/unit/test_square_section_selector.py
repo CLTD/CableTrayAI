@@ -517,7 +517,7 @@ def test_smart_jump_skips_only_after_failed_square_support_ratio(tmp_path: Path)
     assert selection["selected"]["section_name"] == "120-120-10"
 
 
-def test_two_trial_economy_search_stops_after_first_economic_ratio(tmp_path: Path) -> None:
+def test_two_trial_economy_search_checks_materially_cheaper_candidate_even_inside_utilization_band(tmp_path: Path) -> None:
     base_job = tmp_path / "base"
     _write_minimal_job(base_job)
     source_root = tmp_path / "source"
@@ -551,11 +551,12 @@ def test_two_trial_economy_search_stops_after_first_economic_ratio(tmp_path: Pat
         max_evaluated_candidates=2,
     )
 
-    assert run_sections == ["100-100-8"]
+    assert run_sections == ["100-100-8", "120-120-6"]
     assert selection["status"] == "pass"
-    assert selection["selected"]["section_name"] == "100-100-8"
+    assert selection["selected"]["section_name"] == "120-120-6"
     assert selection["selected_economic_status"] == "economic"
-    assert selection["evaluated_candidate_count"] == 1
+    assert selection["selected_economy_status"] == "lowest_material_cost_fresh_deterministic_pass"
+    assert selection["evaluated_candidate_count"] == 2
 
 
 def test_two_trial_economy_search_uses_one_modulus_correction_after_over_limit(tmp_path: Path) -> None:
@@ -667,12 +668,11 @@ def test_low_ratio_smart_jump_downshifts_once_before_accepting(tmp_path: Path) -
         max_evaluated_candidates=2,
     )
 
-    assert run_sections == ["100-100-8", "140-140-8", "120-120-10"]
+    assert run_sections == ["100-100-8", "140-140-8"]
     assert selection["status"] == "pass"
-    assert selection["selected"]["section_name"] == "120-120-10"
-    assert selection["selected"]["controlling_ratio"] == 0.82
-    assert selection["economic_downshift_extensions"]
-    assert selection["economic_downshift_extensions"][0]["next_section"] == "120-120-10"
+    assert selection["selected"]["section_name"] == "140-140-8"
+    assert selection["selected"]["controlling_ratio"] == 0.50
+    assert not selection["economic_downshift_extensions"]
 
 
 def test_overlimit_pair_extends_to_two_larger_allowed_sections(tmp_path: Path) -> None:
@@ -947,7 +947,7 @@ def test_low_ratio_recovery_candidate_downshifts_one_allowed_section(tmp_path: P
     assert selection["selected"]["section_name"] == "140-140-8"
     assert selection["evaluated_candidate_count"] == 4
     assert selection["effective_evaluated_candidate_budget"] == 4
-    assert selection["economy_corrections"][-1]["direction"] == "smaller"
+    assert selection["economy_corrections"][-1]["direction"] == "lower_cost"
     assert selection["economy_corrections"][-1]["after_section"] == "160-160-8"
     assert selection["economy_corrections"][-1]["next_section"] == "140-140-8"
 
@@ -1045,11 +1045,11 @@ def test_select_best_square_section_chooses_minimum_when_all_feasible_are_low_ut
 
     assert selection["status"] == "pass"
     assert selection["selected"]["section_name"] == "100-100-6"
-    assert "light-duty row" in selection["policy"]
+    assert "lowest traceable square-tube material-cost" in selection["policy"]
     assert selection["selected_economic_status"] == "below_economic_range"
 
 
-def test_select_best_square_section_chooses_closest_to_one_when_economy_target_is_available() -> None:
+def test_select_best_square_section_chooses_lowest_material_cost_not_ratio_closest_to_one() -> None:
     selection = select_best_square_section(
         [
             {
@@ -1085,7 +1085,8 @@ def test_select_best_square_section_chooses_closest_to_one_when_economy_target_i
 
     assert selection["status"] == "pass"
     assert selection["selected"]["section_name"] == "120-120-6"
-    assert "0.60 <= ratio <= 0.9999" in selection["policy"]
+    assert selection["economic_ratio_range_role"] == "utilization_review_only_not_a_hard_gate"
+    assert "not a pass/fail or economy gate" in selection["policy"]
 
 
 def test_select_best_square_section_accepts_exact_limit_ratio() -> None:

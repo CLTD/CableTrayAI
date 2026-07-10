@@ -677,7 +677,7 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
     assert captured["smart_order"] is True
 
 
-def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tmp_path: Path, monkeypatch) -> None:
+def test_high_similarity_current_cost_policy_can_skip_duplicate_candidate_trials(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "job"
     _write_job(
         job_dir,
@@ -741,7 +741,7 @@ def test_high_similarity_learned_selection_can_skip_duplicate_downshift_trial(tm
     assert result["status"] == "pass"
     assert result["selection_validation_mode"] == "learned_formal_validation"
     assert result["selected"]["section_name"] == "160-160-8"
-    assert result["learned_formal_validation"]["lower_economy_check"]["status"] == "pass"
+    assert result["learned_formal_validation"]["lower_economy_check"]["status"] == "covered_by_current_cache_version"
     assert applied["selected"]["section_name"] == "160-160-8"
     summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
     assert summary["trial_root_removed"] is True

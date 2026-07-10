@@ -48,11 +48,24 @@
         cursor: pointer;
       }
       button:hover { border-color: var(--blue); color: var(--blue); }
-      button.primary {
-        border-color: var(--green);
-        background: var(--green);
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+      html body button.primary,
+      html body button.primary:hover:not(:disabled),
+      html body button.primary:focus-visible,
+      html body button.primary:active {
+        border-color: #075f4a !important;
+        background-color: var(--green) !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+      }
+      @media (forced-colors: active) {
+        html body button.primary,
+        html body button.primary:hover:not(:disabled) {
+          forced-color-adjust: auto;
+          background-color: Highlight !important;
+          color: HighlightText !important;
+          -webkit-text-fill-color: HighlightText !important;
+        }
       }
       button.ghost { background: #f8fbfd; }
       button:disabled { opacity: .64; cursor: wait; }

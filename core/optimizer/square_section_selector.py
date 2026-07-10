@@ -9,6 +9,11 @@ from typing import Any, Callable
 
 from core.apdl.section_offsets import normalize_secondary_arm_secoffset
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
+from core.optimizer.square_section_economy import (
+    economy_cost_key,
+    load_square_section_economy_config,
+    square_section_economy_metrics,
+)
 
 
 # Candidate section trials are an optimization sub-step, not a publishable
@@ -40,9 +45,12 @@ FORMAL_VALIDATION_RETRYABLE_CHECKS = {
     "modal_frequency_table",
 }
 
-ECONOMIC_RATIO_MIN = 0.60
-ECONOMIC_DOWNSHIFT_RATIO_MAX = 0.75
-ECONOMIC_RATIO_MAX = 0.9999
+UTILIZATION_REVIEW_MIN = 0.60
+UTILIZATION_REVIEW_MAX = 0.9999
+# Compatibility aliases retained in persisted audit files. These values are
+# utilization review thresholds, not feasibility or economy gates.
+ECONOMIC_RATIO_MIN = UTILIZATION_REVIEW_MIN
+ECONOMIC_RATIO_MAX = UTILIZATION_REVIEW_MAX
 MAX_ECONOMIC_SECTION_TRIALS = 2
 OVERLIMIT_RECOVERY_SECTION_TRIALS = 2
 ECONOMY_DOWNSHIFT_SECTION_TRIALS = 1
@@ -54,12 +62,15 @@ SECTION_RATIO_POLICY = (
     "overall controlling evaluation ratio is <= 1.0 and result_validation has no "
     "blocking non-ratio failures; "
     "history/cache/report numbers may order candidates but never decide the section. "
-    "Production economy search targets 0.60 <= ratio <= 0.9999 and must normally "
-    "finish within two fresh ANSYS candidate trials; if those two fresh trials are both "
+    "The 0.60 <= ratio <= 0.9999 interval is a utilization review band only. It is not "
+    "a feasibility gate and does not by itself prove economy. Candidate economy is ordered "
+    "by traceable square-tube material cost per metre (or theoretical mass when no matching "
+    "price is configured), while every selected section must pass a fresh deterministic ANSYS "
+    "trial. The bounded search should normally finish within two candidate trials; if both are "
     "deterministic over-limit, the search may run up to two larger intake-allowed sections "
-    "before reporting failure. If a passed larger candidate lands at ratio <= 0.75, "
-    "run one immediately lower intake-allowed section once to avoid an overly conservative selection; "
-    "if that lower section fails, keep the already passing larger section."
+    "before reporting failure. A second economy trial is run only when another intake-allowed "
+    "section has a materially lower cost proxy and is a plausible candidate; if it fails, keep "
+    "the already passing section. Support spacing and support length remain fixed."
 )
 SECTION_RATIO_BASIS = (
     "evaluation_summary.json:all deterministic stress ratios + "
@@ -73,7 +84,10 @@ def _section_ratio_audit_fields() -> dict[str, str]:
         "ratio_basis": SECTION_RATIO_BASIS,
         "chapter6_ratio_basis": "same_source_as_final_chapter6_evaluation",
         "economic_ratio_range": f"{ECONOMIC_RATIO_MIN:.2f} <= ratio <= {ECONOMIC_RATIO_MAX:.4f}",
-        "economic_downshift_ratio_range": f"ratio <= {ECONOMIC_DOWNSHIFT_RATIO_MAX:.2f}",
+        "economic_ratio_range_role": "utilization_review_only_not_a_hard_gate",
+        "economy_objective": "lowest_traceable_square_tube_material_cost_among_fresh_deterministic_passes",
+        "economy_scope": "square_tube_material_only; fabrication/arm/weld/coating/transport costs are unconfigured",
+        "geometry_recovery_policy": "support_spacing_and_support_length_are_fixed; no automatic geometry reduction",
         "max_economic_section_trials": str(MAX_ECONOMIC_SECTION_TRIALS),
         "overlimit_recovery_section_trials": str(OVERLIMIT_RECOVERY_SECTION_TRIALS),
         "economy_downshift_section_trials": str(ECONOMY_DOWNSHIFT_SECTION_TRIALS),
@@ -235,6 +249,22 @@ class SquareSectionCandidate:
             return 0.0
         inertia = (self.outer_mm**4 - inner**4) / 12.0
         return inertia / (self.outer_mm / 2.0)
+
+    @property
+    def economy_metrics(self) -> dict[str, Any]:
+        return square_section_economy_metrics(
+            outer_mm=self.outer_mm,
+            thickness_mm=self.thickness_mm,
+        )
+
+    @property
+    def estimated_mass_kg_per_m(self) -> float:
+        return float(self.economy_metrics["estimated_mass_kg_per_m"])
+
+    @property
+    def estimated_square_material_cost_cny_per_m(self) -> float | None:
+        value = self.economy_metrics.get("estimated_square_material_cost_cny_per_m")
+        return float(value) if value is not None else None
 
 
 def parse_square_section_name(path_or_name: Path | str) -> SquareSectionCandidate | None:
@@ -772,6 +802,27 @@ def _economic_ratio_status(ratio: float | None) -> str:
     return "limit_pass"
 
 
+def _candidate_economy_fields(candidate: SquareSectionCandidate) -> dict[str, Any]:
+    return dict(candidate.economy_metrics)
+
+
+def _enrich_result_economy_fields(item: dict[str, Any]) -> dict[str, Any]:
+    if item.get("estimated_mass_kg_per_m") is not None:
+        return item
+    parsed = parse_square_section_name(str(item.get("section_name") or ""))
+    if parsed is None:
+        return item
+    return {**item, **_candidate_economy_fields(parsed)}
+
+
+def _result_economy_key(item: dict[str, Any]) -> tuple[float, float, float, str]:
+    return economy_cost_key(_enrich_result_economy_fields(item))
+
+
+def _same_arm_family(left: SquareSectionCandidate, right: SquareSectionCandidate) -> bool:
+    return (left.outer_mm > 120.0) == (right.outer_mm > 120.0)
+
+
 def _candidate_index_by_name(candidates: list[SquareSectionCandidate], section_name: str) -> int | None:
     for index, candidate in enumerate(candidates):
         if candidate.section_name == section_name:
@@ -854,33 +905,88 @@ def _economic_downshift_candidate(
     result: dict[str, Any],
     evaluated_names: set[str],
 ) -> dict[str, Any] | None:
-    """Run one immediately lower allowed section when a passing section is still conservative."""
+    """Plan one materially cheaper fresh trial without changing support geometry."""
 
     try:
         ratio = float(result.get("controlling_ratio"))
     except (TypeError, ValueError):
         return None
-    if ratio <= 0.0 or ratio > ECONOMIC_DOWNSHIFT_RATIO_MAX:
+    if ratio <= 0.0 or ratio > 1.0:
         return None
-    current_index = _candidate_index_by_name(catalog_candidates, current.section_name)
-    if current_index is None or current_index <= 0:
+    current_metrics = _candidate_economy_fields(current)
+    current_cost = current_metrics.get("estimated_square_material_cost_cny_per_m")
+    current_mass = float(current_metrics.get("estimated_mass_kg_per_m") or 0.0)
+    try:
+        current_cost_value = float(current_cost)
+    except (TypeError, ValueError):
+        current_cost_value = float("inf")
+    config = load_square_section_economy_config()
+    minimum_saving = float(config.get("minimum_cost_improvement_ratio_for_extra_trial") or 0.02)
+    dominant = str(result.get("section_selection_dominant_check_id") or result.get("dominant_check_id") or "")
+    dominant_component = result.get("section_selection_dominant_component") or result.get("dominant_component")
+    section_controlled = (not dominant) or is_section_selection_evaluation_row(
+        {"check_id": dominant, "component": dominant_component}
+    )
+    options: list[tuple[tuple[float, float, float, str], SquareSectionCandidate, float | None]] = []
+    for candidate in catalog_candidates:
+        if candidate.section_name == current.section_name or candidate.section_name in evaluated_names:
+            continue
+        metrics = _candidate_economy_fields(candidate)
+        candidate_cost = metrics.get("estimated_square_material_cost_cny_per_m")
+        candidate_mass = float(metrics.get("estimated_mass_kg_per_m") or 0.0)
+        if current_cost_value != float("inf") and candidate_cost is not None:
+            saving_ratio = (current_cost_value - float(candidate_cost)) / max(current_cost_value, 1e-9)
+        else:
+            saving_ratio = (current_mass - candidate_mass) / max(current_mass, 1e-9)
+        if saving_ratio < minimum_saving:
+            continue
+        predicted_ratio: float | None = None
+        if section_controlled:
+            candidate_modulus = candidate.estimated_bending_section_modulus_mm3
+            if candidate_modulus <= 0:
+                continue
+            raw_ratio = result.get("section_selection_ratio") or result.get("square_support_ratio") or ratio
+            try:
+                predicted_ratio = float(raw_ratio) * current.estimated_bending_section_modulus_mm3 / candidate_modulus
+            except (TypeError, ValueError):
+                predicted_ratio = ratio * current.estimated_bending_section_modulus_mm3 / candidate_modulus
+            if predicted_ratio > 1.0:
+                continue
+        else:
+            # Weld/bolt/arm control does not follow square-tube section modulus.
+            # Keep the one extra trial inside the same arm family and require
+            # useful headroom; the fresh ANSYS result remains the only proof.
+            if not _same_arm_family(current, candidate) or ratio > 0.90:
+                continue
+        economy_payload = {
+            "section_name": candidate.section_name,
+            "estimated_area_mm2": candidate.estimated_area_mm2,
+            **metrics,
+        }
+        options.append((economy_cost_key(economy_payload), candidate, predicted_ratio))
+    if not options:
         return None
-    candidate = catalog_candidates[current_index - 1]
-    if candidate.section_name == current.section_name or candidate.section_name in evaluated_names:
-        return None
+    _, candidate, predicted_ratio = sorted(options, key=lambda item: item[0])[0]
+    candidate_metrics = _candidate_economy_fields(candidate)
     return {
         "status": "planned",
-        "direction": "smaller",
+        "direction": "lower_cost",
         "after_section": current.section_name,
         "next_section": candidate.section_name,
         "current_ratio": ratio,
-        "economic_downshift_ratio_min": ECONOMIC_RATIO_MIN,
-        "economic_downshift_ratio_max": ECONOMIC_DOWNSHIFT_RATIO_MAX,
+        "predicted_next_ratio": predicted_ratio,
+        "section_controlled_prediction": section_controlled,
         "current_modulus_mm3": current.estimated_bending_section_modulus_mm3,
         "next_modulus_mm3": candidate.estimated_bending_section_modulus_mm3,
+        "current_mass_kg_per_m": current_metrics.get("estimated_mass_kg_per_m"),
+        "next_mass_kg_per_m": candidate_metrics.get("estimated_mass_kg_per_m"),
+        "current_material_cost_cny_per_m": current_metrics.get("estimated_square_material_cost_cny_per_m"),
+        "next_material_cost_cny_per_m": candidate_metrics.get("estimated_square_material_cost_cny_per_m"),
+        "minimum_cost_improvement_ratio": minimum_saving,
+        "geometry_policy": "support_spacing_and_support_length_fixed",
         "source_ref": (
-            "passed candidate ratio is at or below the conservative 0.75 threshold; "
-            "run exactly one immediately lower intake-allowed section before final selection"
+            "versioned square-tube mass/price advisory + fresh deterministic ANSYS verification; "
+            "ratio review band is not an economy gate"
         ),
     }
 
@@ -1089,6 +1195,7 @@ def _formal_validation_candidates(results: list[dict[str, Any]]) -> list[dict[st
 
 
 def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
+    results = [_enrich_result_economy_fields(item) for item in results]
     feasible = [
         item
         for item in results
@@ -1099,21 +1206,7 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
     if not feasible:
         formal_validation = _formal_validation_candidates(results)
         if formal_validation:
-            economic = [
-                item
-                for item in formal_validation
-                if ECONOMIC_RATIO_MIN <= float(item["controlling_ratio"]) <= ECONOMIC_RATIO_MAX
-            ]
-            pool = economic or formal_validation
-            selected = sorted(
-                pool,
-                key=lambda item: (
-                    0 if ECONOMIC_RATIO_MIN <= float(item["controlling_ratio"]) <= ECONOMIC_RATIO_MAX else 1,
-                    abs(ECONOMIC_RATIO_MAX - float(item["controlling_ratio"])),
-                    float(item.get("estimated_bending_section_modulus_mm3") or 0.0),
-                    float(item.get("estimated_area_mm2") or 0.0),
-                ),
-            )[0]
+            selected = sorted(formal_validation, key=_result_economy_key)[0]
             selected_payload = {
                 **selected,
                 "formal_validation_required": True,
@@ -1140,6 +1233,7 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
                 "economic_ratio_min": ECONOMIC_RATIO_MIN,
                 "economic_ratio_max": ECONOMIC_RATIO_MAX,
                 "selected_economic_status": _economic_ratio_status(float(selected["controlling_ratio"])),
+                "selected_economy_status": "lowest_material_cost_formal_validation_candidate",
                 "candidate_results": results,
             }
         return {
@@ -1152,52 +1246,14 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
             ),
             "candidate_results": results,
         }
-    economic = [
-        item
-        for item in feasible
-        if ECONOMIC_RATIO_MIN <= float(item["controlling_ratio"]) <= ECONOMIC_RATIO_MAX
-    ]
-    if economic:
-        selected = sorted(
-            economic,
-            key=lambda item: (
-                abs(ECONOMIC_RATIO_MAX - float(item["controlling_ratio"])),
-                float(item.get("estimated_bending_section_modulus_mm3") or 0.0),
-                float(item.get("estimated_area_mm2") or 0.0),
-            ),
-        )[0]
-        policy = (
-            "Select the candidate inside the production economy band "
-            f"{ECONOMIC_RATIO_MIN:.2f} <= ratio <= {ECONOMIC_RATIO_MAX:.4f}, closest to the upper economic limit. "
-            "Area is only a tie-breaker."
-        )
-    elif max(float(item["controlling_ratio"]) for item in feasible) < ECONOMIC_RATIO_MIN:
-        selected = sorted(
-            feasible,
-            key=lambda item: (
-                float(item.get("estimated_bending_section_modulus_mm3") or 0.0),
-                float(item.get("estimated_area_mm2") or 0.0),
-                str(item.get("section_name") or ""),
-            ),
-        )[0]
-        policy = (
-            f"All feasible reviewed/intake-allowed sections tried within the two-trial economy search have ratio < {ECONOMIC_RATIO_MIN:.2f}. "
-            "This is treated as a light-duty row or lower-bound candidate limit, so select the minimum feasible section rather than "
-            "running more oversized sections."
-        )
-    else:
-        selected = sorted(
-            feasible,
-            key=lambda item: (
-                abs(1.0 - float(item["controlling_ratio"])),
-                float(item.get("estimated_bending_section_modulus_mm3") or 0.0),
-                float(item.get("estimated_area_mm2") or 0.0),
-            ),
-        )[0]
-        policy = (
-            "No candidate landed inside the preferred economy band within the bounded search. "
-            "Select the acceptable candidate closest to the upper limit without running extra sections."
-        )
+    selected = sorted(feasible, key=_result_economy_key)[0]
+    policy = (
+        "Select the lowest traceable square-tube material-cost candidate among fresh deterministic passes. "
+        "If a matching published price is unavailable, theoretical mass then section area is used. The "
+        f"{ECONOMIC_RATIO_MIN:.2f}-{ECONOMIC_RATIO_MAX:.4f} interval is reported only as a utilization review band; "
+        "it is not a pass/fail or economy gate. Fabrication, arm, weld, coating, transport and contract prices are "
+        "not configured, so the estimate is explicitly limited to square-tube material."
+    )
     return {
         **_section_ratio_audit_fields(),
         "status": "pass",
@@ -1208,6 +1264,7 @@ def select_best_square_section(results: list[dict[str, Any]]) -> dict[str, Any]:
         "economic_ratio_min": ECONOMIC_RATIO_MIN,
         "economic_ratio_max": ECONOMIC_RATIO_MAX,
         "selected_economic_status": _economic_ratio_status(float(selected["controlling_ratio"])),
+        "selected_economy_status": "lowest_material_cost_fresh_deterministic_pass",
     }
 
 
@@ -2213,12 +2270,13 @@ def run_square_section_search(
                 "added_candidate_budget": 1,
                 "effective_candidate_budget": base_candidate_budget + overlimit_recovery_budget + economic_downshift_budget,
                 "current_ratio": correction.get("current_ratio"),
-                "economic_downshift_ratio_min": ECONOMIC_RATIO_MIN,
-                "economic_downshift_ratio_max": ECONOMIC_DOWNSHIFT_RATIO_MAX,
+                "current_material_cost_cny_per_m": correction.get("current_material_cost_cny_per_m"),
+                "next_material_cost_cny_per_m": correction.get("next_material_cost_cny_per_m"),
+                "predicted_next_ratio": correction.get("predicted_next_ratio"),
                 "policy": (
-                    "A passing candidate at ratio <= 0.75 may be oversized. "
-                    "Run exactly one immediately lower intake-allowed section; if that lower section fails, "
-                    "keep the already passing larger section."
+                    "A passing candidate has a materially lower-cost intake-allowed alternative that remains plausible. "
+                    "Run exactly one lower-cost section through fresh ANSYS; if it fails, keep the already passing section. "
+                    "Support spacing and support length remain fixed."
                 ),
             }
         )
@@ -2270,6 +2328,7 @@ def run_square_section_search(
                         "section_name": candidate.section_name,
                         "estimated_area_mm2": candidate.estimated_area_mm2,
                         "estimated_bending_section_modulus_mm3": candidate.estimated_bending_section_modulus_mm3,
+                        **_candidate_economy_fields(candidate),
                         "source_kind": candidate.source_kind,
                         "controlling_ratio": None,
                         "trial_dir": str(trial_dir),
@@ -2331,6 +2390,7 @@ def run_square_section_search(
             "section_name": candidate.section_name,
             "estimated_area_mm2": candidate.estimated_area_mm2,
             "estimated_bending_section_modulus_mm3": candidate.estimated_bending_section_modulus_mm3,
+            **_candidate_economy_fields(candidate),
             "source_kind": candidate.source_kind,
             "controlling_ratio": ratio,
             "section_selection_ratio": section_selection_ratio,
@@ -2437,11 +2497,7 @@ def run_square_section_search(
                     economy_corrections.append(downshift)
                     index = next_index
                     continue
-            if (
-                economic_ratio_min <= float(ratio) <= economic_ratio_max
-                and stop_after_first_feasible
-                and feasible_confirmation_hits >= required_confirmations
-            ):
+            if stop_after_first_feasible and feasible_confirmation_hits >= required_confirmations:
                 break
             correction = (
                 _economic_correction_candidate(
@@ -2526,12 +2582,13 @@ def run_square_section_search(
         "used only as an ordering hint, or from a deterministic engineering estimate for blank-section new intake. "
         "When the intake calculation note lists allowed square sections, that reviewed list remains the hard boundary; "
         "engineering estimates cannot skip or add candidates, and high-similarity learned history may only move the "
-        "starting point inside that allowed list. Production economy target is 0.60 <= ratio <= 0.9999 and the "
-        "search normally runs at most two fresh ANSYS candidate trials: one first candidate and one section-modulus "
-        "correction if the first ratio is outside the economy band. If both normal trials are deterministic over-limit, "
+        "starting point inside that allowed list. The 0.60 <= ratio <= 0.9999 interval is a utilization review band, "
+        "not an economy or feasibility gate. The search normally runs at most two fresh ANSYS candidate trials: one "
+        "first candidate and one section-modulus or materially lower-cost correction. If both normal trials are deterministic over-limit, "
         "the search may run up to two larger intake-allowed recovery candidates. If a passing larger section lands in "
-        "ratio <= 0.75, the search may run exactly one immediately lower intake-allowed section as an economy "
-        "downshift check. If JCZH/LS-FORCE/HF-FORCE/MAX/TMAX/Mode or runtime output-growth checks fail, "
+        "a state with a plausible lower-cost intake-allowed candidate, the search may run exactly one such candidate "
+        "as an economy check. Support spacing and support length are never changed by section recovery. If "
+        "JCZH/LS-FORCE/HF-FORCE/MAX/TMAX/Mode or runtime output-growth checks fail, "
         "section sweeping stops and the source/post-processing issue must be fixed first. Feasibility is based on "
         "deterministic ratios; final report-figure checks are applied only after the selected formal run."
     )

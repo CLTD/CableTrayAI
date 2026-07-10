@@ -230,13 +230,32 @@
         margin-top: 18px;
         border: 1px solid var(--green);
         border-radius: 8px;
-        background: var(--green);
-        color: #fff;
+        background-color: var(--green) !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
         font: inherit;
         font-weight: 700;
         cursor: pointer;
       }
-      button:hover { background: var(--green-dark); }
+      button:hover,
+      button:focus-visible,
+      button:active {
+        background-color: var(--green-dark) !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+      }
+      @media (forced-colors: active) {
+        button,
+        button:hover,
+        button:focus-visible,
+        button:active {
+          forced-color-adjust: auto;
+          background-color: Highlight !important;
+          color: HighlightText !important;
+          -webkit-text-fill-color: HighlightText !important;
+        }
+      }
       button:disabled { opacity: .72; cursor: wait; }
       .status {
         min-height: 22px;

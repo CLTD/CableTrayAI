@@ -61,20 +61,22 @@
         background: #fbfdff;
       }
 
-      button.primary {
-        border-color: #0a6b55;
-        background: #0f7660;
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+      html body button.primary {
+        border-color: #0a6b55 !important;
+        background-color: #0f7660 !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
       }
 
-      button.primary:hover:not(:disabled),
-      button.primary:focus-visible,
-      button.primary:active {
-        border-color: #075f4a;
-        background: #0f7660;
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+      html body button.primary:hover:not(:disabled),
+      html body button.primary:focus-visible,
+      html body button.primary:active {
+        border-color: #064e3b !important;
+        background-color: #0b6b56 !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
         outline: 2px solid #b7d3ee;
         outline-offset: 1px;
       }
@@ -95,6 +97,19 @@
 
       button.primary:disabled {
         opacity: 1;
+      }
+
+      @media (forced-colors: active) {
+        html body button.primary,
+        html body button.primary:hover:not(:disabled),
+        html body button.primary:focus-visible,
+        html body button.primary:active {
+          forced-color-adjust: auto;
+          border: 2px solid ButtonText !important;
+          background-color: Highlight !important;
+          color: HighlightText !important;
+          -webkit-text-fill-color: HighlightText !important;
+        }
       }
 
       input,
@@ -224,6 +239,8 @@
         color: var(--ink);
         font: inherit;
         cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
       }
 
       .module-card.active {
@@ -856,7 +873,7 @@
 
       .section-reason-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 8px;
         margin-top: 8px;
       }
@@ -2768,13 +2785,20 @@
           const dominantCheck = item.overall_dominant_check_id || item.dominant_check_id || "";
           const dominantComponent = item.overall_dominant_component || item.dominant_component || "";
           const dominantLabel = dominantCheck || dominantComponent;
+          const materialCost = item.estimated_square_material_cost_cny_per_m;
+          const mass = item.estimated_mass_kg_per_m;
+          const costLabel = materialCost !== null && materialCost !== undefined
+            ? `；方钢材料参考 ${Number(materialCost).toFixed(2)} 元/米`
+            : mass !== null && mass !== undefined
+              ? `；理论质量 ${Number(mass).toFixed(2)} kg/m`
+              : "";
           const acceptance = isSelected
             ? "最终采纳"
             : numericStatus === "pass"
               ? "候选数值通过，未采纳"
               : "候选不满足";
           const dominant = dominantLabel ? `；控制项 ${dominantLabel}` : "";
-          return `${escapeHtml(name)}: 总控制比值 ${escapeHtml(overallRatio)}；选型比值 ${escapeHtml(sectionRatio)}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(dominant)}`;
+          return `${escapeHtml(name)}: 总控制比值 ${escapeHtml(overallRatio)}；选型比值 ${escapeHtml(sectionRatio)}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(costLabel)}${escapeHtml(dominant)}`;
         }).join("<br>");
         panel.classList.remove("hidden");
         panel.innerHTML = `
@@ -2786,6 +2810,7 @@
             <div><strong>候选顺序</strong><br>${escapeHtml(orderAudit.status || "未记录")}<br>${escapeHtml(orderAudit.policy || "按标准截面和工程门禁排序。")}</div>
             <div><strong>相似提资</strong><br>${escapeHtml(similar.status || "未命中")}<br>${escapeHtml(similar.selected_section_hint ? `只用于排序参考：${similar.selected_section_hint}` : "不复用历史结论。")}</div>
             <div><strong>诊断门禁</strong><br>${escapeHtml(earlyStop.status || "正常")}<br>${escapeHtml(earlyStop.reason || "若 JCZH/LS/HF/MAX/TMAX/Mode 或输出增长异常，将先修源问题，不继续放大方钢。")}</div>
+            <div><strong>经济性边界</strong><br>合格门禁：全部有效评定比值 ≤ 1.0。<br>0.60～0.9999 仅为利用率提示；按通过候选中的方钢材料成本/理论质量排序。间距和方钢长度固定，超限时可人工确认线载荷后重算。</div>
           </div>
           ${first ? `<div style="margin-top:8px"><strong>本次候选摘要</strong><br>${first}</div>` : ""}
         `;
@@ -4127,6 +4152,8 @@
             })
           : false;
         await loadOperatorLocalConfig().catch(() => {});
+        const requestedJobId = String(pageParams.get("job_id") || "").trim();
+        if (requestedJobId) state.activeJobId = requestedJobId;
         if (restoredStillValid) {
           renderParsedRows();
           renderTaskSummary();
