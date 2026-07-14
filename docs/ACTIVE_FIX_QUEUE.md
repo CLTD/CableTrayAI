@@ -1,5 +1,18 @@
 # CableTrayAI ??????
 
+## 2026-07-15 login width redesign queue
+
+Resolved/verified:
+
+1. Replaced viewport-proportional desktop fields with a bounded `320-360 px` range suitable for short username/password content.
+2. Kept a separate `390-420 px` reading width so the explanatory sentence remains on one line.
+3. Verified the real page at 1366x768, 1600x900 and 1920x1080; model framing and form hierarchy remain balanced.
+4. Mobile retains full available width and 48 px touch targets.
+
+Open:
+
+1. No source or deployment blocker remains. Full unit/integration tests pass, and the full package/local installation are refreshed from this source state; use the adjacent SHA256 sidecar as transfer authority.
+
 ## 2026-07-14 login proportion queue
 
 Resolved/verified:

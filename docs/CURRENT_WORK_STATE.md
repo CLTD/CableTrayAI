@@ -1,5 +1,15 @@
 # CableTrayAI ??????
 
+## 2026-07-15 login layout width redesign
+
+1. Decoupled the left reading column from form-control width. Headings and explanatory copy retain `390-420 px`, while username, password, action row, submit button and help content use `320-360 px` on desktop.
+2. Desktop field widths are approximately `320 px` at 1366, `344 px` at 1600 and capped at `360 px` on 1920-wide displays; they no longer grow with wide screens.
+3. Mobile explicitly restores the form and help area to `100%` of the available content width and retains 48 px controls.
+4. The design follows official Ant Design, IBM Carbon and USWDS field-proportion guidance recorded in `docs/ONLINE_REFERENCE_POLICY.md`.
+5. Authentication, remember-account behavior, real-model animation and all engineering logic are unchanged.
+6. Browser review passed at `1366 x 768`, `1600 x 900` and `1920 x 1080`; the full `tests/unit` plus `tests/integration` suite passed `304` tests.
+7. The full deployment package and local `D:/CableTrayAI` installation are refreshed from this source state; the adjacent package SHA256 sidecar is the transfer authority.
+
 ## 2026-07-14 login proportion refinement
 
 1. Reduced the desktop login form from `31.5%` to `28.5%` of the 16:9 stage, approximately `504 px` to `456 px` at `1600 x 900`.
