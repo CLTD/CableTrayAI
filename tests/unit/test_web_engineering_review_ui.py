@@ -38,3 +38,14 @@ def test_tray_load_edits_are_committed_before_row_switch_and_run() -> None:
     assert "previousIndex !== index" in text
     assert "strictTrayLoads: true" in text
     assert 'input.setAttribute("aria-invalid", "true")' in text
+
+
+def test_template_report_is_single_click_guarded_and_downloads_without_popup() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "reportBuildInFlight: false" in text
+    assert "报告正在生成，请勿重复点击" in text
+    assert "triggerTemplateReportDownload(jobId)" in text
+    assert 'link.download = ""' in text
+    assert 'window.open(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`' not in text
+    assert "注入并下载报告" in text

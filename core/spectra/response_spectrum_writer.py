@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 import re
 from typing import Any
@@ -55,6 +56,32 @@ def _curve_payload(curve: SpectrumCurve) -> list[dict[str, float]]:
         {"frequency_hz": float(frequency), "acceleration_g": float(value)}
         for frequency, value in zip(curve.frequency_hz, curve.acceleration_g)
     ]
+
+
+def _validate_formal_spectrum_curve(curve: SpectrumCurve, *, label: str) -> dict[str, Any]:
+    frequencies = tuple(float(value) for value in curve.frequency_hz)
+    accelerations = tuple(float(value) for value in curve.acceleration_g)
+    if len(frequencies) < 2 or len(frequencies) != len(accelerations):
+        raise ValueError(f"{label}: spectrum frequency/acceleration point counts are invalid")
+    if any(not math.isfinite(value) or value <= 0.0 for value in frequencies):
+        raise ValueError(f"{label}: spectrum frequencies must be finite and greater than zero")
+    if any(current <= previous for previous, current in zip(frequencies, frequencies[1:])):
+        raise ValueError(f"{label}: spectrum frequencies must be strictly increasing")
+    if any(not math.isfinite(value) or value < 0.0 for value in accelerations):
+        raise ValueError(f"{label}: spectrum accelerations must be finite and non-negative")
+    if not any(value > 0.0 for value in accelerations):
+        raise ValueError(f"{label}: spectrum acceleration values are all zero")
+    if abs(frequencies[-1] - 100.0) > 1e-6:
+        raise ValueError(f"{label}: spectrum must retain the 100 Hz tail used for ZPA")
+    return {
+        "status": "pass",
+        "point_count": len(frequencies),
+        "frequency_min_hz": frequencies[0],
+        "frequency_max_hz": frequencies[-1],
+        "acceleration_min_g": min(accelerations),
+        "acceleration_max_g": max(accelerations),
+        "source_ref": curve.source_ref,
+    }
 
 
 def _active_column_m_lines_with_openpyxl(path: Path) -> tuple[str, list[tuple[int, str]]] | None:
@@ -350,6 +377,13 @@ def write_segmented_response_spectrum_mac(
         workbook_comparison = _compare_generated_blocks_to_active_column_m(formal_blocks, active_ansys_format)
 
     selected_elevation = float(elevation)
+    formal_curve_validation = {
+        f"{level}_{direction_group}": _validate_formal_spectrum_curve(
+            block["curve"],
+            label=f"{level}({direction_group})",
+        )
+        for (level, direction_group), block in formal_blocks.items()
+    }
     elevation_selection = {
         "mode": "python_vba_envelope_replicator",
         "source_mode": formal_source_mode,
@@ -361,6 +395,7 @@ def write_segmented_response_spectrum_mac(
         "precision_controls": workbook_envelope["controls"],
         "precision_control_override": precision_control_override,
         "active_workbook_column_m_comparison": workbook_comparison,
+        "formal_curve_validation": formal_curve_validation,
     }
 
     lines = ["! Generated segmented response spectrum from Python-replicated workbook envelope"]
@@ -552,6 +587,7 @@ def write_segmented_response_spectrum_mac(
         ),
         "active_workbook_column_m_comparison": workbook_comparison,
         "formal_spectrum_source_mode": formal_source_mode,
+        "formal_curve_validation": formal_curve_validation,
         "precision_control_override": precision_control_override,
         "workbook_vba_replicator": {key: value for key, value in workbook_envelope.items() if key != "blocks"},
         "zpa_parameter_file": "ansys_zpa_parameters.mac",

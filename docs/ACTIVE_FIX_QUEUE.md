@@ -1,5 +1,20 @@
 # CableTrayAI ??????
 
+## 2026-07-14 login/startup/report/spectrum review queue
+
+Resolved/verified:
+
+1. Login now uses the selected real-model animation and retains the real authentication form, account-only memory, responsive layout and reduced-motion support.
+2. Healthy local services are reused before ANSYS discovery; repeated icon clicks no longer stop and restart the server.
+3. Report injection is single-click guarded and downloads from the same page after generation, avoiding delayed popup blocking and duplicate POSTs.
+4. Formal XLSM spectrum output now has a fail-closed curve-integrity gate. Existing interpolation, envelope, damping and precision algorithms are unchanged.
+5. Full tests passed `304`; package gate, installed health/login, fast-path timing and source/package/install hash equality passed.
+
+Open:
+
+1. PDF spectrum numerical recognition into Excel remains a future feature, not a production claim. Development requires representative civil-discipline PDFs paired with their unit-approved Excel/XLSM outputs, including text-table, vector-curve and scanned-PDF cases. Each extracted value must retain page/region/hash provenance and require human confirmation before formal use.
+2. No source/package/local-install blocker remains for this queue. Unit deployment should use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and verify it with the regenerated adjacent `.sha256.txt` sidecar.
+
 ## 2026-07-14 operator line-load synchronization queue
 
 Resolved/verified:

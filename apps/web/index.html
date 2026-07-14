@@ -1262,8 +1262,8 @@
           <div class="panel-body">
             <div class="reserved">
               <div class="actions">
-                <button id="buildTemplateReport" class="wide">生成模板报告</button>
-                <button id="downloadTemplateReport" class="wide">打开模板报告</button>
+                <button id="buildTemplateReport" class="wide">注入并下载报告</button>
+                <button id="downloadTemplateReport" class="wide">下载已有报告</button>
               </div>
               <p class="muted">按钢平台/非钢平台自动选择模板，只替换谱表、结果表和 ANSYS 图片；原模板正文和格式不改。</p>
             </div>
@@ -1450,6 +1450,7 @@
         reviewLoadJobId: "",
         reviewLastLoadedAt: 0,
         reviewGeneration: 0,
+        reportBuildInFlight: false,
         spectrumPreview: null,
         commandRole: "modeling",
         resultView: "formula",
@@ -3973,31 +3974,52 @@
         }
       }
 
+      function triggerTemplateReportDownload(jobId) {
+        const link = document.createElement("a");
+        link.href = `/jobs/${encodeURIComponent(jobId)}/template-report`;
+        link.download = "";
+        link.hidden = true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      function setTemplateReportBusy(busy, text = "") {
+        const buildButton = $("buildTemplateReport");
+        const downloadButton = $("downloadTemplateReport");
+        state.reportBuildInFlight = busy;
+        if (buildButton) {
+          buildButton.disabled = busy;
+          buildButton.textContent = busy && text ? text : "注入并下载报告";
+        }
+        if (downloadButton) downloadButton.disabled = busy;
+      }
+
       async function buildTemplateReport() {
         if (!state.activeJobId) {
           toast("当前还没有可生成报告的 job。");
           return;
         }
-        const button = $("buildTemplateReport");
-        const oldText = button?.textContent;
-        if (button) {
-          button.disabled = true;
-          button.textContent = "检查并导出图片...";
+        if (state.reportBuildInFlight) {
+          toast("报告正在生成，请勿重复点击。");
+          return;
         }
+        const jobId = state.activeJobId;
+        setTemplateReportBusy(true, "1/3 检查报告图件...");
         try {
           await ensureTemplateReportFigures();
-          if (button) button.textContent = "注入模板...";
-          const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, {
+          if (state.activeJobId !== jobId) throw new Error("当前任务已切换，请对新任务重新生成报告。");
+          setTemplateReportBusy(true, "2/3 注入报告数据...");
+          const payload = await requestJson(`/jobs/${encodeURIComponent(jobId)}/template-report`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({}),
           });
-          toast(`模板报告已生成：${payload.report_file || "report.docx"}`);
+          setTemplateReportBusy(true, "3/3 启动下载...");
+          triggerTemplateReportDownload(jobId);
+          toast(`报告已生成并开始下载：${payload.report_file || "report.docx"}`);
         } finally {
-          if (button) {
-            button.disabled = false;
-            button.textContent = oldText || "生成模板报告";
-          }
+          setTemplateReportBusy(false);
         }
       }
 
@@ -4006,7 +4028,11 @@
           toast("当前还没有模板报告。");
           return;
         }
-        window.open(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, "_blank");
+        if (state.reportBuildInFlight) {
+          toast("报告正在生成，请稍候。");
+          return;
+        }
+        triggerTemplateReportDownload(state.activeJobId);
       }
 
       function renderAiMonitorPayload(payload) {

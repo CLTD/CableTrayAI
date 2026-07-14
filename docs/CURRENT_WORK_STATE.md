@@ -1,5 +1,25 @@
 # CableTrayAI ??????
 
+## 2026-07-14 login, startup, report download and spectrum-ingestion boundary
+
+Current source state:
+
+1. Replaced the login visual with the reviewed real-model animation from the referenced Codex visual artifact. The production username/password form, `/auth/login` request, remember-account-only behavior, mobile layout and reduced-motion behavior remain intact.
+2. Fixed desktop startup latency. A healthy local service is now detected and reused before ANSYS discovery or output-directory setup; the launcher no longer stops a healthy service on every icon click.
+3. Fixed report generation/download interaction. Report build is guarded against repeated clicks, displays three deterministic progress stages, and starts a same-origin download after report generation instead of relying on an async popup.
+4. Audited the active response-spectrum implementation against the current unit XLSM/VBA organization. The implemented path retains elevation-linear interpolation, log-frequency interpolation, X/Y horizontal envelope, independent Z processing, workbook precision controls, four ANSYS spectrum blocks and the 100 Hz ZPA tail.
+5. Added only a spectrum-data integrity gate before APDL output: finite positive strictly increasing frequencies, finite non-negative non-all-zero accelerations, matching point counts and a 100 Hz terminal point. No interpolation, envelope, damping-ratio or precision-control formula was changed.
+6. Civil-discipline response-spectrum PDF numerical recognition into Excel is not a current production capability. The reviewed future design is `PDF page/table/curve recognition -> source-located candidate values -> structural validation -> human confirmation -> Excel/XLSM spectrum library -> current VBA-equivalent envelope -> approved-workbook point comparison`. It must not enter formal calculation until paired PDF and unit-approved Excel/XLSM baselines are supplied and regression-validated.
+
+Verification:
+
+1. Full `tests/unit` and `tests/integration` passed: `304 passed`; only the existing Pillow deprecation warning remains. Python `compileall` and inline JavaScript syntax checks passed.
+2. Desktop and mobile login layouts were browser-checked with no horizontal overflow; the live form and requested animation are present.
+3. Installed `D:/CableTrayAI` returned `/health = ok`; `duxyb/cnpe123` login returned HTTP 200.
+4. A second installed desktop-launcher invocation completed in about `0.01 s` and retained the same server PID, proving healthy-service reuse.
+5. Package gate passed. Source, package and installed hashes match for the login page, dashboard, spectrum writer, launcher source and rebuilt launcher executable.
+6. Full package: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; verify transfer with the regenerated adjacent `.sha256.txt` sidecar.
+
 ## 2026-07-14 operator line-load end-to-end synchronization hardening
 
 Current source state:
