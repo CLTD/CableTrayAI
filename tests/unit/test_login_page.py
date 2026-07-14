@@ -25,3 +25,6 @@ def test_login_animation_has_accessible_reduced_motion_and_mobile_layout() -> No
     assert "prefers-reduced-motion: reduce" in text
     assert "@media (max-width: 760px)" in text
     assert 'aria-live="polite"' in text
+    assert "width: 28.5%;" in text
+    assert "min-height: clamp(36px, 3vw, 50px);" in text
+    assert ".form-control,\n      #ct-login-hero-v3 .btn { min-height: 48px; }" in text

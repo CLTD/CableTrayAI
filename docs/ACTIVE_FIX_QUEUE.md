@@ -1,5 +1,18 @@
 # CableTrayAI ??????
 
+## 2026-07-14 login proportion queue
+
+Resolved/verified:
+
+1. Desktop form width and control height were reduced to restore balance with the real-model panel.
+2. Heading and vertical spacing were tightened without changing authentication or animation behavior.
+3. Mobile keeps its separate 48 px touch target and full-width responsive layout.
+4. Desktop screenshot review and all `304` unit/integration tests passed.
+
+Open:
+
+1. No source blocker remains. Rebuild the full package before unit transfer so the installed login page matches the reviewed source.
+
 ## 2026-07-14 login/startup/report/spectrum review queue
 
 Resolved/verified:

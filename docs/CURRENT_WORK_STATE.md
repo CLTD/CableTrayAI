@@ -1,5 +1,13 @@
 # CableTrayAI ??????
 
+## 2026-07-14 login proportion refinement
+
+1. Reduced the desktop login form from `31.5%` to `28.5%` of the 16:9 stage, approximately `504 px` to `456 px` at `1600 x 900`.
+2. Reduced desktop input/button maximum height from `58 px` to `50 px` and tightened heading, paragraph, form and help spacing.
+3. Kept mobile controls at the independent `48 px` touch height and retained the existing responsive full-width form.
+4. The live authentication request, remember-account policy, animation and model panel were not changed.
+5. Browser screenshot review at `1600 x 900` passed; full unit/integration tests passed `304` tests.
+
 ## 2026-07-14 login, startup, report download and spectrum-ingestion boundary
 
 Current source state:
