@@ -873,6 +873,16 @@ def run_operator_one_click(
             render_audit = _render_commands(job_dir, jobs_dir, source_package_id, source_root=Path(source_root), template_dir=Path(template_dir))
             row_result["command_source"] = render_audit.get("command_source")
             row_result["command_status"] = render_audit.get("status")
+            render_result = render_audit.get("render_result") if isinstance(render_audit.get("render_result"), dict) else {}
+            row_result["tray_load_command_audit"] = render_result.get("tray_load_command_audit")
+            if render_audit.get("status") != "pass":
+                load_audit = render_result.get("tray_load_command_audit") or {}
+                if load_audit.get("status") == "fail":
+                    raise RuntimeError(
+                        "Tray line-load synchronization failed; ANSYS was not started because the operator values, "
+                        "normalized input, and generated model density commands are not identical."
+                    )
+                raise RuntimeError("Generated command package failed deterministic audit; ANSYS was not started.")
             update_job_state(job_dir, "apdl_rendered", "operator one-click command streams rendered")
             if execute_real:
                 def forward_section_progress(event: dict[str, Any]) -> None:

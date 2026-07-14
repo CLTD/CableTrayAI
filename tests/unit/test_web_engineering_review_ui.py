@@ -30,3 +30,11 @@ def test_unapproved_public_price_is_not_presented_as_nuclear_cost() -> None:
     assert "单位核定方钢材料参考" in text
     assert 'item.pricing_status === "approved_active"' in text
     assert "不代表核电工程综合造价" in text
+
+
+def test_tray_load_edits_are_committed_before_row_switch_and_run() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "previousIndex !== index" in text
+    assert "strictTrayLoads: true" in text
+    assert 'input.setAttribute("aria-invalid", "true")' in text

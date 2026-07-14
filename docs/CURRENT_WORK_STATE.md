@@ -1,5 +1,23 @@
 # CableTrayAI ??????
 
+## 2026-07-14 operator line-load end-to-end synchronization hardening
+
+Current source state:
+
+1. Verified the fresh local real-ANSYS 4210 run used the operator-entered five-layer line loads `10/15/20/25/30 kg/m`, not the original `15/35/53/90.5/117.5 kg/m`. The job-local normalized densities and generated `QDENS` commands are identical, and result reuse was disabled.
+2. New site line-load values do not need to match any historical load value. A value is accepted when it is finite and positive and its physical layer identity (side, layer index and tray width) matches the current intake model.
+3. The dashboard now commits edits before switching intake rows, rejects blank/zero/non-numeric loads instead of silently retaining the old load, and submits strict load overrides before starting a run.
+4. The backend rejects malformed or partially mapped overrides. The error is explicitly a physical layer-mapping failure, not a historical-value matching failure.
+5. Added `tray_load_command_audit.json` and an APDL trace header. Before ANSYS starts, the gate proves operator override -> normalized `input.json` -> equivalent density -> generated `MP,DENS`/`QDENS`/`HDENS` command consistency. The audit file is included in published command streams.
+6. Same-width layers with distinct per-layer densities are fail-closed when a selected standard family exposes only one material slot for that width; the platform will not silently use a maximum or stale value.
+
+Verification:
+
+1. Mixed/grouped/source-family line-load and geometry regression tests passed.
+2. Full `tests/unit` and `tests/integration` passed with only the existing Pillow deprecation warnings; `compileall` passed for `core`, `apps` and `scripts`; inline dashboard JavaScript passed Node syntax validation.
+3. Re-rendering the installed 4210 input with current source produced `tray_load_command_audit.status=pass` and exact five-layer density command values.
+4. Full deployment package and local installation are refreshed from this source state; use the adjacent SHA256 sidecar as transfer authority.
+
 ## 2026-07-10 nuclear cost boundary and engineering-review UI correction
 
 Current source state:

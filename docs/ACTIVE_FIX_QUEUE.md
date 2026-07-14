@@ -1,5 +1,19 @@
 # CableTrayAI ??????
 
+## 2026-07-14 operator line-load synchronization queue
+
+Resolved/verified:
+
+1. Confirmed the local 4210 real run used dashboard values `10/15/20/25/30 kg/m`; original values remain only in audit metadata.
+2. Removed silent failure paths when switching rows or entering invalid loads.
+3. New positive site loads are accepted without historical-value matching. Only invalid numeric input or physical layer identity mismatch blocks the run.
+4. Added a deterministic pre-ANSYS gate across dashboard override, normalized input and generated APDL density commands.
+5. Full unit/integration/compile/JavaScript checks and current 4210 command re-render audit passed.
+
+Open:
+
+1. No source/package/local-install blocker remains. Unit transfer must use the current full `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and verify the adjacent SHA256 sidecar.
+
 ## 2026-07-10 nuclear-cost and engineering-review UI queue
 
 Resolved/verified:

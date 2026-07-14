@@ -27,6 +27,7 @@ AUDIT_COMMAND_STREAMS = (
     ("calculation", "generated_solve.mac", True),
     ("result_extraction", "generated_post.mac", True),
     ("model_topology_manifest", "apdl_topology_manifest.json", False),
+    ("tray_load_command_audit", "tray_load_command_audit.json", False),
     ("spectrum_full_audit", "ansys_spectrum.mac", False),
     ("spectrum_sl1_solve", "ansys_spectrum_sl1.mac", False),
     ("spectrum_sl2_solve", "ansys_spectrum_sl2.mac", False),

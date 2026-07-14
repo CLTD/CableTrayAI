@@ -145,12 +145,14 @@ def _normalise_tray_layer_override_items(payload: dict) -> list[dict]:
     )
     if isinstance(raw, dict):
         raw = raw.get("layers") or raw.get("items") or []
-    if not isinstance(raw, list):
+    if raw is None:
         return []
+    if not isinstance(raw, list):
+        raise ValueError("tray_layer_overrides must be a list or an object containing a layers/items list")
     items: list[dict] = []
-    for item in raw:
+    for position, item in enumerate(raw):
         if not isinstance(item, dict):
-            continue
+            raise ValueError(f"tray_layer_overrides[{position}] must be an object")
         load = _coerce_positive_float(
             item.get("load_kg_per_m")
             or item.get("line_load_kg_per_m")
@@ -158,7 +160,7 @@ def _normalise_tray_layer_override_items(payload: dict) -> list[dict]:
             or item.get("load")
         )
         if load is None:
-            continue
+            raise ValueError(f"tray_layer_overrides[{position}] requires a positive load_kg_per_m")
         try:
             layer_index = int(item["layer_index"]) if item.get("layer_index") not in (None, "") else None
         except (TypeError, ValueError):
@@ -182,12 +184,27 @@ def _normalise_tray_layer_override_items(payload: dict) -> list[dict]:
 
 def _tray_override_matches_layer(layer: dict, override: dict, layer_position: int) -> bool:
     source_index = override.get("source_index")
-    if source_index is not None and int(source_index) == layer_position:
-        return True
     side = str(override.get("side") or "").strip().lower()
     layer_index = override.get("layer_index")
+    try:
+        override_width = int(float(override.get("tray_width_mm"))) if override.get("tray_width_mm") not in (None, "") else None
+    except (TypeError, ValueError):
+        return False
+    layer_side = str(layer.get("side") or "").strip().lower()
+    layer_number = int(layer.get("layer_index") or -1)
+    layer_width = int(layer.get("tray_width_mm") or 0)
+    if source_index is not None and int(source_index) == layer_position:
+        return (
+            (not side or layer_side == side)
+            and (layer_index is None or layer_number == int(layer_index))
+            and (override_width is None or layer_width == override_width)
+        )
     if side and layer_index is not None:
-        return str(layer.get("side") or "").strip().lower() == side and int(layer.get("layer_index") or -1) == int(layer_index)
+        return (
+            layer_side == side
+            and layer_number == int(layer_index)
+            and (override_width is None or layer_width == override_width)
+        )
     return False
 
 
@@ -237,8 +254,9 @@ def _apply_tray_layer_overrides(tray_mapping: dict | None, payload: dict) -> dic
             break
         if not matched:
             skipped.append({**override, "reason": "matching_tray_layer_not_found"})
+    status = "applied" if applied and not skipped and len(applied) == len(overrides) else "failed"
     return {
-        "tray_load_override_status": "applied" if applied else "requested_no_matching_layer",
+        "tray_load_override_status": status,
         "tray_load_override_source_ref": "dashboard_confirmed_line_weight",
         "tray_load_override_count": len(applied),
         "tray_load_original_layers": original_layers,
@@ -290,6 +308,10 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
     try:
         tray_mapping = parse_tray_load_description(payload.get("description") or "")
         tray_load_override_audit = _apply_tray_layer_overrides(tray_mapping, payload)
+        if tray_load_override_audit.get("tray_load_override_status") == "failed":
+            raise ValueError(
+                "线载荷层位映射失败：提交的侧别或层号在当前提资模型中不存在；为避免载荷施加到错误构件，计算已阻断。"
+            )
         base["support"]["layers_front"] = int(tray_mapping["front_layers"])
         base["support"]["layers_back"] = int(tray_mapping["back_layers"])
         base["support"]["side_count"] = int(tray_mapping.get("side_count") or 1)
@@ -311,6 +333,8 @@ def build_input_from_intake_payload(payload: dict, *, spectrum_file: str | None 
         ]
     except Exception as exc:
         tray_mapping_error = str(exc)
+        if any(payload.get(key) is not None for key in ("tray_layer_overrides", "tray_load_overrides", "line_load_overrides")):
+            raise
     square_section_spec = str(payload.get("square_section_spec") or "").strip()
     square_section_status = "provided_by_intake_column_i" if square_section_spec else "auto_selection_required"
     allowed_square_section_ids = _normalise_square_section_ids(

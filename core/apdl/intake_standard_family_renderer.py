@@ -32,6 +32,7 @@ from core.apdl.source_diff import read_text_with_encoding
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
 from core.apdl.platform_standard_flow import build_platform_standard_shadow_flow
 from core.apdl.standard_command_renderer import _copy_required_sections, _prepend_command_headers, _sha256
+from core.apdl.tray_load_sync import audit_tray_load_command_sync, prepend_tray_load_trace
 from core.intake.tray_load_parser import LOAD_KG_PER_M, TRAY_AREA_M2
 from core.optimizer.square_section_selector import parse_square_section_name
 from core.spectra.static_coefficients import describe_segmented_spectrum_workbook, derive_static_acceleration_coefficients
@@ -2889,8 +2890,14 @@ def render_intake_standard_family_commands(
     else:
         parameter_audit.setdefault("source_family_model_status", "pass")
         parameter_audit["status"] = "pass"
+    rendered_model = prepend_tray_load_trace(rendered_model, payload)
     (job_dir / "generated_model.mac").write_text(rendered_model, encoding="utf-8", newline="\n")
     keypoint_guard_audit = guard_undefined_keypoint_coordinate_refs(job_dir / "generated_model.mac")
+    tray_load_command_audit = audit_tray_load_command_sync(
+        job_dir,
+        payload,
+        parameterization=parameter_audit,
+    )
 
     expected_solve_method = str((render_context.get("metadata") or {}).get("analysis_method") or "").lower() or None
     solve_source_path, solve_source_text, solve_source_encoding = _find_adjacent_solve_command(
@@ -3008,12 +3015,14 @@ def render_intake_standard_family_commands(
     solve_parameterization_failed = solve_parameterization_audit.get("status") == "fail"
     model_parameterization_failed = (parameter_audit.get("physical_bolt_modeling") or {}).get("status") == "fail"
     postprocessor_alignment_failed = (post_alignment_audit.get("ls_force_selector") or {}).get("status") == "fail"
+    tray_load_parameterization_failed = tray_load_command_audit.get("status") == "fail"
     payload_out = {
         "status": "pass"
         if not section_failures
         and not solve_parameterization_failed
         and not model_parameterization_failed
         and not postprocessor_alignment_failed
+        and not tray_load_parameterization_failed
         else "fail",
         "job_id": job_id,
         "job_dir": str(job_dir),
@@ -3021,6 +3030,7 @@ def render_intake_standard_family_commands(
         "solve_strategy": solve_strategy,
         "parameterization": parameter_audit,
         "model_keypoint_guard": keypoint_guard_audit,
+        "tray_load_command_audit": tray_load_command_audit,
         "solve_source": solve_source_audit,
         "solve_parameterization": solve_parameterization_audit,
         "sections": sections,

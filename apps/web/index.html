@@ -789,6 +789,10 @@
         padding: 4px 6px;
         text-align: right;
       }
+      .tray-line-load-input[aria-invalid="true"] {
+        border-color: #b42318;
+        box-shadow: 0 0 0 2px rgba(180, 35, 24, .12);
+      }
 
       .tray-line-load-unit {
         display: block;
@@ -1871,22 +1875,28 @@
         };
       }
 
-      function applyTrayLineLoadInputs(row) {
-        if (!row) return;
+      function applyTrayLineLoadInputs(row, options = {}) {
+        if (!row) return { status: "not_applicable", errors: [] };
         const layers = trayLayerList(row);
-        if (!layers.length) return;
+        if (!layers.length) return { status: "not_applicable", errors: [] };
         const inputs = document.querySelectorAll("#trayLoadAudit .tray-line-load-input[data-tray-load-index]");
-        if (!inputs.length) return;
+        if (!inputs.length) return { status: "not_applicable", errors: [] };
         if (!Array.isArray(row.tray_load_original_layers)) {
           row.tray_load_original_layers = layers.map((layer) => ({ ...layer }));
         }
         const rawLayers = Array.isArray(row.tray_layers) ? row.tray_layers : [];
         const overrides = [];
+        const errors = [];
         inputs.forEach((input) => {
           const index = Number(input.dataset.trayLoadIndex);
           if (!Number.isInteger(index) || !layers[index]) return;
           const lineLoad = parsePositiveNumber(input.value);
-          if (lineLoad === null) return;
+          if (lineLoad === null) {
+            input.setAttribute("aria-invalid", "true");
+            errors.push(`第 ${index + 1} 层线载荷必须为大于 0 的数值`);
+            return;
+          }
+          input.removeAttribute("aria-invalid");
           const original = row.tray_load_original_layers[index] || {};
           const previousLoad = Number(original.load_kg_per_m);
           const layerOverride = updateLayerLineLoad(layers[index], lineLoad);
@@ -1897,7 +1907,9 @@
           }
         });
         row.tray_layer_overrides = overrides;
-        row.tray_load_override_status = overrides.length ? "pending_dashboard_rerun" : "";
+        row.tray_load_override_status = errors.length ? "invalid_dashboard_input" : (overrides.length ? "pending_dashboard_rerun" : "");
+        if (options.strict && errors.length) throw new Error(errors.join("；"));
+        return { status: errors.length ? "fail" : "pass", errors, overrideCount: overrides.length };
       }
 
       function traySideLabel(side) {
@@ -2250,9 +2262,9 @@
         renderSpectrumCandidateLists(row);
       }
 
-      function applyCurrentRowOverrides() {
+      function applyCurrentRowOverrides(options = {}) {
         const index = activeRowIndex();
-        if (index < 0 || !state.rows[index]) return;
+        if (index < 0 || !state.rows[index]) return { status: "not_applicable", errors: [] };
         const row = state.rows[index];
         const identity = $("primaryIdentity").value.trim();
         const wasFormal = Boolean(row.report_number || row.calculation_batch || row.intake_identity_status === "formal_report_number_provided");
@@ -2279,22 +2291,28 @@
             row.elevation_raw = elevationText;
           }
         }
-        applyTrayLineLoadInputs(row);
+        const trayLoadAudit = applyTrayLineLoadInputs(row, { strict: Boolean(options.strictTrayLoads) });
         state.selectedRow = row;
         renderLocationOptions(row);
         renderTaskSummary();
+        return trayLoadAudit;
       }
 
       function commitCurrentRowOverrides(options = {}) {
-        applyCurrentRowOverrides();
+        const trayLoadAudit = applyCurrentRowOverrides(options);
         if (options.renderTable) {
           renderParsedRows();
         }
         renderAiChecks();
         saveIntakeSession();
+        return trayLoadAudit;
       }
 
       function setActiveParsedRow(index, options = {}) {
+        const previousIndex = activeRowIndex();
+        if (previousIndex >= 0 && previousIndex !== index && state.rows[previousIndex]) {
+          applyCurrentRowOverrides();
+        }
         state.selectedRow = state.rows[index] || null;
         state.selectedRowIndex = state.selectedRow ? index : -1;
         if (state.selectedRow) autoFillIdentity(state.selectedRow, { force: options.forceIdentity !== false });
@@ -2498,7 +2516,7 @@
       }
 
       async function runOneClick() {
-        commitCurrentRowOverrides({ renderTable: false });
+        commitCurrentRowOverrides({ renderTable: false, strictTrayLoads: true });
         const intakePath = await uploadFile("intakeFile", "intake");
         const spectrumPath = await uploadFile("spectrumFile", "spectrum");
         saveIntakeSession();
