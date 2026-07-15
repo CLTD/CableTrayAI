@@ -10,8 +10,11 @@ Policy:
 - Do not treat it as an embedded plate result.
 - First-pass intake is expected to leave this value blank in future workflows.
 - When blank, the job records `auto_selection_required`.
-- CableTrayAI must run square steel section candidates from local `*.SECT` files and select the candidate whose controlling stress ratio is <= 1.0 and closest to 1.0.
-- The selected section must not be larger than necessary. Estimated area/weight is only a tie-breaker after satisfying the stress-ratio target.
+- CableTrayAI must run square steel section candidates from local `*.SECT` files and select a candidate whose controlling stress ratio is `<= 1.0`.
+- `0.60 <= ratio <= 0.9999` is a utilization review band only. It is not a feasibility gate or proof of economy. Feasibility requires every valid deterministic ratio to be `<= 1.0`.
+- Among fresh deterministic passes, the default selector prefers the lowest theoretical square-tube material quantity. Public regional steel prices are not nuclear-project cost evidence and are not used. Currency values are enabled only by an active unit-approved price book with a traceable table id and revision.
+- Support spacing and support length are fixed by upstream layout and are never changed automatically. If all allowed sections fail, an operator may explicitly revise tray line load and rerun; the platform does not silently reduce load.
+- The selected section must not be larger than necessary. Similar-intake learning and section-modulus estimates may choose the first candidate, but they cannot accept a result without current real ANSYS and deterministic evaluation.
 - No production result may claim final section optimization until the selected candidate has been run through real ANSYS and deterministic evaluation.
 
 ## Material Allowables
@@ -52,9 +55,11 @@ When `metadata.square_section_selection_status = auto_selection_required`, the o
 
 1. copy the rendered job into a separate `_square_section_trials/<job_id>/<timestamp>/` workspace;
 2. replace only the first square-support `SECREAD` with each candidate square `*.SECT`;
-3. run real ANSYS and deterministic evaluation for each candidate;
-4. choose the candidate with controlling square-support ratio `<= 1.0` and closest to `1.0`;
-5. apply the selected section back to `input.json` and `generated_model.mac`;
-6. run the final real calculation once with the selected section.
+3. run real ANSYS and deterministic evaluation for the first learned/estimated candidate;
+4. if the first candidate is over limit, use the controlling component and section-modulus trend to choose the next stronger allowed candidate;
+5. if the first candidate passes and another allowed candidate has materially lower square-tube material quantity and a plausible passing estimate, run exactly one lower-quantity candidate; if it fails, keep the already passing section;
+6. choose the lowest theoretical material-quantity candidate among fresh deterministic passes, unless an active unit-approved price book is configured; report the utilization band separately;
+7. apply the selected section back to `input.json` and `generated_model.mac`;
+8. run the final real calculation once with the selected section.
 
 If no candidate satisfies `ratio <= 1.0`, the job fails. It must not continue with an oversized default section or a guessed manual value.

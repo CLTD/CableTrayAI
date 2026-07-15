@@ -4,6 +4,7 @@ import json
 import shutil
 import hashlib
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -11,10 +12,19 @@ from typing import Any, Callable
 from core.ansys.artifact_cleanup import cleanup_heavy_solver_artifacts
 from core.ansys.config import AnsysLocalConfig
 from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
-from core.ansys.runner import run_real_ansys
+from core.ansys.runner import (
+    MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+    MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+    MIN_REAL_RUN_TIMEOUT_MINUTES,
+    run_real_ansys,
+)
 from core.apdl.postprocessor_alignment import align_postprocessor_to_intake
+from core.audit.job_state import update_job_state
+from core.intake.tray_load_parser import TRAY_AREA_M2
 from core.optimizer.square_section_selector import (
     SquareSectionCandidate,
+    _clean_trial_runtime_outputs,
+    is_section_selection_evaluation_row,
     discover_square_section_candidates,
     parse_square_section_name,
     replace_square_and_arm_sections_in_model,
@@ -23,9 +33,17 @@ from core.optimizer.square_section_selector import (
 from core.results.result_assembler import assemble_result
 
 
-SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v6-learned-allowed-start"
+SQUARE_SECTION_CACHE_VERSION = "square-section-cache-v10-load-path-spectrum-quantity"
 SECTION_LEARNING_ALLOWED_START_THRESHOLD = 0.82
 SECTION_LEARNING_LOWER_GUARD_COUNT = 2
+LEARNED_FORMAL_VALIDATION_THRESHOLD = 0.95
+CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
+ANSYS_LICENSE_FAILURE_TOKENS = (
+    "ansys license manager error",
+    "ansys license not available",
+    "ansysli exited",
+    "could not read server port ansysli",
+)
 
 
 def _arm_sections_for_square_outer(square_outer_mm: float | None) -> tuple[str, str, str]:
@@ -40,6 +58,15 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _tail_text(path: Path, limit: int = 8000) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")[-limit:]
+    except OSError:
+        return ""
 
 
 def _selection_cache_path(path: Path | str | None = None) -> Path:
@@ -60,6 +87,7 @@ def _selection_cache_key(payload: dict[str, Any]) -> str:
         "load_cases": payload.get("load_cases") or [],
         "analysis_method": metadata.get("analysis_method"),
         "tray_load_mapping": metadata.get("tray_load_mapping"),
+        "spectrum_selection_features": metadata.get("spectrum_selection_features"),
         "allowed_square_section_ids": _allowed_square_section_ids_from_payload(payload),
         "static_acceleration": {
             key: metadata.get(key)
@@ -97,6 +125,46 @@ def _as_float(value: Any) -> float | None:
 
 def _as_text(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def _layer_width_mm(layer: dict[str, Any]) -> float | None:
+    width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+    if width is not None:
+        return width
+    width_m = _as_float(layer.get("tray_width_m"))
+    if width_m is not None:
+        return width_m * 1000.0
+    return None
+
+
+def _layer_load_kg_m(layer: dict[str, Any]) -> float | None:
+    explicit = _as_float(
+        layer.get("load_kg_m")
+        or layer.get("load_kg_per_m")
+        or layer.get("line_load_kg_m")
+        or layer.get("mass_per_m_kg")
+    )
+    if explicit is not None:
+        return explicit
+    width = _layer_width_mm(layer)
+    density = _as_float(layer.get("tray_density_kg_m3"))
+    if width is None or density is None:
+        return None
+    area = TRAY_AREA_M2.get(int(round(width)))
+    if area is None:
+        return None
+    return density * area
+
+
+def _payload_tray_design_layers(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    mapping = metadata.get("tray_load_mapping") if isinstance(metadata.get("tray_load_mapping"), dict) else {}
+    mapped_layers = mapping.get("layers") if isinstance(mapping.get("layers"), list) else []
+    mapped = [layer for layer in mapped_layers if isinstance(layer, dict)]
+    if mapped:
+        return mapped
+    return [layer for layer in raw_layers if isinstance(layer, dict)]
 
 
 def _normalised_section_id(value: Any) -> str | None:
@@ -148,6 +216,41 @@ def _section_allowed_by_payload(section_name: Any, payload: dict[str, Any]) -> b
     return section_id in set(allowed)
 
 
+def _current_square_section_id_from_payload(payload: dict[str, Any]) -> str | None:
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
+    candidates: list[Any] = [
+        metadata.get("square_section_selected"),
+        metadata.get("square_section_spec"),
+        metadata.get("square_section_current_model_spec"),
+        support.get("support_section_id"),
+    ]
+    for section in payload.get("sections") or []:
+        if not isinstance(section, dict):
+            continue
+        candidates.append(section.get("sect_file"))
+        candidates.append(section.get("section_id"))
+    for value in candidates:
+        section_id = _normalised_section_id(value)
+        if section_id:
+            return section_id
+    return None
+
+
+def _has_larger_allowed_square_section(payload: dict[str, Any]) -> bool:
+    current_id = _current_square_section_id_from_payload(payload)
+    current = parse_square_section_name(current_id or "")
+    current_modulus = current.estimated_bending_section_modulus_mm3 if current else -1.0
+    allowed = [
+        parse_square_section_name(section_id)
+        for section_id in _allowed_square_section_ids_from_payload(payload)
+    ]
+    return any(
+        candidate is not None and candidate.estimated_bending_section_modulus_mm3 > current_modulus
+        for candidate in allowed
+    )
+
+
 def _filter_allowed_square_candidates(
     candidates: list[SquareSectionCandidate],
     payload: dict[str, Any],
@@ -194,18 +297,37 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
     project = payload.get("project") if isinstance(payload.get("project"), dict) else {}
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    tray_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    design_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
-    for layer in tray_layers:
-        if not isinstance(layer, dict):
-            continue
-        width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+    layer_signatures: list[str] = []
+    side_load_moments: dict[str, float] = {}
+    for layer in design_layers:
+        width = _layer_width_mm(layer)
         if width is not None:
             widths.append(width)
-        load = _as_float(layer.get("load_kg_m") or layer.get("line_load_kg_m") or layer.get("mass_per_m_kg"))
+        load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
+        side = _as_text(layer.get("side") or "front") or "front"
+        layer_index = int(_as_float(layer.get("layer_index")) or 0)
+        layer_signatures.append(
+            f"{side}:{layer_index}:{round(width or 0.0, 3)}:{round(load or 0.0, 6)}"
+        )
+        arm_length = _as_float(layer.get("arm_total_length_m"))
+        if arm_length is None:
+            arm_a = _as_float(layer.get("arm_a_length_m")) or 0.0
+            arm_b = _as_float(layer.get("arm_b_length_m")) or 0.0
+            arm_length = arm_a + arm_b
+        if load is not None:
+            side_load_moments[side] = side_load_moments.get(side, 0.0) + load * max(arm_length or 0.0, 0.0)
+    payload_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    spectrum_features = (
+        metadata.get("spectrum_selection_features")
+        if isinstance(metadata.get("spectrum_selection_features"), dict)
+        else {}
+    )
+    support_material = _as_text(support.get("material_id") or metadata.get("default_material_id"))
     return {
         "support_type": _as_text(support.get("support_type")),
         "analysis_method": _as_text(metadata.get("analysis_method")),
@@ -216,9 +338,20 @@ def _selection_similarity_features(payload: dict[str, Any]) -> dict[str, Any]:
         "support_height_m": _as_float(support.get("support_height_m")),
         "layers_front": int(_as_float(support.get("layers_front")) or 0),
         "layers_back": int(_as_float(support.get("layers_back")) or 0),
-        "layer_count": len(tray_layers),
+        "layer_count": len(payload_layers) or len(design_layers),
         "tray_widths_mm": sorted(round(width, 3) for width in widths),
+        "tray_layer_signature": sorted(layer_signatures),
         "tray_load_sum_kg_m": round(sum(loads), 6) if loads else None,
+        "tray_load_max_kg_m": round(max(loads), 6) if loads else None,
+        "max_side_load_moment_proxy_kg": round(max(side_load_moments.values()), 6) if side_load_moments else None,
+        "side_load_moment_signature_kg": {
+            key: round(value, 6) for key, value in sorted(side_load_moments.items())
+        },
+        "support_material": support_material,
+        "allowed_square_sections": _allowed_square_section_ids_from_payload(payload),
+        "spectrum_workbook_sha256": spectrum_features.get("workbook_sha256"),
+        "spectrum_peak_acceleration_g": _as_float(spectrum_features.get("peak_acceleration_g")),
+        "spectrum_zpa_sse_max_g": _as_float(spectrum_features.get("zpa_sse_max_g")),
     }
 
 
@@ -274,19 +407,50 @@ def _selection_similarity_score(current: dict[str, Any], cached: dict[str, Any])
         ("layers_front", 1.0),
         ("layers_back", 1.0),
         ("layer_count", 1.0),
+        ("support_material", 1.0),
     ):
         add_exact(key, points)
     add_close("elevation_m", 1.0, 0.08)
     add_close("support_spacing_m", 1.0, 0.10)
     add_close("support_height_m", 1.0, 0.10)
     add_close("tray_load_sum_kg_m", 1.0, 0.12)
-    if current.get("tray_widths_mm") and cached.get("tray_widths_mm"):
-        weight += 1.0
-        if current["tray_widths_mm"] == cached["tray_widths_mm"]:
-            score += 1.0
+    add_close("tray_load_max_kg_m", 1.0, 0.12)
+    add_close("max_side_load_moment_proxy_kg", 2.0, 0.12)
+    add_close("spectrum_peak_acceleration_g", 2.0, 0.10)
+    add_close("spectrum_zpa_sse_max_g", 1.0, 0.10)
+    add_exact("spectrum_workbook_sha256", 1.0)
+    add_exact("allowed_square_sections", 1.0)
+
+    # Tray width and total tray load are load-path features.  Legacy cache
+    # entries that do not record them must not look "perfectly similar" to a
+    # light-duty 300 mm intake just because project, elevation and layer count
+    # match.
+    if current.get("tray_load_sum_kg_m") is not None or cached.get("tray_load_sum_kg_m") is not None:
+        weight += 2.0
+        if _relative_close(current.get("tray_load_sum_kg_m"), cached.get("tray_load_sum_kg_m"), tolerance=0.12):
+            score += 2.0
+            if "tray_load_sum_kg_m" not in matched:
+                matched.append("tray_load_sum_kg_m")
+        elif "tray_load_sum_kg_m" not in mismatched:
+            mismatched.append("tray_load_sum_kg_m")
+    if current.get("tray_widths_mm") or cached.get("tray_widths_mm"):
+        weight += 3.0
+        if current.get("tray_widths_mm") and cached.get("tray_widths_mm") and current["tray_widths_mm"] == cached["tray_widths_mm"]:
+            score += 3.0
             matched.append("tray_widths_mm")
         else:
             mismatched.append("tray_widths_mm")
+    if current.get("tray_layer_signature") or cached.get("tray_layer_signature"):
+        weight += 4.0
+        if (
+            current.get("tray_layer_signature")
+            and cached.get("tray_layer_signature")
+            and current["tray_layer_signature"] == cached["tray_layer_signature"]
+        ):
+            score += 4.0
+            matched.append("tray_layer_signature")
+        else:
+            mismatched.append("tray_layer_signature")
 
     return {
         "score": round(score / weight, 6) if weight else 0.0,
@@ -332,9 +496,16 @@ def _read_similar_cached_selection(job_dir: Path, *, cache_path: Path, threshold
                         "status",
                         "run_status",
                         "controlling_ratio",
+                        "overall_controlling_ratio",
+                        "section_selection_ratio",
+                        "final_chapter6_controlling_ratio",
                         "square_support_ratio",
                         "dominant_check_id",
                         "result_gate_status",
+                        "effective_validation_status",
+                        "estimated_mass_kg_per_m",
+                        "estimated_square_material_cost_cny_per_m",
+                        "economy_selection_scope",
                     )
                 }
                 for item in entry.get("candidate_results", [])
@@ -359,14 +530,34 @@ def _compact_candidate_result_for_cache(item: dict[str, Any]) -> dict[str, Any]:
         "section_name",
         "estimated_area_mm2",
         "estimated_bending_section_modulus_mm3",
+        "estimated_mass_kg_per_m",
+        "estimated_square_material_cost_cny_per_m",
+        "reference_price_cny_per_tonne",
+        "economy_selection_scope",
+        "economy_authority",
+        "economy_ranking_basis",
+        "pricing_status",
+        "price_book_table_id",
+        "price_book_revision",
+        "estimated_outer_surface_area_m2_per_m",
+        "economy_price_limitations",
+        "arm_family",
         "source_kind",
         "controlling_ratio",
+        "overall_controlling_ratio",
+        "section_selection_ratio",
+        "final_chapter6_controlling_ratio",
         "square_support_ratio",
         "result_gate_status",
         "trial_validation_status",
         "effective_validation_status",
         "validation_status",
         "dominant_check_id",
+        "dominant_component",
+        "overall_dominant_check_id",
+        "overall_dominant_component",
+        "section_selection_dominant_check_id",
+        "section_selection_dominant_component",
         "failed_non_ratio_checks",
         "status",
         "run_status",
@@ -384,6 +575,13 @@ def _write_cached_selection(job_dir: Path, selection: dict[str, Any], *, cache_p
     cache = _load_selection_cache(cache_path)
     entries = cache.setdefault("entries", {})
     compact_selected = _compact_candidate_result_for_cache(selected)
+    final_gate_ratio = _as_float(
+        compact_selected.get("overall_controlling_ratio")
+        or compact_selected.get("final_chapter6_controlling_ratio")
+        or compact_selected.get("controlling_ratio")
+    )
+    if final_gate_ratio is not None and final_gate_ratio > 1.0:
+        return
     entries[key] = {
         "status": "pass",
         "selected": compact_selected,
@@ -414,6 +612,20 @@ def _learned_allowed_candidate_start(
         return candidates, {"status": "skipped", "reason": "empty_candidate_list"}
     if not similar_hint:
         return candidates, {"status": "skipped", "reason": "no_similar_successful_selection"}
+    if str(similar_hint.get("entry_cache_version") or "") != SQUARE_SECTION_CACHE_VERSION:
+        return candidates, {
+            "status": "skipped",
+            "reason": "stale_cache_version_not_allowed_for_candidate_start",
+            "entry_cache_version": similar_hint.get("entry_cache_version"),
+            "required_cache_version": SQUARE_SECTION_CACHE_VERSION,
+            "selected_section_hint": similar_hint.get("selected_section_hint"),
+            "source_ref": "square_section_selection_cache.json:cache_version",
+            "policy": (
+                "Only current-version learned records may move the first candidate inside the intake-allowed list. "
+                "Older cache entries can remain as trace history, but they may have stale ratio bases or missing "
+                "tray width/load features and therefore cannot anchor section selection."
+            ),
+        }
     similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
     score = _as_float(similarity.get("score"))
     if score is None or score < threshold:
@@ -454,6 +666,118 @@ def _learned_allowed_candidate_start(
             "intake-allowed section list, while keeping lower economic guard candidates before the learned section. "
             "It cannot add unlisted sections and cannot accept a section without a fresh ANSYS trial and deterministic "
             "ratio gate for the current job."
+        ),
+    }
+
+
+def _learned_formal_validation_selection(
+    *,
+    candidates: list[SquareSectionCandidate],
+    similar_hint: dict[str, Any] | None,
+    allowed_square_section_filter: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Use learned section ordering to skip duplicate candidate trials.
+
+    This never reuses a result.  It only applies a high-confidence section hint
+    to the formal job so the one real ANSYS run for the current intake becomes
+    the deterministic validation.  If the formal result fails, the existing
+    square-section upgrade/reselection gates still run.
+    """
+
+    if allowed_square_section_filter.get("status") != "applied" or not similar_hint:
+        return None
+    if str(similar_hint.get("entry_cache_version") or "") != SQUARE_SECTION_CACHE_VERSION:
+        return None
+    similarity = similar_hint.get("similarity") if isinstance(similar_hint.get("similarity"), dict) else {}
+    score = _as_float(similarity.get("score"))
+    if score is None or score < LEARNED_FORMAL_VALIDATION_THRESHOLD:
+        return None
+    selected_section = str(similar_hint.get("selected_section_hint") or "")
+    selected_candidate = next((item for item in candidates if item.section_name == selected_section), None)
+    if selected_candidate is None:
+        return None
+    historical_results = [
+        item for item in (similar_hint.get("historical_candidate_results") or []) if isinstance(item, dict)
+    ]
+    selected_history = next((item for item in historical_results if item.get("section_name") == selected_section), {})
+    if not is_section_selection_evaluation_row(
+        {
+            "check_id": selected_history.get("dominant_check_id"),
+            "component": selected_history.get("dominant_component"),
+        }
+    ):
+        return None
+    selected_ratio = _as_float(
+        selected_history.get("overall_controlling_ratio")
+        or selected_history.get("final_chapter6_controlling_ratio")
+        or selected_history.get("controlling_ratio")
+    )
+    section_selection_ratio = _as_float(
+        selected_history.get("section_selection_ratio") or selected_history.get("controlling_ratio")
+    )
+    if selected_ratio is None or selected_ratio <= 0.0 or selected_ratio > 1.0:
+        return None
+    final_gate_ratio = _as_float(
+        selected_history.get("overall_controlling_ratio")
+        or selected_history.get("final_chapter6_controlling_ratio")
+    )
+    if final_gate_ratio is not None and final_gate_ratio > 1.0:
+        return None
+    if str(selected_history.get("run_status") or "") != "pass":
+        return None
+    lower_failure_audit: dict[str, Any] = {
+        "status": "covered_by_current_cache_version",
+        "reason": "v9 records are produced by the cost-aware fresh-ANSYS selection policy",
+    }
+    selected_payload = {
+        "section_name": selected_candidate.section_name,
+        "estimated_area_mm2": selected_candidate.estimated_area_mm2,
+        "estimated_bending_section_modulus_mm3": selected_candidate.estimated_bending_section_modulus_mm3,
+        **selected_candidate.economy_metrics,
+        "source_kind": selected_candidate.source_kind,
+        "controlling_ratio": selected_ratio,
+        "overall_controlling_ratio": selected_ratio,
+        "section_selection_ratio": section_selection_ratio,
+        "final_chapter6_controlling_ratio": final_gate_ratio,
+        "ratio_basis": "evaluation_summary.json:all deterministic stress ratios",
+        "historical_controlling_ratio": selected_ratio,
+        "status": "pass",
+        "run_status": "formal_validation_pending",
+        "result_gate_status": "formal_validation_pending",
+        "validation_status": "formal_validation_pending",
+        "failed_non_ratio_checks": [],
+        "dominant_check_id": selected_history.get("overall_dominant_check_id") or selected_history.get("dominant_check_id"),
+        "dominant_component": selected_history.get("overall_dominant_component") or selected_history.get("dominant_component"),
+        "section_selection_dominant_check_id": selected_history.get("section_selection_dominant_check_id"),
+        "section_selection_dominant_component": selected_history.get("section_selection_dominant_component"),
+        "source_ref": "square_section_selection_cache.json:selected_section_hint",
+        "formal_validation_required": True,
+    }
+    return {
+        "status": "pass",
+        "selected": selected_payload,
+        "candidate_results": [selected_payload],
+        "selection_validation_mode": "learned_formal_validation",
+        "learned_formal_validation": {
+            "status": "applied",
+            "similarity_score": score,
+            "similarity_threshold": LEARNED_FORMAL_VALIDATION_THRESHOLD,
+            "selected_section_hint": selected_section,
+            "historical_selected_ratio": selected_ratio,
+            "lower_economy_check": lower_failure_audit,
+            "source_job_dir": similar_hint.get("source_job_dir"),
+            "cache_key": similar_hint.get("cache_key"),
+            "policy": (
+                "High-similarity learned evidence may apply the section directly to the formal job, but it never "
+                "reuses historical results. The current formal ANSYS run and deterministic Chapter 6 evaluation "
+                "remain the only publishable result. Current-version learning includes layer/load-path, selected-spectrum "
+                "and square-tube material-quantity features; the utilization review band is not used as a pass/fail gate."
+            ),
+        },
+        "policy": (
+            "Use a high-similarity learned section only as the current formal validation section. "
+            "No historical result is reused; if the formal run exceeds ratio 1.0, the normal upgrade/reselection "
+            "workflow remains mandatory."
         ),
     }
 
@@ -519,7 +843,8 @@ def reset_square_section_selection_for_reselection(
 
 
 def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
-    validation_path = Path(job_dir) / "result_validation.json"
+    job_path = Path(job_dir)
+    validation_path = job_path / "result_validation.json"
     if not validation_path.exists():
         return False
     try:
@@ -528,12 +853,76 @@ def result_validation_needs_square_section_upgrade(job_dir: Path | str) -> bool:
         return False
     if validation.get("status") == "pass":
         return False
+    failed_ratio_evidence: list[dict[str, Any]] = []
     for check in validation.get("checks") or []:
         if check.get("check_id") == "evaluation_ratio_limit" and check.get("status") == "fail":
             evidence = check.get("evidence") or []
-            if any("square_support" in str(item.get("check_id") or "") for item in evidence if isinstance(item, dict)):
-                return True
-    return False
+            for item in evidence:
+                if not isinstance(item, dict):
+                    continue
+                if not is_section_selection_evaluation_row(item):
+                    continue
+                try:
+                    ratio = float(item.get("ratio"))
+                except (TypeError, ValueError):
+                    continue
+                if ratio > 1.0:
+                    failed_ratio_evidence.append(item)
+    if not failed_ratio_evidence:
+        return False
+    input_path = job_path / "input.json"
+    if not input_path.exists():
+        return True
+    try:
+        payload = _read_json(input_path)
+    except json.JSONDecodeError:
+        return True
+    return _has_larger_allowed_square_section(payload)
+
+
+def result_validation_needs_final_ratio_section_recovery(job_dir: Path | str) -> bool:
+    """Return True when a final ratio gate may be recovered by a larger allowed section.
+
+    This is deliberately broader than square-section sizing.  Weld and bolt
+    ratios are final-result gates, not square-tube economy ratios; if they fail
+    while a larger reviewed square section is still allowed, the production
+    flow may try that section as a design recovery, but the UI/audit must not
+    label it as a 6.1 square-section stress failure.
+    """
+
+    job_path = Path(job_dir)
+    validation_path = job_path / "result_validation.json"
+    if not validation_path.exists():
+        return False
+    try:
+        validation = _read_json(validation_path)
+    except json.JSONDecodeError:
+        return False
+    if validation.get("status") == "pass":
+        return False
+    failed_ratio_evidence: list[dict[str, Any]] = []
+    for check in validation.get("checks") or []:
+        if check.get("check_id") != "evaluation_ratio_limit" or check.get("status") != "fail":
+            continue
+        for item in check.get("evidence") or []:
+            if not isinstance(item, dict):
+                continue
+            try:
+                ratio = float(item.get("ratio"))
+            except (TypeError, ValueError):
+                continue
+            if ratio > 1.0:
+                failed_ratio_evidence.append(item)
+    if not failed_ratio_evidence:
+        return False
+    input_path = job_path / "input.json"
+    if not input_path.exists():
+        return False
+    try:
+        payload = _read_json(input_path)
+    except json.JSONDecodeError:
+        return False
+    return _has_larger_allowed_square_section(payload)
 
 
 def result_validation_needs_square_section_clean_reselection(job_dir: Path | str) -> bool:
@@ -565,7 +954,7 @@ def result_validation_needs_square_section_clean_reselection(job_dir: Path | str
     return False
 
 
-def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
+def _failed_evaluation_ratio(job_dir: Path | str, *, square_support_only: bool = False, section_selection_only: bool = False) -> float | None:
     validation_path = Path(job_dir) / "result_validation.json"
     if not validation_path.exists():
         return None
@@ -578,7 +967,11 @@ def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
         if check.get("check_id") != "evaluation_ratio_limit" or check.get("status") != "fail":
             continue
         for item in check.get("evidence") or []:
-            if not isinstance(item, dict) or "square_support" not in str(item.get("check_id") or ""):
+            if not isinstance(item, dict):
+                continue
+            if square_support_only and "square_support" not in str(item.get("check_id") or ""):
+                continue
+            if section_selection_only and not is_section_selection_evaluation_row(item):
                 continue
             try:
                 ratios.append(float(item.get("ratio")))
@@ -587,31 +980,56 @@ def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
     return max(ratios) if ratios else None
 
 
+def _failed_square_support_ratio(job_dir: Path | str) -> float | None:
+    return _failed_evaluation_ratio(job_dir, square_support_only=True)
+
+
+def _failed_section_selection_ratio(job_dir: Path | str) -> float | None:
+    return _failed_evaluation_ratio(job_dir, section_selection_only=True)
+
+
 def _trial_root(job_dir: Path) -> Path:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     return job_dir.parent / "_square_section_trials" / job_dir.name / stamp
 
 
 def _section_trial_config(config: AnsysLocalConfig) -> AnsysLocalConfig:
-    """Use short, safe ANSYS limits for square-section candidate trials.
+    """Use production-safe ANSYS watchdogs for square-section trials.
 
-    Candidate trials only decide whether a nearby section is worth using; they
-    are not the final publishable calculation.  Keeping the production 120
-    minute timeout here is what makes a bad candidate look like a frozen
-    operator run at the unit site.
+    Candidate trials are not publishable results, but they still must run long
+    enough to produce deterministic APDL/PIP outputs.  A too-short local
+    timeout turns a valid section into a false "missing source outputs" failure
+    on slower unit-site machines.
     """
 
     cloned = config.model_copy(deep=True) if hasattr(config, "model_copy") else config.copy(deep=True)
-    cloned.ansys.timeout_minutes = min(int(cloned.ansys.timeout_minutes or 120), 12)
-    cloned.ansys.startup_no_output_timeout_seconds = min(
-        int(cloned.ansys.startup_no_output_timeout_seconds or 90),
-        90,
+    cloned.ansys.timeout_minutes = max(
+        int(cloned.ansys.timeout_minutes or MIN_REAL_RUN_TIMEOUT_MINUTES),
+        MIN_REAL_RUN_TIMEOUT_MINUTES,
     )
-    cloned.ansys.output_stall_timeout_seconds = min(
-        int(cloned.ansys.output_stall_timeout_seconds or 180),
-        180,
+    cloned.ansys.startup_no_output_timeout_seconds = max(
+        int(cloned.ansys.startup_no_output_timeout_seconds or MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS),
+        MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
     )
+    cloned.ansys.output_stall_timeout_seconds = 0
     return cloned
+
+
+def _ansys_license_unavailable(job_dir: Path, audit: dict[str, Any] | None) -> bool:
+    if not audit or audit.get("status") in {"success", "pass"}:
+        return False
+    evidence = json.dumps(audit, ensure_ascii=False)
+    for name in (
+        "CableTrayAI_Run.err",
+        "CableTrayAI_Run.out",
+        "ansys_stdout.log",
+        "ansys_stderr.log",
+        "run_stdout.log",
+        "run_stderr.log",
+    ):
+        evidence += "\n" + _tail_text(job_dir / name)
+    lower = evidence.lower()
+    return any(token in lower for token in ANSYS_LICENSE_FAILURE_TOKENS)
 
 
 def _candidate_window_around_preferred(
@@ -674,19 +1092,31 @@ def _first_candidate_at_or_above(
 
 def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     support = payload.get("support") if isinstance(payload.get("support"), dict) else {}
-    tray_layers = payload.get("tray_layers") if isinstance(payload.get("tray_layers"), list) else []
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    tray_layers = _payload_tray_design_layers(payload)
     widths: list[float] = []
     loads: list[float] = []
+    side_moment_proxy: dict[str, float] = {}
     for layer in tray_layers:
-        if not isinstance(layer, dict):
-            continue
-        width = _as_float(layer.get("width_mm") or layer.get("tray_width_mm") or layer.get("width"))
+        width = _layer_width_mm(layer)
         if width is not None:
             widths.append(width)
-        load = _as_float(layer.get("load_kg_m") or layer.get("line_load_kg_m") or layer.get("mass_per_m_kg"))
+        load = _layer_load_kg_m(layer)
         if load is not None:
             loads.append(load)
+            side = _as_text(layer.get("side") or "front") or "front"
+            arm_length = _as_float(layer.get("arm_total_length_m"))
+            if arm_length is None:
+                arm_length = (_as_float(layer.get("arm_a_length_m")) or 0.0) + (
+                    _as_float(layer.get("arm_b_length_m")) or 0.0
+                )
+            side_moment_proxy[side] = side_moment_proxy.get(side, 0.0) + load * max(arm_length, 0.0)
     declared_layers = len(tray_layers) or int(_as_float(support.get("layers_front")) or 0) + int(_as_float(support.get("layers_back")) or 0)
+    spectrum_features = (
+        metadata.get("spectrum_selection_features")
+        if isinstance(metadata.get("spectrum_selection_features"), dict)
+        else {}
+    )
     return {
         "layer_count": declared_layers,
         "max_width_mm": max(widths) if widths else None,
@@ -694,6 +1124,14 @@ def _tray_layer_design_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         "max_line_load_kg_m": max(loads) if loads else None,
         "support_height_m": _as_float(support.get("support_height_m")),
         "support_spacing_m": _as_float(support.get("support_spacing_m")),
+        "max_side_load_moment_proxy_kg": max(side_moment_proxy.values()) if side_moment_proxy else None,
+        "load_path_index": (
+            max(side_moment_proxy.values()) * float(_as_float(support.get("support_spacing_m")) or 0.0)
+            if side_moment_proxy
+            else None
+        ),
+        "spectrum_peak_acceleration_g": _as_float(spectrum_features.get("peak_acceleration_g")),
+        "spectrum_zpa_sse_max_g": _as_float(spectrum_features.get("zpa_sse_max_g")),
     }
 
 
@@ -716,16 +1154,22 @@ def _estimated_square_anchor_from_payload(
     load_sum = float(metrics["tray_load_sum_kg_m"] or 0.0)
     max_load = float(metrics["max_line_load_kg_m"] or 0.0)
     support_height = float(metrics["support_height_m"] or 0.0)
+    support_spacing = float(metrics["support_spacing_m"] or 0.0)
+    load_path_index = float(metrics["load_path_index"] or 0.0)
+    spectrum_peak = float(metrics["spectrum_peak_acceleration_g"] or metrics["spectrum_zpa_sse_max_g"] or 0.0)
     score = 0.0
     score += max(0, layer_count - 2) * 0.9
     score += max(0.0, max_width - 400.0) / 140.0
     score += max(0.0, load_sum - 180.0) / 170.0
     score += max(0.0, max_load - 90.0) / 70.0
     score += max(0.0, support_height - 1.0) * 1.2
+    score += max(0.0, support_spacing - 1.5) * 0.8
+    score += max(0.0, load_path_index - 120.0) / 160.0
+    score += max(0.0, spectrum_peak - 0.5) / 1.5
 
     if score >= 7.0 or layer_count >= 8 or load_sum >= 760:
         target_name = "140-140-8"
-    elif score >= 5.2 or layer_count >= 6 or load_sum >= 560:
+    elif score >= 5.2 or layer_count >= 6 or load_sum >= 560 or (max_width >= 600 and load_sum >= 200):
         target_name = "120-120-10"
     elif score >= 2.0 or layer_count >= 4 or load_sum >= 360 or max_width >= 500:
         target_name = "100-100-8"
@@ -744,7 +1188,8 @@ def _estimated_square_anchor_from_payload(
         "metrics": metrics,
         "policy": (
             "Blank-column-I candidate search starts from a deterministic engineering anchor based on layer count, "
-            "tray width, tray load and support height. This only orders candidates; final acceptability still comes "
+            "tray width, per-side load path, support geometry and selected-spectrum intensity. This only orders "
+            "candidates; final acceptability still comes "
             "from real ANSYS + deterministic ratio gates."
         ),
         "source_ref": "square_section_workflow._estimated_square_anchor_from_payload",
@@ -757,23 +1202,94 @@ def real_ansys_section_trial_runner(
     config: AnsysLocalConfig,
     config_path: Path | str,
     confirm_user: str,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     cleanup_stale_ansys_locks(trial_dir)
     trial_config = _section_trial_config(config)
-    audit = run_real_ansys(
-        trial_dir,
-        config=trial_config,
-        config_path=config_path,
-        confirm_real_run=True,
-        confirm_user=confirm_user,
-        run_post_exports=False,
-    )
+
+    def trial_progress(event: dict[str, Any]) -> None:
+        if not progress_callback:
+            return
+        payload = dict(event)
+        payload.setdefault("stage", "select_square_section")
+        payload["candidate_section"] = trial_dir.name
+        payload["trial_dir"] = str(trial_dir)
+        payload["trial_status_file"] = str(trial_dir / "ansys_live_status.json")
+        if "elapsed_seconds" in payload:
+            payload["message"] = (
+                f"Candidate {trial_dir.name} ANSYS running: "
+                f"{float(payload.get('elapsed_seconds') or 0.0) / 60.0:.1f} min elapsed, "
+                f"{float(payload.get('total_output_bytes') or 0.0) / (1024 * 1024):.1f} MB output."
+            )
+        progress_callback(payload)
+
+    retry_delays = list(CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS)
+    attempts: list[dict[str, Any]] = []
+    attempt_index = 0
+    while True:
+        attempt_index += 1
+        audit = run_real_ansys(
+            trial_dir,
+            config=trial_config,
+            config_path=config_path,
+            confirm_real_run=True,
+            confirm_user=confirm_user,
+            run_post_exports=False,
+            progress_callback=trial_progress,
+        )
+        license_busy = _ansys_license_unavailable(trial_dir, audit)
+        attempts.append(
+            {
+                "attempt": attempt_index,
+                "status": audit.get("status"),
+                "failure_reason": audit.get("failure_reason"),
+                "failure_category": audit.get("failure_category"),
+                "license_unavailable": license_busy,
+            }
+        )
+        if audit.get("status") == "success" or not license_busy or not retry_delays:
+            break
+        delay = int(retry_delays.pop(0))
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "select_square_section",
+                    "candidate_section": trial_dir.name,
+                    "trial_dir": str(trial_dir),
+                    "trial_status_file": str(trial_dir / "ansys_live_status.json"),
+                    "message": (
+                        f"Candidate {trial_dir.name} ANSYS license temporarily unavailable; "
+                        f"waiting {delay}s before retry {attempt_index + 1}."
+                    ),
+                    "license_retry_attempt": attempt_index + 1,
+                    "license_retry_delay_seconds": delay,
+                }
+            )
+        _clean_trial_runtime_outputs(trial_dir)
+        cleanup_stale_ansys_locks(trial_dir)
+        time.sleep(max(0, delay))
+    if len(attempts) > 1:
+        audit = dict(audit)
+        audit["license_retry_policy"] = {
+            "status": "applied",
+            "retry_delays_seconds": list(CANDIDATE_LICENSE_RETRY_DELAYS_SECONDS),
+            "reason": "candidate ANSYS trial reported a temporary license-manager failure",
+            "policy": (
+                "A candidate square-section trial is retried on temporary ANSYS license-manager failures before "
+                "the section search is allowed to classify the trial as missing or failed."
+            ),
+        }
+        audit["license_retry_attempts"] = attempts
+        _write_json(trial_dir / "ansys_run_audit.json", audit)
     if audit.get("status") != "success":
         cleanup_heavy_solver_artifacts(trial_dir)
         return audit
     assemble_result(trial_dir)
     artifact_cleanup = cleanup_heavy_solver_artifacts(trial_dir)
-    return {"status": "pass", "ansys_run_audit": audit, "solver_artifact_cleanup": artifact_cleanup}
+    result = {"status": "pass", "ansys_run_audit": audit, "solver_artifact_cleanup": artifact_cleanup}
+    if len(attempts) > 1:
+        result["candidate_license_retry_attempts"] = attempts
+    return result
 
 
 def apply_selected_square_section(
@@ -801,6 +1317,8 @@ def apply_selected_square_section(
             "square_section_selected_ratio": selected.get("controlling_ratio"),
             "square_section_selection_policy": selection.get("policy"),
             "square_section_selection_source": "real_ansys_trial_runs",
+            "square_section_selection_validation_mode": selection.get("selection_validation_mode") or "candidate_trial_complete",
+            "square_section_selection_requires_formal_validation": bool(selected.get("formal_validation_required")),
             "arm_section_family": arm_policy,
         }
     )
@@ -934,6 +1452,7 @@ def select_and_apply_square_section(
             config=config,
             config_path=config_path,
             confirm_user=confirm_user,
+            progress_callback=progress_callback,
         )
 
     similar_hint = (
@@ -978,6 +1497,60 @@ def select_and_apply_square_section(
         "status": "skipped",
         "reason": "allowed-list learning not evaluated",
     }
+    learned_formal_selection = (
+        _learned_formal_validation_selection(
+            candidates=full_candidates,
+            similar_hint=similar_hint,
+            allowed_square_section_filter=allowed_square_section_filter,
+        )
+        if using_default_runner and not force_reselect
+        else None
+    )
+    if learned_formal_selection is not None:
+        learned_formal_selection["allowed_square_section_filter"] = allowed_square_section_filter
+        learned_formal_selection["similar_cache_order_hint"] = similar_hint
+        learned_formal_selection["trial_root"] = None
+        learned_formal_selection["trial_root_removed"] = True
+        learned_formal_selection["production_policy"] = (
+            "High-similarity learned section hints can skip duplicate candidate trial ANSYS runs only when they stay "
+            "inside the current intake allowed-section list. The current formal ANSYS run is still mandatory and is "
+            "the only publishable result; final Chapter 6 ratios, figures and LIS/OUP gates remain unchanged."
+        )
+        apply_audit = apply_selected_square_section(job_dir, learned_formal_selection, source_root=source_root)
+        final_payload = {**learned_formal_selection, "apply_audit": apply_audit}
+        _write_json(job_dir / "square_section_selection.json", final_payload)
+        _write_json(
+            job_dir / "square_section_trial_summary.json",
+            {
+                "status": "pass",
+                "selected": final_payload.get("selected"),
+                "policy": final_payload.get("policy"),
+                "production_policy": final_payload.get("production_policy"),
+                "allowed_square_section_filter": allowed_square_section_filter,
+                "similar_cache_order_hint": similar_hint,
+                "learned_formal_validation": final_payload.get("learned_formal_validation"),
+                "candidate_results": final_payload.get("candidate_results"),
+                "trial_root_removed": True,
+                "trial_root_retention_policy": (
+                    "No candidate trial workspace was created because a high-similarity learned section was applied "
+                    "only for the current formal ANSYS validation run."
+                ),
+            },
+        )
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "select_square_section",
+                    "message": (
+                        f"Using learned section {final_payload['selected']['section_name']} for formal ANSYS validation; "
+                        "current formal run will still decide pass/fail."
+                    ),
+                    "candidate_section": final_payload["selected"]["section_name"],
+                    "candidate_index": 1,
+                    "candidate_count": 1,
+                }
+            )
+        return final_payload
     similarity_score = None
     if similar_hint is not None:
         try:
@@ -994,30 +1567,29 @@ def select_and_apply_square_section(
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
     lower_neighbor_count = 0
     if allowed_filter_applied:
-        # The calculation note is the governing candidate boundary.  Run the
-        # reviewed allowed list with fresh trials.  A high-similarity learning
-        # cache may move the starting point upward inside that hard boundary,
-        # keeping lower guard candidates before the learned section.  Within
-        # the resulting allowed-list run, post-failure modulus jumps may skip
-        # only candidates that are still below a failed square-support ratio
-        # estimate; they never add unlisted sections.  The first passing
-        # section is the economical production stop because later candidates
-        # are ordered larger.
-        candidates, learned_allowed_start_audit = _learned_allowed_candidate_start(full_candidates, similar_hint)
-        preferred_section = None
-        preferred_section_source = None
+        # The calculation note is the governing candidate boundary.  Learning
+        # and deterministic estimates may choose the first candidate inside
+        # that hard boundary, but they never add unlisted sections and never
+        # accept a section without a fresh ANSYS trial.
+        _, learned_allowed_start_audit = _learned_allowed_candidate_start(full_candidates, similar_hint)
+        if learned_allowed_start_audit.get("status") in {"applied", "not_needed"} and learned_allowed_start_audit.get("selected_section_hint"):
+            preferred_section = str(learned_allowed_start_audit["selected_section_hint"])
+            preferred_section_source = "learned_allowed_start"
+        else:
+            engineering_anchor = _estimated_square_anchor_from_payload(input_payload, full_candidates)
+            if engineering_anchor:
+                preferred_section = str(engineering_anchor["section_name"])
+                preferred_section_source = "engineering_estimate_allowed_list"
+        candidates = full_candidates
         candidate_window_audit = {
             "status": "skipped",
-            "reason": "intake_allowed_sections_use_learned_start_and_failure_smart_jumps",
+            "reason": "intake_allowed_sections_use_two_trial_economy_strategy",
             "policy": (
                 "For intake calculation-note sections, only listed/reviewed candidates are allowed. "
-                "Every selected or jumped-to candidate is regenerated and checked by the deterministic ratio gate; "
-                "a high-similarity learned cache may move the start point only inside the current allowed list and "
-                "with lower economic guard candidates retained; post-failure section-modulus jumps may skip only "
-                "smaller allowed candidates that remain below the estimated requirement from a real failed "
-                "square-support ratio. The first fresh real-ANSYS candidate with controlling ratio < 1.0 stops the "
-                "search; larger listed sections are not run after a pass. Engineering estimates cannot skip or add "
-                "candidates."
+                "A high-similarity learned cache or deterministic engineering estimate may choose the first trial "
+                "inside the current allowed list. One section-modulus or materially lower-cost correction trial is "
+                "allowed. The search normally stops within two fresh ANSYS candidate trials; 0.60-0.9999 is reported "
+                "only as a utilization review band."
             ),
         }
     elif preferred_section is None:
@@ -1028,10 +1600,9 @@ def select_and_apply_square_section(
     effective_limit = limit
     if allowed_filter_applied:
         # The intake calculation note is the governing candidate boundary.  A
-        # first passing section is the economical stop because allowed
-        # candidates are sorted by section modulus/area.  After a real failed
-        # square-support ratio, smart jumps may avoid obviously under-sized
-        # allowed candidates while recording exactly what was skipped.
+        # A first pass may still trigger one materially lower-cost fresh trial.
+        # After a real failed square-support ratio, smart jumps may avoid
+        # obviously under-sized candidates while recording what was skipped.
         effective_limit = None if effective_limit is None else max(int(effective_limit), len(candidates))
     elif effective_limit is None and using_default_runner:
         effective_limit = 4
@@ -1046,10 +1617,11 @@ def select_and_apply_square_section(
         preferred_section=str(preferred_section) if preferred_section else None,
         preferred_section_source=preferred_section_source,
         stop_after_first_feasible=True,
-        feasible_confirmation_count=1 if allowed_filter_applied else 2,
+        feasible_confirmation_count=1,
         smart_jumps_enabled=True,
-        smart_order=not allowed_filter_applied,
+        smart_order=True,
         lower_neighbor_count=lower_neighbor_count,
+        max_evaluated_candidates=2,
         progress_callback=progress_callback,
     )
     if engineering_anchor is not None:
@@ -1071,10 +1643,11 @@ def select_and_apply_square_section(
                 preferred_section=str(preferred_section),
                 preferred_section_source=preferred_section_source,
                 stop_after_first_feasible=True,
-                feasible_confirmation_count=1 if allowed_filter_applied else 2,
+                feasible_confirmation_count=1,
                 smart_jumps_enabled=True,
-                smart_order=not allowed_filter_applied,
+                smart_order=True,
                 lower_neighbor_count=lower_neighbor_count,
+                max_evaluated_candidates=2,
                 progress_callback=progress_callback,
             )
             expanded["similar_cache_candidate_window"] = {
@@ -1101,21 +1674,23 @@ def select_and_apply_square_section(
             "status": "blocked",
             "detected_run_statuses": sorted(timeout_statuses),
             "policy": (
-                "Candidate ANSYS timeouts are not allowed to auto-select a square section. "
-                "The row must keep the failure evidence and be rerun after fixing ANSYS/output-stall issues."
+                "Candidate ANSYS timeouts are runtime failures, not section-ratio failures. "
+                "The row keeps the ANSYS evidence and must be rerun after fixing timeout/output-stall conditions; "
+                "the production runner applies code-level minimum watchdogs to avoid stale unit-site local configs."
             ),
         }
     selection["trial_root"] = str(trials)
     selection["production_policy"] = (
         "Future intake rows may omit column I square tube size. In that case, square-section candidates must come "
         "from the intake calculation-note allowed list and are evaluated by fresh real ANSYS output and deterministic "
-        "ratios; the selected section must have ratio < 1.0 within that intake-allowed list. Candidates are ordered by "
-        "economic section size, with high-similarity learned real-run history allowed only to move the starting point "
-        "inside the current allowed list while keeping lower guard candidates. The first fresh real-ANSYS passing "
-        "candidate stops the search and later larger sections are not run. Candidate order may not use deterministic "
-        "engineering estimates, local catalog fallback or historical results to add unlisted candidates or accept a "
-        "section without current ANSYS evidence. After a real failed square-support ratio, section-modulus smart jumps may skip only "
-        "under-sized allowed candidates and must record the skipped list. Generated APDL HREC candidates are disabled by default and only allowed when "
+        "overall stress ratios including weld, bolt, support and cantilever checks; the selected section must have "
+        "overall ratio <= 1.0 within that intake-allowed list. The 0.60 <= ratio <= 0.9999 interval is a utilization "
+        "review band only. Section selection normally completes within two fresh ANSYS candidate trials: one "
+        "learned/estimated first trial plus one section-modulus or materially lower-cost correction if needed. "
+        "Economy ranking is limited to theoretical square-tube material quantity unless a unit-approved price book is active; support spacing and "
+        "support length stay fixed. Candidate order may not use "
+        "local catalog fallback or historical results to add unlisted candidates or accept a section without current "
+        "ANSYS evidence. Generated APDL HREC candidates are disabled by default and only allowed when "
         "allow_native_hrec_generated=true is explicitly set for a reviewed engineering run. No nearest-report-value "
         "substitution is allowed."
     )
@@ -1154,13 +1729,12 @@ def select_and_apply_square_section(
     _write_json(job_dir / "square_section_selection.json", final_payload)
     if using_default_runner:
         _write_cached_selection(job_dir, final_payload, cache_path=resolved_cache_path)
-    if trials.exists():
-        shutil.rmtree(trials)
-        trial_summary["trial_root_removed"] = True
-        trial_summary["trial_root_removal_policy"] = (
-            "Candidate ANSYS workspaces are regenerable and are removed after recording section ratios. "
-            "The final selected production job retains the official APDL/LIS/OUP/figures."
-        )
+    trial_summary["trial_root_removed"] = False
+    trial_summary["trial_root_retention_policy"] = (
+        "Candidate ANSYS workspaces are retained after selection so unit-site stalls or ratio decisions can be audited. "
+        "Heavy solver artifacts are cleaned inside each trial, but command streams, live status, out/err logs, LIS/OUP, "
+        "result JSON and evaluation summaries remain available under trial_root."
+    )
     _write_json(job_dir / "square_section_trial_summary.json", trial_summary)
     return final_payload
 
@@ -1175,12 +1749,25 @@ def upgrade_square_section_after_ratio_fail(
     limit: int | None = None,
     runner: Callable[[Path], dict[str, Any]] | None = None,
     allow_native_hrec_generated: bool = False,
+    section_selection_only: bool = True,
+    upgrade_reason: str | None = None,
 ) -> dict[str, Any]:
     """Select a larger square tube when the final deterministic ratio gate fails."""
 
     job_dir = Path(job_dir)
-    if not result_validation_needs_square_section_upgrade(job_dir):
-        payload = {"status": "skipped", "reason": "result_validation does not require square-section upgrade"}
+    recovery_required = (
+        result_validation_needs_square_section_upgrade(job_dir)
+        if section_selection_only
+        else result_validation_needs_final_ratio_section_recovery(job_dir)
+    )
+    if not recovery_required:
+        payload = {
+            "status": "skipped",
+            "reason": "result_validation does not require square-section upgrade"
+            if section_selection_only
+            else "result_validation does not require final-ratio section recovery",
+            "section_selection_only": section_selection_only,
+        }
         _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", payload)
         return payload
 
@@ -1204,7 +1791,10 @@ def upgrade_square_section_after_ratio_fail(
     ]
     candidates, allowed_square_section_filter = _filter_allowed_square_candidates(candidates, input_payload)
     allowed_filter_applied = allowed_square_section_filter.get("status") == "applied"
-    failed_ratio = _failed_square_support_ratio(job_dir)
+    if section_selection_only:
+        failed_ratio = _failed_section_selection_ratio(job_dir) or _failed_square_support_ratio(job_dir)
+    else:
+        failed_ratio = _failed_evaluation_ratio(job_dir)
     estimated_required_modulus = None
     skipped_by_estimate = 0
     if not allowed_filter_applied and failed_ratio and failed_ratio > 1.0 and current_modulus > 0:
@@ -1233,7 +1823,7 @@ def upgrade_square_section_after_ratio_fail(
             reason = _allowed_section_insufficient_reason(input_payload)
         elif not allow_native_hrec_generated:
             reason = (
-                "No reviewed square-tube SECT candidate satisfied ratio < 1.0; "
+                "No reviewed square-tube SECT candidate satisfied ratio <= 1.0; "
                 "generated APDL HREC candidates are disabled by default."
             )
         else:
@@ -1255,6 +1845,7 @@ def upgrade_square_section_after_ratio_fail(
             config=config,
             config_path=config_path,
             confirm_user=confirm_user,
+            progress_callback=None,
         )
     trials = job_dir.parent / "_square_section_upgrade_trials" / job_dir.name / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     selection = run_square_section_search(
@@ -1265,31 +1856,39 @@ def upgrade_square_section_after_ratio_fail(
         source_root=source_root,
         overwrite_trials=True,
         stop_after_first_feasible=True,
-        feasible_confirmation_count=1 if allowed_square_section_filter.get("status") == "applied" else 2,
+        feasible_confirmation_count=1,
         smart_jumps_enabled=not bool(estimated_required_modulus),
         smart_order=allowed_square_section_filter.get("status") != "applied",
+        max_evaluated_candidates=2,
     )
-    selection["upgrade_reason"] = "Final deterministic evaluation ratio exceeded 1.0 for the current square tube."
+    selection["upgrade_reason"] = upgrade_reason or (
+        "Final deterministic 6.1 section-selection ratio exceeded 1.0 for the current square tube."
+        if section_selection_only
+        else "Final deterministic non-section gate ratio exceeded 1.0; trying larger allowed square sections as design recovery."
+    )
+    selection["section_selection_only"] = section_selection_only
+    selection["recovery_mode"] = "square_section_6_1_upgrade" if section_selection_only else "final_ratio_design_recovery"
     selection["current_section"] = current_name
     selection["allowed_square_section_filter"] = allowed_square_section_filter
     selection["candidate_prefilter"] = {
         "status": "applied" if estimated_required_modulus else "skipped",
-        "failed_square_support_ratio": failed_ratio,
+        "failed_ratio": failed_ratio,
         "current_estimated_bending_section_modulus_mm3": current_modulus,
         "estimated_required_bending_section_modulus_mm3": estimated_required_modulus,
         "skipped_candidate_count": skipped_by_estimate,
         "policy": (
             "The filter only avoids candidates whose square-tube bending section modulus is far below the modulus "
             "implied by the failed real-ANSYS ratio. One lower trend candidate is still run; final acceptance remains "
-            "a real-ANSYS deterministic ratio < 1.0."
+            "a real-ANSYS deterministic ratio <= 1.0."
         ),
     }
     selection["production_policy"] = (
         "A provided or provisional square tube section is not accepted when final real-ANSYS deterministic ratios exceed 1.0. "
         "Only intake-allowed/reviewed local SECT candidates are tried by default. Generated job-local APDL HREC candidates are allowed "
         "only when allow_native_hrec_generated=true is set for a reviewed engineering run; selected section must still "
-        "have ratio < 1.0. Candidates are ordered by economy, so the first passing upgrade is retained and larger "
-        "sections are not run after a pass."
+        "have overall ratio <= 1.0. Square-section recovery/economy is now judged by the same final deterministic "
+        "ratio basis shown in the web result, including weld and bolt rows, so the selected candidate and final "
+        "publication gate cannot disagree."
     )
     if (
         selection.get("status") != "pass"
@@ -1310,26 +1909,34 @@ def upgrade_square_section_after_ratio_fail(
         and not selection.get("early_stop")
     ):
         selection["reason"] = (
-            "No reviewed square-tube SECT candidate satisfied ratio < 1.0; "
+            "No reviewed square-tube SECT candidate satisfied ratio <= 1.0; "
             "generated APDL HREC candidates are disabled by default."
         )
     if selection.get("status") != "pass":
         selection["trial_root_removed"] = False
-        if trials.exists():
-            shutil.rmtree(trials)
-            selection["trial_root_removed"] = True
-            selection["trial_root_removal_policy"] = (
-                "Failed square-section upgrade trial workspaces are regenerable. "
-                "The JSON summary keeps every candidate ratio and failure reason, while heavy ANSYS artifacts are removed."
-            )
+        selection["trial_root_retention_policy"] = (
+            "Failed square-section upgrade trial workspaces are retained so unit-site runtime failures can be diagnosed "
+            "from command streams, live status, out/err logs and LIS/OUP files. Heavy solver artifacts are cleaned inside "
+            "each trial by the ANSYS trial runner."
+        )
         _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", selection)
         return selection
 
     apply_audit = apply_selected_square_section(job_dir, selection, source_root=source_root)
     final_payload = {**selection, "apply_audit": apply_audit}
+    final_payload["trial_root_removed"] = False
+    final_payload["trial_root_retention_policy"] = (
+        "Successful square-section upgrade trial workspaces are retained as lightweight audit evidence. "
+        "The formal selected job remains the publishable result, while trial logs explain the section decision."
+    )
+    final_payload["selection_validation_mode"] = "upgrade_after_final_ratio_fail"
+    final_payload["job_state_after_upgrade"] = update_job_state(
+        job_dir,
+        "apdl_rendered",
+        "square-section upgrade applied; formal ANSYS rerun is allowed",
+    )
+    _write_json(job_dir / "square_section_selection.json", final_payload)
     _write_json(job_dir / "square_section_upgrade_after_ratio_fail.json", final_payload)
-    if trials.exists():
-        shutil.rmtree(trials)
     return final_payload
 
 

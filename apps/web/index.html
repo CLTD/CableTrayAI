@@ -61,20 +61,22 @@
         background: #fbfdff;
       }
 
-      button.primary {
-        border-color: #0a6b55;
-        background: #0f7660;
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+      html body button.primary {
+        border-color: #0a6b55 !important;
+        background-color: #0f7660 !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
       }
 
-      button.primary:hover:not(:disabled),
-      button.primary:focus-visible,
-      button.primary:active {
-        border-color: #075f4a;
-        background: #0f7660;
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+      html body button.primary:hover:not(:disabled),
+      html body button.primary:focus-visible,
+      html body button.primary:active {
+        border-color: #064e3b !important;
+        background-color: #0b6b56 !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
         outline: 2px solid #b7d3ee;
         outline-offset: 1px;
       }
@@ -95,6 +97,19 @@
 
       button.primary:disabled {
         opacity: 1;
+      }
+
+      @media (forced-colors: active) {
+        html body button.primary,
+        html body button.primary:hover:not(:disabled),
+        html body button.primary:focus-visible,
+        html body button.primary:active {
+          forced-color-adjust: auto;
+          border: 2px solid ButtonText !important;
+          background-color: Highlight !important;
+          color: HighlightText !important;
+          -webkit-text-fill-color: HighlightText !important;
+        }
       }
 
       input,
@@ -224,6 +239,8 @@
         color: var(--ink);
         font: inherit;
         cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
       }
 
       .module-card.active {
@@ -545,12 +562,15 @@
         display: grid;
         grid-template-columns: minmax(680px, 1.22fr) minmax(460px, 0.78fr);
         gap: 14px;
+        align-items: stretch;
+        --review-panel-height: clamp(720px, 74vh, 900px);
       }
 
       .model-wrap {
-        min-height: 660px;
+        min-height: 0;
+        height: var(--review-panel-height);
         display: grid;
-        grid-template-rows: auto minmax(520px, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
@@ -571,10 +591,9 @@
       #modelCanvas {
         display: block;
         width: 100%;
-        min-height: 520px;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,247,250,.9)),
-          repeating-linear-gradient(135deg, rgba(182,198,211,.18) 0, rgba(182,198,211,.18) 1px, transparent 1px, transparent 28px);
+        min-height: 0;
+        height: 100%;
+        background: #05080d;
         cursor: grab;
       }
 
@@ -595,7 +614,8 @@
       }
 
       .command-panel {
-        min-height: 660px;
+        min-height: 0;
+        height: var(--review-panel-height);
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
         border: 1px solid var(--line);
@@ -695,6 +715,13 @@
         background: #fff;
       }
 
+      .command-panel > #commandText {
+        min-height: 0;
+        height: auto;
+        max-height: none;
+        overflow: auto;
+      }
+
       .tray-audit-title {
         font-weight: 700;
         font-size: 13px;
@@ -755,6 +782,23 @@
 
       .tray-layer-table tr:last-child td {
         border-bottom: 0;
+      }
+
+      .tray-line-load-input {
+        min-height: 30px;
+        padding: 4px 6px;
+        text-align: right;
+      }
+      .tray-line-load-input[aria-invalid="true"] {
+        border-color: #b42318;
+        box-shadow: 0 0 0 2px rgba(180, 35, 24, .12);
+      }
+
+      .tray-line-load-unit {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 11px;
       }
 
       .tray-empty {
@@ -842,7 +886,7 @@
 
       .section-reason-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 8px;
         margin-top: 8px;
       }
@@ -1099,6 +1143,20 @@
         .tray-audit-body {
           grid-template-columns: 1fr;
         }
+
+        .model-wrap,
+        .command-panel {
+          min-height: 0;
+          height: auto;
+        }
+
+        #modelCanvas {
+          height: clamp(360px, 56vh, 600px);
+        }
+
+        .command-panel {
+          height: clamp(420px, 65vh, 620px);
+        }
       }
 
       @media (max-width: 760px) {
@@ -1204,8 +1262,8 @@
           <div class="panel-body">
             <div class="reserved">
               <div class="actions">
-                <button id="buildTemplateReport" class="wide">生成模板报告</button>
-                <button id="downloadTemplateReport" class="wide">打开模板报告</button>
+                <button id="buildTemplateReport" class="wide">注入并下载报告</button>
+                <button id="downloadTemplateReport" class="wide">下载已有报告</button>
               </div>
               <p class="muted">按钢平台/非钢平台自动选择模板，只替换谱表、结果表和 ANSYS 图片；原模板正文和格式不改。</p>
             </div>
@@ -1293,15 +1351,16 @@
                 <button id="viewIso">等轴</button>
                 <button id="viewFront">正视</button>
                 <button id="viewTop">俯视</button>
+                <button id="toggleMesh" class="active">网格示意</button>
                 <button id="toggleSections" class="active">截面符号</button>
-                <button id="toggleOpenArrows" class="active">开口箭头</button>
-                <button id="toggleNodeLabels">节点号</button>
+                <button id="toggleOpenArrows">开口箭头</button>
+                <button id="toggleNodeLabels">关键点号</button>
                 <button id="clearHighlight">清除高亮</button>
                 <span id="modelSource" class="pill">等待命令流</span>
-                <span id="modelStats" class="pill blue">0 点 / 0 线</span>
+                <span id="modelStats" class="pill blue">0 关键点 / 0 几何线</span>
               </div>
               <canvas id="modelCanvas"></canvas>
-              <div id="modelCaption" class="model-caption">三维预览由网页解释 `generated_model.mac` 中的 APDL 参数、循环和 K/L 命令生成；真实模态图和应力云图仍以 ANSYS 输出图片为准。</div>
+              <div id="modelCaption" class="model-caption">三维预览由网页解释 `generated_model.mac` 中的 APDL 参数、循环和 K/L 命令生成；网格为几何分段审查示意，不是 ANSYS 实际节点/单元。真实模型网格、模态图和应力云图以 ANSYS 输出图片为准。</div>
             </div>
 
             <div class="command-panel">
@@ -1391,6 +1450,7 @@
         reviewLoadJobId: "",
         reviewLastLoadedAt: 0,
         reviewGeneration: 0,
+        reportBuildInFlight: false,
         spectrumPreview: null,
         commandRole: "modeling",
         resultView: "formula",
@@ -1400,7 +1460,8 @@
         yaw: -0.55,
         pitch: 0.34,
         showSections: true,
-        showOpenArrows: true,
+        showMesh: true,
+        showOpenArrows: false,
         showNodeLabels: false,
         dragging: false,
         lastX: 0,
@@ -1783,6 +1844,75 @@
         return Array.isArray(row?.tray_equivalent_densities) ? row.tray_equivalent_densities : [];
       }
 
+      const TRAY_AREA_M2 = {
+        600: 0.001796,
+        500: 0.001596,
+        300: 53.0 / 44315.0,
+        200: 35.0 / 51095.0,
+        100: 15.0 / 3896.1,
+        50: 0.000400,
+      };
+
+      function parsePositiveNumber(value) {
+        const match = String(value ?? "").match(/[-+]?(?:\d+(?:\.\d*)?|\.\d+)/);
+        if (!match) return null;
+        const parsed = Number(match[0]);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+      }
+
+      function updateLayerLineLoad(layer, lineLoad) {
+        if (!layer || !Number.isFinite(lineLoad) || lineLoad <= 0) return null;
+        const width = Number(layer.tray_width_mm);
+        const area = TRAY_AREA_M2[width];
+        layer.load_kg_per_m = lineLoad;
+        if (area) layer.tray_density_kg_m3 = lineLoad / area;
+        layer.source_ref = "dashboard_confirmed_line_weight";
+        return {
+          side: layer.side,
+          layer_index: layer.layer_index,
+          tray_width_mm: layer.tray_width_mm,
+          load_kg_per_m: lineLoad,
+          source_ref: "dashboard_confirmed_line_weight",
+        };
+      }
+
+      function applyTrayLineLoadInputs(row, options = {}) {
+        if (!row) return { status: "not_applicable", errors: [] };
+        const layers = trayLayerList(row);
+        if (!layers.length) return { status: "not_applicable", errors: [] };
+        const inputs = document.querySelectorAll("#trayLoadAudit .tray-line-load-input[data-tray-load-index]");
+        if (!inputs.length) return { status: "not_applicable", errors: [] };
+        if (!Array.isArray(row.tray_load_original_layers)) {
+          row.tray_load_original_layers = layers.map((layer) => ({ ...layer }));
+        }
+        const rawLayers = Array.isArray(row.tray_layers) ? row.tray_layers : [];
+        const overrides = [];
+        const errors = [];
+        inputs.forEach((input) => {
+          const index = Number(input.dataset.trayLoadIndex);
+          if (!Number.isInteger(index) || !layers[index]) return;
+          const lineLoad = parsePositiveNumber(input.value);
+          if (lineLoad === null) {
+            input.setAttribute("aria-invalid", "true");
+            errors.push(`第 ${index + 1} 层线载荷必须为大于 0 的数值`);
+            return;
+          }
+          input.removeAttribute("aria-invalid");
+          const original = row.tray_load_original_layers[index] || {};
+          const previousLoad = Number(original.load_kg_per_m);
+          const layerOverride = updateLayerLineLoad(layers[index], lineLoad);
+          if (rawLayers[index]) updateLayerLineLoad(rawLayers[index], lineLoad);
+          if (!layerOverride) return;
+          if (!Number.isFinite(previousLoad) || Math.abs(previousLoad - lineLoad) > 1e-9) {
+            overrides.push({ ...layerOverride, source_index: index });
+          }
+        });
+        row.tray_layer_overrides = overrides;
+        row.tray_load_override_status = errors.length ? "invalid_dashboard_input" : (overrides.length ? "pending_dashboard_rerun" : "");
+        if (options.strict && errors.length) throw new Error(errors.join("；"));
+        return { status: errors.length ? "fail" : "pass", errors, overrideCount: overrides.length };
+      }
+
       function traySideLabel(side) {
         const text = String(side || "").toLowerCase();
         if (text === "front") return "前侧";
@@ -1851,12 +1981,15 @@
               </tr>
             </thead>
             <tbody>
-              ${layers.map((layer) => `
+              ${layers.map((layer, layerIndex) => `
                 <tr>
                   <td>${esc(traySideLabel(layer.side))}${layer.layer_index ? ` ${esc(layer.layer_index)}层` : ""}</td>
                   <td>${esc(layer.tray_width_mm || "-")} mm</td>
                   <td>${esc(trayCableTypeLabel(layer.cable_type))}</td>
-                  <td>${esc(compact(layer.load_kg_per_m))} kg/m</td>
+                  <td>
+                    <input class="tray-line-load-input" data-tray-load-index="${layerIndex}" value="${esc(compact(layer.load_kg_per_m))}" aria-label="line load kg per meter" />
+                    <span class="tray-line-load-unit">kg/m</span>
+                  </td>
                   <td>${esc(compact(layer.tray_density_kg_m3))} kg/m³</td>
                   <td>${esc(layer.tray_section_file || "-")}</td>
                 </tr>
@@ -2130,9 +2263,9 @@
         renderSpectrumCandidateLists(row);
       }
 
-      function applyCurrentRowOverrides() {
+      function applyCurrentRowOverrides(options = {}) {
         const index = activeRowIndex();
-        if (index < 0 || !state.rows[index]) return;
+        if (index < 0 || !state.rows[index]) return { status: "not_applicable", errors: [] };
         const row = state.rows[index];
         const identity = $("primaryIdentity").value.trim();
         const wasFormal = Boolean(row.report_number || row.calculation_batch || row.intake_identity_status === "formal_report_number_provided");
@@ -2159,21 +2292,28 @@
             row.elevation_raw = elevationText;
           }
         }
+        const trayLoadAudit = applyTrayLineLoadInputs(row, { strict: Boolean(options.strictTrayLoads) });
         state.selectedRow = row;
         renderLocationOptions(row);
         renderTaskSummary();
+        return trayLoadAudit;
       }
 
       function commitCurrentRowOverrides(options = {}) {
-        applyCurrentRowOverrides();
+        const trayLoadAudit = applyCurrentRowOverrides(options);
         if (options.renderTable) {
           renderParsedRows();
         }
         renderAiChecks();
         saveIntakeSession();
+        return trayLoadAudit;
       }
 
       function setActiveParsedRow(index, options = {}) {
+        const previousIndex = activeRowIndex();
+        if (previousIndex >= 0 && previousIndex !== index && state.rows[previousIndex]) {
+          applyCurrentRowOverrides();
+        }
         state.selectedRow = state.rows[index] || null;
         state.selectedRowIndex = state.selectedRow ? index : -1;
         if (state.selectedRow) autoFillIdentity(state.selectedRow, { force: options.forceIdentity !== false });
@@ -2377,7 +2517,7 @@
       }
 
       async function runOneClick() {
-        commitCurrentRowOverrides({ renderTable: false });
+        commitCurrentRowOverrides({ renderTable: false, strictTrayLoads: true });
         const intakePath = await uploadFile("intakeFile", "intake");
         const spectrumPath = await uploadFile("spectrumFile", "spectrum");
         saveIntakeSession();
@@ -2404,6 +2544,7 @@
             area: row.area || row.building,
             elevation: row.elevation,
             elevation_raw: row.elevation_raw,
+            tray_layer_overrides: row.tray_layer_overrides || [],
           };
         });
         setStatus("后台计算已提交", "warn");
@@ -2530,6 +2671,17 @@
         $("progressStage").textContent = payload.stage || payload.status || "运行中";
         $("progressMessage").textContent = payload.message || "后台计算运行中。";
         renderOutputSnapshot(payload.output_snapshot);
+        if (payload.trial_dir && $("progressOutput")) {
+          const trialLines = [
+            `Candidate trial: ${payload.candidate_section || "-"}`,
+            `Trial dir: ${payload.trial_dir}`,
+            payload.trial_status_file ? `Live status: ${payload.trial_status_file}` : "",
+            payload.elapsed_seconds ? `Elapsed: ${formatDuration(payload.elapsed_seconds)}` : "",
+            payload.total_output_bytes ? `Trial output: ${formatBytes(payload.total_output_bytes)}` : "",
+            payload.no_output_seconds ? `No new output: ${formatDuration(payload.no_output_seconds)}` : "",
+          ].filter(Boolean).join("\n");
+          $("progressOutput").textContent = [$("progressOutput").textContent, trialLines].filter(Boolean).join("\n");
+        }
         const done = ["pass", "dry_run", "fail", "cancelled"].includes(payload.status);
         $("jobBadge").textContent = payload.active_job_id || payload.run_id || payload.status || "运行中";
         $("jobBadge").className = `pill ${payload.status === "fail" ? "bad" : done ? "ok" : "warn"}`;
@@ -2672,13 +2824,30 @@
           const isSelected = selectedSectionName && name === selectedSectionName;
           const numericStatus = item.status || "-";
           const gateStatus = item.effective_validation_status || item.trial_validation_status || "-";
+          const overallRatio = item.overall_controlling_ratio ?? item.final_chapter6_controlling_ratio ?? item.controlling_ratio ?? "-";
+          const sectionRatio = item.section_selection_ratio ?? item.controlling_ratio ?? "-";
+          const dominantCheck = item.overall_dominant_check_id || item.dominant_check_id || "";
+          const dominantComponent = item.overall_dominant_component || item.dominant_component || "";
+          const dominantLabel = dominantCheck || dominantComponent;
+          const materialCost = item.estimated_square_material_cost_cny_per_m;
+          const mass = item.estimated_mass_kg_per_m;
+          const area = item.estimated_area_mm2;
+          const pricingApproved = item.pricing_status === "approved_active";
+          const quantityParts = [];
+          if (area !== null && area !== undefined) quantityParts.push(`截面材料面积 ${Number(area).toFixed(0)} mm²`);
+          if (mass !== null && mass !== undefined) quantityParts.push(`估算理论质量 ${Number(mass).toFixed(2)} kg/m`);
+          if (pricingApproved && materialCost !== null && materialCost !== undefined) {
+            const priceBook = [item.price_book_table_id, item.price_book_revision].filter(Boolean).join("/");
+            quantityParts.push(`单位核定方钢材料参考 ${Number(materialCost).toFixed(2)} 元/米${priceBook ? `（${priceBook}）` : ""}`);
+          }
+          const quantityLabel = quantityParts.length ? `；${quantityParts.join("；")}` : "";
           const acceptance = isSelected
             ? "最终采纳"
             : numericStatus === "pass"
               ? "候选数值通过，未采纳"
               : "候选不满足";
-          const dominant = item.dominant_check_id ? `；控制项 ${item.dominant_check_id}` : "";
-          return `${escapeHtml(name)}: 比值 ${escapeHtml(item.controlling_ratio ?? "-")}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(dominant)}`;
+          const dominant = dominantLabel ? `；控制项 ${dominantLabel}` : "";
+          return `${escapeHtml(name)}: 总控制比值 ${escapeHtml(overallRatio)}；选型比值 ${escapeHtml(sectionRatio)}；${escapeHtml(acceptance)}；数值 ${escapeHtml(statusText(numericStatus))}；门禁 ${escapeHtml(statusText(gateStatus))}${escapeHtml(quantityLabel)}${escapeHtml(dominant)}`;
         }).join("<br>");
         panel.classList.remove("hidden");
         panel.innerHTML = `
@@ -2690,6 +2859,7 @@
             <div><strong>候选顺序</strong><br>${escapeHtml(orderAudit.status || "未记录")}<br>${escapeHtml(orderAudit.policy || "按标准截面和工程门禁排序。")}</div>
             <div><strong>相似提资</strong><br>${escapeHtml(similar.status || "未命中")}<br>${escapeHtml(similar.selected_section_hint ? `只用于排序参考：${similar.selected_section_hint}` : "不复用历史结论。")}</div>
             <div><strong>诊断门禁</strong><br>${escapeHtml(earlyStop.status || "正常")}<br>${escapeHtml(earlyStop.reason || "若 JCZH/LS/HF/MAX/TMAX/Mode 或输出增长异常，将先修源问题，不继续放大方钢。")}</div>
+            <div><strong>经济性边界</strong><br>合格门禁：全部有效评定比值 ≤ 1.0。<br>0.60～0.9999 仅为利用率提示；默认按方钢截面材料面积和估算理论质量比较，不代表核电工程综合造价。只有导入单位核定价格表后才显示人民币指标。间距和方钢长度固定，超限时可人工确认线载荷后重算。</div>
           </div>
           ${first ? `<div style="margin-top:8px"><strong>本次候选摘要</strong><br>${first}</div>` : ""}
         `;
@@ -2907,15 +3077,36 @@
         });
       }
 
+      function apdlVarKey(name, index = null) {
+        const upper = String(name || "").toUpperCase();
+        if (index === null || index === undefined) return upper;
+        return `${upper}(${Math.trunc(Number(index))})`;
+      }
+
+      function replaceApdlIdentifiers(expr, vars) {
+        return String(expr || "").replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name, offset, source) => {
+          const upper = name.toUpperCase();
+          if (upper === "ABS") return "Math.abs";
+          if ((upper === "E" || upper === "D") && offset > 0 && /[0-9.]/.test(source[offset - 1] || "")) {
+            return upper === "D" ? "E" : name;
+          }
+          const value = vars.get(apdlVarKey(upper));
+          return Number.isFinite(value) ? String(value) : "0";
+        });
+      }
+
       function evalApdlExpression(expression, vars) {
         let expr = expandApdlPercents(expression, vars).trim();
         if (!expr) return NaN;
-        expr = expr.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name) => {
-          const upper = name.toUpperCase();
-          if (!vars.has(upper)) return "0";
-          return String(vars.get(upper));
+        expr = expr.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\s*\(([^()]+)\)/g, (match, name, indexExpr) => {
+          if (String(name || "").toUpperCase() === "ABS") return match;
+          const index = evalApdlExpression(indexExpr, vars);
+          if (!Number.isFinite(index)) return "0";
+          const value = vars.get(apdlVarKey(name, index));
+          return Number.isFinite(value) ? String(value) : "0";
         });
-        if (!/^[0-9+\-*/(). Ee]+$/.test(expr)) return NaN;
+        expr = replaceApdlIdentifiers(expr, vars);
+        if (!/^[0-9+\-*/(). EeMathabs]+$/.test(expr)) return NaN;
         try {
           const value = Function(`"use strict"; return (${expr});`)();
           return Number.isFinite(Number(value)) ? Number(value) : NaN;
@@ -2984,11 +3175,13 @@
       }
 
       function assignApdlVariable(line, vars) {
-        const match = expandApdlPercents(line, vars).match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+        const match = expandApdlPercents(line, vars).match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\(([^()]+)\))?\s*=\s*(.+)$/);
         if (!match) return false;
-        const value = evalApdlExpression(match[2], vars);
+        const index = match[2] ? evalApdlExpression(match[2], vars) : null;
+        if (match[2] && !Number.isFinite(index)) return false;
+        const value = evalApdlExpression(match[3], vars);
         if (!Number.isFinite(value)) return false;
-        vars.set(match[1].toUpperCase(), value);
+        vars.set(apdlVarKey(match[1], index), value);
         return true;
       }
 
@@ -3009,9 +3202,29 @@
           const a = evalApdlExpression(parts[1], vars);
           const b = evalApdlExpression(parts[2], vars);
           if (Number.isFinite(a) && Number.isFinite(b)) {
-            geometry.elements.push({ a: String(Math.trunc(a)), b: String(Math.trunc(b)) });
+            const id = String(geometry.elements.length + 1);
+            geometry.elements.push({ id, a: String(Math.trunc(a)), b: String(Math.trunc(b)), sourceCommand: command });
+            vars.set("_LNEW", Number(id));
           }
         }
+      }
+
+      function registerApdlLineComponent(line, vars, geometry) {
+        const clean = expandApdlPercents(stripApdlComment(line), vars);
+        const match = clean.match(/^LS_(SUP|ARM|TRAY|BOLT)\s*\([^)]*\)\s*=\s*_LNEW\s*$/i);
+        if (!match) return false;
+        const lineId = String(Math.trunc(Number(vars.get("_LNEW"))));
+        const element = geometry.elements.find((item) => item.id === lineId);
+        if (!element) return false;
+        const component = match[1].toUpperCase();
+        element.component = `LS_${component}`;
+        element.kind = ({
+          SUP: "square_support",
+          ARM: "cantilever_arm",
+          TRAY: "tray_rail",
+          BOLT: "bolt_rod",
+        })[component];
+        return true;
       }
 
       function runApdlGeometrySubset(lines, start, end, vars, geometry) {
@@ -3061,7 +3274,7 @@
             index = match.endIndex + 1;
             continue;
           }
-          if (!assignApdlVariable(clean, vars)) {
+          if (!registerApdlLineComponent(clean, vars, geometry) && !assignApdlVariable(clean, vars)) {
             parseApdlGeometryCommand(clean, vars, geometry);
           }
           index += 1;
@@ -3076,12 +3289,12 @@
         runApdlGeometrySubset(lines, 0, lines.length, vars, geometry);
         const validElements = geometry.elements
           .filter((element) => geometry.nodes.has(element.a) && geometry.nodes.has(element.b))
-          .map((element) => ({ ...element, kind: classifyElement(element, geometry.nodes) }));
+          .map((element) => ({ ...element, kind: element.kind || classifyElement(element, geometry.nodes) }));
         if (geometry.nodes.size && validElements.length) {
           state.model = {
             nodes: [...geometry.nodes.values()],
             elements: validElements,
-            source: `generated_model.mac APDL解释预览，${geometry.nodes.size} 点 / ${validElements.length} 线`,
+            source: `generated_model.mac APDL 几何预览，${geometry.nodes.size} 关键点 / ${validElements.length} 几何线`,
           };
           $("modelSource").textContent = "来自建模命令";
           $("modelSource").className = "pill ok";
@@ -3106,6 +3319,17 @@
         const idA = Number(element.a);
         const idB = Number(element.b);
         const idBand = Math.max(idA, idB);
+        const suffixA = Math.abs(idA) % 10;
+        const suffixB = Math.abs(idB) % 10;
+        const isPhysicalBoltPair =
+          idBand >= 500 && idBand < 2500 &&
+          ((suffixA === 2 || suffixA === 3) && suffixB === 9 || (suffixB === 2 || suffixB === 3) && suffixA === 9);
+        const isTrayRailPair =
+          idBand >= 500 && idBand < 2500 &&
+          ((suffixA === 6 && suffixB === 7) || (suffixA === 7 && suffixB === 8) ||
+           (suffixB === 6 && suffixA === 7) || (suffixB === 7 && suffixA === 8));
+        if (isPhysicalBoltPair) return "bolt_rod";
+        if (isTrayRailPair) return "tray_rail";
         if (dz / max > 0.72 && Math.abs(midX) < 0.2) return "square_support";
         if (dx / max > 0.68) return "cantilever_arm";
         if (dy / max > 0.68 && midX > 0.1) return "tray_rail";
@@ -3119,9 +3343,10 @@
           square_support: { color: "#0b6b57", edge: "#074637", width: 8, label: "方钢立柱", glyph: "square" },
           cantilever_arm: { color: "#1e63a8", edge: "#123e6e", width: 7, label: "托臂槽钢", glyph: "channel" },
           tray_rail: { color: "#b86b10", edge: "#7a4108", width: 5, label: "托盘/纵向件", glyph: "open_up" },
+          bolt_rod: { color: "#5b6472", edge: "#27313f", width: 4.5, label: "螺栓/圆钢", glyph: "round_bar" },
           vertical_connector: { color: "#64748b", edge: "#334155", width: 4, label: "竖向连接", glyph: "connector" },
           connector: { color: "#64748b", edge: "#334155", width: 4, label: "连接/短撑", glyph: "connector" },
-          other: { color: "#64748b", edge: "#334155", width: 4, label: "其它线单元", glyph: "connector" },
+          other: { color: "#64748b", edge: "#334155", width: 4, label: "未分类几何线", glyph: "connector" },
         };
         return styles[kind] || styles.other;
       }
@@ -3138,11 +3363,11 @@
         const stats = $("modelStats");
         if (!stats) return;
         if (!model) {
-          stats.textContent = "0 点 / 0 线";
+          stats.textContent = "0 关键点 / 0 几何线";
           return;
         }
         const counts = modelKindCounts(model);
-        stats.textContent = `${model.nodes.length} 点 / ${model.elements.length} 线 · 方钢 ${counts.square_support || 0} · 托臂 ${counts.cantilever_arm || 0} · 托盘 ${counts.tray_rail || 0}`;
+        stats.textContent = `${model.nodes.length} 关键点 / ${model.elements.length} 几何线 · 方钢 ${counts.square_support || 0} · 托臂 ${counts.cantilever_arm || 0} · 托盘 ${counts.tray_rail || 0} · 螺栓/圆钢 ${counts.bolt_rod || 0}`;
       }
 
       function project(point, width, height) {
@@ -3153,8 +3378,8 @@
         const z1 = point.z;
         const y2 = y1 * cp - z1 * sp;
         const z2 = y1 * sp + z1 * cp;
-        const scale = Math.max(58, Math.min(102, width / 9.2, height / 5.4));
-        return { x: width / 2 + x1 * scale, y: height * 0.6 - z2 * scale + y2 * 12, depth: y2 };
+        const scale = Math.max(54, Math.min(150, width / 6.8, height / 4.6));
+        return { x: width / 2 + x1 * scale, y: height * 0.58 - z2 * scale + y2 * 12, depth: y2 };
       }
 
       function normalizedNodes(nodes) {
@@ -3180,6 +3405,7 @@
       }
 
       function drawEmptyModel(ctx, width, height, message) {
+        const dark = state.showMesh;
         const projectPreview = (point) => project(point, width, height);
         const drawPreviewLine = (a, b, color, lineWidth = 1.2) => {
           const pa = projectPreview(a);
@@ -3194,8 +3420,8 @@
         ctx.strokeStyle = "#d0d9e2";
         ctx.lineWidth = 1;
         for (let i = -4; i <= 4; i += 1) {
-          drawPreviewLine({ x: -3.2, y: i * 0.45, z: -1.2 }, { x: 3.2, y: i * 0.45, z: -1.2 }, "#dbe4ec");
-          drawPreviewLine({ x: i * 0.8, y: -1.8, z: -1.2 }, { x: i * 0.8, y: 1.8, z: -1.2 }, "#dbe4ec");
+          drawPreviewLine({ x: -3.2, y: i * 0.45, z: -1.2 }, { x: 3.2, y: i * 0.45, z: -1.2 }, dark ? "#173246" : "#dbe4ec");
+          drawPreviewLine({ x: i * 0.8, y: -1.8, z: -1.2 }, { x: i * 0.8, y: 1.8, z: -1.2 }, dark ? "#173246" : "#dbe4ec");
         }
         drawPreviewLine({ x: -3.2, y: 0, z: -1.2 }, { x: 3.2, y: 0, z: -1.2 }, "#1f5f99", 2);
         drawPreviewLine({ x: 0, y: -1.8, z: -1.2 }, { x: 0, y: 1.8, z: -1.2 }, "#0f7660", 2);
@@ -3208,17 +3434,17 @@
           [{ x: 1.1, y: -1.6, z: 0.32 }, { x: 1.1, y: 1.6, z: 0.32 }],
           [{ x: 1.55, y: -1.6, z: 0.32 }, { x: 1.55, y: 1.6, z: 0.32 }],
         ];
-        ghost.forEach(([a, b]) => drawPreviewLine(a, b, "#9ab9d6", 2));
+        ghost.forEach(([a, b]) => drawPreviewLine(a, b, dark ? "#7dd3fc" : "#9ab9d6", 2));
         [["X", { x: 3.35, y: 0, z: -1.2 }], ["Y", { x: 0, y: 1.95, z: -1.2 }], ["Z", { x: -3.0, y: -1.55, z: 1.95 }]].forEach(([label, point]) => {
           const p = projectPreview(point);
-          ctx.fillStyle = "#17212b";
+          ctx.fillStyle = dark ? "#e6f4ff" : "#17212b";
           ctx.font = "700 12px Segoe UI";
           ctx.fillText(label, p.x + 4, p.y - 4);
         });
-        ctx.fillStyle = "#17212b";
+        ctx.fillStyle = dark ? "#e6f4ff" : "#17212b";
         ctx.font = "700 15px Segoe UI";
         ctx.fillText("三维命令流预览", 18, 30);
-        ctx.fillStyle = "#5c6b78";
+        ctx.fillStyle = dark ? "#9ec8dd" : "#5c6b78";
         ctx.font = "12px Segoe UI";
         const lines = [
           message || "等待 generated_model.mac；生成后会解释 APDL 参数、循环和 K/L 命令绘制真实线框。",
@@ -3255,7 +3481,64 @@
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
 
+      function drawMeshMember(ctx, element, projected, style, highlighted) {
+        const pa = projected[element.a];
+        const pb = projected[element.b];
+        if (!pa || !pb) return;
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const nx = -dy / length;
+        const ny = dx / length;
+        const halfWidth = Math.max(2.4, style.width * 0.72);
+        const meshColors = {
+          square_support: "#00e5ff",
+          cantilever_arm: "#f8fafc",
+          tray_rail: "#dbeafe",
+          bolt_rod: "#22c55e",
+          vertical_connector: "#94a3b8",
+          connector: "#94a3b8",
+          other: "#94a3b8",
+        };
+        const color = highlighted ? "#fb7185" : (meshColors[element.kind] || "#94a3b8");
+        const divisions = Math.max(1, Math.min(32, Math.round(length / 12)));
+        ctx.save();
+        ctx.lineCap = "butt";
+        ctx.lineJoin = "miter";
+        ctx.fillStyle = highlighted ? "rgba(251,113,133,.18)" : "rgba(8,25,38,.34)";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = highlighted ? 1.8 : 1.05;
+        ctx.beginPath();
+        ctx.moveTo(pa.x + nx * halfWidth, pa.y + ny * halfWidth);
+        ctx.lineTo(pb.x + nx * halfWidth, pb.y + ny * halfWidth);
+        ctx.lineTo(pb.x - nx * halfWidth, pb.y - ny * halfWidth);
+        ctx.lineTo(pa.x - nx * halfWidth, pa.y - ny * halfWidth);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.globalAlpha = highlighted ? 1 : 0.78;
+        for (let index = 1; index < divisions; index += 1) {
+          const ratio = index / divisions;
+          const x = pa.x + dx * ratio;
+          const y = pa.y + dy * ratio;
+          ctx.beginPath();
+          ctx.moveTo(x + nx * halfWidth, y + ny * halfWidth);
+          ctx.lineTo(x - nx * halfWidth, y - ny * halfWidth);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       function drawMemberBody(ctx, element, projected, style, highlighted) {
+        if (state.showMesh) {
+          drawMeshMember(ctx, element, projected, style, highlighted);
+          return;
+        }
         const pa = projected[element.a];
         const pb = projected[element.b];
         if (!pa || !pb) return;
@@ -3333,12 +3616,13 @@
         const uy = dy / length;
         const nx = -uy;
         const ny = ux;
+        const sectionStroke = state.showMesh ? "#7dd3fc" : style.edge;
         if (style.glyph === "square") {
           ctx.save();
           ctx.translate(mid.x, mid.y);
           ctx.rotate(Math.atan2(dy, dx));
-          ctx.strokeStyle = style.edge;
-          ctx.fillStyle = "rgba(15, 118, 96, 0.18)";
+          ctx.strokeStyle = sectionStroke;
+          ctx.fillStyle = state.showMesh ? "rgba(0, 229, 255, 0.10)" : "rgba(15, 118, 96, 0.18)";
           ctx.lineWidth = 2;
           ctx.strokeRect(-9, -9, 18, 18);
           ctx.strokeRect(-5, -5, 10, 10);
@@ -3350,7 +3634,7 @@
           ctx.save();
           ctx.translate(mid.x, mid.y);
           ctx.rotate(Math.atan2(dy, dx));
-          ctx.strokeStyle = style.edge;
+          ctx.strokeStyle = sectionStroke;
           ctx.lineWidth = 2.2;
           ctx.beginPath();
           ctx.moveTo(-10, -7);
@@ -3365,11 +3649,24 @@
             const width = canvas.width / (window.devicePixelRatio || 1);
             const height = canvas.height / (window.devicePixelRatio || 1);
             const openTo = project({ ...sourceMid, z: sourceMid.z + 0.3 }, width, height);
-            drawArrow(ctx, { x: mid.x + nx * 12, y: mid.y + ny * 12 }, openTo, style.edge);
-            ctx.fillStyle = style.edge;
+            drawArrow(ctx, { x: mid.x + nx * 12, y: mid.y + ny * 12 }, openTo, sectionStroke);
+            ctx.fillStyle = sectionStroke;
             ctx.font = "700 10px Segoe UI";
             ctx.fillText("开口", openTo.x + 4, openTo.y - 3);
           }
+        }
+        if (style.glyph === "round_bar") {
+          ctx.save();
+          ctx.translate(mid.x, mid.y);
+          ctx.rotate(Math.atan2(dy, dx));
+          ctx.fillStyle = state.showMesh ? "rgba(34, 197, 94, 0.12)" : "rgba(39, 49, 63, 0.18)";
+          ctx.strokeStyle = sectionStroke;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 8, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
         }
       }
 
@@ -3379,15 +3676,20 @@
           ["square_support", `方钢立柱/矩形管 ${counts.square_support || 0}`],
           ["cantilever_arm", `托臂槽钢 ${counts.cantilever_arm || 0}`],
           ["tray_rail", `托盘纵向件 ${counts.tray_rail || 0}`],
+          ["bolt_rod", `螺栓/圆钢 ${counts.bolt_rod || 0}`],
           ["connector", `连接/短撑 ${(counts.connector || 0) + (counts.vertical_connector || 0)}`],
         ];
         let x = 18;
-        const y = 74;
+        let y = 74;
         items.forEach(([kind, label]) => {
           const style = elementStyle(kind);
-          ctx.fillStyle = "rgba(255, 255, 255, .82)";
-          ctx.strokeStyle = "rgba(148, 163, 184, .5)";
+          ctx.fillStyle = state.showMesh ? "rgba(3, 10, 18, .82)" : "rgba(255, 255, 255, .82)";
+          ctx.strokeStyle = state.showMesh ? "rgba(148, 210, 230, .55)" : "rgba(148, 163, 184, .5)";
           const boxWidth = Math.max(142, ctx.measureText(label).width + 52);
+          if (x + boxWidth > width - 18) {
+            x = 18;
+            y += 34;
+          }
           ctx.beginPath();
           ctx.roundRect(x - 7, y - 16, boxWidth, 28, 8);
           ctx.fill();
@@ -3398,40 +3700,40 @@
           ctx.moveTo(x, y);
           ctx.lineTo(x + 28, y);
           ctx.stroke();
-          ctx.fillStyle = "#17212b";
+          ctx.fillStyle = state.showMesh ? "#e6f4ff" : "#17212b";
           ctx.font = "12px Segoe UI";
           ctx.fillText(label, x + 35, y + 4);
           x += boxWidth + 10;
-          if (x > width - 180) x = 18;
         });
       }
 
       function drawModelHud(ctx, width, height, model) {
         const counts = modelKindCounts(model);
         const lines = [
-          ["节点", model.nodes.length],
-          ["线单元", model.elements.length],
+          ["关键点", model.nodes.length],
+          ["几何线", model.elements.length],
           ["方钢", counts.square_support || 0],
           ["托臂", counts.cantilever_arm || 0],
           ["托盘", counts.tray_rail || 0],
+          ["螺栓/圆钢", counts.bolt_rod || 0],
         ];
         const x = width - 180;
         const y = 20;
-        ctx.fillStyle = "rgba(255,255,255,.86)";
-        ctx.strokeStyle = "rgba(148,163,184,.55)";
+        ctx.fillStyle = state.showMesh ? "rgba(3,10,18,.84)" : "rgba(255,255,255,.86)";
+        ctx.strokeStyle = state.showMesh ? "rgba(148,210,230,.58)" : "rgba(148,163,184,.55)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(x, y, 160, 132, 10);
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = "#17212b";
+        ctx.fillStyle = state.showMesh ? "#e6f4ff" : "#17212b";
         ctx.font = "700 13px Segoe UI";
         ctx.fillText("模型审核摘要", x + 12, y + 24);
         ctx.font = "12px Segoe UI";
         lines.forEach(([label, value], index) => {
-          ctx.fillStyle = "#5c6b78";
+          ctx.fillStyle = state.showMesh ? "#9ec8dd" : "#5c6b78";
           ctx.fillText(label, x + 12, y + 49 + index * 17);
-          ctx.fillStyle = "#17212b";
+          ctx.fillStyle = state.showMesh ? "#e6f4ff" : "#17212b";
           ctx.textAlign = "right";
           ctx.fillText(String(value), x + 145, y + 49 + index * 17);
           ctx.textAlign = "left";
@@ -3458,16 +3760,21 @@
         const canvas = $("modelCanvas");
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.max(600, Math.floor(rect.width * dpr));
-        canvas.height = Math.max(360, Math.floor(rect.height * dpr));
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
         const ctx = canvas.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const w = canvas.width / dpr;
         const h = canvas.height / dpr;
         ctx.clearRect(0, 0, w, h);
         const bg = ctx.createLinearGradient(0, 0, 0, h);
-        bg.addColorStop(0, "#fbfdff");
-        bg.addColorStop(1, "#edf4fa");
+        if (state.showMesh) {
+          bg.addColorStop(0, "#02060b");
+          bg.addColorStop(1, "#07111b");
+        } else {
+          bg.addColorStop(0, "#fbfdff");
+          bg.addColorStop(1, "#edf4fa");
+        }
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, w, h);
         const model = state.model;
@@ -3479,14 +3786,16 @@
         const drawModelData = { ...model, nodes: drawNodes };
         const byId = Object.fromEntries(drawModelData.nodes.map((node) => [node.id, node]));
         const projected = Object.fromEntries(drawModelData.nodes.map((node) => [node.id, project(node, w, h)]));
-        ctx.save();
-        ctx.globalAlpha = 0.86;
-        ctx.strokeStyle = "#d5e0e9";
-        ctx.lineWidth = 1;
-        for (let x = -40; x < w + 80; x += 48) {
-          ctx.beginPath(); ctx.moveTo(x, h - 42); ctx.lineTo(x + 32, h - 82); ctx.stroke();
+        if (!state.showMesh) {
+          ctx.save();
+          ctx.globalAlpha = 0.86;
+          ctx.strokeStyle = "#d5e0e9";
+          ctx.lineWidth = 1;
+          for (let x = -40; x < w + 80; x += 48) {
+            ctx.beginPath(); ctx.moveTo(x, h - 42); ctx.lineTo(x + 32, h - 82); ctx.stroke();
+          }
+          ctx.restore();
         }
-        ctx.restore();
         drawModelData.elements
           .slice()
           .sort((left, right) => {
@@ -3505,29 +3814,29 @@
             drawSectionGlyph(ctx, element, byId, projected, style, index);
           }
         });
-        const labelIds = new Set(drawModelData.nodes.slice(0, 4).map((node) => node.id));
+        const labelIds = new Set();
         drawModelData.nodes
           .slice()
           .sort((a, b) => projected[a.id].depth - projected[b.id].depth)
           .forEach((node) => {
             const p = projected[node.id];
             const hi = state.highlight.has(node.id);
-            ctx.fillStyle = hi ? "#b42318" : "rgba(15, 118, 96, .85)";
+            ctx.fillStyle = hi ? "#fb7185" : state.showMesh ? "#22c55e" : "rgba(15, 118, 96, .85)";
             ctx.beginPath();
             ctx.arc(p.x, p.y, hi ? 7 : 3.8, 0, Math.PI * 2);
             ctx.fill();
             if (hi || state.showNodeLabels || labelIds.has(node.id)) {
-              ctx.fillStyle = "#17212b";
+              ctx.fillStyle = state.showMesh ? "#f8fafc" : "#17212b";
               ctx.font = "12px Segoe UI";
               ctx.fillText(node.id, p.x + 7, p.y - 6);
             }
           });
-        ctx.fillStyle = "#17212b";
+        ctx.fillStyle = state.showMesh ? "#e6f4ff" : "#17212b";
         ctx.font = "700 14px Segoe UI";
         ctx.fillText("generated_model.mac 三维构件预览", 18, 24);
-        ctx.fillStyle = "#5c6b78";
+        ctx.fillStyle = state.showMesh ? "#9ec8dd" : "#5c6b78";
         ctx.font = "12px Segoe UI";
-        ctx.fillText(`来源：${model.source}；颜色/截面符号用于审核构件类别，拖拽旋转，点击载荷表高亮节点`, 18, 45);
+        ctx.fillText(`来源：${model.source}；${state.showMesh ? "分段线框为网格审查示意，非 ANSYS 实际单元" : "颜色/截面符号用于审核构件类别"}；拖拽旋转`, 18, 45);
         drawModelLegend(ctx, w);
         drawModelHud(ctx, w, h, model);
         drawAxes(ctx, w, h);
@@ -3665,31 +3974,52 @@
         }
       }
 
+      function triggerTemplateReportDownload(jobId) {
+        const link = document.createElement("a");
+        link.href = `/jobs/${encodeURIComponent(jobId)}/template-report`;
+        link.download = "";
+        link.hidden = true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      function setTemplateReportBusy(busy, text = "") {
+        const buildButton = $("buildTemplateReport");
+        const downloadButton = $("downloadTemplateReport");
+        state.reportBuildInFlight = busy;
+        if (buildButton) {
+          buildButton.disabled = busy;
+          buildButton.textContent = busy && text ? text : "注入并下载报告";
+        }
+        if (downloadButton) downloadButton.disabled = busy;
+      }
+
       async function buildTemplateReport() {
         if (!state.activeJobId) {
           toast("当前还没有可生成报告的 job。");
           return;
         }
-        const button = $("buildTemplateReport");
-        const oldText = button?.textContent;
-        if (button) {
-          button.disabled = true;
-          button.textContent = "检查并导出图片...";
+        if (state.reportBuildInFlight) {
+          toast("报告正在生成，请勿重复点击。");
+          return;
         }
+        const jobId = state.activeJobId;
+        setTemplateReportBusy(true, "1/3 检查报告图件...");
         try {
           await ensureTemplateReportFigures();
-          if (button) button.textContent = "注入模板...";
-          const payload = await requestJson(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, {
+          if (state.activeJobId !== jobId) throw new Error("当前任务已切换，请对新任务重新生成报告。");
+          setTemplateReportBusy(true, "2/3 注入报告数据...");
+          const payload = await requestJson(`/jobs/${encodeURIComponent(jobId)}/template-report`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({}),
           });
-          toast(`模板报告已生成：${payload.report_file || "report.docx"}`);
+          setTemplateReportBusy(true, "3/3 启动下载...");
+          triggerTemplateReportDownload(jobId);
+          toast(`报告已生成并开始下载：${payload.report_file || "report.docx"}`);
         } finally {
-          if (button) {
-            button.disabled = false;
-            button.textContent = oldText || "生成模板报告";
-          }
+          setTemplateReportBusy(false);
         }
       }
 
@@ -3698,7 +4028,11 @@
           toast("当前还没有模板报告。");
           return;
         }
-        window.open(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`, "_blank");
+        if (state.reportBuildInFlight) {
+          toast("报告正在生成，请稍候。");
+          return;
+        }
+        triggerTemplateReportDownload(state.activeJobId);
       }
 
       function renderAiMonitorPayload(payload) {
@@ -3864,6 +4198,11 @@
         $("elevationOverride").addEventListener("change", () => {
           commitCurrentRowOverrides({ renderTable: true });
         });
+        document.addEventListener("change", (event) => {
+          if (!event.target?.matches?.(".tray-line-load-input")) return;
+          commitCurrentRowOverrides({ renderTable: true });
+          renderTrayLoadAudit(state.selectedRow || {});
+        });
         $("outputRoot").addEventListener("input", () => {
           renderTaskSummary();
           saveIntakeSession();
@@ -3931,6 +4270,11 @@
         $("viewIso").addEventListener("click", () => { state.yaw = -0.55; state.pitch = 0.34; drawModel(); });
         $("viewFront").addEventListener("click", () => { state.yaw = 0; state.pitch = 0; drawModel(); });
         $("viewTop").addEventListener("click", () => { state.yaw = 0; state.pitch = Math.PI / 2; drawModel(); });
+        $("toggleMesh").addEventListener("click", () => {
+          state.showMesh = !state.showMesh;
+          $("toggleMesh").classList.toggle("active", state.showMesh);
+          drawModel();
+        });
         $("toggleSections").addEventListener("click", () => {
           state.showSections = !state.showSections;
           $("toggleSections").classList.toggle("active", state.showSections);
@@ -3965,6 +4309,10 @@
         });
         canvas.addEventListener("pointerup", () => { state.dragging = false; });
         window.addEventListener("resize", drawModel);
+        if (window.ResizeObserver) {
+          const modelResizeObserver = new ResizeObserver(() => drawModel());
+          modelResizeObserver.observe(canvas.parentElement);
+        }
       }
 
       async function initApp() {
@@ -3978,6 +4326,8 @@
             })
           : false;
         await loadOperatorLocalConfig().catch(() => {});
+        const requestedJobId = String(pageParams.get("job_id") || "").trim();
+        if (requestedJobId) state.activeJobId = requestedJobId;
         if (restoredStillValid) {
           renderParsedRows();
           renderTaskSummary();

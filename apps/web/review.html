@@ -49,6 +49,21 @@
         justify-content: space-between;
       }
 
+      .top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .back-link {
+        min-height: 34px;
+        padding: 6px 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+      }
+      .back-link:hover,
+      .back-link:focus-visible { border-color: var(--blue); outline: 2px solid #b7d3ee; outline-offset: 1px; }
+
       h1 { margin: 0; font-size: 19px; letter-spacing: 0; }
       h2 { margin: 0; font-size: 15px; }
       .sub { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
@@ -442,7 +457,10 @@
           <h1>电缆桥架智能力学分析平台 - 结果核查</h1>
           <div class="sub">按报告第六章和附录结构查看评定表、载荷表、模态图、应力云图和三份命令流；本页不生成报告。</div>
         </div>
-        <span id="jobPill" class="pill">读取 job</span>
+        <div class="top-actions">
+          <a id="backToDashboard" class="back-link" href="/dashboard">返回计算工作台</a>
+          <span id="jobPill" class="pill">读取 job</span>
+        </div>
       </div>
     </header>
 
@@ -539,6 +557,9 @@
       const params = new URLSearchParams(location.search);
       const jobId = params.get("job_id") || "";
       const state = { review: null, commandRole: "modeling", memos: [] };
+      $("backToDashboard").href = jobId
+        ? `/dashboard?job_id=${encodeURIComponent(jobId)}`
+        : "/dashboard";
 
       function valueText(value, fallbackUnit = "") {
         if (value === null || value === undefined || value === "") return "-";

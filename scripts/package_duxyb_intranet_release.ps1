@@ -1,5 +1,6 @@
 param(
     [string]$OutputRoot = "C:\Users\duxy\Desktop\duxyb",
+    [string]$InitialPassword = "cnpe123",
     [switch]$BuildPortableRuntime,
     [switch]$BuildDesktopRuntime,
     [switch]$BuildInstallerRuntime
@@ -44,7 +45,7 @@ function Should-SkipPath {
         if ($isTopLevelEntry -and $topLevelName -in @("jobs", "uploads", "outputs", "logs", "_internal_update", "_review_pre_real")) {
             return $true
         }
-        if ($relativePath -match '^docs[\\/](web_runs|production_runs|precision_gate)([\\/]|$)') {
+        if ($relativePath -match '^docs[\\/](web_runs|production_runs|precision_gate|paper)([\\/]|$)') {
             return $true
         }
         if ($relativePath -match '^docs[\\/](web_error_log\.jsonl|ansys_discovery\.json)$') {
@@ -81,6 +82,46 @@ function Copy-TreeFiltered {
             Copy-Item -LiteralPath $entry.FullName -Destination $dest -Force
         }
     }
+}
+
+function Resolve-PackagePython {
+    $candidates = @()
+    if ($env:CABLETRAYAI_PACKAGE_PYTHON) {
+        $candidates += $env:CABLETRAYAI_PACKAGE_PYTHON
+    }
+    $candidates += (Join-Path $Root ".venv\Scripts\python.exe")
+    $candidates += "D:\miniconda3\python.exe"
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+            return (Resolve-Path -LiteralPath $candidate).Path
+        }
+    }
+    $commands = @(Get-Command python -All -ErrorAction SilentlyContinue)
+    foreach ($command in $commands) {
+        $source = [string]$command.Source
+        if (-not $source) {
+            continue
+        }
+        if ($source -match 'LibreOffice') {
+            continue
+        }
+        return $source
+    }
+    throw "Cannot find a usable Python interpreter for deployment package gate. Set CABLETRAYAI_PACKAGE_PYTHON."
+}
+
+function Remove-GeneratedPythonCaches {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+    Get-ChildItem -LiteralPath $Path -Recurse -Directory -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -eq "__pycache__" -or $_.Name -eq ".pytest_cache" -or $_.Name -eq ".pytest_tmp" } |
+        Sort-Object FullName -Descending |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
+    Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in @(".pyc", ".pyo") } |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
 }
 
 if ($BuildPortableRuntime) {
@@ -120,6 +161,7 @@ $dirs = @(
     "data",
     "docs",
     "prompts",
+    "resources",
     "runtime",
     "scripts",
     "source_materials",
@@ -139,6 +181,13 @@ foreach ($file in $rootFiles) {
 Copy-Item -LiteralPath $desktopExe -Destination (Join-Path $PackageDir "CableTrayAI.exe") -Force
 Copy-Item -LiteralPath $installerExe -Destination (Join-Path $PackageDir "CableTrayAI_Installer.exe") -Force
 
+if ($InitialPassword -and $InitialPassword.Trim()) {
+    $initialPasswordPath = Join-Path $PackageDir "config\initial_password.txt"
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $initialPasswordPath) | Out-Null
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($initialPasswordPath, "$($InitialPassword.Trim())`n", $utf8NoBom)
+}
+
 $readmeLines = @(
     "CableTrayAI deployment package",
     "",
@@ -150,14 +199,18 @@ $readmeLines = @(
     "",
     "Login:",
     "- First install creates config/auth.local.json locally.",
-    "- The generated initial password is written only to install_manifest.json on that machine.",
+    "- This deployment package sets the first-install password to: $($InitialPassword.Trim())",
+    "- If a previous auth.local.json already exists, the installer backs it up and rewrites local users to this package password.",
+    "- The password is shown by the installer and written to CableTrayAI_LOGIN_INFO.txt plus install_manifest.json on that machine.",
+    "- CableTrayAI_LOGIN_INFO.txt also lists the local ANSYS config path for the unit computer.",
     "- Do not publish or commit local credentials.",
     "",
     "Notes:",
     "- The package includes standard APDL/PIP/MAC/SECT sources, templates, source_materials, and runtime files.",
     "- Historical jobs, uploads, outputs, logs, cache folders, and local ansys.local.toml are not packaged.",
     "- Keeping historical generated results out of the package prevents stale data from polluting new intake calculations.",
-    "- ANSYS is discovered by the application and can also be set manually in the web UI.",
+    "- Installer upgrades preserve target-machine jobs/uploads/outputs/logs by default; reset runtime data only with CABLETRAYAI_RESET_RUNTIME_DATA=1.",
+    "- ANSYS is discovered by the application and can also be set manually in the web UI; each unit computer uses its own config/ansys.local.toml and license.",
     "- Production conclusions still come from ANSYS outputs, Excel/deterministic formulas, and source_ref traceability."
 )
 $readmeLines | Set-Content -Encoding UTF8 -Path (Join-Path $PackageDir "README_INSTALL.txt")
@@ -170,24 +223,31 @@ $manifest = [ordered]@{
     entry = "CableTrayAI_Installer.exe"
     desktop_runtime = "runtime/CableTrayAI_Desktop/CableTrayAI.exe"
     server_runtime = "runtime/CableTrayAI_Server/CableTrayAI_Server.exe"
+    initial_password_file = "config/initial_password.txt"
+    initial_password_policy = "First install and installer-managed auth reset use the package password unless CABLETRAYAI_INITIAL_PASSWORD overrides it."
 }
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 -Path (Join-Path $PackageDir "release_manifest.json")
 
 $gateScript = Join-Path $Root "scripts\deployment_package_gate.py"
 if (Test-Path -LiteralPath $gateScript) {
-    $python = Get-Command python -ErrorAction Stop
-    & $python.Source $gateScript --package-dir $PackageDir
+    $python = Resolve-PackagePython
+    & $python $gateScript --package-dir $PackageDir
     if ($LASTEXITCODE -ne 0) {
         throw "deployment_package_gate.py failed; package was not zipped"
     }
 }
 
+Remove-GeneratedPythonCaches -Path $PackageDir
+
 if (Test-Path -LiteralPath $ZipPath) {
     Remove-Item -LiteralPath $ZipPath -Force
 }
 Compress-Archive -Path (Join-Path $PackageDir "*") -DestinationPath $ZipPath -Force
+$zipHash = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash
+$zipHash | Set-Content -Encoding ASCII -Path "$ZipPath.sha256.txt"
 
 Write-Host "CableTrayAI deployment package created:"
 Write-Host $PackageDir
 Write-Host $ZipPath
 Write-Host ("Zip size MB: {0:N2}" -f ((Get-Item -LiteralPath $ZipPath).Length / 1MB))
+Write-Host "Zip SHA256: $zipHash"

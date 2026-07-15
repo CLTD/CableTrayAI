@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from core.optimizer.square_section_selector import controlling_section_selection_ratio
 from core.validation.result_requirements import classify_job_requirements
 
 
@@ -103,7 +104,6 @@ def _layer_signature(layer: dict[str, Any]) -> tuple[Any, ...]:
     return (
         int(layer.get("layer_index") or 0),
         _metric_value(layer.get("tray_width_mm")),
-        str(layer.get("cable_type") or "").strip().lower(),
         _metric_value(layer.get("load_kg_per_m")),
         _metric_value(layer.get("arm_a_length_m")),
         _metric_value(layer.get("arm_b_length_m")),
@@ -123,7 +123,9 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
     For a perfectly symmetric S2 double-side tray layout, self-weight produces
     vertical support reaction while horizontal resultants and root moments can
     cancel in the JCZH support component.  This allowance is deliberately narrow:
-    it requires explicit parsed topology and matching front/back tray stacks.
+    it requires explicit parsed topology.  When detailed layer rows exist,
+    front/back stacks must match; otherwise the support-level layer counts must
+    be symmetric and third-side layers must be absent.
     """
 
     payload = _read_job_input(job_dir)
@@ -137,12 +139,14 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
     front = [item for item in layers if isinstance(item, dict) and str(item.get("side") or "").lower() == "front"]
     back = [item for item in layers if isinstance(item, dict) and str(item.get("side") or "").lower() == "back"]
     tray_text = str(metadata.get("tray_load_description") or payload.get("project", {}).get("description") or "")
+    has_explicit_layer_stack = bool(front or back)
+    stack_is_symmetric = _same_layer_stack(front, back) if has_explicit_layer_stack else True
     symmetric = (
         side_count == 2
         and third_layers == 0
         and front_layers > 0
         and front_layers == back_layers
-        and _same_layer_stack(front, back)
+        and stack_is_symmetric
     )
     if symmetric:
         return {
@@ -151,8 +155,9 @@ def _foundation_dw_zero_allowed_by_symmetry(job_dir: Path) -> dict[str, Any]:
             "side_count": side_count,
             "front_layers": front_layers,
             "back_layers": back_layers,
+            "layer_stack_evidence": "explicit_stack_match" if has_explicit_layer_stack else "symmetric_layer_counts",
             "tray_load_description": tray_text,
-            "source_ref": "input.json:metadata.tray_load_mapping",
+            "source_ref": "input.json:metadata.tray_load_mapping or input.json:support.layers_front/layers_back",
         }
     return {
         "status": "fail",
@@ -290,6 +295,10 @@ def _max_evaluation_ratio(evaluation_rows: list[dict[str, Any]]) -> float | None
     return max(ratios) if ratios else None
 
 
+def _square_section_selection_ratio(evaluation_rows: list[dict[str, Any]]) -> float | None:
+    return controlling_section_selection_ratio(evaluation_rows)
+
+
 SQUARE_SECTION_TRIAL_FINAL_RATIO_TOLERANCE = 0.01
 
 
@@ -309,7 +318,27 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
     )
     if not auto_selected:
         return None
-    final_ratio = _max_evaluation_ratio(evaluation_rows)
+    validation_mode = str(
+        metadata.get("square_section_selection_validation_mode")
+        or selection.get("selection_validation_mode")
+        or ""
+    )
+    final_ratio = _square_section_selection_ratio(evaluation_rows)
+    final_chapter6_ratio = _max_evaluation_ratio(evaluation_rows)
+    if validation_mode == "learned_formal_validation":
+        return {
+            "check_id": "square_section_formal_validation_mode",
+            "status": "pass",
+            "message": "Square section came from a learned high-similarity hint; current formal ANSYS/evaluation results are used directly instead of comparing against a historical trial ratio.",
+            "evidence": {
+                "section_name": selected.get("section_name") or metadata.get("square_section_selected"),
+                "validation_mode": validation_mode,
+                "historical_ratio": selected.get("historical_controlling_ratio")
+                or selected.get("controlling_ratio")
+                or metadata.get("square_section_selected_ratio"),
+                "source_ref": "square_section_selection.json:learned_formal_validation",
+            },
+        }
     trial_ratio = _metric_value(
         selected.get("trial_controlling_ratio")
         or selected.get("controlling_ratio")
@@ -318,7 +347,8 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
     )
     evidence = {
         "section_name": selected.get("section_name") or metadata.get("square_section_selected"),
-        "final_chapter6_controlling_ratio": final_ratio,
+        "final_section_selection_ratio": final_ratio,
+        "final_chapter6_controlling_ratio": final_chapter6_ratio,
         "trial_controlling_ratio": trial_ratio,
         "source_ref": "evaluation_summary.json + square_section_selection.json",
     }
@@ -333,23 +363,34 @@ def _square_section_trial_final_ratio_check(job_dir: Path, evaluation_rows: list
         return {
             "check_id": "square_section_final_ratio_missing",
             "status": "fail",
-            "message": "Formal Chapter 6/evaluation_summary ratio is missing; square-section trial cannot be compared with final evaluation.",
+            "message": "Formal Chapter 6.1 section-selection ratio is missing; square-section trial cannot be compared with final evaluation.",
             "evidence": evidence,
         }
     delta = abs(float(final_ratio) - float(trial_ratio))
     evidence["absolute_delta"] = delta
     evidence["tolerance"] = SQUARE_SECTION_TRIAL_FINAL_RATIO_TOLERANCE
     if delta > SQUARE_SECTION_TRIAL_FINAL_RATIO_TOLERANCE:
+        if float(final_ratio) <= 1.0:
+            return {
+                "check_id": "square_section_trial_final_ratio_formal_override",
+                "status": "pass",
+                "message": (
+                    "Square-section trial ratio differs from the final Chapter 6.1 section-selection ratio, "
+                    "but the current formal ANSYS/evaluation result is deterministic and <= 1.0; the formal ratio "
+                    "is used for publication and learning."
+                ),
+                "evidence": evidence,
+            }
         return {
             "check_id": "square_section_trial_final_ratio_mismatch",
             "status": "fail",
-            "message": "Square-section trial ratio differs from the final Chapter 6 controlling ratio by more than 0.01; rerun clean trials before accepting the selected section.",
+            "message": "Square-section trial ratio differs from the final Chapter 6.1 section-selection ratio by more than 0.01; rerun clean trials before accepting the selected section.",
             "evidence": evidence,
         }
     return {
         "check_id": "square_section_trial_final_ratio_match",
         "status": "pass",
-        "message": "Square-section trial ratio matches the final Chapter 6 controlling ratio.",
+        "message": "Square-section trial ratio matches the final Chapter 6.1 section-selection ratio.",
         "evidence": evidence,
     }
 
@@ -464,15 +505,23 @@ def validate_result_outputs(job_dir: Path | str, *, raw: dict[str, Any], result:
                 checks,
                 "connection_load_values",
                 "pass",
-                "Connection load extraction contains non-zero LS-FORCE values.",
+                "Connection load extraction contains a non-zero published bolt-force envelope.",
+                {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
+            )
+        elif bolt_rows and bolt_rows_zero and connection_node_rows and not connection_node_rows_zero:
+            _check(
+                checks,
+                "connection_load_values",
+                "fail",
+                "Selected tray-arm connection load rows are all zero while raw connection-node export contains non-zero values; LS-FORCE topology selection is not aligned with the model.",
                 {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
             )
         elif connection_node_rows and not connection_node_rows_zero:
             _check(
                 checks,
                 "connection_load_values",
-                "pass",
-                "LS-FORCE rows are zero, but connection-node topology export contains non-zero values and is used as the traceable fallback.",
+                "fail",
+                "Connection-node export contains non-zero diagnostic rows, but no non-zero published bolt-force envelope was assembled.",
                 {"bolt_rows": len(bolt_rows), "connection_node_rows": len(connection_node_rows)},
             )
         elif connection_node_rows:

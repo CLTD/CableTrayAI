@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from core.evaluators.bolt import evaluate_bolt_forces
+from core.evaluators.bolt import (
+    M8_BOLT_STRESS_AREA_M2,
+    M12_BOLT_GROUP_AREA_M2,
+    M12_BOLT_LEVER_ARM_BY_TRAY_WIDTH_M,
+    SOURCE_BOLT_FORMULA_M8,
+    SOURCE_BOLT_FORMULA_M12,
+    SOURCE_BOLT_SIZE_FROM_TRAY_WIDTH,
+    evaluate_bolt_forces,
+)
 from core.evaluators.material_policy import component_material_id
 from core.evaluators.support_beam import evaluate_support_beam
 from core.evaluators.weld import evaluate_cantilever_root_equivalent_weld_from_stress_items, evaluate_weld_forces
@@ -22,6 +30,44 @@ def _has_nonzero_stress(rows: list[dict]) -> bool:
         except (TypeError, ValueError):
             continue
     return False
+
+
+def _bolt_geometry_from_input(cable_input: CableTrayInput) -> dict:
+    widths = [
+        float(layer.tray_width_m) * 1000.0
+        for layer in cable_input.tray_layers
+        if getattr(layer, "tray_width_m", None) is not None
+    ]
+    max_width = max(widths) if widths else None
+    if max_width is not None and max_width <= 200.0:
+        return {
+            "bolt_size": "M8",
+            "bolt_area_m2": M8_BOLT_STRESS_AREA_M2,
+            "bolt_moment_lever_arm_m": None,
+            "bolt_force_share_count": 1.0,
+            "bolt_geometry_source_ref": SOURCE_BOLT_SIZE_FROM_TRAY_WIDTH,
+            "bolt_formula_source_ref": SOURCE_BOLT_FORMULA_M8,
+            "max_tray_width_mm": max_width,
+            "formula_policy": "tray_width_le_200_uses_workbook_200_m8_single_bolt_path",
+        }
+    standard_width = 300
+    if max_width is not None:
+        if max_width <= 300.0:
+            standard_width = 300
+        elif max_width <= 500.0:
+            standard_width = 500
+        else:
+            standard_width = 600
+    return {
+        "bolt_size": "M12",
+        "bolt_area_m2": M12_BOLT_GROUP_AREA_M2,
+        "bolt_moment_lever_arm_m": M12_BOLT_LEVER_ARM_BY_TRAY_WIDTH_M[standard_width],
+        "bolt_force_share_count": 2.0,
+        "bolt_geometry_source_ref": SOURCE_BOLT_SIZE_FROM_TRAY_WIDTH,
+        "bolt_formula_source_ref": f"{SOURCE_BOLT_FORMULA_M12}:tray_width_page={standard_width}",
+        "max_tray_width_mm": max_width,
+        "formula_policy": f"tray_width_gt_200_uses_workbook_{standard_width}_m12_two_bolt_lever_arm_path",
+    }
 
 
 def build_evaluation_summary(result: dict, cable_input: CableTrayInput) -> list[dict]:
@@ -64,7 +110,18 @@ def build_evaluation_summary(result: dict, cable_input: CableTrayInput) -> list[
                 component_eval_items.get("cantilever_arm") or component_eval_items.get("mixed_beam_type_1") or []
             )
         )
-    items.extend(evaluate_bolt_forces(result.get("bolt_force_results", [])))
+    bolt_geometry = _bolt_geometry_from_input(cable_input)
+    items.extend(
+        evaluate_bolt_forces(
+            result.get("bolt_force_results", []),
+            bolt_size=bolt_geometry["bolt_size"],
+            bolt_area_m2=bolt_geometry["bolt_area_m2"],
+            bolt_moment_lever_arm_m=bolt_geometry["bolt_moment_lever_arm_m"],
+            bolt_force_share_count=bolt_geometry["bolt_force_share_count"],
+            bolt_geometry_source_ref=bolt_geometry["bolt_geometry_source_ref"],
+            bolt_formula_source_ref=bolt_geometry["bolt_formula_source_ref"],
+        )
+    )
     items.extend(
         evaluate_weld_forces(
             result.get("weld_force_results", []),

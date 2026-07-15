@@ -33,7 +33,7 @@ http://127.0.0.1:8000/dashboard
 - Rows that explicitly mention steel platform use the static method, but still need the selected project spectrum workbook so the static SL-1/SL-2 peak acceleration coefficients can be derived and audited.
 - A new intake does not need a formal report number or calculation batch at upload time. The job is created under a provisional intake identity. After the formal report number is added to the intake workbook, run the reconciliation step to bind that number to the existing job and output folder.
 - Rows that do not mention steel platform use the response-spectrum method and must have a spectrum workbook selected.
-- Intake column I is treated as the square-tube section. If it is blank, the platform runs candidate square sections and chooses the one whose controlling ratio is `<= 1.0` and closest to `1.0`.
+- Intake column I is treated as the square-tube section. If it is blank, the platform runs candidate square sections inside the intake allowed list and chooses a section whose controlling ratio is `<= 1.0`; the normal economy target is `0.60 <= ratio <= 0.9999`, with at most two candidate trials.
 - The selected section is written back to the job-local `input.json` and `generated_model.mac`; the original intake and `source_materials` are not modified.
 - ANSYS must be run for formal results. If ANSYS discovery, preflight, spectrum confirmation, or section selection fails, the job fails instead of switching to mock.
 

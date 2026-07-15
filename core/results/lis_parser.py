@@ -248,11 +248,12 @@ def _annotate_modal_cutoff(rows: list[dict]) -> list[dict]:
 def _normalize_reportable_modal_rows(rows: list[dict]) -> list[dict]:
     """Number reportable structural modes while preserving ANSYS source MODE."""
 
+    positive_rows = [row for row in rows if row.get("frequency_hz") is not None and float(row.get("frequency_hz") or 0.0) > 0.0]
+    reportable_rows = [row for row in positive_rows if float(row.get("frequency_hz") or 0.0) >= MODAL_REPORTING_MIN_FREQUENCY_HZ]
+    low_frequency_fallback = bool(positive_rows and not reportable_rows)
     normalized: list[dict] = []
-    for row in rows:
+    for row in reportable_rows or positive_rows:
         frequency = row.get("frequency_hz")
-        if frequency is None or float(frequency) < MODAL_REPORTING_MIN_FREQUENCY_HZ:
-            continue
         source_mode = int(row.get("source_mode") or row.get("mode"))
         normalized.append(
             {
@@ -260,8 +261,10 @@ def _normalize_reportable_modal_rows(rows: list[dict]) -> list[dict]:
                 "source_mode": source_mode,
                 "mode": len(normalized) + 1,
                 "modal_reporting_min_frequency_hz": MODAL_REPORTING_MIN_FREQUENCY_HZ,
+                "modal_reporting_low_frequency_fallback": low_frequency_fallback,
                 "modal_reporting_policy": (
-                    "Report modal sequence excludes zero and near-rigid rows below 1 Hz; "
+                    "Report modal sequence excludes zero and near-rigid rows below 1 Hz when higher rows exist; "
+                    "if every real ANSYS modal row is below 1 Hz, positive rows are retained for the appendix frequency table. "
                     "source_mode preserves the original ANSYS MODE for traceability and MT cutoff."
                 ),
             }
@@ -276,29 +279,41 @@ def parse_modal_oup(path: Path | str) -> list[dict]:
     except LisParseError:
         records = []
     results: list[dict] = []
+    seen_source_modes: set[int] = set()
     for record in records:
         if not record.get("frequency_hz"):
             continue
-        frequency = _float(_require(record, "frequency_hz", path))
+        try:
+            frequency = _float(_require(record, "frequency_hz", path))
+        except (TypeError, ValueError):
+            continue
         if frequency <= 0:
             continue
+        source_mode = _int(_require(record, "mode", path))
+        if source_mode in seen_source_modes:
+            continue
+        seen_source_modes.add(source_mode)
         period = _float(record["period_s"]) if record.get("period_s") else 1.0 / frequency
         results.append(
             {
-                "mode": _int(_require(record, "mode", path)),
-                "source_mode": _int(_require(record, "mode", path)),
+                "mode": source_mode,
+                "source_mode": source_mode,
                 "frequency_hz": frequency,
                 "period_s": period,
                 "mass_x": _float(record["mass_x"]) if record.get("mass_x") else None,
                 "mass_y": _float(record["mass_y"]) if record.get("mass_y") else None,
                 "mass_z": _float(record["mass_z"]) if record.get("mass_z") else None,
                 "source_ref": path.name,
+                "modal_source_format": record.get("modal_source_format") or "tabular_frequency_record",
                 **_source_meta(path, str(frequency)),
             }
         )
     if results:
         return _normalize_reportable_modal_rows(results)
-    return _normalize_reportable_modal_rows(_parse_mapdl_modal_frequency_table(path))
+    try:
+        return _normalize_reportable_modal_rows(_parse_mapdl_modal_frequency_table(path))
+    except LisParseError:
+        return _normalize_reportable_modal_rows(_parse_mapdl_participation_frequency_table(path))
 
 
 def _parse_mapdl_modal_frequency_table(path: Path) -> list[dict]:
@@ -337,6 +352,54 @@ def _parse_mapdl_modal_frequency_table(path: Path) -> list[dict]:
             break
     if not results:
         raise LisParseError(f"{path.name}: no modal frequency rows parsed")
+    return results
+
+
+def _parse_mapdl_participation_frequency_table(path: Path) -> list[dict]:
+    results: list[dict] = []
+    seen_modes: set[int] = set()
+    in_table = False
+    numeric = re.compile(
+        r"^\s*(\d+)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\s+([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?)\b"
+    )
+    for line_number, line in enumerate(_read_lines(path), start=1):
+        upper = line.upper()
+        if re.search(r"\bMODE\b\s+\bFREQUENCY\b\s+\bPERIOD\b\s+PARTIC\.?FACTOR\b", upper):
+            in_table = True
+            continue
+        if not in_table:
+            continue
+        match = numeric.match(line)
+        if match:
+            mode = _int(match.group(1))
+            if mode in seen_modes:
+                continue
+            seen_modes.add(mode)
+            frequency = _float(match.group(2))
+            if frequency <= 0:
+                continue
+            period = _float(match.group(3)) if match.group(3) else 1.0 / frequency
+            meta = _source_meta(path, match.group(2))
+            meta["source_line"] = line_number
+            results.append(
+                {
+                    "mode": mode,
+                    "source_mode": mode,
+                    "frequency_hz": frequency,
+                    "period_s": period,
+                    "mass_x": None,
+                    "mass_y": None,
+                    "mass_z": None,
+                    "source_ref": path.name,
+                    "modal_source_format": "participation_factor_frequency_table",
+                    **meta,
+                }
+            )
+            continue
+        if results and re.search(r"^\s*\*{3,}|\bANSYS BINARY FILE STATISTICS\b", upper):
+            break
+    if not results:
+        raise LisParseError(f"{path.name}: no modal participation frequency rows parsed")
     return results
 
 

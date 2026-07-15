@@ -16,18 +16,117 @@ def test_six_layer_new_intake_starts_at_bounded_safe_initial_count() -> None:
     assert modal_mode_count_from_layer_count(6) == 80
 
 
+def test_one_layer_new_intake_starts_at_department_20_mode_rule() -> None:
+    assert modal_mode_count_from_layer_count(1) == 20
+
+
 def test_payload_infers_layer_count_when_explicit_modal_count_absent() -> None:
     payload = {
         "support": {"layers_front": 4, "layers_back": 2},
         "metadata": {},
-        "tray_layers": [{"width_mm": 500} for _ in range(6)],
+        "tray_layers": [
+            {"side": "front", "layer_index": 1, "width_mm": 500},
+            {"side": "front", "layer_index": 2, "width_mm": 500},
+            {"side": "front", "layer_index": 3, "width_mm": 500},
+            {"side": "front", "layer_index": 4, "width_mm": 500},
+            {"side": "back", "layer_index": 1, "width_mm": 500},
+            {"side": "back", "layer_index": 2, "width_mm": 500},
+        ],
     }
 
     assert modal_mode_count_from_payload(payload, source_text="MT=40") == 40
     audit = modal_policy_audit(payload, source_text="MT=40")
     assert audit["assigned_modal_mode_count"] == 40
     assert audit["assigned_modal_mode_count_source"] == "audited_source_safe_count"
-    assert audit["inferred_layer_count"] == 6
+    assert audit["inferred_layer_count"] == 4
+
+
+def test_double_sided_mixed_payload_uses_vertical_levels_not_total_runs_for_initial_mt() -> None:
+    payload = {
+        "support": {"layers_front": 5, "layers_back": 5, "side_count": 2},
+        "metadata": {
+            "tray_load_mapping": {
+                "front_layers": 5,
+                "back_layers": 5,
+                "layers": [
+                    {"side": "front", "layer_index": index}
+                    for index in range(1, 6)
+                ]
+                + [
+                    {"side": "back", "layer_index": index}
+                    for index in range(1, 6)
+                ],
+            }
+        },
+        "tray_layers": [
+            {"side": "front", "layer_index": index, "tray_width_m": width}
+            for index, width in enumerate((0.1, 0.2, 0.3, 0.5, 0.6), start=1)
+        ]
+        + [
+            {"side": "back", "layer_index": index, "tray_width_m": width}
+            for index, width in enumerate((0.1, 0.2, 0.3, 0.5, 0.6), start=1)
+        ],
+    }
+
+    assert modal_mode_count_from_payload(payload, source_text="MT=120") == 120
+    audit = modal_policy_audit(payload, source_text="MT=120")
+    assert audit["inferred_layer_count"] == 5
+    assert audit["assigned_modal_mode_count"] == 120
+    assert audit["assigned_modal_mode_count_source"] == "audited_source_safe_count"
+
+
+def test_learned_metadata_above_layer_band_is_trusted_as_real_run_evidence() -> None:
+    payload = {
+        "support": {"layers_front": 5, "layers_back": 5, "side_count": 2},
+        "metadata": {
+            "modal_mode_count": 110,
+            "modal_mode_count_source": "learned_similar_intake_modal_cache",
+            "tray_load_mapping": {
+                "front_layers": 5,
+                "back_layers": 5,
+                "layers": [
+                    {"side": "front", "layer_index": index}
+                    for index in range(1, 6)
+                ]
+                + [
+                    {"side": "back", "layer_index": index}
+                    for index in range(1, 6)
+                ],
+            },
+        },
+    }
+
+    assert modal_mode_count_from_payload(payload, source_text="MT=120") == 110
+    audit = modal_policy_audit(payload, source_text="MT=120")
+    assert audit["assigned_modal_mode_count"] == 110
+    assert audit["assigned_modal_mode_count_source"] == "learned_similar_intake_metadata"
+
+
+def test_auto_layer_metadata_above_layer_band_falls_back_to_inferred_layers() -> None:
+    payload = {
+        "support": {"layers_front": 5, "layers_back": 5, "side_count": 2},
+        "metadata": {
+            "modal_mode_count": 110,
+            "modal_mode_count_source": "intake_rule_layer_count_modal_count",
+            "tray_load_mapping": {
+                "front_layers": 5,
+                "back_layers": 5,
+                "layers": [
+                    {"side": "front", "layer_index": index}
+                    for index in range(1, 6)
+                ]
+                + [
+                    {"side": "back", "layer_index": index}
+                    for index in range(1, 6)
+                ],
+            },
+        },
+    }
+
+    assert modal_mode_count_from_payload(payload, source_text=None) == 70
+    audit = modal_policy_audit(payload, source_text=None)
+    assert audit["assigned_modal_mode_count"] == 70
+    assert audit["assigned_modal_mode_count_source"] == "inferred_layer_count"
 
 
 def test_explicit_modal_count_still_wins_over_layer_heuristic() -> None:

@@ -399,6 +399,8 @@ Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
 
 
 def start_server(root: Path, output_dir: Path) -> None:
+    if health_ok():
+        return
     stop_stale_server()
     if health_ok():
         return
@@ -445,6 +447,10 @@ def main() -> int:
                 webbrowser.open(denied_page.resolve().as_uri())
             show_error(f"当前电脑未在访问白名单内，请联系管理员-duxyb。\n本机 IP：{', '.join(ips) if ips else '未识别'}")
             return 2
+        if health_ok():
+            if os.environ.get("CABLETRAYAI_NO_OPEN") != "1":
+                webbrowser.open(URL + "login")
+            return 0
         candidates = scan_ansys()
         ansys_exe = candidates[0] if candidates else None
         output_dir = choose_output_dir(root)

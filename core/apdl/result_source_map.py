@@ -38,6 +38,14 @@ def _selector_window(lines: list[str], create_line_index: int) -> list[dict[str,
 
 def _component_scope(selectors: list[dict[str, Any]]) -> str:
     commands = "\n".join(item["command"].upper().replace(" ", "") for item in selectors)
+    if "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM" in commands and "CMSEL,A,CTAI_ARM_ELEMS,ELEM" in commands:
+        return "ctai_type1_component"
+    if "CMSEL,S,CTAI_ARM_ELEMS,ELEM" in commands:
+        return "ctai_cantilever_arm_component"
+    if "CMSEL,S,CTAI_SUPPORT_ELEMS,ELEM" in commands:
+        return "ctai_support_component"
+    if "CMSEL,S,CTAI_STRUCTURAL_ELEMS,ELEM" in commands:
+        return "ctai_structural_component"
     if "ESEL,A,TYPE,,10*I+2" in commands and "ESEL,A,TYPE,,10*I+3" in commands:
         return "parameterized_cantilever_arm_type_family"
     if "CMSEL,S,LS,NODE" in commands and "ESLN,S" in commands and "ESEL,U,SEC,,1" in commands:
@@ -52,6 +60,14 @@ def _component_scope(selectors: list[dict[str, Any]]) -> str:
 
 
 def _report_component_hint(scope: str) -> str:
+    if scope == "ctai_type1_component":
+        return "mixed_beam_type_1"
+    if scope == "ctai_cantilever_arm_component":
+        return "cantilever_arm"
+    if scope == "ctai_support_component":
+        return "square_support"
+    if scope == "ctai_structural_component":
+        return "mixed_beam"
     if scope == "parameterized_cantilever_arm_type_family":
         return "cantilever_arm"
     if scope == "ls_component_attached_elements_except_section_1":

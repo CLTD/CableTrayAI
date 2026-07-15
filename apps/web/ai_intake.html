@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>对话提资计算</title>
+    <style>
+      :root {
+        --bg: #edf2f6;
+        --panel: #ffffff;
+        --soft: #f7fafc;
+        --ink: #142333;
+        --muted: #5a6f82;
+        --line: #cfdae4;
+        --line-strong: #aabccd;
+        --green: #0f7660;
+        --green-soft: #e7f5ef;
+        --blue: #245b91;
+        --blue-soft: #eaf3ff;
+        --amber: #986300;
+        --amber-soft: #fff7df;
+        --red: #b42318;
+        --red-soft: #fff1ef;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      }
+      button, input, textarea { font: inherit; }
+      button {
+        min-height: 36px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        padding: 6px 12px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+      html body button.primary,
+      html body button.primary:hover:not(:disabled),
+      html body button.primary:focus-visible,
+      html body button.primary:active {
+        border-color: #075f4a !important;
+        background-color: var(--green) !important;
+        background-image: none !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+      }
+      @media (forced-colors: active) {
+        html body button.primary,
+        html body button.primary:hover:not(:disabled) {
+          forced-color-adjust: auto;
+          background-color: Highlight !important;
+          color: HighlightText !important;
+          -webkit-text-fill-color: HighlightText !important;
+        }
+      }
+      button:disabled { cursor: not-allowed; opacity: .6; }
+      input, textarea {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line-strong);
+        border-radius: 6px;
+        padding: 7px 9px;
+        background: #fff;
+        color: var(--ink);
+      }
+      textarea { min-height: 190px; resize: vertical; }
+      label { display: block; margin: 10px 0 5px; color: var(--muted); font-size: 12px; }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255,255,255,.98);
+      }
+      .topbar {
+        max-width: 1580px;
+        min-height: 64px;
+        margin: 0 auto;
+        padding: 10px 16px;
+        display: grid;
+        grid-template-columns: minmax(320px, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+      h1 { margin: 0; font-size: 19px; letter-spacing: 0; }
+      .subtitle { color: var(--muted); font-size: 12px; margin-top: 3px; }
+      .top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      main {
+        max-width: 1580px;
+        margin: 0 auto;
+        padding: 12px 16px 20px;
+        display: grid;
+        grid-template-columns: minmax(360px, 520px) minmax(640px, 1fr);
+        gap: 12px;
+      }
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 42px;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--soft);
+      }
+      .panel-title { font-weight: 700; }
+      .panel-body { padding: 12px; }
+      .stack { display: grid; gap: 12px; align-content: start; }
+      .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      .check-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+      .check-row input { width: auto; min-height: auto; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 2px 9px;
+        background: #fff;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .ok { border-color: #84d0be; background: var(--green-soft); color: var(--green); }
+      .warn { border-color: #e1bd66; background: var(--amber-soft); color: var(--amber); }
+      .bad { border-color: #ed9c95; background: var(--red-soft); color: var(--red); }
+      .blue { border-color: #b7c9ea; background: var(--blue-soft); color: var(--blue); }
+      .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+      .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+      .metric { border: 1px solid #d7e1eb; border-radius: 7px; padding: 8px 9px; background: #fff; }
+      .metric b { display: block; font-size: 16px; line-height: 1.3; }
+      .metric span { color: var(--muted); font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; background: #fff; }
+      th, td { border: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; }
+      th { background: #f6f9fb; color: #2e4357; }
+      pre {
+        margin: 0;
+        max-height: 260px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 10px;
+        background: #07111f;
+        color: #e6edf7;
+        white-space: pre-wrap;
+      }
+      .list { display: grid; gap: 7px; }
+      .notice { border: 1px solid #d7e1eb; border-radius: 7px; padding: 8px 9px; background: #fbfdff; }
+      @media (max-width: 1100px) {
+        main { grid-template-columns: 1fr; }
+        .summary-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="topbar">
+        <div>
+          <h1>对话提资计算</h1>
+          <div class="subtitle">自然语言整理为可审查提资行，计算仍走现有 ANSYS 与评定门禁。</div>
+        </div>
+        <div class="top-actions">
+          <button type="button" onclick="location.href='/dashboard'">计算工作台</button>
+          <button type="button" onclick="location.href='/ai-tools'">AI 质控</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stack">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">提资对话</div>
+            <span id="draftBadge" class="pill warn">未预检</span>
+          </div>
+          <div class="panel-body">
+            <label for="message">提资内容</label>
+            <textarea id="message">项目1818，NR厂房，标高8.5m，双侧2+2层600，支架间距2m，方钢长度1.8m，允许100x8、120x10、140x8</textarea>
+            <label for="spectrumFile">反应谱文件</label>
+            <div class="row">
+              <input id="spectrumFile" placeholder="uploads/spectrum/楼层谱...xlsm 或 D:\...\楼层谱.xlsm" />
+              <input id="fileInput" type="file" accept=".xlsm,.xlsx" style="display:none" />
+              <button type="button" id="uploadSpectrum">上传</button>
+            </div>
+            <label for="outputRoot">输出目录</label>
+            <div class="row">
+              <input id="outputRoot" placeholder="留空使用平台默认 ANSYS Output" />
+              <button type="button" id="chooseOutput">选择</button>
+            </div>
+            <div class="actions">
+              <button type="button" id="previewBtn">预检提资</button>
+              <button type="button" id="startBtn" class="primary">启动真实计算</button>
+              <button type="button" id="useStandardSectionsBtn" hidden>使用单位候选库补截面</button>
+            </div>
+            <div class="hint">候选截面优先读取提资文字，例如“允许100x8、120x10、140x8”。只有提资未说明可用截面时，才需要使用单位候选库补截面。</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">运行状态</div>
+            <span id="runBadge" class="pill">空闲</span>
+          </div>
+          <div class="panel-body">
+            <div class="summary-grid">
+              <div class="metric"><b id="runStatus">-</b><span>状态</span></div>
+              <div class="metric"><b id="runProgress">0%</b><span>进度</span></div>
+              <div class="metric"><b id="activeJob">-</b><span>当前 job</span></div>
+            </div>
+            <div class="actions">
+              <button type="button" id="openDashboard">查看工作台</button>
+              <button type="button" id="refreshRun">刷新</button>
+            </div>
+            <div id="runMessage" class="hint">尚未启动。</div>
+          </div>
+        </section>
+      </section>
+
+      <section class="stack">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">结构化提资</div>
+            <span id="fieldBadge" class="pill">0 项</span>
+          </div>
+          <div class="panel-body">
+            <div id="missingList" class="list"></div>
+            <table>
+              <tbody id="fieldTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">审计 JSON</div>
+            <span class="pill blue">可追溯</span>
+          </div>
+          <div class="panel-body">
+            <pre id="auditJson">等待预检。</pre>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const state = { draft: null, runId: "", timer: null, useStandardSections: false };
+      const hiddenIntakeFields = new Set([
+        "report_number",
+        "calculation_batch",
+        "intake_order_id",
+        "provisional_intake_id",
+        "intake_identity_status",
+        "raw_intake_row",
+        "elevation_raw",
+        "allowed_square_section_source_ref",
+        "allowed_square_section_status",
+      ]);
+      const fieldLabels = {
+        project_code: "项目号",
+        building: "厂房/区域",
+        area: "谱表区域",
+        elevation: "标高(m)",
+        damping_ratio: "阻尼比",
+        material: "材料",
+        support_type: "支架类型",
+        support_spacing_m: "支架间距(m)",
+        support_height_m: "方钢长度(m)",
+        description: "桥架布置",
+        support_id: "支架号",
+        analysis_method: "计算方法",
+        allowed_square_section_ids: "候选方钢截面",
+      };
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let payload = {};
+        try { payload = text ? JSON.parse(text) : {}; } catch { payload = { detail: text }; }
+        if (!response.ok) throw new Error(payload.detail || `${response.status} ${response.statusText}`);
+        return payload;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+      }
+
+      function payloadForParse() {
+        return {
+          message: $("message").value.trim(),
+          spectrum_file: $("spectrumFile").value.trim(),
+          output_root: $("outputRoot").value.trim(),
+          use_standard_square_sections: state.useStandardSections,
+          execute_real: true,
+        };
+      }
+
+      function renderDraft(draft) {
+        state.draft = draft;
+        const fields = draft.intake_payload || {};
+        const missing = draft.missing_fields || [];
+        const shownEntries = Object.entries(fields).filter(([key]) => !hiddenIntakeFields.has(key));
+        $("draftBadge").textContent = draft.status === "pass" ? "可计算" : "需补全";
+        $("draftBadge").className = `pill ${draft.status === "pass" ? "ok" : "warn"}`;
+        $("fieldBadge").textContent = `${shownEntries.length} 项`;
+        $("fieldTable").innerHTML = shownEntries.map(([key, value]) => {
+          const shown = Array.isArray(value) ? value.join("、") : typeof value === "object" ? JSON.stringify(value) : value;
+          return `<tr><th>${escapeHtml(fieldLabels[key] || key)}</th><td>${escapeHtml(shown)}</td></tr>`;
+        }).join("");
+        const prompts = draft.prompts || [];
+        $("useStandardSectionsBtn").hidden = !missing.includes("allowed_square_section_ids");
+        $("missingList").innerHTML = missing.length
+          ? prompts.map((item) => `<div class="notice"><span class="pill warn">缺项</span> ${escapeHtml(item)}</div>`).join("")
+          : `<div class="notice"><span class="pill ok">通过</span> 字段完整，可以启动真实计算。</div>`;
+        $("auditJson").textContent = JSON.stringify(draft, null, 2);
+      }
+
+      async function previewDraft() {
+        $("previewBtn").disabled = true;
+        $("draftBadge").textContent = "预检中";
+        try {
+          const payload = await requestJson("/ai/intake/preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadForParse()),
+          });
+          renderDraft(payload.draft || payload);
+        } catch (error) {
+          $("auditJson").textContent = `预检失败：${error.message}`;
+          $("draftBadge").textContent = "失败";
+          $("draftBadge").className = "pill bad";
+        } finally {
+          $("previewBtn").disabled = false;
+        }
+      }
+
+      async function startRun() {
+        $("startBtn").disabled = true;
+        $("runBadge").textContent = "提交中";
+        $("runBadge").className = "pill warn";
+        try {
+          const payload = await requestJson("/ai/intake/start-run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadForParse()),
+          });
+          if (payload.status === "blocked") {
+            renderDraft(payload.draft);
+            $("runBadge").textContent = "未启动";
+            $("runBadge").className = "pill warn";
+            $("runMessage").textContent = "提资缺项，已阻断 ANSYS 启动。";
+            return;
+          }
+          renderDraft(payload.draft);
+          state.runId = payload.run?.run_id || "";
+          $("runMessage").textContent = `已生成提资：${payload.intake_workbook?.intake_path || "-"}`;
+          pollRun();
+          if (state.timer) clearInterval(state.timer);
+          state.timer = setInterval(pollRun, 4000);
+        } catch (error) {
+          $("runBadge").textContent = "失败";
+          $("runBadge").className = "pill bad";
+          $("runMessage").textContent = error.message;
+        } finally {
+          $("startBtn").disabled = false;
+        }
+      }
+
+      async function pollRun() {
+        if (!state.runId) return;
+        const run = await requestJson(`/runs/${encodeURIComponent(state.runId)}`, { cache: "no-store" });
+        $("runStatus").textContent = run.status || "-";
+        $("runProgress").textContent = `${run.progress || 0}%`;
+        $("activeJob").textContent = run.active_job_id || "-";
+        $("runMessage").textContent = run.message || "";
+        const terminal = ["completed", "failed", "cancelled", "fail", "pass"].includes(String(run.status || "").toLowerCase());
+        $("runBadge").textContent = terminal ? "已结束" : "运行中";
+        $("runBadge").className = `pill ${terminal ? (String(run.status).toLowerCase() === "fail" ? "bad" : "ok") : "warn"}`;
+        if (terminal && state.timer) {
+          clearInterval(state.timer);
+          state.timer = null;
+        }
+      }
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(",", 2)[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function uploadSpectrumFile(file) {
+        const content_base64 = await fileToBase64(file);
+        const payload = await requestJson("/files/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, kind: "spectrum", content_base64 }),
+        });
+        $("spectrumFile").value = payload.path;
+        await previewDraft();
+      }
+
+      $("previewBtn").addEventListener("click", previewDraft);
+      $("startBtn").addEventListener("click", startRun);
+      $("useStandardSectionsBtn").addEventListener("click", async () => {
+        state.useStandardSections = true;
+        await previewDraft();
+      });
+      $("message").addEventListener("input", () => {
+        state.useStandardSections = false;
+      });
+      $("refreshRun").addEventListener("click", pollRun);
+      $("openDashboard").addEventListener("click", () => { location.href = "/dashboard"; });
+      $("uploadSpectrum").addEventListener("click", () => $("fileInput").click());
+      $("fileInput").addEventListener("change", () => {
+        const file = ($("fileInput").files || [])[0];
+        if (file) uploadSpectrumFile(file).catch((error) => { $("auditJson").textContent = `上传失败：${error.message}`; });
+      });
+      $("chooseOutput").addEventListener("click", async () => {
+        const payload = await requestJson("/folders/select-output", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initial: $("outputRoot").value.trim() }),
+        });
+        if (payload.path) $("outputRoot").value = payload.path;
+      });
+
+      previewDraft().catch(() => {});
+    </script>
+  </body>
+</html>

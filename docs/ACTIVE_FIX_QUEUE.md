@@ -1,4 +1,1158 @@
+# CableTrayAI ??????
+
+## 2026-07-15 login cover redesign queue
+
+Resolved/verified:
+
+1. Replaced the dark split-panel cover with a light engineering-workbench composition using a white login surface and a full-height finite-element model field.
+2. Removed the visible source-image frame and ANSYS screenshot marker from the presentation layer while retaining the real model silhouette, moving load path, response hotspots and reduced-motion support.
+3. Kept desktop controls at `328-352 px`, moved the login group to the vertical center and added a dedicated mobile login surface.
+4. Browser review passed at 1600x900, 1366x768 and 390x844; full unit/integration tests passed 304 tests.
+
+Open:
+
+1. No source or deployment blocker remains. The full package and local installation are refreshed from this source state; use the adjacent SHA256 sidecar as transfer authority.
+
+## 2026-07-15 login width redesign queue
+
+Resolved/verified:
+
+1. Replaced viewport-proportional desktop fields with a bounded `320-360 px` range suitable for short username/password content.
+2. Kept a separate `390-420 px` reading width so the explanatory sentence remains on one line.
+3. Verified the real page at 1366x768, 1600x900 and 1920x1080; model framing and form hierarchy remain balanced.
+4. Mobile retains full available width and 48 px touch targets.
+
+Open:
+
+1. No source or deployment blocker remains. Full unit/integration tests pass, and the full package/local installation are refreshed from this source state; use the adjacent SHA256 sidecar as transfer authority.
+
+## 2026-07-14 login proportion queue
+
+Resolved/verified:
+
+1. Desktop form width and control height were reduced to restore balance with the real-model panel.
+2. Heading and vertical spacing were tightened without changing authentication or animation behavior.
+3. Mobile keeps its separate 48 px touch target and full-width responsive layout.
+4. Desktop screenshot review and all `304` unit/integration tests passed.
+
+Open:
+
+1. No source blocker remains. Rebuild the full package before unit transfer so the installed login page matches the reviewed source.
+
+## 2026-07-14 login/startup/report/spectrum review queue
+
+Resolved/verified:
+
+1. Login now uses the selected real-model animation and retains the real authentication form, account-only memory, responsive layout and reduced-motion support.
+2. Healthy local services are reused before ANSYS discovery; repeated icon clicks no longer stop and restart the server.
+3. Report injection is single-click guarded and downloads from the same page after generation, avoiding delayed popup blocking and duplicate POSTs.
+4. Formal XLSM spectrum output now has a fail-closed curve-integrity gate. Existing interpolation, envelope, damping and precision algorithms are unchanged.
+5. Full tests passed `304`; package gate, installed health/login, fast-path timing and source/package/install hash equality passed.
+
+Open:
+
+1. PDF spectrum numerical recognition into Excel remains a future feature, not a production claim. Development requires representative civil-discipline PDFs paired with their unit-approved Excel/XLSM outputs, including text-table, vector-curve and scanned-PDF cases. Each extracted value must retain page/region/hash provenance and require human confirmation before formal use.
+2. No source/package/local-install blocker remains for this queue. Unit deployment should use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and verify it with the regenerated adjacent `.sha256.txt` sidecar.
+
+## 2026-07-14 operator line-load synchronization queue
+
+Resolved/verified:
+
+1. Confirmed the local 4210 real run used dashboard values `10/15/20/25/30 kg/m`; original values remain only in audit metadata.
+2. Removed silent failure paths when switching rows or entering invalid loads.
+3. New positive site loads are accepted without historical-value matching. Only invalid numeric input or physical layer identity mismatch blocks the run.
+4. Added a deterministic pre-ANSYS gate across dashboard override, normalized input and generated APDL density commands.
+5. Full unit/integration/compile/JavaScript checks and current 4210 command re-render audit passed.
+
+Open:
+
+1. No source/package/local-install blocker remains. Unit transfer must use the current full `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and verify the adjacent SHA256 sidecar.
+
+## 2026-07-10 nuclear-cost and engineering-review UI queue
+
+Resolved/verified:
+
+1. Removed the unsupported `118.38 CNY/m` ordinary-market value from default runtime output and candidate ordering.
+2. Default economy evidence is now square-tube material area and estimated theoretical mass only. Nuclear-project comprehensive cost remains `not_configured` until a unit-approved price book is supplied.
+3. Recorded the official NEA quota-management framework and 2025 nuclear-island budget-quota notice as governance references; no public item price is inferred from them.
+4. Fixed right-side command-panel blank space and desktop bottom alignment; verified one-pixel terminal border gap and zero panel bottom delta.
+5. Fixed preview semantics and component mapping. The page now says keypoints/geometric lines, labels its segmented wireframe as a mesh-review schematic, and uses `LS_SUP/LS_ARM/LS_TRAY/LS_BOLT` registrations.
+6. 4210 browser verification reports square support `18`, arm `42`, tray `30`, bolt `15`; desktop/mobile browser errors are zero and 390px layout has no horizontal overflow.
+7. Full unit/integration and compile checks passed.
+
+Open:
+
+1. No source blocker remains. A true CNY comprehensive-cost comparison still requires the unit to provide an approved nuclear-project quota/price data set covering the required cost scopes; the platform correctly refuses to invent it.
+2. No source/package/local-install blocker remains. Git closeout records this exact source state.
+
+## 2026-07-10 economic selection and browser compatibility queue
+
+Resolved/verified:
+
+1. `0.60-0.9999` is no longer a formal or economic gate. It is an operator-facing utilization-review range only; all applicable deterministic ratios must remain `<=1.0`.
+2. Economic choice is made only among fresh ANSYS-passing candidates, using versioned square-tube material reference cost per metre and theoretical mass fallback. Similar-job history affects order only.
+3. Support spacing and square-support height/length are fixed intake conditions and are not changed automatically after an over-limit result. Line-load adjustment requires explicit operator input and a new solve.
+4. Green-button hover visibility and cross-page job restoration were fixed for unit-browser differences.
+5. Full unit/integration/compile/browser checks passed. Real ANSYS18.2 mixed five-layer 4210 validation passed at `140-140-8` with controlling ratio `0.8072080946405193`.
+6. New full package: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `B7BB2002662141BB5F744B69C39449306570EB90C0D6904823A3765EC110C1D9`. Local `D:/CableTrayAI` health/login and source-package-install hash checks passed.
+
+Open:
+
+1. No source, package, or local-install blocker remains for this queue. Unit deployment should replace the old installation with the new full package. Project-specific purchase prices may later replace the public reference snapshot without changing the deterministic mechanical gate.
+
+## 2026-07-09 mixed five-layer short-section segment queue
+
+Resolved/verified:
+
+1. Confirmed the user-visible issue on `160-160-8`: the 500/600 tray `YIXINGGANG150DAN` short-section appeared too long even though `QALEN` and `QL3A` arrays were already correct.
+2. Root cause: in `ctai_layered_mixed_tray_standard`, the 500/600 segment `502 -> 503` was incorrectly registered as the short-section arm type. It should remain the main arm; only `503 -> 504` is the short tail.
+3. Fixed `core/apdl/mixed_tray_model.py` with a width branch:
+   - `500/600`: `502 -> 503` is main arm, `503 -> 504` is short tail.
+   - `100/200`: existing two-part short-tail split remains unchanged.
+   - `300`: existing special path remains unchanged.
+4. Added regression assertions in `tests/unit/test_intake_standard_family_tray_widths.py`.
+5. Verification passed: targeted mixed-tray tests and full `tests/unit`.
+6. Fresh review command streams are under `C:/Users/duxy/Desktop/mixed_five_tray_code_review_20260709_segment_fix`.
+7. Real ANSYS18.2 model-only validation passed for 10 representative generated-model cases under `jobs/model_only_matrix_20260709_2230`. The matrix covers single-layer, double-layer, single-side, double-side, same-width 200/300/500/600, mixed 100+200, mixed 500+600, and five-width mixed 100/200/300/500/600. Only `generated_model.mac` was executed; solve and post were not executed. All cases had ANSYS error count `0` and nonzero element counts.
+
+Open:
+
+1. No source/package/deployment blocker remains after the model-only validation. Unit transfer should use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `447F5F4D2A1BC4E41D22C6449D24F2B040E416EB665F78F0A0809DE3383E1A85`, not the older `CableTrayAI0708.zip`.
+
+## 2026-07-09 mixed five-layer total-distance queue
+
+Resolved/verified:
+
+1. Confirmed the user's unit-deployment symptom: mixed five-layer tray models could still show wrong distances after copying the previous package.
+2. Root cause: the 2026-07-07 fix only corrected branch-specific L3/tail values. The single five-width CTAI renderer still recalculated `QALEN` from `arm_a + dynamic_tail`, so 160-class sections shortened 600 and 500 tray total arm lengths.
+3. Fixed total-length preservation:
+   - 600 keeps total `QALEN=0.67` for both 120 and 160 branches.
+   - 500 keeps total `QALEN=0.55` for both 120 and 160 branches.
+   - 160 branch changes only the tail split: 600 `QA=0.52`, `QL3A=0.15`; 500 `QA=0.40`, `QL3A=0.15`.
+   - 120 branch remains: 600 `QA=0.47`, `QL3A=0.20`; 500 `QA=0.35`, `QL3A=0.20`.
+   - 100/200/300 stay `QALEN=0.35`, `QL3A=0.15`.
+4. Updated topology manifest sync so UI/model trace distances follow the final section replacement.
+5. Regression tests cover the 120 and 160 branches; full `tests/unit` passed.
+6. Deployment package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `A12F08B273C042368E7B4B0A78F99DFD9C9F2E36F1C8F30B067D8951289E294A`.
+7. Local install `D:/CableTrayAI` was refreshed from that package, `/health` passed, and `duxyb/cnpe123` login passed.
+
+Open:
+
+1. No active code/package blocker remains for the mixed five-layer distance issue. Unit deployment must use the new `CableTrayAI.zip`, not the older `CableTrayAI0708.zip`.
+
+## 2026-07-07 mixed tray tail-rule queue
+
+Resolved/verified:
+
+1. Clarified and locked the active rule:
+   - `500/600` trays with square section `<=120-120-10`: `CAOGANG42DAN` tail `0.20 m`;
+   - `500/600` trays with square section above `120-120-10`: `YIXINGGANG150DAN` tail `0.15 m`;
+   - `100/200/300` trays: reviewed short-tail behavior stays `0.15 m` for both arm families.
+2. Fixed grouped source-style `600/500/300` mixed rendering so the 300 mm group does not reuse the shared 600/500 `L5` tail. The 300 group now renders its own `0.15` tail expression.
+3. Added mixed-source tail audit for reviewed single-side source-style mixed families, explicitly mapping `L5` to 500/600 and 0.15 tails to 100/200/300.
+4. Added regression tests for 120-120-10 and 160-160-8 branches, plus QL3A topology sync coverage.
+
+Verified:
+
+1. Targeted tests passed for the affected APDL paths and topology sync.
+2. Full `tests/unit` passed.
+3. `py_compile` passed for touched APDL modules.
+4. Render smoke confirmed the corrected expressions.
+
+Deployment closeout:
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `EBEE944A440CCB433DA3CD2479F371811E973DA7CEBC9CF4CA7E3F78EF701D88`, size `75.73 MB`.
+2. Package gate passed: forbidden paths absent, runtime XML support files present, and no-expat spectrum smoke passed.
+3. Local `D:/CableTrayAI` was refreshed from the package; `/health` returned `ok`, root HTTP returned `200`, and `duxyb/cnpe123` login returned `pass`.
+4. Source/package/installed hashes match for the touched APDL renderer modules and deployment scripts.
+
+## 2026-06-19 4126 LS-FORCE clarification queue
+
+Resolved/verified:
+
+1. Accepted the user's correction: `18185NI-LXSJ4126` should not be described as requiring a different missing `03` result-extraction command stream. The available generic `03 导出数据-S2.PIP` is the shared stream and remains byte-identical to the curated repo resource.
+2. Rechecked the saved 4126 desktop `01` model and `.bak`: both contain physical bolt/round-bar topology `506/507/508` and `1506/1507/1508`; neither contains the generic suffix-9 LS-FORCE interface `509/609/709` and `1509/1609/1709`.
+3. Rechecked diagnostic results: strict suffix-9 extraction gives zero LS-FORCE values for the saved 4126 model; a diagnostic `507/1507` selector gives nonzero values but still does not match the Word report. This confirms `507` is not an acceptable production replacement.
+4. Targeted post/topology/result tests passed after the clarification:
+   - `tests/unit/test_postprocessor_alignment.py`
+   - `tests/unit/test_result_validity_square_section.py`
+   - `tests/unit/test_ansys_post_exports_stream_output.py`
+   - `tests/unit/test_result_assembler_connection_nodes.py`
+   - `tests/unit/test_apdl_post_extract_template.py`
+
+Open:
+
+1. Historical 4126 tray-arm connection load reproduction remains unresolved, but the open item is now precisely scoped: the saved 4126 `01` model does not expose the interface selected by the shared generic `03`, and the original raw LIS/DB evidence behind the Word report is unavailable.
+2. Current production should continue to block suffix-9 topology mismatches instead of publishing all-zero loads or suffix-6/7/8 diagnostic physical bolt values.
+
+## 2026-06-19 generic S2 post-extraction topology queue
+
+Resolved in source and tests:
+
+1. Confirmed the user-provided generic extraction stream `C:/Users/duxy/Desktop/Desktopuxyb/03 导出数据-S2.PIP` is byte-identical to the curated repo resource `resources/current_type_command_flows/single_mixed_600_500_300_200_100/03_extract_s2.PIP`.
+2. Removed the generated-post LS-FORCE nearby-keypoint fallback. `templates/apdl/post_extract_s2.mac.j2` now selects exactly `KYALS%I%`; it no longer tries `KYALS%I%-3` or `KYALS%I%-101`.
+3. Removed formal publication fallback from connection-node post-assembly. `LS-FORCE-NODES.LIS` suffix-6/7/8 physical bolt rows and suffix-2 CP interface rows are diagnostic only; only suffix-9 rows may become published tray-arm connection loads.
+4. Added regression tests so this cannot silently regress.
+5. Static render matrix `jobs/type_mix_command_audit_20260619_200315/summary.json` confirmed representative single-width and mixed-width command streams keep their own topology:
+   - same-width 100/200/300/500/600 source-family extraction stays on `TYPE=1` and `TYPE=1` minus `SEC=1`;
+   - mixed tray-width extraction uses `CTAI_TYPE1_ELEMS`, `CTAI_ARM_ELEMS`, and `CTAI_TRAY_ELEMS`;
+   - no audited case contains `KYSEL`, `KYALS%I%-3`, or `KYALS%I%-101`.
+
+Verified:
+
+1. Targeted tests: `78 passed`.
+2. Full unit tests: `269 passed`.
+3. `py_compile` passed for touched modules.
+4. `git diff --check` has no whitespace errors; remaining messages are pre-existing line-ending normalization warnings.
+5. Final recheck at `2026-06-19T20:12:16+08:00` also confirmed audit-summary JSON integrity and no `source_materials` worktree changes.
+
+Open:
+
+1. No new production-code or package blocker in this queue.
+2. Full package is refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `D0B3223213FC41DE1A6143648AA7E30AF9927A1B169B48E733C36A27C79C7022`; local `D:/CableTrayAI` smoke passed with `/health`, root HTTP 200, and `duxyb/cnpe123` login.
+3. Exact historical `18185NI-LXSJ4126` LS-FORCE reproduction is still governed by the existing 4126 queue: do not adopt `507` or any suffix-6/7/8 substitute without the original authoritative post stream.
+
+## 2026-06-19 LS-FORCE hardening coverage validation queue
+
+Resolved/verified:
+
+1. Current-code topology audit confirms the 4126 historical source model is missing the standard `509/1509` LS-FORCE interface while normal current generated models expose it.
+2. The LS-FORCE hardening now protects two production failure classes:
+   - standard suffix-9 post selector paired with a model without matching `509/1509` topology;
+   - final `bolt_force_results` envelope all zero while unrelated raw connection-node rows are nonzero.
+3. Input-matched real ANSYS coverage at the 5% gate shows no cross-contamination of tray-width logic:
+   - `4115` 500 mm: pass;
+   - `4118` 300 mm: pass;
+   - `4156` 200 mm: pass;
+   - `4249` 600 mm: pass;
+   - `4151` 500+600 mixed: pass;
+   - `4228` historical 500 mm replay: pass.
+4. Targeted tests, full unit tests, py_compile and `git diff --check` passed.
+5. Evidence is recorded in `docs/LS_FORCE_TOPOLOGY_AND_COVERAGE_VALIDATION_20260619.md` and `jobs/input_matched_coverage_summary_20260619.json`.
+
+Open:
+
+1. `18185NI-LXSJ4126_full_input` still fails the 5% historical report comparison only on `LS-FORCE.LIS`. Main stress, modal and foundation loads are aligned.
+2. Do not change production to `507` extraction. The diagnostic `*09 -> *07` patch gave nonzero loads but did not match the report.
+3. Exact 4126 LS-FORCE reproduction remains blocked until the original department `03` extraction command stream, historical LIS files, or another authoritative extraction point is provided.
+
+## 2026-06-19 4126 LS-FORCE topology queue
+
+Resolved in source and tests:
+
+1. `18185NI-LXSJ4126` remaining full-input discrepancy has been isolated to tray-arm connection load extraction. Structural stress, modal and foundation-load outputs are aligned.
+2. Root cause: the historical 300 tray source model has physical bolt lines `506/507/508` and `1506/1507/1508`, while the shared S2 post stream extracts LS-FORCE through standard suffix-9 `509/1509` keypoints. Physical bolt geometry alone is not a valid LS-FORCE publication interface.
+3. Added `core/apdl/ls_force_topology.py` and wired its audit into:
+   - 300 tray source-family scoring.
+   - 300 tray physical-bolt parameterization audit.
+   - `postprocessor_alignment_audit.json` as `ls_force_selector`.
+   - render traceability status, so model/post mismatch is a generated-command failure.
+4. Hardened result assembly and validation:
+   - selected connection-node families can now be marked `selected_all_zero`;
+   - raw nonzero `LS-FORCE-NODES.LIS` rows no longer make a zero final `bolt_force_results` envelope publishable.
+5. Regression coverage added for missing `509/1509` topology, LS-FORCE selector alignment, zero selected connection-node family behavior, and final result validation.
+
+Verified:
+
+1. Targeted LS-FORCE tests passed.
+2. Full unit tests passed.
+3. `py_compile` passed for touched files.
+4. Direct audit of the 4126 source model correctly reports missing `509/1509` topology while detecting legacy `506/507/508` physical bolt lines.
+
+Open:
+
+1. Exact historical 4126 LS-FORCE report reproduction still needs the original department `03` post stream. The previous diagnostic `*09 -> *07` patch is not accepted as a production rule because it remained far from the report baseline.
+2. No deployment package has been rebuilt for this LS-FORCE hardening yet.
+
+## 2026-06-19 full input-matched high-error replay queue
+
+Resolved/verified:
+
+1. Built full-input diagnostic batch `jobs/full_input_matched_high_error_20260619_180420`.
+2. Replayed `18185NI-LXSJ4151` with desktop source `01` model and `02` solve. It now passes both `5%` and `1%` report comparison; `0` failed metrics.
+3. Replayed `18185NI-LXSJ4228` with desktop source `01` model and `02` solve, including historical `L3=0.15`. It now passes both `5%` and `1%` report comparison; `0` failed metrics.
+4. Replayed `18185NI-LXSJ4126` with desktop source `01` model and `02` solve. Main stress/modal/foundation values match: stress max relative error about `0.0327%`, modal max relative error about `0.00002%`.
+5. Wrote detailed evidence to `docs/FULL_INPUT_MATCH_VALIDATION_20260619.md`.
+
+Open:
+
+1. `18185NI-LXSJ4126` is not fully accepted because `LS-FORCE.LIS` tray-arm connection loads remain mismatched.
+2. Root cause: source `4126` model uses `506/507/508` and `1506/1507/1508` keypoint families, while the generic standard S2 post LS-FORCE block selects `*09` keypoint families. This produced all-zero LS-FORCE.
+3. A diagnostic-only `*09 -> *07` LS selector patch produced nonzero LS-FORCE but still failed against the report, so the exact historical extraction point is not proven.
+4. Next production fix candidate: add source-family-aware LS-FORCE extraction for `300` source-style models, or obtain the exact historical `03` extraction stream for `4126` and reproduce it before coding.
+
+## 2026-06-19 high-error input-matched replay queue
+
+Resolved/verified:
+
+1. Applied the NR 4249 input-matched replay method to other large-error desktop-folder-2 cases under `jobs/input_matched_high_error_20260619_174851`.
+2. Real ANSYS18.2 completed for `18185NI-LXSJ4115`, `4118`, `4156`, `4126`, `4151`, and `4228`.
+3. `4115`, `4118`, and `4156` now pass historical baseline comparison after replaying their desktop source solve streams:
+   - `4115`: failed comparisons `42 -> 0`.
+   - `4118`: failed comparisons `17 -> 0`.
+   - `4156`: failed comparisons `3 -> 0`.
+4. Documented the run in `docs/HIGH_ERROR_INPUT_MATCH_VALIDATION_20260619.md`.
+
+Open:
+
+1. `4126` remains a model/input mismatch, not a solve-only mismatch. Current generated model has mixed `300/200` tray content and CTAI topology; desktop source model is `300-75-2mm` source-style only.
+2. `4151` remains a model/input mismatch. Current generated model is `500-75-2mm` only; desktop source model is mixed `600-75-2mm + 500-75-2mm`.
+3. `4228` mostly improves but conflicts with current production `L3` rule. Desktop source uses `L3=0.15`; current locked rule gives `L3=0.20` for `500 mm` tray with `120-120-8`.
+4. Decision still required before claiming the whole desktop-folder-2 baseline is accepted: preserve current production rules and mark conflicting historical reports, or add a developer-only historical replay mode that freezes source model/solve/post streams for reproduction.
+
+## 2026-06-19 NR-only input-matched replay queue
+
+Resolved/verified:
+
+1. Narrowed the desktop-folder-2 comparison to the NR case `18185NI-LXSJ4249` and rebuilt a diagnostic replay at `jobs/nr_input_matched_20260619_170940/18185NI-LXSJ4249_source_solve`.
+2. Confirmed model inputs match the desktop source model: `H1=0.14`, `H2=1.4`, `L1=0.67`, `L2=0.6`, `L3=0.15`, `L4=2.0`, `140-140-8`, `YIXINGGANG150/YIXINGGANG150DAN`, and `600-75-2mm`.
+3. Replayed the desktop source solve command stream for NR 4249. Real ANSYS18.2 succeeded with `MT=60`.
+4. Governing stress and ratio values now match the report within comparison tolerance: faulted bending `289.308 MPa` vs `289.32 MPa`, and faulted tension+bending ratio `0.8167` vs `0.82`.
+
+Open:
+
+1. Remaining NR 4249 failures are limited to several SL-1 load components at about `3%` to `4%` in JCZH/HF/LS load tables.
+2. The desktop NR 4249 folder contains only the report and `01/02` command streams, not historical LIS files or a separate `03` post command stream. Do not classify this residual as a production post-processing bug until that historical extraction evidence is available.
+3. The NB spectrum-elevation blocker is separate from this NR check: NR 4249 has valid `NR_1818@26.2` spectrum data; the blocked sample lacks an acceptable NB elevation under the current no-snap-down policy.
+
+## 2026-06-19 Desktop folder 2 baseline validation queue
+
+Resolved in source:
+
+1. Windows status-file race during long real ANSYS batch validation is fixed. `run_production_full_intake_compute.ps1` now writes status files with PID-suffixed temp files and retry/backoff, preventing `[WinError 5]` when the UI or operator reads status while the writer replaces it.
+2. Symmetric double-side static/self-weight result validation is fixed. The DW foundation-load zero gate now ignores cable label text when proving front/back self-weight symmetry, and only uses geometry/load signature.
+3. Regression test added for the symmetric explicit stack with different front/back cable labels.
+
+Verified:
+
+1. Targeted result-validity test passed: `pytest tests/unit/test_result_validity_square_section.py -q` returned `9 passed`.
+2. Real ANSYS re-run passed for `18185NI-LXSJ4151` and `18185NI-LXSJ4228` under `jobs/baseline_desktop2_fixverify_20260619_154504`.
+3. Initial representative sample real runs passed for `4115`, `4118`, `4126`, `4249`, and `4156`.
+4. `4227` is input-blocked by the current spectrum-elevation policy, not by an ANSYS or post-processing crash.
+
+Open:
+
+1. Historical report precision baseline is still not accepted. `jobs/baseline_desktop2_20260619_151733/baseline_validation_summary.md` records multiple report comparison failures at `1%` tolerance.
+2. The dominant conflict is input-policy mismatch: static historical solve streams contain fixed/audited `ACEL` values that do not match current production equivalent-static coefficient derivation from the selected workbook/current elevation; `4151` also differs by historical `MT=90` versus current retry `MT=100`.
+3. Before claiming "no deviation from desktop 2 reports", choose one policy: developer-only replay of historical standard `ACEL`/`MT` for baseline reproduction, or current-production comparison that records those historical files as input-policy conflicts.
+
+## 2026-06-19 4218 grouped mirrored 500/600 L5 sync queue
+
+Resolved in source, tests, and real ANSYS:
+
+1. Root cause: grouped mirrored 500/600 jobs kept source-style `L5=0.2` after final section selection because `ctai_grouped_mirrored_mixed_standard` was skipped by the previous single-side-only L5 sync guard.
+2. Fix: final square-section replacement now recognizes this model source from `intake_standard_family_traceability.json` and synchronizes `L5` using the wide-tray rule. For final `160-160-8`, `L5=0.15`.
+3. Guardrail: `L3=0.6` and `L4=0.5` remain tray-width variables and are not rewritten by this fix.
+4. Regression test added for grouped mirrored 500/600 replacement: `H1=0.160000`, `L5=0.15`, `L3=0.6`, and `L4=0.5`.
+5. Web preview was made taller and the legend now wraps cleanly, improving the visual review panel without changing APDL semantics.
+6. Real ANSYS18.2 validation passed for `18185NI-LXSJ4218` under `jobs/verify_4218_l5_fix_20260619_104624`; selected `160-160-8`, result validation passed, controlling ratio `0.963156436189633`.
+
+Open:
+
+1. No package/local-deployment blocker remains. Full installer package is `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C770DDD3DB13CE8EDA4BC923C294C7E4CFE456F6F3A13F4F7C63803DDADBE372`. Local `D:/CableTrayAI` is synced from that package, server PID `19240`, `/health` ok, root HTTP `200`, and `duxyb/cnpe123` login pass.
+2. Commit and push completed at `01e31c0` on `origin/codex/unit-deployment-hardening-20260610`.
+
+## 2026-06-18 result-extraction component mapping queue
+
+Resolved in source, tests, and real ANSYS:
+
+1. Standard command-flow mapping is now explicit. `MAXBEAMSTRESS.LIS` and appendix-B `B*/D*` figures use the department `TYPE=1` equivalent scope: square support + tray arms, excluding trays and bolts. `SQUAREBEAMSTRESS.LIS` is square-support numeric-only. `TMAXBEAMSTRESS.LIS` is tray-arm-only. Fig. 5.2 / `TBMODEL.PNG` is model review only and selects arms + trays.
+2. Mixed component-topology models now publish `CTAI_TYPE1_ELEMS` as support + arms. `CTAI_STRUCTURAL_ELEMS` remains support + arms + trays for visual review and cannot drive `MAXBEAMSTRESS`.
+3. Square-section replacement now synchronizes component-topology `QL3A` and `apdl_topology_manifest.json` after final section selection. The tested L3 rule is: tray width `<=300 mm -> 0.15 m`; tray width `>300 mm` and square outer `<=120 mm -> 0.20 m`; tray width `>300 mm` and square outer `>120 mm -> 0.15 m`.
+4. `SQUAREBEAMSTRESS.LIS` export strips plot commands and no longer generates `SQ-*` figures. Appendix-B requires `B*/D*` main-stress figures from the support+arm scope.
+5. TMAX selector alignment is idempotent, so repeated formal section sync cannot duplicate `CMSEL,S,CTAI_ARM_ELEMS,ELEM`.
+6. Full test suite passed, and real ANSYS18.2 row 2 / `18185NI-LXSJ4210` passed at `jobs/verify_mapping_real_cleanpost_20260618`. The final model selected `160-160-8`, synchronized `QL3A(1..5)=0.15`, and result validation is publishable.
+7. Full installer package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `48427750AB6C42D593576926F36DBF206AD0F56CA3F872F0456742AE3845CE1B`.
+8. Package gate passed, local `D:/CableTrayAI` was installed from the rebuilt package, `/health` ok, root HTTP 200, and `duxyb/cnpe123` login pass.
+
+Open:
+
+1. None for the current result-extraction component mapping closeout. Commit and push are complete at `78a10c0` on `origin/codex/unit-deployment-hardening-20260610`; the 2026-06-19 final audit reconfirmed result-file definitions, output presence, package hash, local install, and full tests.
+
+## 2026-06-18 CableTrayAI mixed tray component-topology standard flow queue
+
+Resolved in source and unit tests:
+
+1. Mixed tray-width jobs now route to CableTrayAI-owned standardized APDL geometry instead of using a department mixed model as the production geometry.
+2. Department command-flow families remain as audited solve/post intent and manual review references, so the code still respects existing standards without forcing mismatched mixed geometry.
+3. Mixed generated models now declare `CTAI_SUPPORT_ELEMS`, `CTAI_ARM_ELEMS`, `CTAI_TRAY_ELEMS`, `CTAI_BOLT_ELEMS`, `CTAI_STRUCTURAL_ELEMS`, and `CTAI_BOLT_NODES` after meshing.
+4. Mixed generated post-processing now extracts cantilever stress and Fig. 5.2 display by those declared components, not by coordinate reselection, obsolete `10*_CTAI_LAYER` expressions, or stale TYPE/SEC assumptions.
+5. `apdl_topology_manifest.json` is written and published with the command streams so manual review can see the intended modeling/extraction interface.
+6. All new APDL comments for the standard flow are Chinese UTF-8 comments; APDL variables and component names remain ASCII to avoid ANSYS parser encoding issues.
+
+Verification:
+
+1. Python compile passed for touched APDL/result modules.
+2. Full `tests/unit` passed.
+3. `git diff --check` passed.
+4. Mixed render smokes passed for grouped mirrored mixed and single-side five-width mixed examples.
+5. UTF-8 Chinese comment checks passed.
+6. Real ANSYS18.2 validation passed for row 2 / `18185NI-LXSJ4210` at `jobs/verify_ctai_component_topology_real_20260618_211918`. It selected `160-160-8`, `ansys_run_status=success`, `result_validation.status=pass`, max deterministic ratio `0.8526662509801224`, and `TMAXBEAMSTRESS.LIS` maps to `ctai_cantilever_arm_component`.
+7. The modal MT and square-section learning caches were refreshed by the real run for this normalized 4210 key; this is intentional because the learned record now points to the component-topology validation job and aligned section-selection component.
+
+Closeout:
+
+1. Additional real ANSYS18.2 matrix validation passed for rows 5 and 7 at `jobs/verify_ctai_component_topology_matrix_20260618_214222`.
+2. `18185NI-LXSJ4213` selected `100-100-6`, ANSYS return code `0`, result validation `pass`, and final controlling ratio `0.8205337776189886`.
+3. `18185NI-LXSJ4215` selected `100-100-8`, ANSYS return code `0`, result validation `pass`, final controlling ratio `0.8284205670255151`, and command-stream publication includes `apdl_topology_manifest.json`.
+4. Full `tests/unit`, Python compile, recovery JSON validation, `git diff --check`, and `source_materials` clean checks passed. `git diff --check` only reports expected CRLF normalization warnings.
+5. Accessible source-tree Python caches were removed. Two old root pytest cache directories have unreadable ACLs, but they are ignored by Git and package-excluded.
+6. Server, desktop, and installer runtimes were rebuilt, the full installer package was refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`, package gate passed, and local `D:/CableTrayAI` install smoke passed with `/health`, root page, and `duxyb/cnpe123` login.
+
+Open:
+
+1. Commit and push the completed source/package-state update.
+
+## 2026-06-18 single-side five-width mixed tray source-flow queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Added the reviewed department single-side five-layer `600/500/300/200/100` command-flow family under `resources/current_type_command_flows/single_mixed_600_500_300_200_100/`.
+2. Exact single-side mixed intakes containing `100/200` small-tray topology now select this reviewed source family and preserve its source-style post-processing selectors. This prevents using source `ESEL,S,TYPE,,1` / `ESEL,U,SEC,,1` against a nonstandard generated topology.
+3. Standard-family scoring still keeps compact `500+600` mixed jobs on the smaller reviewed source family.
+4. Square-section replacement now synchronizes reviewed single-side mixed wide-tray `L5` after final section selection: `>120 mm -> L5=0.15`, `<=120 mm -> L5=0.20`; unrelated `L5` semantics are skipped.
+5. Verification passed: py_compile, targeted APDL/post/square-section tests, full `tests/unit`, `git diff --check`, and a real ANSYS18.2 single-side five-width run.
+6. Real-run result: `18185NI-LXSJ4210` selected `160-160-8`, final model `H1=0.160000` and `L5=0.15`, `result_validation.status=pass`, max deterministic ratio `0.8483448948253757`.
+7. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+8. Local `D:/CableTrayAI` was installed from the full package; `/health`, root page, and `duxyb/cnpe123` login passed; installed resources are not nested and match source/package hashes.
+
+Open:
+
+1. Commit and push this completed update.
+
+## 2026-06-18 all-ratio square-section display queue
+
+Resolved in source and unit tests:
+
+1. Candidate pass/fail now uses the same all-row deterministic stress ratio as the final result, including weld and bolt rows. The previous Chapter 6.1 member-only ratio remains as `section_selection_ratio` for audit and smart jump heuristics only.
+2. Web candidate summary data now has aligned backend values: `controlling_ratio`, `overall_controlling_ratio`, and `final_chapter6_controlling_ratio` reflect the final all-row gate, so the web page cannot show a passing selected section while the final result is over limit.
+3. Learned square-section cache version bumped to `square-section-cache-v8-final-all-ratio`; old Chapter 6.1-only learned records cannot be used as current-version formal-validation evidence.
+4. Support-spacing recovery from selection failure now reads overall/final candidate ratio first, preserving the rule that spacing is reduced only after the largest allowed square section is active and still over limit.
+5. Current-source 4210 render verification passed for the actual installed 4210 input: grouped mixed renderer, `senum1=5` to `senum5=1`, all five tray widths present, no legacy `QCODE`/`QW(` arrays, and yixing secondary arm offset is plain `SECOFFSET,user`.
+6. Verification passed: targeted square-section/support-spacing tests, full `tests/unit`, py_compile, and `git diff --check`.
+
+Closeout:
+
+1. Full installer package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as the transfer hash authority.
+2. Local `D:/CableTrayAI` synced from the refreshed full package; service restarted as PID `23104`.
+3. Local smoke passed: `/health` ok, root HTTP 200, and `duxyb/cnpe123` login pass.
+4. Source and installed hashes match for the touched optimizer modules and recovery state.
+5. No update package is required for this closeout; unit deployment should reinstall from the full `CableTrayAI.zip`.
+
+## 2026-06-18 final installer-only queue
+
+Resolved in source and real ANSYS:
+
+1. 100/200 current-type physical connector section, short-line mesh isolation, reviewed-source solve-tail stripping, and square-section arm-family scoring are fixed.
+2. Modal MT strategy now uses learned/audited evidence for 4210-class mixed jobs and keeps pure estimates bounded; validated 4210 uses `MT=110`, not the insufficient `MT=70`.
+3. Full `tests/unit` and `git diff --check` passed.
+4. Real ANSYS18.2 validations passed for 4210, 4215, and 4218 with deterministic ratios below 1.0 and no result-publication blockers.
+
+Closeout:
+
+1. Rebuild the full installer package only at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Do not create or rely on an update package for this unit deployment; the unit should reinstall from the full package.
+3. Push the cleaned source state to Git after package verification.
+
+## 2026-06-18 100/200 small-tray bolt mesh-selection and candidate-summary queue
+
+Resolved in source and real ANSYS:
+
+1. Web candidate summary now reports the overall maximum deterministic ratio and controlling item, not only the square-section sizing ratio. The sizing ratio remains separately displayed and still drives square-tube selection.
+2. Single 100/200 and double 100/200 small-tray physical bolts now mesh section 10 through `CTAI_SMALL_BOLT_LINES`, assembled from K509/K1509 connector lines, instead of broad `KX(516)/KX(1516)` geometry selections.
+3. The physical-bolt modeling gate now fails any 100/200 generated model that lacks M8 section-10 data, K509/K1509 connector topology, `L5-0.05` coupling, component-based section-10 meshing, or contains the legacy section-10 geometry-selection pollution pattern.
+4. Mixed 100/200 models are covered by regression tests that require `LS_BOLT(I)` / `BOLT_SEC(I)` line-id meshing and reject the old geometry-selection section-10 path.
+5. Verification passed: targeted tray-width tests, square-section selector/workflow tests, full `tests/unit`, frontend script syntax check, and real ANSYS18.2 rows 5/7 under `jobs/verify_small_tray_component_real_20260618_075550`.
+6. Real-run results: `18185NI-LXSJ4213` single 200 selected `100-100-6`, validation `pass`, max ratio `0.9313729151561154`; `18185NI-LXSJ4215` double 100+200 selected `120-120-6`, validation `pass`, max ratio `0.7488461481605604`.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `167A4BECD82F9E22E8CF39302324A48109594CEC9CABDA8F2FB69AED6561F2C9`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `2D5D7D15AB170FA8D8DD290877D8CE036F763E42CDCC461A9C7DDBDFD8456D90`.
+3. Update applied to local `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260618_081041`.
+4. Installed smoke passed on port `8000`: `/health` ok, root page 200, and `duxyb/cnpe123` login pass.
+
+Open:
+
+1. Commit and push this completed update.
+
+## 2026-06-18 4219 mixed 500/600 source-style modeling and TMAX queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4219` old blocker `Result validation failed: cantilever_stress_rows` is fixed. Grouped mixed models now select TMAX cantilever arms by section (`SEC=2/3`), and the real ANSYS `TMAXBEAMSTRESS.LIS` has non-zero NORMAL/UPSET/FAULTED rows.
+2. `4218/4219` mirrored double-side `500+600` command streams now keep reviewed source-style variables `L1/L2/L3/L4/L5` and `senum1/senum2`, learned from the current-type single mixed command flows, while retaining line-id capture for deterministic post-processing.
+3. Mixed model `H1` now follows the final selected square section first, not the original intake width.
+4. TBMODEL/Fig. 5.2 for grouped mixed models now selects `SEC=2/3/4..9`, excluding bolt sections `10/11`, so ANSYS no longer warns about undefined `10*_CTAI_LAYER` or `200*_CTAI_LAYER` TYPE IDs.
+5. Verification passed: targeted postprocessor/tray-width tests, full `tests/unit`, real ANSYS18.2 row 11 / `18185NI-LXSJ4219` with run success, no command-stream warnings, and non-zero TMAX.
+6. `4219` now fails only because the deterministic final engineering gate is over limit: controlling `cantilever_root_weld_equivalent.accident.bending` ratio `1.6677249408688304`; larger-section recovery checked `140-140-8` and `160-160-8`, still `>1.0`.
+7. Packaging scripts now regenerate outer `.sha256.txt` sidecars automatically for both full and update zips, so transfer hashes cannot remain stale after a rebuild.
+
+Open:
+
+1. Commit and push this completed update.
+
+## 2026-06-18 physical bolt element-type and grouped mixed TMAX queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4213`-class physical bolt visual defect root cause found: generated models assigned physical bolt connector lines with `LATT,1,,4,...`, but reviewed sources had `KEYOPT,2,...` immediately after `ET,4,188`. Generated APDL now normalizes that block to `KEYOPT,4,4,2` and `KEYOPT,4,1,1`.
+2. 100/200 mm small-tray jobs must keep physical bolt/connector geometry. If the selected reviewed source lacks that topology, generation inserts ET4, M8 CSOLID section, K509/K1509 connector points, and section-10 bolt meshing.
+3. `4215` grouped mixed small-tray post-processing no longer selects nonexistent `10*I+2/10*I+3` arm element types. It detects grouped `TYPE=2`/`SEC=2/3` topology and uses section-based TMAX selection.
+4. The TMAX selector patcher is now line-based, not a large DOTALL regex, eliminating the pre-ANSYS CPU hang/no-log symptom.
+5. Verification passed: full `tests/unit`, targeted postprocessor/tray-width tests, and real ANSYS18.2 for `4213`, `4215`, and a temporary double-side 200 row `9299`.
+6. Real results: `4213` ratio `0.6179154054744243`, `4215` section ratio `0.3986404089390689` with final max ratio `0.7488461481605604`, and `9299` ratio `0.19562670633692059`; all have `result_validation.status=pass`.
+7. Deployment refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; sidecar hashes were regenerated.
+8. Local `D:/CableTrayAI` updated from `更新包`; the exact latest backup path is recorded in the installed update manifest; health check passed.
+
+Open:
+
+1. Commit and push this completed update.
+
+## 2026-06-17 4213 bolt-section and 4210 grouped mixed queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. `4213` 100/200 mm small-tray jobs no longer keep a wide-tray M12 `SECDATA,0.006` physical bolt section. The renderer rewrites section 10 to M8 nominal radius `SECDATA,0.004` for small-tray widths while preserving physical bolt/connector lines.
+2. `4210` mirrored double-side mixed jobs with 2 to 5 tray-width groups now render grouped `senum` boundary loops instead of the old `QW/QCODE` per-layer array stream. The formal row 2 case with 100/200/300/500/600 mm trays emits `senum1=5` through `senum5=1`.
+3. The grouped renderer now records `ARM_ET` and `TRAY_ET` in addition to section/material arrays, fixing the real MAPDL `No dimensions set for parameter= ARM_ET` failure.
+4. Mixed small/large tray jobs keep separate bolt section ids through `BOLT_SEC`: M12/large tray on section 10 and M8/small tray on section 11.
+5. Verification passed: py_compile, targeted tray-width tests, full `tests/unit`, and real ANSYS18.2 rows 2/5 from `C:/Users/duxy/Desktop/1818 S2支架.xlsx`.
+6. Real ANSYS results: `4210` selected `140-140-8` with final section-selection ratio `0.9527713364018127`; `4213` selected `100-100-6` with ratio `0.6179154054744243`; both have `result_validation.status=pass`.
+7. Deployment refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `.sha256.txt` sidecars as transfer hash authority.
+8. Local `D:/CableTrayAI` was updated; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; `/health` and `duxyb/cnpe123` login passed.
+
+Open:
+
+1. Commit and push this completed source/package-state update.
+
+## 2026-06-17 current-type mixed tray dispatch and coupling queue
+
+Resolved in source and real ANSYS:
+
+1. `100/200 mm` small-tray coupling follows the department clarification: keep `CPCYC ... L5-0.05`; do not use the temporary `CPCYC ... L5` interpretation.
+2. Exact current-type mixed source families are used only when the reviewed `resources/current_type_command_flows` family covers the intake topology. This keeps `4514` on the reviewed single-side `500+600` family and prevents `4210` double-side per-side mixed `100+300+500` from being forced into a mismatched single-side source family.
+3. `4514` now renders with standard-family variables `senum1/senum2/senum3`, `L1/L2/L11/L12/L5`, and `M1-0.05`, with guarded optional mesh blocks for unused source width families and no platform-only `QTOFF/QCODE`.
+4. `4210` now records a current-family cover failure and uses the deterministic mixed tray renderer; real ANSYS confirms this path is publishable.
+5. Verification passed: full `tests/unit`, real ANSYS `4210`, real ANSYS `4211`, and real ANSYS `4514`.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package and existing-install update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`; use the adjacent `.sha256.txt` sidecars as transfer hash authority.
+2. The update was applied to local `D:/CableTrayAI` through the update package installer entrypoint.
+3. `/health` passed, `duxyb/cnpe123` login passed, and source/package/installed hashes match for the touched runtime files and recovery docs.
+
+Open:
+
+1. Commit and push the completed source/package-state update.
+
+## 2026-06-17 4211 small-tray coupling review correction queue
+
+Resolved in source and verified with real ANSYS:
+
+1. Department clarification supersedes the temporary `CPCYC ... L5` interpretation from image review. For `100/200 mm` trays, `L5-0.05` couples the bolt upper point to the tray; `L5` would couple the cantilever arm/tray location.
+2. The `100/200 mm` small-tray rewrite keeps `K509/K1509`, rewrites the inherited connector line to `503/1503 -> 509/1509`, and rewrites `0.068-0.05` to `L5-0.05`.
+3. The 300 mm physical-bolt topology remains unchanged. The 500/600 mm topology remains on the reviewed `L2/2` connection line.
+4. Verification passed: targeted tray-width/selector/workflow tests, full `tests/unit`, render smoke, and real ANSYS18.2 row 9 / `18185NI-LXSJ4211` at `jobs/verify_4211_l5_minus_coupling_real_20260617`.
+5. Real-run result: selected `100-100-6`, result validation `pass`, final Chapter 6.1 controlling ratio `0.9313729151561154`, and model command stream contains `K509`, `L,503 -> 509`, and `CPCYC ... L5-0.05`.
+
+Open:
+
+1. Refresh full/update deployment packages, apply the update to local `D:/CableTrayAI`, smoke-test, then commit and push.
+
+## 2026-06-17 small-tray/wide-tray command-flow correction queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Width-compatible source-family selection now blocks 100/200 mm trays from selecting the 300 mm physical-bolt command family.
+2. 100/200 mm small-tray rewrite now normalizes inherited wide-source geometry: `L3=0.15m`, `L5=0.074m`, tray Z offset `0.1+L5+...`, and `CPCYC` offset `L5-0.05`.
+3. Square-section candidate/final replacement now synchronizes `H1` and single-width `L3` together, so 600 mm trays selected as 140/160 no longer retain stale `L3=0.2`.
+4. Mixed CAOGANG 500/600 tray layers now use `QTOFF/HTOFF=0.074`; YIXING wide mixed layers keep `0.068`.
+5. Verification passed: targeted tray-width/selector/workflow tests, full `tests/unit`, real ANSYS rows 9/10 for 4211/4311, and real ANSYS rows 7/14 for 4215/4514.
+6. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `8C1A395EA8BE1701C38668F348005EFCDC9873B9CDFD883BFEEB54EB51EAD810`.
+7. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `2D0489EE38878E492FA5CB96F4DA88A45FE9F186467588F0616904AD585F01B9`.
+8. Local `D:/CableTrayAI` was updated from the refreshed update package; latest backup is `D:/CableTrayAI/_update_backups/20260617_192703`; `/health` and `duxyb/cnpe123` login passed; source/package/installed hashes match for the touched modules, learning caches, and server exe.
+
+Open:
+
+1. No current source/package/deployment blocker remains for this queue. Existing unit installs should use `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; fresh installs can use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Verify transfer with the adjacent `.sha256.txt` sidecars.
+
+## 2026-06-17 department S2 rule alignment queue
+
+Resolved in source and unit tests:
+
+1. Reviewed the department S2 memo against current production code.
+2. Kept broad steel-platform text recognition unchanged after the user's correction.
+3. Added missing `120-120-8` to the conversational-intake operator-confirmed default square-section list.
+4. Reduced one-layer new-intake MT fallback from `40` to `20`, while preserving learned MT, explicit MT, audited source MT, and post-run Mode.oup >50 Hz retry authority.
+
+Verification:
+
+1. Targeted chat/modal/intake-row tests passed.
+2. Full unit tests passed.
+3. `source_materials` is clean.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `C9869E91836AEF02DED08EF2D1991737AEBF7DA6687AA173A672E010AA097124`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `BA45B05C3E53842D72E1664A360A7DE567FAB82C6E521505CA1310A569E876CC`.
+3. External SHA256 sidecars refreshed beside both zip files.
+4. Update applied to local `D:/CableTrayAI`; latest backup is `D:/CableTrayAI/_update_backups/20260617_164537`.
+5. `/health` passed, `duxyb/cnpe123` login passed, and installed code contains the `120-120-8` chat default plus one-layer MT fallback `20`.
+
+## 2026-06-17 current-type command-flow baseline queue
+
+Resolved in source and real ANSYS:
+
+1. Curated the latest reviewed command-flow folder `C:/Users/duxy/Desktop/类型` into `resources/current_type_command_flows/` and made it the preferred production model-family library.
+2. Historical standard command streams are not deleted because `source_materials` is the traceability baseline and must stay read-only. They are now fallback/reference only, not the first production modeling source.
+3. Fixed selector scoring so single/double/mixed topologies and wide-tray families do not cross-pick the wrong old source.
+4. Fixed mixed-tray APDL loop variable collision by changing the scalar width-code variable to `QTCODE`; `QCODE/HCODE` remain arrays.
+5. Fixed secondary-arm offset normalization for channel and yixing arms.
+6. Verified current production modeling rules for 100/200/300/500/600 and mixed layouts with a render matrix.
+7. Real ANSYS18.2 validation passed for rows 3, 4, 7, and 11 of the uploaded workbook at `jobs/validation_current_type_baseline_final_real_20260617`: 4211, 4212, 4215, and 4214 all have ANSYS success and deterministic pass.
+
+Deployment queue status: completed.
+
+Closeout:
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. External SHA256 sidecars refreshed beside both zip files.
+4. Update applied to local `D:/CableTrayAI`; latest backup is `D:/CableTrayAI/_update_backups/20260617_161759`.
+5. `/health` passed, `duxyb/cnpe123` login passed, `resources/current_type_command_flows` exists in the installed tree, and source/package/installed hashes match for touched runtime files.
+
+## 2026-06-17 600-tray L2/2 topology and load-counting queue
+
+Resolved in source and real ANSYS:
+
+1. Fixed the 600 mm single-tray APDL topology pollution. Keypoints 506/507/508/509 for reviewed 500/600 standard families now follow the same `H1/2+L1-L2/2` connection line as 502; the previous broad L3 rewrite is removed.
+2. Preserved separate tray rules:
+   - tray `<=300 mm`: `L3=0.15m`;
+   - tray `>300 mm` and square outer `<=120 mm`: `L3=0.20m`;
+   - tray `>300 mm` and square outer `>120 mm`: `L3=0.15m`;
+   - 300 mm physical-bolt topology and 100/200 mm small-tray partition remain independently tested.
+3. Fixed square-section engineering anchor for 600 and mixed 500/600 cases. Density-only layers are converted back to kg/m for strategy scoring, but explicit kg/m line-load fields always win and are not double-counted with density.
+4. Added regression coverage for density fallback, explicit-line-load no-double-counting, single 600 anchor, 300 topology, 100/200 small-tray topology, and 500/600 L2/2 offsets.
+5. Hardened the full-intake production PowerShell script so it selects a Python runtime with required dependencies before invoking the backend calculation.
+6. Real ANSYS18.2 validation passed under `jobs/validation_600_mixed_fix_real_20260617`:
+   - `18185NI-LXSJ4215` single 600 selected `140-140-8`, final controlling ratio `0.8883527244537628`, pass.
+   - `18185NI-LXSJ4214` mixed 500/600 selected `100-100-8` after fresh ANSYS, final Chapter 6.1 ratio `0.869901992449058`, pass.
+
+Deployment queue status: source and real ANSYS complete; package/local deployment refresh remains to close this queue.
+
+Open:
+
+1. Rebuild `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and the update package, apply to local `D:/CableTrayAI`, smoke-test `/health` and login, then add a package closeout entry.
+
+## 2026-06-17 section-before-spacing recovery and line-load override queue
+
+Resolved in source, real ANSYS, package, and local deployment:
+
+1. Superseded the temporary spacing-first recovery. Current policy: for final weld/bolt/connection over-limit with the current square tube still below the largest allowed section, the workflow tries larger allowed square sections first. Support spacing is reduced only after the largest allowed square section is active and the final deterministic gate still exceeds 1.0.
+2. Removed the one-click preserved-current-section spacing branch and removed the corresponding result-gate validation bypass.
+3. Hardened `support_spacing_recovery` so it skips final-ratio spacing plans unless the current section equals the maximum allowed square section.
+4. Added dashboard/backend tray line-load override support. Operators can revise layer `kg/m` after parsing, rerun without re-uploading the intake, and keep original-vs-adjusted line-load audit in the job metadata.
+5. Real ANSYS18.2 validation for `18185NI-LXSJ4215` row 7 passed at `jobs/validation_4215_section_before_spacing_20260617_130851/18185NI-LXSJ4215`: initial 120 passed Chapter 6.1 but failed final gate, workflow tried 140 then 160, final selected `160-160-8`, support spacing stayed `2.0m`, controlling weld accident equivalent ratio `0.9049054104654485`, `result_validation.status=pass`.
+6. Verification passed: full `tests/unit`, targeted support-spacing/result-validity/tray-load-override tests, frontend Node/VM syntax check, package gate, update self-verification, local `/health`, `duxyb/cnpe123` login, and installed source-hash checks.
+
+Deployment queue status: completed.
+
+1. Full package: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the adjacent `CableTrayAI.zip.sha256.txt` as transfer hash authority.
+2. Update package: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the adjacent `更新包.zip.sha256.txt` as transfer hash authority.
+3. Local update applied; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
+Open:
+
+1. No current source/package/deployment blocker remains. Existing unit installs should use `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; fresh installs can use `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Verify transfer with the refreshed `.sha256.txt` sidecars.
+
+## 2026-06-17 4215 spacing-first economy recovery queue
+
+Resolved in source and real ANSYS:
+
+1. For `4215`-class jobs where Chapter 6.1 square-section sizing passes but weld/bolt/connection final ratio controls, automatic recovery now reduces support spacing before trying a larger square tube.
+2. The preserved-section spacing branch keeps the current square section, regenerates APDL, reruns formal ANSYS, and validates against the current formal Chapter 6.1 ratio instead of requiring the old trial ratio, which is no longer comparable after spacing changes.
+3. Real ANSYS validation on uploaded workbook row 7 / `18185NI-LXSJ4215` passed: selected section remained `120-120-10`, support spacing changed `2.0m -> 1.5m`, final Section 6.1 ratio `0.5241137016938773`, controlling final weld ratio `0.961668929223405`, `result_validation.status=pass`.
+4. Regression coverage was added for support-spacing planning, preserved-section application, and result-validity formal validation after spacing recovery.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+2. Existing-install update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecar beside the zip as transfer authority.
+3. Local `D:/CableTrayAI` was updated; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`; health, login, and installed-hash checks passed.
+
+Open:
+
+1. No source/package blocker remains for this policy. For the unit machine, use the update package for an existing deployment or the full package for a fresh deployment, and verify with the refreshed `.sha256.txt` sidecars.
+
+## 2026-06-17 uploaded-intake 4211/4215 queue
+
+Resolved in source and real ANSYS:
+
+1. Duplicate report ids no longer override physical Excel row selection. This fixes the copied `4211__row_3` symptom where a row intended as `single-side 2-layer 500` was generated as `single-side 2-layer 100`.
+2. Structured tray layer data is now authoritative for scope/result requirements, so 500/600 mm tray jobs no longer depend on fragile text parsing.
+3. `18185NI-LXSJ4215` no longer treats weld/bolt/global final-ratio failures as Chapter 6.1 square-section stress failures. The workflow records those cases as `final_ratio_design_recovery`.
+4. Real ANSYS validation used the uploaded workbook `C:/Users/duxy/Desktop/1818 S2支架.xlsx`:
+   - row 3 / 4211: `500-75-2mm`, selected `120-120-6`, Chapter 6.1 ratio `0.9727244369318827`, pass.
+   - row 7 / 4215: `600-75-2mm`, 120-120-10 Chapter 6.1 ratio about `0.815`, weld final gate controlled, recovered to `160-160-8`, pass.
+5. Learning cache guard added: records with Chapter 6.1 section pass but final weld/bolt/global gate over 1.0 are not retained as successful square-section learning samples, and existing unsafe records were pruned.
+
+Deployment closeout:
+
+1. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. External SHA256 sidecars were refreshed beside both zip files.
+3. Update applied to local `D:/CableTrayAI`; latest backup `D:/CableTrayAI/_update_backups/20260617_095241`.
+4. `/health` passed, login `duxyb/cnpe123` passed, installed hashes match source for touched modules and pruned learning cache, and installed-code row-binding smoke generated 4211 as 500 mm and 4215 as 600 mm.
+
+Open:
+
+1. No current source/package blocker remains for unit transfer. For existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for fresh deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Use the `.sha256.txt` sidecars for transfer verification.
+## 2026-06-16 mixed tray line-id standardization closeout
+
+Resolved in source and verified:
+
+1. Mixed tray-width APDL generation now uses per-layer arrays plus recorded line-id groups, matching the reviewed standardized seven-layer style while remaining generic for new single-side and double-side mixed intakes.
+2. Support, arm, tray, and bolt lines are recorded with `*GET,_LNEW,LINE,0,NUM,MAX` and later meshed through `LS_SUP`, `LS_ARM`, `LS_TRAY`, and `LS_BOLT`.
+3. This removes the old geometry-location reselection ambiguity that could miss layers or select the wrong line group in mixed 300/500/600 layouts.
+4. The explicit 300 mm topology, 200/100 small-tray branch, wider-tray branch, and channel/non-channel secondary-arm offset policies are preserved.
+5. Verification passed: py_compile, targeted mixed tray tests, full `tests/unit`, hardcode/source_materials checks, and real ANSYS18.2 validation for 4214 and 4215 under `jobs/validation_mixed_lineid_real_20260616`.
+
+Deployment queue status: completed.
+
+1. Full package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed: `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. External `.sha256.txt` sidecars beside both zip files are the transfer authority.
+4. Local `D:/CableTrayAI` was updated from the refreshed update package; `/health`, `duxyb/cnpe123` login, and source/package/installed hash checks passed.
+
+## 2026-06-16 seven-intake layer parsing and preview closeout
+
+Resolved in source and verified:
+
+1. `double-side 3+3 layers, one 100, one 300, one 500` now parses as front `[100,300,500]` and back `[100,300,500]`. The apparent "six layers" in `input.json` are three front trace rows plus three back trace rows.
+2. Unlabeled equal-side layer patterns are repeated per side; unequal declared counts are distributed by count; side-labeled text still takes precedence.
+3. Web 3D command-stream preview now evaluates APDL array variables and `ABS(...)`, so mixed-loop `generated_model.mac` files no longer preview as only two layers.
+4. 4211 ratio `0.0530209796187918` was checked as a light two-layer 100 mm double-side job with `100-100-6`; current deterministic outputs support the small ratio and do not indicate zero extraction.
+5. Real ANSYS18.2 validation passed for seven rows at `jobs/validation_layer_fix_real_20260616`: 4210, 4211, 4212, 4213, 4214, 4215, and 4220 all have `result_validation=pass`.
+6. 4215 economy follow-up is resolved: after `140-140-8` passed with ratio `0.509069498978923`, the tightened policy downshifted to `120-120-10`; real ANSYS rerun `jobs/validation_economic_downshift_real_20260616/18185NI-LXSJ4215` passed with ratio `0.9673673573968273`.
+
+Deployment queue status: completed.
+
+1. Refreshed `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and the mail/update package under the same folder.
+2. Refreshed the external `.sha256.txt` sidecars; use those sidecars as transfer authority after copying to the unit computer.
+3. Applied the update to local `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json` and `D:/CableTrayAI/docs/last_mail_update_apply.json`.
+4. `/health`, `duxyb/cnpe123` login, and source/package/installed hash checks passed.
+
+## 2026-06-16 platform-owned single-tray command-flow shadow v1
+
+Resolved in source and verified:
+
+1. Added platform-owned standard command-flow shadow generation for S2 single tray-width jobs.
+2. Generated review files are `platform_standard_solve.mac`, `platform_standard_post.mac`, and `platform_standard_post_numeric.mac`.
+3. The shadow files are not production entrypoints. `run_all.mac` still executes `generated_solve.mac` plus the production `generated_post_numeric.mac`.
+4. Scope gate skips mixed tray widths, third-side jobs, unsupported support types, and unsupported analysis methods.
+5. Publishing now includes optional `platform_standard_*` command streams when present.
+6. Verification passed: py_compile, full unit tests, render smoke, and real ANSYS18.2 single-tray 300 mm validation with `result_validation=pass`.
+
+Deployment queue status: completed.
+
+1. Full package and update package were refreshed under `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
+## 2026-06-16 mixed tray loop/offset closeout
+
+Resolved in source and verified:
+
+1. Fixed the latest mixed-tray offset review: channel secondary arm `CAOGANG42DAN` generates `SECOFFSET,user,,-0.03249`; non-channel secondary arms still generate `SECOFFSET,user`.
+2. Replaced explicit per-point mixed geometry generation with APDL arrays plus `*DO` loops for support columns, tray-layer keypoints, tray-layer lines, meshing, and root coupling.
+3. Enforced mixed-layer vertical order: for each side, wider trays are lower and smaller trays are above them. Example `300+600` is rendered as bottom `600`, top `300`.
+4. Fixed double-side mixed root CP coupling so one support node is not coupled twice in UX.
+5. Fixed native side parsing for `前侧300+600` / `后侧300+500` so the first tray width is retained.
+6. Verification passed: py_compile, targeted parser/mixed tests, full `tests/unit`, render smokes for single/double/seven-layer/different-section cases, and two real ANSYS18.2 mixed-loop jobs with `result_validation=pass`.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars beside the zip files as transfer authority.
+3. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
+## 2026-06-16 tray-300 physical bolt and <=300 L3 fix
+
+Resolved in source and verified:
+
+1. `L3` rule corrected for small trays: single-width/no-L6 S2 tray widths `<=300 mm` render `L3=0.15 m` regardless of square-tube section. Wider trays still follow the square-tube L3 policy.
+2. 300 mm tray modeling now requires physical bolt/round-bar APDL, not just `CP/CPCYC`. The selector gives a strong preference to standard families with `ET,4`, `SECTYPE,10`, `SECDATA,0.006`, `LATT,1,,4,,,,10`, and 506/507/508 physical bolt line pairs.
+3. The 300 mm gate is not applied to 200/100 mm small trays. 200/100 are governed by the reviewed small-tray partition: `502/1502` at `L3`, `503/1503` and CPCYC at `L2/2`, and the connector line rewired to `503-509` when transforming larger single-width families.
+4. Mixed-width shared-maximum fallback now also applies while rendering APDL parameters. For 300/500 cases that reuse a reviewed 500 mm single-width source, the generated geometry and material slots use 500 mm instead of the first listed 300 mm tray.
+5. Web APDL preview now recognizes bolt/round-bar elements and shows them separately from tray rails and arms.
+6. Verification passed: targeted tray-width tests, broader selector/static/bolt tests, full `tests/unit`, Node syntax check, and render-entry smokes for double 300 3+2, single 200, and mixed 300/500.
+
+Deployment queue status: completed.
+
+1. Full package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`, SHA256 `0DD63988F61B00BB5AB61C590C1613E7E0CA667B3A5898C2EE952CB3B4A8318C`.
+2. Update package refreshed at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`, SHA256 `1171B1FB97138FCD6F2762BF9EC469796435CEC8E69D9DA35044434967212ECB`.
+3. Package gate, update self-verification, local update apply, `/health`, and `duxyb/cnpe123` login smoke all passed.
+
+## 2026-06-16 4215 smart section-selection and deployment closeout
+
+Resolved in source and verified:
+
+1. Fixed the stale-learning cause of 300 mm jobs starting at `160-160-8`. Similarity and cache acceptance now include tray width/load and require current v7 evidence for direct learned decisions.
+2. Preserved the intended AI-like behavior: learned history can order candidates, but the current job's real ANSYS and deterministic evaluation decide publication.
+3. Formal Section 6.1 ratio is authoritative after the final ANSYS run. Trial/formal mismatch no longer blocks when the formal Section 6.1 ratio is `<= 1.0`; over-limit formal results still trigger larger-section or spacing recovery.
+4. Candidate and formal ANSYS license-manager unavailable messages now retry the same section/run instead of falsely failing the section.
+5. Real ANSYS18.2 validation passed on changed 300/500/600 response-spectrum and static intakes. The 300 single-side representative selected `100-100-6`; the double-side 300 representative failed `100-100-6` then selected `120-120-10`; 600 variants passed after automatic larger-section recovery.
+6. Full unit tests passed, deployment package gate passed, and local `D:/CableTrayAI` is updated and healthy.
+
+Open queue:
+
+1. No current source/package blocker remains for unit transfer. For an existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for a fresh deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`. Use the refreshed `.sha256.txt` sidecars in the same folder for transfer verification.
+2. If a future unit run fails after this package, retain the full job folder and compare the current formal `evaluation_summary.json`, `result_validation.json`, and `square_section_selection_summary.json` before changing formulas or material policy.
+
+## 2026-06-15 support-spacing recovery and modeling robustness closeout
+
+Resolved in source and verified:
+
+1. Added support-spacing recovery for final deterministic over-limit cases where the current square tube is already the largest intake-allowed section. This includes weld/connection over-limit evidence, so the workflow can keep reducing spacing when section enlargement is exhausted.
+2. The user-reported 600 mm static case is now handled by continuing spacing reduction in 0.1 m steps. If `160-160-8` at 1.8 m still has weld ratio above 1.0, the next recovery run will try a smaller spacing instead of returning a terminal software failure.
+3. Fixed single-side 300 mm source-family modeling by applying the `L3` offset to single-width/no-L6 connection and CPCYC selectors. This removed the low-layer small-pivot failure without changing double-side reviewed source topology.
+4. Added BEAM188 warping KEYOPT restoration and empty line-mesh guarding to harden generated APDL for new intake variants.
+5. Real ANSYS18.2 representative regression passed for 300/500/600 response-spectrum and 300/500/600 static rows. The 600 static row reduced spacing from 2.0 m to 1.7 m and then passed.
+6. Full `tests/unit` passed.
+
+Deployment closeout:
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+2. Deployment package gate and update VerifyOnly both passed.
+3. Local `D:/CableTrayAI` was updated; `/health` and `duxyb/cnpe123` login passed. The exact backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. External SHA256 sidecars were refreshed beside the full package and update package; use those sidecars as transfer authority.
+
+## 2026-06-15 unit jobs square-section and bolt-width policy closeout
+
+Resolved:
+
+1. Fixed square-section sizing ratio basis. Candidate acceptance, selection summary, result-validity trial/final comparison, final over-limit upgrade trigger, and learned formal validation now use Chapter 6.1 structural member rows only.
+2. Weld and bolt checks remain final result gates but no longer drive square-tube enlargement/economy selection.
+3. Bumped learned square-section cache to `square-section-cache-v7-section-6-1-ratio`, so old cache evidence cannot skip fresh trials.
+4. Fixed standard S2 single-width/no-L6 `L3` geometry rule: `<=120 mm -> 0.20 m`, `>120 mm -> 0.15 m`.
+5. Fixed bolt-width policy beyond area replacement: M8 `36.6 mm2` for `<=200 mm` uses workbook `螺栓 200` single-bolt equations; M12 `84.3 mm2` for `300/500/600 mm` uses workbook two-bolt/lever-arm equations with L `0.241/0.441/0.541 m`.
+6. Verified copied unit job evidence: 4210/4215 old stored selected ratios were stale or non-section-sizing ratios; new Chapter 6.1 ratios are much lower. 4212 latest copied folder was operator-cancelled before evaluation summary and is incomplete runtime evidence.
+7. Verification passed: targeted tests and full `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No package blocker remains for the 2026-06-15 square-section/L3/M8-M12 fix. The refreshed full deployment package is `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`; the refreshed update package is `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; package gate and update self-verification both passed. Local `D:/CableTrayAI` was updated from this package and passed health/login/hash smoke.
+
+## 2026-06-12 AI PPT专题交付复核 closeout
+
+Resolved:
+
+1. 重新完成 AI/智能化专题汇报 PPT，并复制到 `C:/Users/duxy/Desktop/核电工艺所人工智能应用汇报-AI智能化专题.pptx`。
+2. 第 7 页已嵌入完整 16:9 真实软件演示视频，避免遮挡、裁切和局部截图；独立视频备份为 `C:/Users/duxy/Desktop/CableTrayAI_对话提资完整演示.mp4`。
+3. 生成可编辑 Visio 流程源文件 `C:/Users/duxy/Desktop/CableTrayAI_flow_source.vsdx`，包含 AI 数据闭环、可学习/自恢复、多科室协同 3 页。
+4. 交付 QA 通过：桌面 PPT 可由 PowerPoint 打开，`slides=10`，`media_shapes=1`，`slide7_media=1`；占位符扫描通过；Visio 源文件可打开且页数为 3。
+
+Open queue:
+
+1. 本次 PPT 交付无阻塞项。若转移到其他电脑，保留独立 MP4 与 PPT 同目录作为播放兜底。
+
+## 2026-06-12 PPT/demo closeout
+
+Resolved:
+
+1. Built the 河北省军工杯汇报 deck and copied final deliverables to Desktop.
+2. Fixed two demo blockers in source and installed copy: JSON-safe `/ai/intake/start-run` responses and `source_package_id=null` for chat-intake real-run startup.
+3. Real demo job `CHAT-20260612-f2317f9b9b` completed with ANSYS success, selected `140-140-8`, controlling ratio `0.9074547160463298`, and `result_publishable=true`.
+4. PPT QA passed: PowerPoint opens the Desktop deck, 10 slides are present, one embedded media shape is present, and placeholder scan is clean.
+
+Open queue:
+
+1. No blocker remains for the PPT deliverable. If the deck is moved to another computer, keep the standalone MP4 beside it as a playback fallback even though the PPT contains an embedded media part.
+
+## 2026-06-12 unit jobs self-recovery closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit copied `C:/Users/duxy/Desktop/jobs/18185NI-LXSJ4212` stopped after final deterministic over-limit instead of recovering. The job had been auto-selected to `120-120-6` from old learned evidence, but the final formal run failed weld/bolt/cantilever/mixed-beam ratio gates.
+2. Old learned cache entries can no longer direct-skip candidate trials unless their `entry_cache_version` equals the current `SQUARE_SECTION_CACHE_VERSION`. Old cache can still order candidates, but not decide a publishable section.
+3. Any final deterministic `evaluation_ratio_limit` failure now triggers larger-section recovery when the square section was auto-selected and the intake allowed list still contains larger candidates. This covers non-square-support controlling checks such as weld or bolt ratios.
+4. Candidate trial directories no longer copy inherited `job_state.json` or live status files, so a previous failed parent task cannot make preflight reject a fresh candidate before ANSYS starts.
+5. Successful square-section upgrade now writes the new selection to `square_section_selection.json` and resets the job state to `apdl_rendered`, allowing the formal rerun to pass real-run guards while retaining history.
+6. Real ANSYS18.2 validation on copied unit `4212` passed: auto-recovery tried `120-120-10` (`ratio=1.4624074146092667`, fail), then selected `160-160-8` (`ratio=0.8480306526316335`, pass), formal rerun succeeded, and `result_validation.status=pass`.
+7. Unit copied `4215` class is hardened: if main ANSYS succeeds but post-only figure export hits a transient ANSYS license-manager failure, numeric results are assembled for diagnosis, DB/RST are retained for retry, and figure export itself performs bounded license retries.
+8. Unit login password failure class is fixed: package `initial_password.txt` is written UTF-8 without BOM, and all installer paths strip BOM before hashing. Temporary install smoke verified `duxyb/cnpe123` login `pass`.
+9. Verification passed: full `tests/unit`, targeted square-section/ANSYS post-export/runtime/cleanup/auth/package tests, `py_compile` for touched modules, package gate, update package self verification, initial-password hex check, temporary installed `/health=ok`, package cleanliness scan, and source/package hash checks.
+10. Latest send-folder outputs are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use their external `.sha256.txt` sidecars as transfer authority.
+11. Local `D:/CableTrayAI` is refreshed and verified. The old locked server PID `21532` was terminated through WMI after `Stop-Process` and `taskkill` were denied; update backup is `D:/CableTrayAI/_update_backups/20260612_105433`, the fresh server is PID `25224`, `/health` is `ok`, `duxyb/cnpe123` login is `pass`, package gate and update self-verification pass, and key installed source hashes match the repository.
+
+Open queue:
+
+1. No source/package blocker remains for unit transfer. For the existing unit deployment, send `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; for fresh deployment, send `CableTrayAI.zip` or the clean `CableTrayAI` folder. Use the `.sha256.txt` sidecars to verify transfer.
+2. Local-only follow-up is closed: the current port-8000 process is the refreshed `D:/CableTrayAI` runtime and can be used for local smoke verification.
+
+## 2026-06-11 unit 4211 connection-node export timeout closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4211 failed because `connection_node_export` used a fixed hard `timeout=300`, while the unit machine produced `LS-FORCE-NODES.LIS` and `connection_node_export.out` completion evidence slightly after the timeout path had already marked the post-export failed.
+2. The failure evidence is deterministic: main ANSYS completed with `ERROR=0`; connection-node export output existed; `connection_node_export.out` ended with `ROUTINE COMPLETED`, zero MAPDL errors, and warnings only.
+3. `core/ansys/connection_export.py` now disables hard timeout killing, records a soft timeout warning only, adds `/EXIT,NOSAV`, accepts only current-run completion markers with a non-empty `LS-FORCE-NODES.LIS`, and removes stale connection export outputs before reruns.
+4. Copied unit outputs reassembled successfully at `jobs/verify_unit_4211_connection_export_outputs_20260611_174956/18185NI-LXSJ4211`: `result_validation.status=pass`, `result_publishable=true`, and 262 connection-node rows.
+5. Real ANSYS18.2 validation passed at `jobs/verify_unit_4211_connection_export_fix_20260611_175038/18185NI-LXSJ4211`: `connection_node_export_status=success`, `figure_export_status=success`, `figure_count=14`, `result_validation.status=pass`, total wall time about `167.8s`.
+6. Full unit suite passed with `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4211 connection-node export timeout fix. The refreshed transfer files are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
+## 2026-06-11 unit 4211 50-minute stall root-cause closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4211 was not a formula/material/spectrum error. The copied job showed candidate trials and formal solve could complete, but the old flow wasted time by repeating a known 160/140 economy downshift and then could stall at post-only figure export after MAPDL had already completed graphics output.
+2. The selector still honors the economy requirement: `0.60 <= ratio <= 0.75` normally triggers one immediately lower intake-allowed trial. The duplicate lower trial is skipped only when a high-similarity learned record already proves that exact immediately lower section completed under real ANSYS and failed with ratio `> 1.0`.
+3. The learned skip is not result reuse. The current formal ANSYS run and current deterministic `result_validation.json` remain the publication authority.
+4. Figure export now ends with `/EXIT,NOSAV`, detects `ROUTINE COMPLETED` plus zero MAPDL errors, and performs job-scoped cleanup only after a short completion grace. Required figures remain mandatory.
+5. Fresh real ANSYS runs delete stale completion-marker outputs before launch, preventing old `8TEG009010.TXT` files from making a new run look complete.
+6. Real ANSYS18.2 validation passed at `jobs/verify_4211_unit_hang_fix_20260611_114124/18185NI-LXSJ4211`: main run `116.635979s`, figure export `success`, `figure_count=14`, `result_validation.status=pass`, `result_publishable=true`, total wall time about `162.2s`.
+7. Full unit suite passed with `D:/miniconda3/python.exe -m pytest tests/unit -q`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4211 stall fix. The refreshed transfer files are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+
+## 2026-06-11 ??4211/4212?????????????? closeout
+
+Resolved in source and verified:
+
+1. ?????? `C:/Users/duxy/Desktop/_square_section_trials` ???4211 `160-160-8` ? 4212 `120-120-6` ????????????? `run_all.mac` ??? `generated_post_numeric.mac`??? `8TEG009010.TXT` ??? `ROUTINE COMPLETED`?`EXIT ANSYS WITHOUT SAVING DATABASE`?`ERROR=0`?
+2. ??? ANSYS18.2 ???? APDL ??????? `4294967295` ??? launcher ????? runner ?? returncode `0`???????????? failed????????????????
+3. `core/ansys/runner.py` ??? `*.TXT` ???? MAPDL ???????????? + MAPDL ??? 0????????? launcher ?????????? LIS/OUP/??/??????????
+4. ????????? `15s` ???????? ANSYS ?????????? job ????????? `completion_marker_cleanup`???????????????????????????
+5. ??????????? `trial_dir`?`trial_status_file`?`elapsed_seconds`?`total_output_bytes`?`no_output_seconds`?`ansys_pid` ? API ?????????????????? live status?
+6. ??????? `_square_section_trials` ???????????????????????????? solver DB/RST ?? trial runner ???
+7. ???????4211 `160-160-8` ??????????? `0.6125688698630086`????4212 `120-120-6` ???????????????????
+8. ???????????? `tests/unit`???????????????????? ANSYS18.2 ?? 4212 ????? `47.9s` ???
+
+Open queue:
+
+1. ?????? `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` ? `C:/Users/duxy/Desktop/duxyb-cnpe/???.zip`??? `.sha256.txt` ??????????????? 4211/4212 ?????? job ???? `_square_section_trials` ???????????????
+
 # CableTrayAI 当前修复队列
+## 2026-06-10 单位4211/4212导图卡住与候选试算提速 closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. 4212 单位失败证据定位为候选试算主后处理误跑图片命令，触发 ANSYS 批处理 `/IMAGE` warning 和输出停滞，不是建模、反应谱、材料许用值或评定公式错误。
+2. 主 ANSYS 入口改用内部 `generated_post_numeric.mac`，只做数值提取；`generated_post.mac` 继续保留为审查命令和导图转换来源。
+3. 候选试算阶段跳过图形命令并禁用输出停滞硬杀 watchdog，避免候选选型被“导图卡住”误报为截面失败。
+4. 正式导图改为带 live/audit 文件的 post-only 流程，`timeout_minutes` 是软监控阈值，不再硬杀 MAPDL。
+5. 使用单位拷回 4212 job 真实 ANSYS18.2 验证通过：主数值流程 `50.1s`，导图 `20.1s`，`figure_count=22`，缺图为空。
+6. 全量 `tests/unit` 通过。
+
+Open queue:
+
+1. 无剩余源码/部署阻塞项。单位用 `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` 或 `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip` 重跑 4211/4212；同目录 `.sha256.txt` 为传输校验依据。
+
+## 2026-06-10 异型钢 SECOFFSET 修正 closeout
+
+Resolved in source and unit verified:
+
+1. 异型钢托臂分支不再继承槽钢专用 `SECOFFSET,user,,-0.03249`；当托臂截面为 `YIXINGGANG*` 时生成命令归一化为 `SECOFFSET,user`。
+2. 槽钢分支仍保留 `SECOFFSET,user,,-0.03249`，避免影响 `CAOGANG42DAN` 已审查命令流。
+3. 标准族渲染和方钢截面选型替换两个入口均已接入，审计字段为 `yixing_secoffset_replacements`。
+4. 回归测试覆盖纯文本规则、异型钢试算替换、槽钢保留、标准族渲染。
+
+Open queue:
+
+1. 无剩余源码/部署阻塞项。单位应使用 `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` 或 `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`，并用同目录 `.sha256.txt` 文件校验传输。
+
+## 2026-06-09 4211 economy downshift strategy closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Added the requested economy downshift strategy: if a fresh passing square-section candidate is in `0.60 <= ratio <= 0.75`, the selector runs exactly one immediately lower intake-allowed square section before final selection.
+2. The normal production strategy remains bounded. This does not sweep all smaller sections; it is one downward check only, and only in production `stop_after_first_feasible=True` mode.
+3. If the lower candidate passes, it can be selected as the more economical section. If it fails, the already passing larger section remains selected. Already evaluated candidates are skipped to prevent duplicate ANSYS trials after a backward check.
+4. Regression tests cover both the lower-section-pass branch and the lower-section-fail branch.
+5. Verification passed: targeted selector/workflow/postprocessor/result-validity tests, `py_compile`, and full `tests/unit`.
+6. Real ANSYS18.2 validation passed at `jobs/verify_4211_economy_downshift_20260609_202204/18185NI-LXSJ4211`. The downshift ran as requested: `160-160-8` ratio `0.6125191042609882`, then `140-140-8` ratio `1.1132861849732167`.
+7. Since `140-140-8` is over limit in the fresh real ANSYS run, the correct formal selected section remains `160-160-8`; formal `result_validation.json` is pass and required figures count is 14.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the economy downshift strategy. The refreshed send-folder packages are `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` and `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`; use the external `.sha256.txt` sidecars in that folder as transfer authority.
+2. If the unit has evidence that `140-140-8` passes for the same 4211 input, compare that retained job folder against `jobs/verify_4211_economy_downshift_20260609_202204/18185NI-LXSJ4211` before changing any deterministic evaluation rule.
+
+## 2026-06-09 unit 4211 overlimit recovery and H1 geometry closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4211 failed after two over-limit candidates. Preserved evidence showed `100-100-6` ratio `1.3581785618588114` and `120-120-10` ratio `1.6479509969960606`; both candidate runs completed, so this was a deterministic capacity over-limit condition.
+2. The same candidate evidence showed `generated_model.mac` H1 was not synchronized for the 120 square section: model H1 stayed `0.1` while post/input already used `0.12`.
+3. `core/optimizer/square_section_selector.py` now updates model H1 from the square-section outer width. Thickness is ignored for H1, so all 120-wide square tubes use `H1=0.120000`.
+4. Production square-section selection still normally runs two candidates for economy. If both of those candidates are deterministic over-limit, it now runs up to two larger intake-allowed candidates instead of failing immediately.
+5. The extension is recorded in `square_section_selection.json` through `overlimit_recovery_extensions`, while the base two-candidate economy budget remains visible as `max_evaluated_candidates=2`.
+6. Regression tests cover both H1 outer-width synchronization and two-overlimit recovery to a larger allowed section.
+7. Verification passed: targeted selector/workflow/postprocessor/result-validity tests and full `pytest tests/unit -q`.
+8. Real ANSYS18.2 validation passed at `jobs/verify_4211_h1_overlimit_recovery_20260609_172633/18185NI-LXSJ4211`: evaluated `100-100-6`, `120-120-10`, then `160-160-8`; selected `160-160-8`, ratio `0.6132882273722775`, `result_validation.json` pass, `figure_count=14`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4211 over-limit recovery and H1 geometry issue. The unit should install `更新包.zip` or redeploy `CableTrayAI.zip`, then rerun 4211 from a fresh job instead of reusing the old failed candidate directory.
+
+## 2026-06-09 unit 4210 ANSYS timeout false section-failure closeout
+
+Resolved in source and verified with real ANSYS:
+
+1. Unit 4210 failed on `140-140-8` with a misleading square-section failure message. Copied unit evidence shows the candidate trial timed out at `timeout_seconds=720`; no deterministic ratio was produced for that failed attempt.
+2. Hash comparison showed unit and local 4210 model/solve/post/spectrum command streams matched. The failure was caused by candidate-trial/runtime watchdog policy, not model generation, spectrum selection, residual mass, or RCC-M evaluation logic.
+3. `core/optimizer/square_section_workflow.py` no longer shortens candidate trials to 12 minutes. Candidate trials now use production-safe watchdogs so they can produce APDL/PIP outputs before section selection decides.
+4. `core/ansys/runner.py` now applies code-level minimum real-run watchdogs: 120 minutes total timeout, 90 seconds startup no-output timeout, and 300 seconds output-stall timeout. The configured values are retained in `ansys_run_audit.json` as `configured_*` fields.
+5. `core/optimizer/square_section_selector.py` now classifies ANSYS timeouts as runtime failures, not section over-limit decisions. A timed-out candidate without a computed ratio will no longer be reported as a section stress failure.
+6. Regression tests added in `tests/unit/test_ansys_runtime_timeout_policy.py`; full `pytest tests/unit -q` passed with `115 passed`.
+7. Real ANSYS18.2 validation deliberately ran 4210 with `-TimeoutMinutes 12` at `jobs/verify_unit_4210_timeout_clamp_20260609_123539/18185NI-LXSJ4210`; the new code clamped the effective timeout to 7200 seconds and the job passed.
+8. Validation result: selected `140-140-8`, controlling ratio `0.9052401909300667`, formal `result_validation.json` pass, `figure_count=14`, and `ansys_run_audit.json` records `configured_timeout_seconds=720`, effective `timeout_seconds=7200`, `timeout_policy.status=clamped`.
+
+Open queue:
+
+1. Rebuild and send the refreshed deployment/update package to the unit. After installing it, unit 4210 should rerun instead of reusing the old timeout-failed trial directory.
+
+## 2026-06-09 unit 4210 candidate-output fallback closeout
+
+Resolved in source, real ANSYS validation, runtime, package, and local install:
+
+1. Unit 4210 reported `140*8` as blocked with `candidate failed because required ansys/pip source outputs are missing ... all-zero or stalled`, although the section is known to satisfy the formal calculation.
+2. `core/optimizer/square_section_selector.py` now classifies feasible candidate trials with ratio `<= 1.0` and retryable source-output checks as `formal_validation_retryable` instead of treating them as a square-section capacity failure.
+3. The selector now stops section sweeping for those source-output defects and selects the feasible candidate only for formal full-run validation. It does not publish the candidate trial result; formal `result_validation.json` remains the publication gate.
+4. Retryable candidate-output checks include required source outputs for modal, JCZH, LS-FORCE, HF-FORCE, MAXBEAMSTRESS, and TMAXBEAMSTRESS. Spectrum errors, ANSYS timeouts, ANSYS run failures, missing evaluation summary, and zero allowables remain non-retryable blockers.
+5. `core/pipeline/one_click.py` now reports candidate section, ratio, status, failed checks, domains, run status, and `trial_dir` in the error message.
+6. `core/optimizer/square_section_workflow.py` records formal validation mode in `input.json` metadata for traceability.
+7. Verification passed: targeted square-section/workflow tests, result-validity/package/auth tests, `py_compile`, and full `tests/unit` (`112 passed`).
+8. Real ANSYS18.2 validation passed at `jobs/verify_unit_4210_candidate_fallback_20260609_091048/18185NI-LXSJ4210`: selected `140-140-8`, ratio `0.9052401909300667`, `result_validation.json` pass with 14/14 checks.
+9. Deployment refreshed and applied locally: full package `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` SHA256 `83E499A079FD148468A5E9BB4958F106751902CD63D2A86ECFBFAB29AAC9C6F3`; update package `C:/Users/duxy/Desktop/duxyb-update/更新包.zip` SHA256 `E00426429D18887ECD983D601A8653EC0426D6071E942CC35F418977FE661E50`; local backup `D:/CableTrayAI/_update_backups/20260609_091931`; `/health` ok.
+10. Latest full deployment package copied to `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip` with `CableTrayAI.zip.sha256.txt`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the 4210 candidate-output fallback issue. The unit should rerun 4210 after installing the new package/update; if it still fails, inspect the new message's `failed_checks` and `trial_dir` instead of changing section size.
+
+## 2026-06-08 two-trial square-section economy strategy closeout
+
+Resolved in source and real ANSYS validation:
+
+1. User requested square-section selection to finish within two candidate runs and treat `0.6-0.9999` as the economic ratio band.
+2. `core/optimizer/square_section_selector.py` now records `economic_ratio_min=0.6`, `economic_ratio_max=0.9999`, and `max_evaluated_candidates=2` for production searches.
+3. `core/optimizer/square_section_workflow.py` now keeps the intake allowed list as the hard boundary, uses learned/estimated first candidate ordering, and passes the two-trial budget into the selector.
+4. If the first candidate is over limit or below the economic band, the selector plans at most one section-modulus correction candidate; it does not sweep the full allowed list.
+5. Progress events now report the active trial budget as `candidate_count`, so the web side shows `0/2` instead of `0/6` while still preserving full `available_candidate_count` in the JSON audit.
+6. Real ANSYS18.2 validation passed at `jobs/verify_two_trial_section_strategy_20260608_173006` / `E:/CODEX/tray_platform/ANSYS Output/verify_two_trial_section_strategy_20260608_173006`:
+   - `18185NI-LXSJ4210`: selected `140-140-8`, ratio `0.9052401909300667`, evaluated candidates `1/2`, result validation `pass`.
+   - `18185NI-LXSJ4213` static: selected `120-120-10`, ratio `0.8025890143573237`, evaluated candidates `1/2`, result validation `pass`.
+   - `18185NI-LXSJ4215` / raw-6: selected `160-160-8`, ratio `0.9131067176524903`, evaluated candidates `1/2`, result validation `pass`.
+7. Verification passed: py_compile, targeted square-section/workflow tests, and full `tests/unit`.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the two-trial square-section strategy. Send the regenerated `C:/Users/duxy/Desktop/duxyb-update/更新包.zip` for an update, or `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` for a full deployment.
+
+## 2026-06-08 raw-6 / 18185NI-LXSJ4215 unit-run hotfix closeout
+
+Resolved in source, runtime, package, local install, and smoke tests:
+
+1. Unit clarified the failed row is the last intake (`raw-6`, `18185NI-LXSJ4215`), not 4213. The reported symptom was a satisfying section near ratio `0.99` being returned as `Square section auto-selection failed`.
+2. `core/optimizer/square_section_selector.py` now derives candidate controlling ratio from the fresh `evaluation_summary.json` maximum deterministic Chapter 6 ratio. Stale `result_validation.json:evaluation_ratio_limit` ratio evidence is recorded as `validation_ratio_limit_ratio` but ignored for candidate acceptance.
+3. Section-selection boundary is aligned to the project gate: ratio `> 1.0` fails; ratio `<= 1.0` passes. `run_square_section_search`, `select_best_square_section`, and `write_square_section_selection_summary` were updated.
+4. `core/pipeline/one_click.py` now raises a diagnostic message with candidate section/ratio/status/failed non-ratio checks instead of the old generic one-line error.
+5. `core/ansys/runner.py` now treats WARNING-level `file_or_permission_error` file probes as nonblocking warnings, while ERROR/FATAL file/permission messages still block. Required output absence remains enforced by result validation.
+6. Regression coverage added:
+   - stale validation ratio `1.01` plus fresh evaluation ratio `0.99` must pass;
+   - exact ratio `1.0` is accepted;
+   - WARNING-level file probe does not block;
+   - ERROR-level file open failure still blocks.
+7. Verification passed: targeted tests `tests/unit/test_square_section_selector.py` and `tests/unit/test_ansys_command_stream_warning_gate.py`; full `tests/unit`; row6 historical readback selected `160-160-8` with max ratio `0.9131955968601544`.
+8. Runtime/package refreshed: server, desktop, and installer runtimes rebuilt; deployment package gate passed; update package `-VerifyOnly` passed; package cleanliness scan passed.
+9. Final full deployment package is regenerated at `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`; use the generated file hash from the final closeout as the transfer authority.
+10. Final update package is regenerated at `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`; its extracted `manifest/update_manifest.json` records the payload SHA256 and payload file count.
+11. Local install smoke: update package applied to `D:/CableTrayAI`; `/health` returned ok; source/package/installed hashes match for current touched runtime modules and server exe.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the raw-6/4215 unit-run hotfix. Historical failed unit job records still need to be rerun on the unit machine after applying `更新包.zip`.
+
+## 2026-06-08 deployment package fixed-password closeout
+
+Resolved in source, package, local install, and smoke tests:
+
+1. Deployment package now directly supports the user's requested fixed login password `cnpe123`.
+2. `scripts/package_duxyb_intranet_release.ps1` defaults `InitialPassword` to `cnpe123` and writes `config/initial_password.txt` into `C:/Users/duxy/Desktop/duxyb/CableTrayAI`.
+3. The native installer reads that package file. Fresh install and installer-managed auth reset both write local `config/auth.local.json` for `duxyb`, `jianghl`, and `wanggangb` using `cnpe123`.
+4. Existing target `auth.local.json` is not silently preserved when the package fixed password exists; it is backed up to `auth.local.json.bak_<timestamp>` and then rewritten, fixing old random-password deployments.
+5. Python and PowerShell fallback installers were aligned to the same package password and auth-backup behavior.
+6. Installer cleanup now removes stale target-root `CableTrayAI_Installer.exe`, avoiding old installer remnants in installed folders.
+7. Final full deployment package: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`, size `78960185` bytes; SHA256 `CE94EACF784DD7C8F1F7151DDFA22E099D7165DF1A231C0B26FF5FDAA0CD5EEE`; package gate passed.
+8. Package cleanliness passed: no top-level `jobs/uploads/outputs/logs`, no local configs, no `runtime/auth_sessions.json`, no `__pycache__`, no `*.pyc`, and package directory dirty-count is 0.
+9. Local installer smoke against `D:/CableTrayAI` passed: `install_manifest.json` and `CableTrayAI_LOGIN_INFO.txt` record `cnpe123`; `duxyb/cnpe123` login passed; wrong password returned 401; `/health` returned ok; root `D:/CableTrayAI/CableTrayAI_Installer.exe` is absent.
+
+Open queue:
+
+1. No blocking item remains for sending the full deployment package. Send `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` when a full deployment is desired.
+
+## 2026-06-08 mail update package closeout
+
+Resolved in source, final package, local install, and update-package smoke:
+
+1. Added a formal mail-safe update flow so future unit upgrades use `更新包.zip` instead of manual full-folder copy.
+2. `scripts/package_internal_update.ps1` creates `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`. It rebuilds the clean deployment payload, writes a payload zip plus per-file SHA256 manifest, and self-runs `install_update.ps1 -VerifyOnly`.
+3. `scripts/install_update_package.ps1` verifies the payload zip SHA256 and every expanded file before applying, rejects protected runtime/local-config/cache files, applies through `scripts/apply_internal_update.ps1`, restarts the server, checks `/health`, and attempts backup overlay rollback if health fails.
+4. `scripts/package_duxyb_intranet_release.ps1` now removes package-gate-generated `__pycache__`, `.pytest_cache`, `.pytest_tmp`, `*.pyc`, and `*.pyo` after the deployment gate and before zip creation.
+5. Final package checks passed: no top-level `jobs/uploads/outputs/logs`, no `config/*.local.*`, no `runtime/auth_sessions.json`, no `ansys.local.toml`, no `__pycache__`, and no `*.pyc` in either `更新包.zip` or payload `CableTrayAI.zip`.
+6. Final update package: `C:/Users/duxy/Desktop/duxyb-update/更新包.zip`, size `78513666` bytes; payload SHA256 `265dde3d6bb0d82192bdab1720f0e8959946b564743f804e6d9432cd9e4bd5d0`, payload file count `1774`.
+7. Local installed smoke passed using the final update package against `D:/CableTrayAI`: verification pass, backup `D:/CableTrayAI/_update_backups/20260608_135840`, `/health` pass, and installed hashes match source for the update scripts and checked runtime modules.
+
+Open queue:
+
+1. No blocking item remains for the mail-safe update package. For future feature optimization releases, regenerate `更新包.zip` with `scripts/package_internal_update.ps1` and send that zip to the unit.
+
+## 2026-06-08 unit deployment / 12-layer validation closeout
+
+Resolved in source, package, and installer smoke:
+
+1. Unit deployment login `duxyb / cnpe123` failed because the native installer did not create `config/auth.local.json` on first install. The backend has no committed default credentials by design, so an install without a local auth file rejects every password.
+2. `scripts/CableTrayAIInstaller.cs` now creates `config/auth.local.json` locally with users `duxyb`, `jianghl`, and `wanggangb` when no local auth file exists. Existing local auth configs are preserved.
+3. The first-install password is generated locally unless `CABLETRAYAI_INITIAL_PASSWORD` is set. The installer writes `CableTrayAI_LOGIN_INFO.txt` plus `install_manifest.json` on the target machine so the password is easy to find during unit deployment without committing a default password.
+4. `scripts/package_duxyb_intranet_release.ps1` now avoids LibreOffice Python when running the deployment package gate and its package README points operators to `CableTrayAI_LOGIN_INFO.txt`.
+5. Per-side `12+12` support has been extended and real-ANSYS verified. High-layer source-family keypoints now use expanded `KPOFF/KPFSTEP/KPBKBASE` numbering, and post/connection-node export uses the same numbering.
+6. Real validation job: `jobs/verify_12x12_high_layer_static_20260608_124204/S2_12x12_160x8_static_overload`. Main solve `success`, connection export `success`, figure export `success` with all 14 required figures, and modal frequency table rows parsed.
+7. The 12+12 validation proves modeling/calculation capability, not engineering adequacy. The synthetic high-load 160x8 sample remains not publishable because deterministic ratios exceed 1.0; this is the expected answer for leadership demonstration.
+8. Static-method modal appendix parsing is fixed for ANSYS18.2 participation-factor `Mode.oup` output and low-frequency rows; response-spectrum MT >50 Hz gate remains unchanged.
+9. Regression tests passed for installer auth, high-layer APDL numbering, postprocessor alignment, modal parsing, static method policy, section workflow, MT learning, and report template injection.
+
+Open queue:
+
+1. No blocking source/package/deployment item remains for the unit deployment, 12-layer validation, static modal appendix table, or installer credential UX.
+2. Current package policy intentionally ships `config/initial_password.txt` with `cnpe123`; installers back up and rewrite target `config/auth.local.json` to that packaged password. Do not reintroduce random-password-only behavior unless the user explicitly changes the deployment policy.
+
+## 2026-06-07 report-generation injection closeout
+
+Resolved in source and verified against installed job `18185NI-LXSJ4212`:
+
+1. User requested report-generation optimization only: fill missing report content from existing result files and figures, preserve the fixed report format, remove blank appendix pages caused by page breaks, and mark only the corresponding changed/added titles red in the final generated report.
+2. `core/report/template_injector.py` now treats the <=120 mm square-tube equivalent weld branch as a report-specific branch: the not-applicable `HF-FORCE` root-load table is removed from the generated copy instead of being left as `待确认`.
+3. The generated weld table is now `表6-2 托臂根部焊缝评定结果（应力比）`, six columns, eight deterministic rows from `evaluation_summary.json`; equivalent stress uses `calculation_value / 0.526`.
+4. Generated reports mark only injected/updated section titles, table titles and figure captions red; body text and table values are not colored.
+5. Appendix cleanup removes empty page-break-only paragraphs inside actual appendices and skips TOC paragraphs, avoiding the previous accidental TOC/layout touch.
+6. Verification report: `C:/Users/duxy/Desktop/report_review_18185NI-LXSJ4212_20260607_180115.docx`. Audit status is `pass`, warnings are empty, the equivalent weld table has 8 data rows.
+7. Regression coverage added in `tests/unit/test_template_report_injector.py` for equivalent weld row calculations and appendix page-break cleanup TOC skip.
+8. Verification passed: report unit test, report template integration test, full unit test suite, and `py_compile`.
+9. Deployment completed: `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip` refreshed, package gate passed, applied to `D:/CableTrayAI`, backup `D:/CableTrayAI/_update_backups/20260607_180517`, service PID `21176`, `/health` ok, root no-cache headers ok, installed/package/source `core/report/template_injector.py` hashes match.
+
+Open queue:
+
+1. No blocking source/deployment item remains for the report-generation optimization.
 
 ## 2026-06-07 frontend ANSYS command-stream review lifecycle closeout
 
@@ -438,3 +1592,124 @@ Remaining queue:
 
 1. Restart `D:/CableTrayAI` service and smoke-test `/health` plus root no-cache headers.
 2. Optional fresh formal selection rerun for 4210 can be performed after deployment; the selection gate will reject 100-100-8 because the deterministic evaluation ratio is now greater than 1.
+
+## 2026-06-07 report render QA and appendix caption closeout
+
+Resolved:
+
+1. Installed a usable LibreOffice QA renderer without relying on Program Files write permission by extracting the MSI to `C:/Users/duxy/AppData/Local/LibreOfficePortableExtracted` and fixing its `bootstrap.ini`.
+2. Re-rendered the generated 4212 report through portable `soffice.com`; the first report sample exposed a final-page caption-only defect for `图C-8`.
+3. Fixed `core/report/template_injector.py` so every inserted figure paragraph keeps with the following caption paragraph.
+4. Regenerated `C:/Users/duxy/Desktop/report_review_18185NI-LXSJ4212_20260607_190600.docx`; PDF/PNG spot checks confirm no blank-page suspects and the final figure/caption stay together.
+
+Deployment queue status: completed.
+
+1. Refreshed `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`.
+2. Applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260607_191437`.
+3. Restarted service as PID `18604`.
+4. `/health` returned ok, root no-cache headers are present, and installed/package/source hashes matched for the report injector and handoff docs.
+
+## 2026-06-07 pre-deployment known-issue audit closeout
+
+Resolved during final audit:
+
+1. Static-method report table 3-1 used the raw intake elevation instead of the selected equivalent-static spectrum elevation. For `18185NI-LXSJ4213`, that meant `7.5m` instead of the selected `13.09m`, causing report audit warning.
+2. `core/report/template_injector.py` now reads static report spectrum elevations from `metadata.static_acceleration_source.selected_elevation/elevations`.
+3. Recent installed jobs `18185NI-LXSJ4211`, `18185NI-LXSJ4212`, `18185NI-LXSJ4213`, and `18185NI-LXSJ4214` all regenerate template reports with audit `pass`.
+
+Deployment queue status: completed.
+
+1. Refreshed `C:/Users/duxy/Desktop/duxyb/CableTrayAI.zip`.
+2. Applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260607_202131`.
+3. Restarted service as PID `20688`.
+4. `/health` returned ok, root no-cache headers are present, package contains runtime XML support files, and installed/package/source hashes matched for all checked runtime files.
+
+## 2026-06-12 real ANSYS variant validation closeout
+
+Resolved:
+
+1. User requested real ANSYS validation with changed intake references. A job-local validation workbook was created with double-side 2+2 layers at 600 mm, single-side 5 layers at 600 mm, and double-side 3+3 layers at 600 mm. No uploaded/source workbook was modified.
+2. True ANSYS18.2 validation found one real selector defect: the two-trial/economic search path could report square-section failure before proving every remaining intake-allowed square tube. This was visible in `18185NI-LXSJ9101`, where `140-140-8` and smaller skipped candidates were not evaluated in the first run.
+3. `core/optimizer/square_section_selector.py` now enables a final failure-exhaustion pass before blocking: when all tested candidates are deterministic over-limit and no feasible result exists, all untested allowed sections are appended and run with fresh ANSYS/deterministic evaluation. Smart jumps and economic downshift are disabled during this exhaustion pass.
+4. Regression coverage was added in `tests/unit/test_square_section_selector.py` for both cases: a skipped allowed section later passes, and all allowed sections fail after exhaustive proof.
+5. Verification passed: full `pytest` returned `154 passed`; real ANSYS rerun for `18185NI-LXSJ9101` evaluated `120-120-6`, `120-120-10`, `160-160-8`, `100-100-6`, `100-100-8`, and `140-140-8`, all over 1.0, so final failure is a proven engineering capacity result.
+6. Real ANSYS variant outcomes: `18185NI-LXSJ9103` double-side 3+3 layers, 600 mm passed with `160-160-8` and controlling ratio `0.8582242170469485`; `18185NI-LXSJ9102` single-side 5 layers, 600 mm completed ANSYS but failed deterministic weld equivalent ratio `1.2479863056049951`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; backup `D:/CableTrayAI/_update_backups/20260612_175308`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; installed source hash matches repository source for the selector fix.
+
+## 2026-06-12 conversational intake calculation closeout
+
+Resolved in source:
+
+1. Added a conversation-to-intake workflow for departments that do not use the mechanics Excel batch sheet. Operators can describe requirements such as single/double side, layer count, tray width, spacing, support height, project/factory/elevation, and candidate square sections.
+2. The workflow is conservative by design: it returns missing-field prompts instead of starting ANSYS when the conversation lacks spectrum file, allowed square sections, geometry, or project/factory/elevation information.
+3. `apps/api/app/main.py` now exposes `/ai/intake/preview` and `/ai/intake/start-run`. The start endpoint writes a traceable chat intake workbook and then reuses the existing `/runs/start` production path rather than creating a separate calculation engine.
+4. `apps/web/ai_intake.html` provides the web UI; `apps/web/ai_tools.html` links to it.
+5. `docs/ONLINE_REFERENCE_POLICY.md` records the OpenAI structured-output/function-calling references used as tooling guidance only. Mechanical authority remains local APDL/PIP/MAC/SECT, real ANSYS, deterministic formulas, and source refs.
+
+Verification:
+
+1. Full `pytest` returned `158 passed`.
+2. Python compile passed for the new parser and API module.
+3. Inline JavaScript syntax checks passed for the new page and modified AI tools page.
+4. Temporary source-service HTTP checks passed: complete conversational intake previews as pass; missing or nonexistent spectrum files block with `spectrum_file`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; `/ai-intake` returns 200; installed hashes match source for `core/intake/chat_intake.py`, `apps/web/ai_intake.html`, and `apps/api/app/main.py`.
+
+## 2026-06-12 conversational intake UX cleanup
+
+Resolved in source:
+
+1. Other disciplines no longer need to provide or see a formal mechanics report number in the chat intake UI.
+2. A report-like token pasted in chat is retained only as a raw detected reference number; the calculation still uses an internal `CHAT-...` id unless a backend caller explicitly allows a formal report number.
+3. The default candidate square-section checkbox was removed. Explicit candidate sections in the message are used directly; if no section is supplied, the page exposes a one-click fallback `使用单位候选库补截面`.
+4. Internal tracking fields are hidden from the structured preview table and replaced with user-facing labels.
+
+Verification:
+
+1. Full `pytest` returned `158 passed`.
+2. Python compile passed for the parser and API.
+3. Node/VM script checks passed for the modified pages.
+4. Unicode parse smoke passed: `18185NI-LXSJ9001` remains trace evidence while the job id is `CHAT-...`.
+
+Deployment queue status: completed.
+
+1. Full package and update package are refreshed in `C:/Users/duxy/Desktop/duxyb-cnpe`.
+2. Local `D:/CableTrayAI` update is applied; exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+
+## 2026-06-16 mixed tray-width modeling closeout
+
+Resolved in source:
+
+1. Mixed tray-width front/back layouts no longer reuse one maximum tray-width geometry for every layer. `core/apdl/mixed_tray_model.py` renders each layer independently so combinations such as single-side `300+600` preserve the correct tray width, load density, arm length split, bolt topology, and post-processing trace points.
+2. The 600 mm tray intake split is now `0.47+0.20`, so the generated model no longer carries the incorrect `0.22m` tail raised during review.
+3. `core/apdl/intake_standard_family_renderer.py` keeps standard source-family solve/post references but bypasses the old source-family model geometry when a valid mixed-width layer payload is detected.
+4. Unit regression coverage now checks `300+600` rendering, 300/600 SECT inclusion, CSOLID bolt creation, 600 mm tail geometry, and the audit marker proving shared-maximum geometry is not used.
+5. Learning caches were updated from the successful real ANSYS case so future similar NX mixed-width jobs can order square-section and MT choices from validated evidence.
+
+Verification:
+
+1. `D:/miniconda3/python.exe -m py_compile core/apdl/mixed_tray_model.py core/apdl/intake_standard_family_renderer.py core/intake/tray_load_parser.py` passed.
+2. `D:/miniconda3/python.exe -m pytest tests/unit/test_tray_load_parser.py tests/unit/test_intake_standard_family_tray_widths.py -q` returned `28 passed`.
+3. Real ANSYS18.2 passed for NX, `-8.8m`, single-side two layers `300+600`, support spacing `2m`, square-support height `2.2m`, response spectrum. Selected section: `100-100-6`; controlling ratio: `0.418410665203697`.
+
+Operator artifact:
+
+1. Full copied result folder: `C:/Users/duxy/Desktop/NX_-8.8m_single_300_600_results_20260616_171205`.
+
+Deployment queue status: completed.
+
+1. Full package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/CableTrayAI.zip`.
+2. Mail/update package rebuilt at `C:/Users/duxy/Desktop/duxyb-cnpe/更新包.zip`.
+3. Update applied to `D:/CableTrayAI`; the exact latest backup path is recorded in `D:/CableTrayAI/docs/last_internal_update_apply.json`.
+4. Active service `/health` is ok; `duxyb/cnpe123` login passes; installed source hash matches repository source for the mixed tray-width renderer, intake renderer, and tray parser changes.

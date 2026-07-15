@@ -24,11 +24,16 @@ def _static_method_job(job_dir: Path) -> bool:
     return str((metadata or {}).get("analysis_method") or "").strip().lower() == "static"
 
 
-def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
+def build_ansys_command(
+    config: AnsysLocalConfig,
+    job_dir: Path | str,
+    *,
+    post_macro_name: str = "generated_post.mac",
+) -> dict:
     job_dir = Path(job_dir).resolve()
     ansys = config.ansys
     executable = ansys.executable or "ANSYS_EXECUTABLE_NOT_CONFIGURED"
-    build_run_all_macro(job_dir)
+    master_audit = build_run_all_macro(job_dir, post_macro_name=post_macro_name)
     job_name = resolve_master_job_name(job_dir)
     input_file = job_dir / MASTER_MACRO_NAME
     output_file = job_dir / "ansys.out"
@@ -79,6 +84,8 @@ def build_ansys_command(config: AnsysLocalConfig, job_dir: Path | str) -> dict:
         "ansys_job_name": job_name,
         "input_file": str(input_file),
         "output_file": str(output_file),
+        "post_macro_name": post_macro_name,
+        "master_macro_audit": master_audit,
         "config": config_to_dict(config),
         "resources": {
             "nproc": effective_nproc,

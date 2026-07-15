@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from core.optimizer import square_section_workflow as workflow
 from core.optimizer.square_section_selector import SquareSectionCandidate, replace_square_and_arm_sections_in_model
@@ -55,6 +56,102 @@ def _write_section_catalog(source_root: Path, names: list[str]) -> None:
         (source_root / f"{name}.SECT").write_text("! test sect\n", encoding="utf-8")
 
 
+def _write_single_mixed_wide_tail_job(job_dir: Path, *, source_shape: str = "single_mixed_600_500_300_200_100_universal") -> None:
+    job_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {"analysis_method": "response_spectrum"},
+        "support": {
+            "allowed_square_section_ids": ["120-120-10", "160-160-8"],
+            "square_tube_width_m": 0.1,
+        },
+        "sections": [{"section_id": "100-100-6", "sect_file": "100-100-6"}],
+        "tray_layers": [
+            {"side": "front", "tray_width_m": 0.6},
+            {"side": "front", "tray_width_m": 0.5},
+            {"side": "front", "tray_width_m": 0.3},
+            {"side": "front", "tray_width_m": 0.2},
+            {"side": "front", "tray_width_m": 0.1},
+        ],
+    }
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "intake_standard_family_traceability.json").write_text(
+        json.dumps({"parameterization": {"source_mixed_family_shape": source_shape}}),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "H1=0.100000",
+                "L3=0.35",
+                "L5=0.2",
+                "L6=2.0",
+                "senum1=5",
+                "senum2=4",
+                "senum3=3",
+                "senum4=2",
+                "senum5=1",
+                "SECREAD,100-100-6,SECT",
+                "SECREAD,600-75-2mm,SECT",
+                "SECREAD,500-75-2mm,SECT",
+                "SECREAD,300-75-2mm,SECT",
+                "SECREAD,200-75-2mm,SECT",
+                "SECREAD,100-75-2mm,SECT",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_grouped_mirrored_wide_tail_job(job_dir: Path) -> None:
+    job_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "metadata": {"analysis_method": "static"},
+        "support": {
+            "allowed_square_section_ids": ["120-120-10", "160-160-8"],
+            "square_tube_width_m": 0.12,
+        },
+        "sections": [{"section_id": "120-120-10", "sect_file": "120-120-10"}],
+        "tray_layers": [
+            {"side": "front", "tray_width_m": 0.5},
+            {"side": "front", "tray_width_m": 0.6},
+            {"side": "back", "tray_width_m": 0.5},
+            {"side": "back", "tray_width_m": 0.6},
+        ],
+    }
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "intake_standard_family_traceability.json").write_text(
+        json.dumps({"parameterization": {"model_source": "ctai_grouped_mirrored_mixed_standard"}}),
+        encoding="utf-8",
+    )
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "H1=0.120000",
+                "L1=0.67",
+                "L2=0.55",
+                "L3=0.6",
+                "L4=0.5",
+                "L5=0.2",
+                "L6=0.8",
+                "senum1=2",
+                "senum2=1",
+                "SECREAD,120-120-10,SECT",
+                "SECREAD,600-75-2mm,SECT",
+                "SECREAD,500-75-2mm,SECT",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+                "K,503,H1/2+L1-L5,0,0.1",
+                "K,1503,-(H1/2+L1-L5),0,0.1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_trial_section_replacement_uses_same_arm_branch_as_final_model(tmp_path: Path) -> None:
     source_root = tmp_path / "source"
     _write_section_catalog(
@@ -90,6 +187,173 @@ def test_trial_section_replacement_uses_same_arm_branch_as_final_model(tmp_path:
     assert "SECREAD,YIXINGGANG150DAN,SECT" in shaped_text
 
 
+def test_yixing_trial_replacement_removes_channel_secondary_offset(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-6",
+            "140-140-8",
+            "50-42",
+            "CAOGANG42DAN",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "SECREAD,100-100-6,SECT",
+                "SECOFFSET,cent,",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "140-140-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["arm_section_family"] == "square_gt_120_yixing_arm_family"
+    assert audit["arm_section_replace_audit"]["yixing_secoffset_replacements"] == 1
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,YIXINGGANG150DAN" not in text
+    assert "SECOFFSET,user\nSECREAD,YIXINGGANG150DAN" in text
+
+
+def test_channel_trial_replacement_keeps_channel_secondary_offset(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-6",
+            "50-42",
+            "CAOGANG42DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    (job_dir / "generated_model.mac").write_text(
+        "\n".join(
+            [
+                "SECREAD,100-100-6,SECT",
+                "SECOFFSET,cent,",
+                "SECREAD,50-42,SECT",
+                "SECOFFSET,user,,-0.03249",
+                "SECREAD,CAOGANG42DAN,SECT",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "120-120-6", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["arm_section_family"] == "square_le_120_standard_channel_family"
+    assert audit["arm_section_replace_audit"]["yixing_secoffset_replacements"] == 0
+    assert "SECOFFSET,user,,-0.03249\nSECREAD,CAOGANG42DAN" in text
+
+
+def test_trial_section_replacement_syncs_single_mixed_l5_for_yixing_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.15" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "updated"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["policy_status"] == "square_outer_width_gt_120_l5_0p15m"
+
+
+def test_trial_section_replacement_keeps_single_mixed_l5_for_channel_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "120-120-10",
+            "50-42",
+            "CAOGANG42DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "120-120-10", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.120000" in text
+    assert "L5=0.2" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "already_current"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["policy_status"] == "square_outer_width_le_120_l5_0p20m"
+
+
+def test_trial_section_replacement_syncs_grouped_mirrored_500_600_l5_for_yixing_branch(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_grouped_mirrored_wide_tail_job(job_dir)
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.15" in text
+    assert "L3=0.6" in text
+    assert "L4=0.5" in text
+    l5_sync = audit["model_h1_sync_audit"]["L5_sync"]
+    assert l5_sync["status"] == "updated"
+    assert l5_sync["source_mixed_family_shape"] == "ctai_grouped_mirrored_mixed_standard"
+    assert l5_sync["source_mixed_family_shape_source"] == "traceability_model_source"
+    assert l5_sync["policy_status"] == "square_outer_width_gt_120_l5_0p15m"
+
+
+def test_trial_section_replacement_does_not_rewrite_non_single_mixed_l5_span(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "160-160-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_single_mixed_wide_tail_job(job_dir, source_shape="double_mixed_one_width_per_side")
+
+    audit = replace_square_and_arm_sections_in_model(job_dir, "160-160-8", source_root=source_root)
+    text = (job_dir / "generated_model.mac").read_text(encoding="utf-8")
+
+    assert audit["status"] == "pass"
+    assert "H1=0.160000" in text
+    assert "L5=0.2" in text
+    assert audit["model_h1_sync_audit"]["L5_sync"]["status"] == "skipped"
+    assert audit["model_h1_sync_audit"]["L5_sync"]["reason"] == "source_multi_width_L5_not_wide_tail_family"
+
+
 def test_trial_section_replacement_does_not_overwrite_tray_secreads(tmp_path: Path) -> None:
     source_root = tmp_path / "source"
     _write_section_catalog(
@@ -123,6 +387,40 @@ def test_trial_section_replacement_does_not_overwrite_tray_secreads(tmp_path: Pa
     assert text.count("SECREAD,500-75-2mm,SECT") == 2
     assert "SECREAD,50-42,SECT" not in text
     assert "SECREAD,CAOGANG42DAN,SECT" in text
+
+
+def test_apply_selected_square_section_records_formal_validation_mode(tmp_path: Path) -> None:
+    source_root = tmp_path / "source"
+    _write_section_catalog(
+        source_root,
+        [
+            "140-140-8",
+            "YIXINGGANG150",
+            "YIXINGGANG150DAN",
+        ],
+    )
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["140-140-8"])
+    _write_minimal_model_with_sections(job_dir)
+    selection = {
+        "status": "pass",
+        "selection_validation_mode": "formal_full_run_required",
+        "policy": "test formal fallback",
+        "selected": {
+            "section_name": "140-140-8",
+            "controlling_ratio": 0.91,
+            "formal_validation_required": True,
+        },
+    }
+
+    audit = workflow.apply_selected_square_section(job_dir, selection, source_root=source_root)
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    metadata = payload["metadata"]
+
+    assert audit["status"] == "pass"
+    assert metadata["square_section_selection_validation_mode"] == "formal_full_run_required"
+    assert metadata["square_section_selection_requires_formal_validation"] is True
+    assert metadata["square_section_selected"] == "140-140-8"
 
 
 def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sections(tmp_path: Path, monkeypatch) -> None:
@@ -169,10 +467,97 @@ def test_allowed_square_sections_use_verified_smart_search_without_unlisted_sect
     assert captured["stop_after_first_feasible"] is True
     assert captured["feasible_confirmation_count"] == 1
     assert captured["smart_jumps_enabled"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert captured["lower_neighbor_count"] == 0
     assert captured["limit"] is None
+    assert captured["max_evaluated_candidates"] == 2
     assert captured["overwrite_trials"] is True
+
+
+def test_successful_square_section_selection_retains_trial_root(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["140-140-8"])
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+
+    def fake_search(base_job_dir, trial_root, *args, **kwargs):
+        trial_root = Path(trial_root)
+        trial_dir = trial_root / "140-140-8"
+        trial_dir.mkdir(parents=True)
+        (trial_dir / "ansys_live_status.json").write_text('{"stage":"finished"}', encoding="utf-8")
+        return {
+            "status": "pass",
+            "selected": {
+                "section_name": "140-140-8",
+                "controlling_ratio": 0.91,
+                "trial_dir": str(trial_dir),
+            },
+            "candidate_results": [
+                {
+                    "section_name": "140-140-8",
+                    "status": "pass",
+                    "controlling_ratio": 0.91,
+                    "trial_dir": str(trial_dir),
+                }
+            ],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        runner=lambda trial_dir: {"status": "pass"},
+    )
+    summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
+    trial_root = Path(result["trial_root"])
+
+    assert result["status"] == "pass"
+    assert trial_root.exists()
+    assert (trial_root / "140-140-8" / "ansys_live_status.json").exists()
+    assert summary["trial_root_removed"] is False
+    assert "retained" in summary["trial_root_retention_policy"]
+
+
+def test_real_ansys_section_trial_runner_forwards_live_progress(tmp_path: Path, monkeypatch) -> None:
+    trial_dir = tmp_path / "160-160-8"
+    trial_dir.mkdir()
+    events: list[dict] = []
+
+    monkeypatch.setattr(workflow, "cleanup_stale_ansys_locks", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "_section_trial_config", lambda config: config)
+    monkeypatch.setattr(workflow, "assemble_result", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "cleanup_heavy_solver_artifacts", lambda *args, **kwargs: {"status": "pass"})
+
+    def fake_run_real_ansys(*args, **kwargs):
+        kwargs["progress_callback"](
+            {
+                "stage": "running_ansys",
+                "elapsed_seconds": 125.0,
+                "total_output_bytes": 2 * 1024 * 1024,
+            }
+        )
+        return {"status": "success"}
+
+    monkeypatch.setattr(workflow, "run_real_ansys", fake_run_real_ansys)
+
+    result = workflow.real_ansys_section_trial_runner(
+        trial_dir,
+        config=SimpleNamespace(),
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        progress_callback=events.append,
+    )
+
+    assert result["status"] == "pass"
+    assert events
+    assert events[0]["candidate_section"] == "160-160-8"
+    assert events[0]["trial_dir"] == str(trial_dir)
+    assert events[0]["trial_status_file"].endswith("ansys_live_status.json")
 
 
 def test_allowed_square_sections_ignore_similar_cache_window_and_keep_smaller_candidates(tmp_path: Path, monkeypatch) -> None:
@@ -216,8 +601,9 @@ def test_allowed_square_sections_ignore_similar_cache_window_and_keep_smaller_ca
     captured_names = [candidate.section_name for candidate in captured["candidates"]]
     assert captured_names == ["100-100-6", "100-100-8", "120-120-6"]
     assert captured["stop_after_first_feasible"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert captured["smart_jumps_enabled"] is True
+    assert captured["max_evaluated_candidates"] == 2
 
 
 def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path: Path, monkeypatch) -> None:
@@ -238,6 +624,7 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
             "selected_section_hint": "140-140-8",
             "source_job_dir": "jobs/history/similar_row",
             "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
             "similarity": {"score": 0.97},
             "historical_candidate_results": [
                 {"section_name": "100-100-8", "status": "fail", "controlling_ratio": 1.07},
@@ -272,6 +659,8 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
 
     assert result["status"] == "pass"
     assert [candidate.section_name for candidate in captured["candidates"]] == [
+        "100-100-6",
+        "100-100-8",
         "120-120-6",
         "120-120-10",
         "140-140-8",
@@ -285,7 +674,262 @@ def test_allowed_square_sections_use_learned_start_inside_allowed_list(tmp_path:
     ]
     assert result["learned_allowed_section_start"]["selected_section_hint"] == "140-140-8"
     assert captured["stop_after_first_feasible"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
+
+
+def test_high_similarity_current_cost_policy_can_skip_duplicate_candidate_trials(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    applied: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "160-160-8",
+            "source_job_dir": "jobs/history/4211",
+            "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {
+                    "section_name": "160-160-8",
+                    "status": "pass",
+                    "run_status": "pass",
+                    "controlling_ratio": 0.6125,
+                    "section_selection_ratio": 0.6125,
+                    "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
+                },
+                {
+                    "section_name": "140-140-8",
+                    "status": "fail",
+                    "run_status": "pass",
+                    "controlling_ratio": 1.113,
+                    "section_selection_ratio": 1.113,
+                    "dominant_check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
+                },
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        workflow,
+        "run_square_section_search",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("duplicate candidate trials should be skipped")),
+    )
+
+    def fake_apply(job_dir_arg, selection, **kwargs):
+        applied.update(selection)
+        return {"status": "pass"}
+
+    monkeypatch.setattr(workflow, "apply_selected_square_section", fake_apply)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert result["selection_validation_mode"] == "learned_formal_validation"
+    assert result["selected"]["section_name"] == "160-160-8"
+    assert result["learned_formal_validation"]["lower_economy_check"]["status"] == "covered_by_current_cache_version"
+    assert applied["selected"]["section_name"] == "160-160-8"
+    summary = json.loads((job_dir / "square_section_trial_summary.json").read_text(encoding="utf-8"))
+    assert summary["trial_root_removed"] is True
+
+
+def test_learned_selection_with_historical_final_gate_fail_runs_fresh_trials(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "120-120-10",
+            "source_job_dir": "jobs/history/4215",
+            "cache_key": "similar-cache-key",
+            "entry_cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {
+                    "section_name": "120-120-10",
+                    "status": "pass",
+                    "run_status": "pass",
+                    "controlling_ratio": 0.8155,
+                    "section_selection_ratio": 0.8155,
+                    "final_chapter6_controlling_ratio": 1.496,
+                    "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+                    "dominant_component": "mixed_beam_type_1",
+                }
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.90},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.90}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert captured["max_evaluated_candidates"] == 2
+
+
+def test_selection_cache_does_not_record_historical_final_gate_fail(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["120-120-10", "160-160-8"])
+    cache_path = tmp_path / "cache.json"
+
+    workflow._write_cached_selection(
+        job_dir,
+        {
+            "status": "pass",
+            "selected": {
+                "section_name": "120-120-10",
+                "controlling_ratio": 0.8155,
+                "section_selection_ratio": 0.8155,
+                "final_chapter6_controlling_ratio": 1.496,
+                "dominant_check_id": "mixed_beam_type_1.support_compression_bending_combined_accident",
+                "dominant_component": "mixed_beam_type_1",
+                "run_status": "pass",
+            },
+            "candidate_results": [],
+        },
+        cache_path=cache_path,
+    )
+
+    assert not cache_path.exists()
+
+
+def test_old_cache_version_cannot_skip_candidate_trials(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "120-120-6",
+            "source_job_dir": "jobs/history/4212",
+            "cache_key": "old-cache-key",
+            "entry_cache_version": "square-section-cache-v5-final-ratio-economy-proof",
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {"section_name": "120-120-6", "status": "pass", "run_status": "pass", "controlling_ratio": 0.9828}
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "120-120-10", "controlling_ratio": 0.86},
+            "candidate_results": [{"section_name": "120-120-10", "status": "pass", "controlling_ratio": 0.86}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert result["learned_allowed_section_start"]["status"] == "skipped"
+    assert result["learned_allowed_section_start"]["reason"] == "stale_cache_version_not_allowed_for_candidate_start"
+    assert captured["max_evaluated_candidates"] == 2
+
+
+def test_learned_low_ratio_selection_without_lower_failure_runs_normal_downshift(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "_read_similar_cached_selection",
+        lambda *args, **kwargs: {
+            "status": "hit",
+            "selected_section_hint": "160-160-8",
+            "similarity": {"score": 1.0},
+            "historical_candidate_results": [
+                {"section_name": "160-160-8", "status": "pass", "run_status": "pass", "controlling_ratio": 0.6125}
+            ],
+        },
+    )
+
+    def fake_search(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.6125},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.6125}],
+            "policy": "test",
+        }
+
+    monkeypatch.setattr(workflow, "run_square_section_search", fake_search)
+
+    result = workflow.select_and_apply_square_section(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        cache_path=tmp_path / "cache.json",
+    )
+
+    assert result["status"] == "pass"
+    assert "learned_formal_validation" not in result
+    assert captured["max_evaluated_candidates"] == 2
+    assert captured["stop_after_first_feasible"] is True
 
 
 def test_similar_selection_cache_prefers_current_newer_entry_on_tie(tmp_path: Path) -> None:
@@ -329,6 +973,117 @@ def test_similar_selection_cache_prefers_current_newer_entry_on_tie(tmp_path: Pa
     assert hit["entry_cache_version"] == workflow.SQUARE_SECTION_CACHE_VERSION
 
 
+def test_similar_cache_missing_width_and_load_is_not_high_similarity(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "100-100-8", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    current_features = workflow._selection_similarity_features(payload)
+    legacy_features = {
+        key: value
+        for key, value in current_features.items()
+        if key not in {"tray_widths_mm", "tray_load_sum_kg_m"}
+    }
+    cache_path = tmp_path / "square_section_selection_cache.json"
+    cache_path.write_text(
+        json.dumps(
+            {
+                "cache_version": workflow.SQUARE_SECTION_CACHE_VERSION,
+                "entries": {
+                    "legacy-no-load-width": {
+                        "status": "pass",
+                        "selected": {"section_name": "160-160-8"},
+                        "similarity_features": legacy_features,
+                        "cache_version": "square-section-cache-v6-learned-allowed-start",
+                        "updated_at": "2026-06-08T00:00:00+00:00",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    hit = workflow._read_similar_cached_selection(job_dir, cache_path=cache_path, threshold=0.82)
+    score = workflow._selection_similarity_score(current_features, legacy_features)
+
+    assert hit is None
+    assert score["score"] < 0.82
+    assert "tray_widths_mm" in score["mismatched"]
+    assert "tray_load_sum_kg_m" in score["mismatched"]
+
+
+def test_engineering_anchor_uses_density_back_calculated_line_load_for_mixed_500_600() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {"side": "front", "layer_index": 1, "tray_width_m": 0.5, "tray_density_kg_m3": 90.5 / 0.001596},
+            {"side": "front", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+            {"side": "back", "layer_index": 1, "tray_width_m": 0.5, "tray_density_kg_m3": 90.5 / 0.001596},
+            {"side": "back", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+        ],
+    }
+
+    metrics = workflow._tray_layer_design_metrics(payload)
+    anchor = workflow._estimated_square_anchor_from_payload(payload, _candidates())
+
+    assert round(metrics["tray_load_sum_kg_m"], 3) == 416.0
+    assert anchor["section_name"] == "120-120-10"
+    assert anchor["target_section_name"] == "120-120-10"
+
+
+def test_engineering_anchor_does_not_double_count_explicit_line_load_and_density() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 2.0,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {
+                "side": "front",
+                "layer_index": 1,
+                "tray_width_m": 0.6,
+                "load_kg_m": 117.5,
+                "tray_density_kg_m3": 999999.0,
+            },
+            {
+                "side": "back",
+                "layer_index": 1,
+                "tray_width_m": 0.6,
+                "load_kg_m": 117.5,
+                "tray_density_kg_m3": 999999.0,
+            },
+        ],
+    }
+
+    metrics = workflow._tray_layer_design_metrics(payload)
+
+    assert metrics["tray_load_sum_kg_m"] == 235.0
+    assert metrics["max_line_load_kg_m"] == 117.5
+
+
+def test_engineering_anchor_starts_single_600_above_small_100x8() -> None:
+    payload = {
+        "support": {
+            "support_height_m": 1.6,
+            "support_spacing_m": 2.0,
+        },
+        "tray_layers": [
+            {"side": "front", "layer_index": 1, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+            {"side": "front", "layer_index": 2, "tray_width_m": 0.6, "tray_density_kg_m3": 117.5 / 0.001796},
+        ],
+    }
+
+    anchor = workflow._estimated_square_anchor_from_payload(payload, _candidates())
+
+    assert anchor["section_name"] == "120-120-10"
+    assert anchor["target_section_name"] == "120-120-10"
+
+
 def test_allowed_square_sections_keep_modulus_jump_inside_allowed_list(tmp_path: Path, monkeypatch) -> None:
     job_dir = tmp_path / "job"
     _write_job(job_dir, allowed=["100-100-6", "100-100-8", "120-120-6"])
@@ -361,7 +1116,7 @@ def test_allowed_square_sections_keep_modulus_jump_inside_allowed_list(tmp_path:
     )
 
     assert captured["smart_jumps_enabled"] is True
-    assert captured["smart_order"] is False
+    assert captured["smart_order"] is True
     assert [candidate.section_name for candidate in captured["candidates"]] == [
         "100-100-6",
         "100-100-8",
@@ -442,6 +1197,276 @@ def test_square_support_ratio_over_limit_triggers_upgrade_not_clean_reselection(
 
     assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
     assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+
+
+def test_auto_selected_weld_or_bolt_ratio_over_limit_does_not_drive_square_upgrade(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "120-120-6"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.46},
+                            {"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+    assert workflow.result_validation_needs_final_ratio_section_recovery(job_dir) is True
+
+
+def test_auto_selected_weld_or_bolt_ratio_over_limit_at_max_section_uses_spacing_recovery(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "160-160-8",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "160-160-8"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {"check_id": "cantilever_root_weld_equivalent.accident.bending", "ratio": 1.12},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+    assert workflow.result_validation_needs_final_ratio_section_recovery(job_dir) is False
+
+
+def test_auto_selected_section_6_1_ratio_over_limit_triggers_larger_allowed_upgrade(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(
+        job_dir,
+        allowed=["100-100-6", "120-120-6", "120-120-10", "140-140-8", "160-160-8"],
+    )
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"][0]["sect_file"] = "120-120-6"
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "message": "ratio > 1",
+                        "evidence": [
+                            {
+                                "check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                                "component": "mixed_beam_type_1",
+                                "ratio": 1.18,
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_clean_reselection(job_dir) is False
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is True
+
+
+def test_auto_selected_final_ratio_over_limit_without_larger_allowed_section_blocks(tmp_path: Path) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["100-100-6", "120-120-6"])
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [{"check_id": "bolt_force_raw_faulted_bolt_combined", "ratio": 1.90}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert workflow.result_validation_needs_square_section_upgrade(job_dir) is False
+
+
+def test_candidate_real_ansys_trial_retries_temporary_license_failure(tmp_path: Path, monkeypatch) -> None:
+    trial_dir = tmp_path / "trial"
+    trial_dir.mkdir()
+    calls: list[int] = []
+    sleeps: list[int] = []
+
+    class Config(SimpleNamespace):
+        def model_copy(self, deep: bool = False) -> "Config":
+            return self
+
+    config = Config(
+        ansys=SimpleNamespace(
+            timeout_minutes=120,
+            startup_no_output_timeout_seconds=120,
+            output_stall_timeout_seconds=0,
+        )
+    )
+
+    def fake_run_real_ansys(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            (trial_dir / "CableTrayAI_Run.err").write_text(
+                "ANSYSLI exited or could not read server port ANSYSLI_DEMO_PORT.\n"
+                "*** ERROR - ANSYS license not available.",
+                encoding="utf-8",
+            )
+            return {"status": "failed", "failure_reason": "ANSYS license not available"}
+        return {"status": "success"}
+
+    monkeypatch.setattr(workflow, "run_real_ansys", fake_run_real_ansys)
+    monkeypatch.setattr(workflow, "assemble_result", lambda *args, **kwargs: None)
+    monkeypatch.setattr(workflow, "cleanup_heavy_solver_artifacts", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow, "cleanup_stale_ansys_locks", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(workflow.time, "sleep", lambda seconds: sleeps.append(int(seconds)))
+
+    result = workflow.real_ansys_section_trial_runner(
+        trial_dir,
+        config=config,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+    )
+
+    audit = json.loads((trial_dir / "ansys_run_audit.json").read_text(encoding="utf-8"))
+    assert result["status"] == "pass"
+    assert len(calls) == 2
+    assert sleeps == [20]
+    assert audit["license_retry_policy"]["status"] == "applied"
+    assert audit["license_retry_attempts"][0]["license_unavailable"] is True
+    assert audit["license_retry_attempts"][1]["status"] == "success"
+
+
+def test_square_section_upgrade_resets_failed_job_state_for_formal_rerun(tmp_path: Path, monkeypatch) -> None:
+    job_dir = tmp_path / "job"
+    _write_job(job_dir, allowed=["120-120-6", "160-160-8"])
+    payload = json.loads((job_dir / "input.json").read_text(encoding="utf-8"))
+    payload["metadata"].update(
+        {
+            "square_section_selection_status": "auto_selected_by_real_ansys",
+            "square_section_selected": "120-120-6",
+        }
+    )
+    payload["sections"] = [{"section_id": "square", "sect_file": "120-120-6"}]
+    (job_dir / "input.json").write_text(json.dumps(payload), encoding="utf-8")
+    (job_dir / "job_state.json").write_text(
+        json.dumps({"job_id": "job", "status": "failed", "failure_reason": "previous ratio limit", "history": []}),
+        encoding="utf-8",
+    )
+    (job_dir / "result_validation.json").write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "checks": [
+                    {
+                        "check_id": "evaluation_ratio_limit",
+                        "status": "fail",
+                        "evidence": [
+                            {
+                                "check_id": "mixed_beam_type_1.support_tension_bending_combined_accident",
+                                "component": "mixed_beam_type_1",
+                                "ratio": 1.9,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(workflow, "discover_square_section_candidates", lambda *args, **kwargs: _candidates())
+    monkeypatch.setattr(workflow, "apply_selected_square_section", lambda *args, **kwargs: {"status": "pass"})
+    monkeypatch.setattr(
+        workflow,
+        "run_square_section_search",
+        lambda *args, **kwargs: {
+            "status": "pass",
+            "selected": {"section_name": "160-160-8", "controlling_ratio": 0.84},
+            "candidate_results": [{"section_name": "160-160-8", "status": "pass", "controlling_ratio": 0.84}],
+        },
+    )
+
+    result = workflow.upgrade_square_section_after_ratio_fail(
+        job_dir,
+        config=None,
+        config_path=tmp_path / "ansys.toml",
+        confirm_user="tester",
+        runner=lambda trial_dir: {"status": "pass"},
+    )
+
+    state = json.loads((job_dir / "job_state.json").read_text(encoding="utf-8"))
+    selection = json.loads((job_dir / "square_section_selection.json").read_text(encoding="utf-8"))
+    assert result["status"] == "pass"
+    assert selection["selection_validation_mode"] == "upgrade_after_final_ratio_fail"
+    assert selection["selected"]["section_name"] == "160-160-8"
+    assert state["status"] == "apdl_rendered"
+    assert state["failure_reason"] is None
+    assert "formal ANSYS rerun is allowed" in state["history"][-1]["message"]
 
 
 def test_force_reselect_resets_previous_auto_selected_state(tmp_path: Path, monkeypatch) -> None:

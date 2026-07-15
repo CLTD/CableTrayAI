@@ -19,6 +19,35 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 
+function Resolve-CableTrayPython {
+    $candidates = @(
+        $env:CABLETRAYAI_PYTHON,
+        $env:CABLETRAYAI_PACKAGE_PYTHON,
+        (Join-Path $Root ".venv\Scripts\python.exe"),
+        "D:\miniconda3\python.exe",
+        "python"
+    ) | Where-Object { $_ -and $_.Trim() }
+
+    foreach ($candidate in $candidates) {
+        $resolved = $candidate
+        if ($candidate -ne "python" -and -not (Test-Path $candidate)) {
+            continue
+        }
+        try {
+            & $resolved -c "import pydantic, openpyxl" *> $null
+            if ($LASTEXITCODE -eq 0) {
+                return $resolved
+            }
+        }
+        catch {
+            continue
+        }
+    }
+    throw "No usable Python runtime found. Set CABLETRAYAI_PYTHON to a Python that can import pydantic and openpyxl."
+}
+
+$PythonExe = Resolve-CableTrayPython
+
 if (-not $IntakePath) {
     $intakeCandidate = Get-ChildItem -Path "uploads\intake" -File -Filter "*.xlsx" -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -like "*S2*" } |
@@ -146,6 +175,7 @@ from pathlib import Path
 import json
 from datetime import datetime
 import os
+import time
 
 from core.intake.intake_excel_reader import read_tabular_intake_rows
 from core.pipeline.one_click import run_operator_one_click
@@ -181,9 +211,23 @@ def write_status(payload):
 
 def atomic_write_text(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    tmp.replace(path)
+    last_error = None
+    for attempt in range(20):
+        tmp = path.with_name(f"{path.name}.{os.getpid()}.{attempt}.tmp")
+        try:
+            tmp.write_text(text, encoding="utf-8")
+            tmp.replace(path)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            time.sleep(min(0.5, 0.05 * (attempt + 1)))
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"Could not write status file: {path}")
 
 def progress(event):
     event = dict(event)
@@ -263,7 +307,7 @@ print(json.dumps({
     "jobs_root": str(jobs_root),
     "result_file": "docs/production_runs/full_intake_compute_result.json",
 }, ensure_ascii=False, indent=2))
-"@ | python -
+"@ | & $PythonExe -
 
 $pythonExit = $LASTEXITCODE
 Remove-Item $LockPath -Force -ErrorAction SilentlyContinue

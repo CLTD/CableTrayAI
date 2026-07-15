@@ -15,7 +15,7 @@ def test_report_mapping_requires_result_fields_and_figures():
     }
     figures = [
         {"figure_type": "modal", "target_file": "MOTAI-1.PNG"},
-        {"figure_type": "stress", "target_file": "SQ-SDIR.PNG"},
+        {"figure_type": "stress", "target_file": "B1SDIR1.PNG"},
     ]
 
     checks = validate_report_mapping(result, input_payload, figures)

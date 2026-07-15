@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import traceback
+from datetime import datetime
 from pathlib import Path
 
 
@@ -191,7 +192,10 @@ def cleanup_existing_install(dst: Path, src: Path) -> None:
         feedback_backup_root = Path(tempfile.mkdtemp(prefix="cabletrayai_feedback_"))
         feedback_backup = feedback_backup_root / "operator_feedback"
         shutil.copytree(feedback_dir, feedback_backup)
-    for name in MANAGED_DIRS | RUNTIME_DATA_DIRS:
+    cleanup_dirs = set(MANAGED_DIRS)
+    if os.environ.get("CABLETRAYAI_RESET_RUNTIME_DATA") == "1":
+        cleanup_dirs.update(RUNTIME_DATA_DIRS)
+    for name in cleanup_dirs:
         target = dst / name
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
@@ -248,10 +252,13 @@ def ensure_auth_local(root: Path) -> dict[str, object]:
     auth_local = config_dir / "auth.local.json"
     users_env = os.environ.get("CABLETRAYAI_INITIAL_USERS", "")
     users = [item.strip().lower() for item in users_env.split(",") if item.strip()] or ["duxyb", "jianghl", "wanggangb"]
-    if auth_local.exists():
+    initial_password, password_source, fixed_by_deployment = resolve_initial_password(root)
+    if auth_local.exists() and not fixed_by_deployment:
         return {"created": False, "path": str(auth_local), "users": users}
+    if auth_local.exists() and fixed_by_deployment:
+        backup = auth_local.with_name(f"{auth_local.name}.bak_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+        shutil.copy2(auth_local, backup)
 
-    initial_password = os.environ.get("CABLETRAYAI_INITIAL_PASSWORD") or secrets.token_urlsafe(12)
     payload = {
         "enabled": True,
         "session_ttl_seconds": 12 * 60 * 60,
@@ -266,7 +273,55 @@ def ensure_auth_local(root: Path) -> dict[str, object]:
         "path": str(auth_local),
         "users": users,
         "initial_password": initial_password,
+        "password_source": password_source,
     }
+
+
+def resolve_initial_password(root: Path) -> tuple[str, str, bool]:
+    env_password = os.environ.get("CABLETRAYAI_INITIAL_PASSWORD")
+    if env_password and env_password.strip():
+        return env_password.strip(), "environment CABLETRAYAI_INITIAL_PASSWORD", True
+    packaged_password = root / "config" / "initial_password.txt"
+    if packaged_password.exists():
+        value = packaged_password.read_text(encoding="utf-8-sig").strip()
+        if value:
+            return value, "deployment package config/initial_password.txt", True
+    return secrets.token_urlsafe(12), "generated random first-install password", False
+
+
+def ensure_login_info(root: Path, auth_setup: dict[str, object]) -> Path:
+    path = root / "CableTrayAI_LOGIN_INFO.txt"
+    auth_setup["login_info_path"] = str(path)
+    if not auth_setup.get("created") and path.exists():
+        return path
+
+    users = ", ".join(str(item) for item in auth_setup.get("users", []))
+    lines = [
+        "CableTrayAI Login Information",
+        "================================",
+        f"Install folder: {root}",
+        "Login URL: http://127.0.0.1:8000/",
+        f"Users: {users}",
+    ]
+    if auth_setup.get("created"):
+        lines.extend(
+            [
+                f"Initial password: {auth_setup.get('initial_password')}",
+                f"Password status: {auth_setup.get('password_source')}.",
+            ]
+        )
+    else:
+        lines.append("Password status: existing local auth was preserved; reinstall cannot recover the password.")
+    lines.extend(
+        [
+            f"Auth config: {auth_setup.get('path')}",
+            f"ANSYS config: {root / 'config' / 'ansys.local.toml'}",
+            "",
+            "Keep this file inside the unit machine. Do not publish, upload, or commit it.",
+        ]
+    )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
 
 
 def create_shortcut(install_dir: Path) -> Path:
@@ -316,6 +371,7 @@ def write_manifest(root: Path, package: Path, shortcut: Path, auth_setup: dict[s
         "entry": "desktop shortcut -> CableTrayAI.exe",
         "auth_policy": "account_login_only",
         "auth_local_path": auth_setup.get("path"),
+        "login_info_path": auth_setup.get("login_info_path"),
         "auth_local_created": auth_setup.get("created", False),
         "login_users": auth_setup.get("users", []),
     }
@@ -350,9 +406,16 @@ def main() -> int:
         cleanup_existing_install(dst, src)
         copy_package(src, dst)
         auth_setup = ensure_auth_local(dst)
+        login_info = ensure_login_info(dst, auth_setup)
         shortcut = create_shortcut(dst)
         write_manifest(dst, src, shortcut, auth_setup)
-        show_message("CableTrayAI 安装完成", f"已安装到：{dst}\n桌面快捷方式：{shortcut}\n后续请从桌面 CableTrayAI 图标启动。")
+        message = (
+            f"Installed to: {dst}\n"
+            f"Desktop shortcut: {shortcut}\n"
+            f"Login info: {login_info}\n"
+            "Start CableTrayAI from the desktop shortcut."
+        )
+        show_message("CableTrayAI install completed", message)
         return 0
     except RuntimeError as exc:
         if str(exc) == "已取消安装":

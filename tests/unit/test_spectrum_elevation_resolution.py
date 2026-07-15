@@ -5,12 +5,32 @@ import pytest
 from pathlib import Path
 
 from core.spectra.static_coefficients import SpectrumCurve, _curve_at_elevation, resolve_spectrum_elevation
-from core.spectra.response_spectrum_writer import write_segmented_response_spectrum_mac
+from core.spectra.response_spectrum_writer import _validate_formal_spectrum_curve, write_segmented_response_spectrum_mac
 from core.spectra.selector import select_spectrum_points
 
 
 def _curve(source: str) -> SpectrumCurve:
     return SpectrumCurve((1.0, 100.0), (0.1, 0.2), source)
+
+
+def test_formal_spectrum_curve_integrity_gate_accepts_valid_curve() -> None:
+    audit = _validate_formal_spectrum_curve(_curve("valid"), label="SL-1(XY)")
+
+    assert audit["status"] == "pass"
+    assert audit["frequency_max_hz"] == 100.0
+
+
+@pytest.mark.parametrize(
+    "curve, message",
+    [
+        (SpectrumCurve((1.0, 1.0, 100.0), (0.1, 0.2, 0.3), "duplicate"), "strictly increasing"),
+        (SpectrumCurve((1.0, 100.0), (0.0, 0.0), "zero"), "all zero"),
+        (SpectrumCurve((1.0, 50.0), (0.1, 0.2), "tail"), "100 Hz tail"),
+    ],
+)
+def test_formal_spectrum_curve_integrity_gate_blocks_invalid_data(curve: SpectrumCurve, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        _validate_formal_spectrum_curve(curve, label="SL-1(XY)")
 
 
 def _curves_for_elevations(elevations: list[float]) -> dict[tuple[str, str, float, float], SpectrumCurve]:

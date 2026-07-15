@@ -1,0 +1,51 @@
+from pathlib import Path
+
+
+INDEX = Path("apps/web/index.html")
+
+
+def test_command_panel_fills_its_grid_track() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert ".command-panel > #commandText" in text
+    assert "max-height: none;" in text
+    assert "--review-panel-height:" in text
+
+
+def test_model_preview_uses_component_registries_and_honest_geometry_terms() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "LS_(SUP|ARM|TRAY|BOLT)" in text
+    assert 'TRAY: "tray_rail"' in text
+    assert 'BOLT: "bolt_rod"' in text
+    assert "关键点 /" in text
+    assert "几何线" in text
+    assert "不是 ANSYS 实际节点/单元" in text
+
+
+def test_unapproved_public_price_is_not_presented_as_nuclear_cost() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "118.38" not in text
+    assert "单位核定方钢材料参考" in text
+    assert 'item.pricing_status === "approved_active"' in text
+    assert "不代表核电工程综合造价" in text
+
+
+def test_tray_load_edits_are_committed_before_row_switch_and_run() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "previousIndex !== index" in text
+    assert "strictTrayLoads: true" in text
+    assert 'input.setAttribute("aria-invalid", "true")' in text
+
+
+def test_template_report_is_single_click_guarded_and_downloads_without_popup() -> None:
+    text = INDEX.read_text(encoding="utf-8")
+
+    assert "reportBuildInFlight: false" in text
+    assert "报告正在生成，请勿重复点击" in text
+    assert "triggerTemplateReportDownload(jobId)" in text
+    assert 'link.download = ""' in text
+    assert 'window.open(`/jobs/${encodeURIComponent(state.activeJobId)}/template-report`' not in text
+    assert "注入并下载报告" in text

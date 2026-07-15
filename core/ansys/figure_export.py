@@ -4,9 +4,10 @@ import json
 import re
 import shutil
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from core.ansys.config import AnsysLocalConfig, load_ansys_config
 from core.ansys.command_builder import DEFAULT_HIGH_MODAL_NPROC_CAP_THRESHOLD
@@ -20,10 +21,146 @@ from core.validation.result_requirements import classify_job_requirements
 FIGURE_EXPORT_MACRO = "export_figures.mac"
 FIGURE_EXPORT_AUDIT = "figure_export_audit.json"
 FIGURE_POST_MACRO = "generated_post_figure_export.mac"
+FIGURE_EXPORT_LIVE_STATUS = "figure_export_live_status.json"
+FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS = 10
+
+_FIGURE_EXPORT_COMPLETION_MARKER_RE = re.compile(r"\*{5}\s+ROUTINE\s+COMPLETED\s+\*{5}", re.IGNORECASE)
+_FIGURE_EXPORT_END_INPUT_RE = re.compile(r"\*{5}\s+END\s+OF\s+INPUT\s+ENCOUNTERED\s+\*{5}", re.IGNORECASE)
+_FIGURE_EXPORT_ERROR_COUNT_RE = re.compile(r"NUMBER\s+OF\s+ERROR\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+_FIGURE_EXPORT_WARNING_COUNT_RE = re.compile(r"NUMBER\s+OF\s+WARNING\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
 
 
 def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _read_text_tail(path: Path, *, max_chars: int = 40000) -> str:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return text[-max_chars:]
+
+
+def _kill_process_tree(pid: int | None) -> dict[str, Any]:
+    if not pid:
+        return {"status": "skipped", "reason": "missing_pid"}
+    try:
+        completed = subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30,
+        )
+    except Exception as exc:  # pragma: no cover - defensive for OS/process failures
+        return {"status": "failed", "pid": pid, "reason": str(exc)}
+    return {
+        "status": "success" if completed.returncode == 0 else "failed",
+        "pid": pid,
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
+def _detect_figure_export_completion(job_dir: Path) -> dict[str, Any]:
+    """Detect a complete post-only graphics export even with ANSYS launcher noise.
+
+    ANSYS 18.2 can return a nonzero launcher code after a batch graphics macro
+    has already written all requested PNG files and zero MAPDL errors.  This is
+    a completion signal only; required figure collection still decides whether
+    the export is usable.
+    """
+
+    candidates = [
+        job_dir / "export_figures.out",
+        job_dir / "figure_export_stdout.log",
+        job_dir / "figure_export_stderr.log",
+        job_dir / "CableTrayAI_Run.err",
+        job_dir / "CableTrayAI_Run.log",
+    ]
+    checked: list[str] = []
+    matches: list[dict[str, Any]] = []
+    partial_matches: list[dict[str, Any]] = []
+    for path in candidates:
+        if not path.exists() or not path.is_file():
+            continue
+        checked.append(str(path))
+        text = _read_text_tail(path)
+        if not text:
+            continue
+        has_routine = bool(_FIGURE_EXPORT_COMPLETION_MARKER_RE.search(text))
+        has_end_input = bool(_FIGURE_EXPORT_END_INPUT_RE.search(text))
+        if not has_routine:
+            continue
+        error_counts = [int(value) for value in _FIGURE_EXPORT_ERROR_COUNT_RE.findall(text)]
+        warning_counts = [int(value) for value in _FIGURE_EXPORT_WARNING_COUNT_RE.findall(text)]
+        payload = {
+            "file": str(path),
+            "markers": [
+                name
+                for name, present in (
+                    ("ROUTINE_COMPLETED", has_routine),
+                    ("END_OF_INPUT", has_end_input),
+                )
+                if present
+            ],
+            "error_count": error_counts[-1] if error_counts else None,
+            "warning_count": warning_counts[-1] if warning_counts else None,
+        }
+        if error_counts and error_counts[-1] == 0:
+            matches.append(payload)
+        else:
+            partial_matches.append(payload)
+    return {
+        "status": "pass" if matches else "not_detected",
+        "matches": matches,
+        "partial_matches": partial_matches,
+        "checked_files": checked,
+        "policy": (
+            "Figure export can accept a nonzero ANSYS launcher return code only when "
+            "the post-only MAPDL stream reached ROUTINE COMPLETED with zero MAPDL errors. "
+            "Required PNG collection still controls success."
+        ),
+    }
+
+
+def _figure_export_activity(job_dir: Path, started_monotonic: float, started: datetime) -> dict[str, Any]:
+    watched = [
+        job_dir / "export_figures.out",
+        job_dir / "figure_export_stdout.log",
+        job_dir / "figure_export_stderr.log",
+        job_dir / "figure_export_names.txt",
+    ]
+    watched.extend(list(job_dir.glob("*.PNG")))
+    watched.extend(list(job_dir.glob("*.png")))
+    existing = [path for path in watched if path.exists()]
+    total_bytes = sum(path.stat().st_size for path in existing if path.is_file())
+    latest_mtime = max((path.stat().st_mtime for path in existing if path.is_file()), default=started.timestamp())
+    latest_files = sorted(
+        (
+            {
+                "name": path.name,
+                "size_bytes": path.stat().st_size,
+                "updated_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(),
+            }
+            for path in existing
+            if path.is_file()
+        ),
+        key=lambda item: item["updated_at"],
+        reverse=True,
+    )[:12]
+    return {
+        "elapsed_seconds": round(time.monotonic() - started_monotonic, 1),
+        "total_output_bytes": total_bytes,
+        "total_output_mb": round(total_bytes / (1024 * 1024), 3),
+        "no_output_seconds": round(max(0.0, time.time() - latest_mtime), 1),
+        "png_count": len(list(job_dir.glob("*.PNG"))) + len(list(job_dir.glob("*.png"))),
+        "latest_files": latest_files,
+    }
 
 
 def _quote_apdl(value: str) -> str:
@@ -157,7 +294,91 @@ def _named_model_png_lines(image_name: str, setup_lines: list[str], *, note: str
     ]
 
 
-def _model_figure_export_lines() -> list[str]:
+def _generated_model_text(job_dir: Path) -> str:
+    model_path = job_dir / "generated_model.mac"
+    if not model_path.exists():
+        return ""
+    return model_path.read_text(encoding="utf-8", errors="ignore")
+
+
+def _model_uses_component_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    required = ("CTAI_SUPPORT_ELEMS", "CTAI_ARM_ELEMS", "CTAI_TRAY_ELEMS", "CTAI_BOLT_ELEMS")
+    return all(name in model_text for name in required)
+
+
+def _model_uses_section_based_arm_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    return (
+        "current-type grouped mixed tray model" in model_text
+        or re.search(r"(?im)^\s*ARM_ET\s*\(\s*NARM\s*\)\s*=\s*2\s*$", model_text) is not None
+    ) and re.search(r"(?im)^\s*ARM_SEC\s*\(\s*NARM\s*\)\s*=\s*[23]\s*$", model_text) is not None
+
+
+def _model_uses_source_type1_arm_topology(job_dir: Path) -> bool:
+    model_text = _generated_model_text(job_dir)
+    has_source_arm_latt = bool(re.search(r"LATT\s*,\s*1\s*,\s*,\s*1\s*,\s*,\s*,\s*,\s*[23]\b", model_text, re.IGNORECASE))
+    has_parameterized_arm_type = bool(re.search(r"10\s*\*\s*I\s*\+\s*[23]|200\s*\*\s*I\s*\+\s*[23]", model_text, re.IGNORECASE))
+    return has_source_arm_latt and not has_parameterized_arm_type
+
+
+def _tbmodel_selection_lines(job_dir: Path) -> list[str]:
+    if _model_uses_component_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: component-topology model; select cantilever arms and trays declared by generated_model.mac.",
+            "CMSEL,S,CTAI_ARM_ELEMS,ELEM",
+            "CMSEL,A,CTAI_TRAY_ELEMS,ELEM",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    if _model_uses_section_based_arm_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: grouped mixed model; select arm sections 2/3 and tray sections 4..9.",
+            "ESEL,S,SEC,,2",
+            "ESEL,A,SEC,,3",
+            "ESEL,A,SEC,,4,9",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    if _model_uses_source_type1_arm_topology(job_dir):
+        return [
+            "ALLSEL,ALL",
+            "! Fig. 5.2: reviewed source-family topology; TYPE=1 contains support and arm/tray elements, SEC=1 is square support.",
+            "ESEL,S,TYPE,,1",
+            "ESEL,U,SEC,,1",
+            "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+            "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+            "  ALLSEL,ALL",
+            "*ELSE",
+            "  NSLE,S",
+            "*ENDIF",
+        ]
+    return [
+        "ALLSEL,ALL",
+        "! Fig. 5.2 fallback: select common arm/tray section range, then fall back to whole model if empty.",
+        "ESEL,S,SEC,,2",
+        "ESEL,A,SEC,,3",
+        "ESEL,A,SEC,,4,9",
+        "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
+        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
+        "  ALLSEL,ALL",
+        "*ELSE",
+        "  NSLE,S",
+        "*ENDIF",
+    ]
+
+
+def _model_figure_export_lines(job_dir: Path) -> list[str]:
     """Export report Fig. 5.1/5.2 before result contour commands run.
 
     The standard post command stream later creates many line-stress cloud plots.
@@ -167,38 +388,14 @@ def _model_figure_export_lines() -> list[str]:
     the converted post macro skips their original /IMAGE,SAVE commands.
     """
 
-    select_cantilever_types = [
-        "ALLSEL,ALL",
-        "ESEL,NONE",
-        "! Fig. 5.2 is the tray-arm/cantilever model.  Select by section IDs",
-        "! assigned in generated_model.mac (SEC 2/3 arm and SEC 10 auxiliary rods).",
-        "! Do not include SEC 4 tray/cable elements here; report Fig. 5.2 is",
-        "! the cantilever finite-element model, not a copy of the full tray model.",
-        "ESEL,S,SEC,,2",
-        "ESEL,A,SEC,,3",
-        "ESEL,A,SEC,,10",
-        "*GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
-        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
-        "  ! Fallback by coordinates: tray-arm elements are outside the square tube centerline.",
-        "  ESEL,S,CENT,X,H1/2,H1/2+L1",
-        "  ESEL,U,SEC,,1",
-        "  ESEL,U,SEC,,4",
-        "  *GET,_CTAI_TB_ECOUNT,ELEM,0,COUNT",
-        "*ENDIF",
-        "*IF,_CTAI_TB_ECOUNT,LE,0,THEN",
-        "  ! Final fallback keeps Fig. 5.2 non-empty, and the audit flags SHITI/TBMODEL similarity.",
-        "  ALLSEL,ALL",
-        "*ELSE",
-        "  NSLE,S",
-        "*ENDIF",
-    ]
+    select_cantilever_types = _tbmodel_selection_lines(job_dir)
     report_model_view = [
         "! Match the audited S2 post-PIP model figure style used in reports.",
         "! The original source exports SHITI after /VIEW + /ANG rotations and",
         "! indexed white/black plotting colors.  We intentionally suppress the",
         "! source /REPLOT and /REP,FAST intermediate frames here, then issue a",
         "! single EPLOT per figure so names map deterministically to PNG files.",
-        "/ESHAPE,0",
+        "/ESHAPE,1",
         "/RGB,INDEX,100,100,100,0",
         "/RGB,INDEX,80,80,80,13",
         "/RGB,INDEX,60,60,60,14",
@@ -234,7 +431,7 @@ def _model_figure_export_lines() -> list[str]:
         *_named_model_png_lines(
             "TBMODEL",
             [*select_cantilever_types, *report_model_view],
-            note="! Fig. 5.2: cantilever/tray-arm finite-element model from section IDs, source-PIP view/style.",
+            note="! Fig. 5.2: cantilever/tray finite-element model from the model topology, source-PIP view/style.",
         ),
         "/PNGR,COLOR,2",
         "/COLOR,DEFA",
@@ -430,7 +627,7 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         "/REPLOT",
         "! Register existing load-case files because this is a fresh post-only MAPDL session.",
         *loadcase_lines,
-        *_model_figure_export_lines(),
+        *_model_figure_export_lines(job_dir),
         *_stress_figure_display_lines(),
         "! generated_post_figure_export.mac opens /SHOW,PNG only at each saved plot.",
         f"! Run the named-image copy of generated_post.mac; selections and plots remain source-derived.",
@@ -442,6 +639,7 @@ def build_figure_export_macro(job_dir: Path | str, *, output_name: str = FIGURE_
         ),
         "/SHOW,CLOSE",
         "FINISH",
+        "/EXIT,NOSAV",
         "",
     ]
     macro_path = job_dir / output_name
@@ -571,6 +769,8 @@ def _read_exported_names(job_dir: Path) -> list[str]:
 
 def _normalise_recorded_name(name: str) -> str:
     upper = name.upper().rstrip("+-")
+    # Legacy compatibility only. New production post streams do not generate SQ-* figures;
+    # square-support evaluation is numeric-only through SQUAREBEAMSTRESS.LIS.
     replacements = {
         "SQ-A1SDI": "SQ-A1SDIR1",
         "SQ-B1SDI": "SQ-B1SDIR1",
@@ -644,7 +844,7 @@ def _normalise_named_pngs(job_dir: Path, job_name: str, started: datetime) -> di
 def _cleanup_previous_generic_pngs(job_dir: Path, job_name: str) -> list[str]:
     """Remove stale MAPDL auto-numbered PNGs before a new figure export.
 
-    Named output images such as SHITI.PNG and SQ-B1SDIR1.PNG are preserved and
+    Named output images such as SHITI.PNG and B1SDIR1.PNG are preserved and
     overwritten after export.  Only the transient CableTrayAI_Run###.png files
     are removed so the normaliser maps this run's images, not leftovers.
     """
@@ -667,6 +867,7 @@ def run_figure_export(
     config: AnsysLocalConfig | None = None,
     *,
     timeout_minutes: int | None = None,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run ANSYS in post-only mode to generate BMP/PNG cloud figures."""
 
@@ -702,26 +903,107 @@ def run_figure_export(
         return audit
 
     removed_generic_pngs = _cleanup_previous_generic_pngs(job_dir, command["ansys_job_name"])
-    timeout_seconds = max(1, int((timeout_minutes or config.ansys.timeout_minutes) * 60))
+    soft_timeout_seconds = max(1, int((timeout_minutes or config.ansys.timeout_minutes) * 60))
     stdout_path = job_dir / "figure_export_stdout.log"
     stderr_path = job_dir / "figure_export_stderr.log"
+    started_monotonic = time.monotonic()
+    running_audit = {
+        "status": "running",
+        "mode": "figure_export",
+        "executed": True,
+        "started_at": started.isoformat(),
+        "soft_timeout_seconds": soft_timeout_seconds,
+        "hard_timeout_policy": "disabled",
+        "command_file": "figure_export_command.json",
+        "stdout_path": stdout_path.name,
+        "stderr_path": stderr_path.name,
+        "notes": [
+            "Figure export writes live status while ANSYS is running.",
+            "timeout_minutes is a soft monitoring threshold here; CableTrayAI does not kill MAPDL during figure export.",
+        ],
+    }
+    _write_json(job_dir / FIGURE_EXPORT_AUDIT, running_audit)
     try:
         with stdout_path.open("w", encoding="utf-8", errors="replace") as stdout_handle, stderr_path.open(
             "w", encoding="utf-8", errors="replace"
         ) as stderr_handle:
-            completed = subprocess.run(
+            process = subprocess.Popen(
                 command["command"],
                 cwd=str(job_dir),
                 stdout=stdout_handle,
                 stderr=stderr_handle,
                 text=True,
-                timeout=timeout_seconds,
-                check=False,
             )
-    except subprocess.TimeoutExpired:
+            soft_timeout_reported = False
+            completion_detection: dict[str, Any] | None = None
+            completion_seen_at: float | None = None
+            completion_cleanup: dict[str, Any] | None = None
+            completed_by_marker_cleanup = False
+            while True:
+                returncode = process.poll()
+                activity = _figure_export_activity(job_dir, started_monotonic, started)
+                live_status = {
+                    "stage": "exporting_figures",
+                    "status": "running" if returncode is None else "finished",
+                    "process_running": returncode is None,
+                    "ansys_pid": process.pid,
+                    "returncode": returncode,
+                    "soft_timeout_seconds": soft_timeout_seconds,
+                    "hard_timeout_policy": "disabled",
+                    **activity,
+                }
+                if returncode is None and activity["elapsed_seconds"] > soft_timeout_seconds:
+                    live_status["status"] = "running_over_soft_timeout"
+                    live_status["message"] = (
+                        "Figure export exceeded the soft monitoring threshold; "
+                        "CableTrayAI keeps MAPDL running and continues writing live status."
+                    )
+                    soft_timeout_reported = True
+                if returncode is None:
+                    marker_probe = _detect_figure_export_completion(job_dir)
+                    if marker_probe.get("status") == "pass":
+                        completion_detection = marker_probe
+                        if completion_seen_at is None:
+                            completion_seen_at = time.monotonic()
+                            live_status["status"] = "completion_marker_seen"
+                            live_status["message"] = (
+                                "Figure export wrote ROUTINE COMPLETED with zero MAPDL errors; "
+                                "waiting briefly for the ANSYS launcher to exit."
+                            )
+                        elif time.monotonic() - completion_seen_at >= FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS:
+                            completion_cleanup = {
+                                "status": "completed_marker_cleanup",
+                                "reason": (
+                                    "Figure export completed and required output files stopped changing, "
+                                    "but the launcher remained alive after the completion grace window."
+                                ),
+                                "grace_seconds": FIGURE_EXPORT_POST_COMPLETION_EXIT_GRACE_SECONDS,
+                                "process_tree_cleanup": _kill_process_tree(process.pid),
+                            }
+                            try:
+                                process.wait(timeout=15)
+                            except subprocess.TimeoutExpired:
+                                pass
+                            completed_by_marker_cleanup = True
+                            returncode = process.poll()
+                            live_status["status"] = "completion_marker_cleanup"
+                            live_status["process_running"] = False
+                            live_status["returncode"] = returncode
+                            live_status["completion_marker_detection"] = completion_detection
+                            live_status["completion_marker_cleanup"] = completion_cleanup
+                    elif completion_detection is None:
+                        completion_detection = marker_probe
+                _write_json(job_dir / FIGURE_EXPORT_LIVE_STATUS, live_status)
+                if progress_callback:
+                    progress_callback(live_status)
+                if returncode is not None:
+                    break
+                if completed_by_marker_cleanup:
+                    break
+                time.sleep(5.0)
+            completed_returncode = int(process.returncode) if process.returncode is not None else 4294967295
+    except Exception as exc:
         finished = datetime.now(timezone.utc)
-        with stderr_path.open("a", encoding="utf-8", errors="replace") as stderr_handle:
-            stderr_handle.write(f"\nFigure export exceeded timeout_seconds={timeout_seconds}.\n")
         audit = {
             "status": "failed",
             "mode": "figure_export",
@@ -730,20 +1012,23 @@ def run_figure_export(
             "finished_at": finished.isoformat(),
             "duration_seconds": (finished - started).total_seconds(),
             "returncode": None,
-            "reason": f"Figure export exceeded timeout_seconds={timeout_seconds}.",
-            "timeout_seconds": timeout_seconds,
+            "reason": str(exc),
+            "soft_timeout_seconds": soft_timeout_seconds,
+            "hard_timeout_policy": "disabled",
             "command_file": "figure_export_command.json",
             "stdout_path": stdout_path.name,
             "stderr_path": stderr_path.name,
             "figure_count": 0,
-            "notes": [
-                "Post-only ANSYS figure export timed out and was blocked.",
-                "The main result must not be published with missing or stale cloud figures.",
-            ],
         }
         _write_json(job_dir / FIGURE_EXPORT_AUDIT, audit)
         return audit
     finished = datetime.now(timezone.utc)
+    if "completion_detection" not in locals() or completion_detection is None:
+        completion_detection = _detect_figure_export_completion(job_dir)
+    if "completion_cleanup" not in locals():
+        completion_cleanup = None
+    if "completed_by_marker_cleanup" not in locals():
+        completed_by_marker_cleanup = False
     naming = _normalise_named_pngs(job_dir, command["ansys_job_name"], started)
     figures = collect_figures(job_dir, output_manifest=True)
     requirements_path = job_dir / "result_requirements.json"
@@ -751,14 +1036,24 @@ def run_figure_export(
     required = {str(name).upper() for name in requirements.get("required_figures", [])}
     present = {str(item.get("source_file") or "").upper() for item in figures}
     missing_required = sorted(required - present)
+    returncode_success = completed_returncode == 0 or (completion_detection or {}).get("status") == "pass"
     audit = {
-        "status": "success" if completed.returncode == 0 and figures and not missing_required else "failed",
+        "status": "success" if returncode_success and figures and not missing_required else "failed",
         "mode": "figure_export",
         "executed": True,
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "duration_seconds": (finished - started).total_seconds(),
-        "returncode": completed.returncode,
+        "returncode": completed_returncode,
+        "returncode_accepted_by_completion_marker": bool(
+            completed_returncode != 0 and (completion_detection or {}).get("status") == "pass"
+        ),
+        "completion_marker_detection": completion_detection,
+        "completion_marker_cleanup": completion_cleanup,
+        "completed_by_marker_cleanup": completed_by_marker_cleanup,
+        "soft_timeout_seconds": soft_timeout_seconds,
+        "hard_timeout_policy": "disabled",
+        "soft_timeout_reported": soft_timeout_reported,
         "naming": naming,
         "removed_stale_generic_pngs": removed_generic_pngs,
         "command_file": "figure_export_command.json",

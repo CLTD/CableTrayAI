@@ -7,6 +7,7 @@ from typing import Any
 
 from core.optimizer.square_section_selector import (
     controlling_evaluation_ratio,
+    controlling_section_selection_ratio,
     controlling_square_ratio,
     parse_square_section_name,
 )
@@ -72,12 +73,19 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
     candidate = parse_square_section_name(str(section_name)) if section_name else None
     evaluation_summary = _read_json(job_dir / "evaluation_summary.json", [])
     final_square_support_ratio = controlling_square_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
-    final_controlling_ratio = controlling_evaluation_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
+    final_section_selection_ratio = controlling_section_selection_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
+    final_chapter6_controlling_ratio = controlling_evaluation_ratio(evaluation_summary if isinstance(evaluation_summary, list) else [])
     trial_controlling_ratio = (
         (selected or {}).get("trial_controlling_ratio")
+        or (selected or {}).get("overall_controlling_ratio")
         or (selected or {}).get("controlling_ratio")
         or previous_selection.get("trial_controlling_ratio")
         or metadata.get("square_section_selected_ratio")
+    )
+    trial_section_selection_ratio = (
+        (selected or {}).get("trial_section_selection_ratio")
+        or (selected or {}).get("section_selection_ratio")
+        or previous_selection.get("trial_section_selection_ratio")
     )
     trial_square_support_ratio = (
         (selected or {}).get("trial_square_support_ratio")
@@ -85,27 +93,38 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         or previous_selection.get("trial_square_support_ratio")
     )
     controlling_ratio = (
-        final_controlling_ratio
-        if final_controlling_ratio is not None
+        final_chapter6_controlling_ratio
+        if final_chapter6_controlling_ratio is not None
+        else final_section_selection_ratio
+        if final_section_selection_ratio is not None
         else final_square_support_ratio
         if final_square_support_ratio is not None
         else trial_controlling_ratio
     )
     ratio_consistency_status = "not_checked"
-    ratio_consistency_message = "No formal evaluation_summary.json ratio was available."
-    if final_controlling_ratio is not None and trial_controlling_ratio is not None:
-        delta = abs(float(final_controlling_ratio) - float(trial_controlling_ratio))
-        ratio_consistency_status = "pass" if delta <= TRIAL_FINAL_RATIO_TOLERANCE else "fail"
-        ratio_consistency_message = (
-            "Formal Chapter 6/evaluation_summary ratio matches the section-search trial ratio."
-            if ratio_consistency_status == "pass"
-            else "Formal Chapter 6/evaluation_summary ratio differs from the section-search trial ratio by more than 0.01; section economy is not reliable until clean trial workspaces are rerun."
-        )
+    ratio_consistency_message = "No formal deterministic final ratio was available."
+    if final_chapter6_controlling_ratio is not None and trial_controlling_ratio is not None:
+        delta = abs(float(final_chapter6_controlling_ratio) - float(trial_controlling_ratio))
+        if delta <= TRIAL_FINAL_RATIO_TOLERANCE:
+            ratio_consistency_status = "pass"
+            ratio_consistency_message = "Formal deterministic final ratio matches the section-search trial ratio."
+        elif float(final_chapter6_controlling_ratio) <= 1.0:
+            ratio_consistency_status = "formal_override"
+            ratio_consistency_message = (
+                "Formal deterministic final ratio differs from the section-search trial ratio, "
+                "but the current formal ANSYS/evaluation ratio is <= 1.0 and is used for publication and learning."
+            )
+        else:
+            ratio_consistency_status = "fail"
+            ratio_consistency_message = (
+                "Formal deterministic final ratio differs from the section-search trial ratio and the formal ratio is over limit; "
+                "section economy is not reliable until clean trial workspaces are rerun."
+            )
     status = "pass" if candidate else "warning"
     if controlling_ratio is None:
         acceptance = "unknown"
     else:
-        acceptance = "pass" if float(controlling_ratio) < 1.0 else "fail"
+        acceptance = "pass" if float(controlling_ratio) <= 1.0 else "fail"
     if ratio_consistency_status == "fail":
         status = "fail"
         acceptance = "fail"
@@ -116,12 +135,51 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "outer_mm": candidate.outer_mm if candidate else None,
         "thickness_mm": candidate.thickness_mm if candidate else None,
         "estimated_area_mm2": candidate.estimated_area_mm2 if candidate else None,
+        "estimated_mass_kg_per_m": candidate.estimated_mass_kg_per_m if candidate else None,
+        "estimated_square_material_cost_cny_per_m": (
+            (selected or {}).get("estimated_square_material_cost_cny_per_m")
+            if isinstance(selected, dict) and "estimated_square_material_cost_cny_per_m" in selected
+            else candidate.estimated_square_material_cost_cny_per_m if candidate else None
+        ),
+        "estimated_outer_surface_area_m2_per_m": (
+            (selected or {}).get("estimated_outer_surface_area_m2_per_m")
+            if isinstance(selected, dict) and "estimated_outer_surface_area_m2_per_m" in selected
+            else candidate.economy_metrics.get("estimated_outer_surface_area_m2_per_m") if candidate else None
+        ),
+        "economy_selection_scope": (
+            candidate.economy_metrics.get("economy_selection_scope") if candidate else None
+        ),
+        "economy_price_reference_date": (
+            (selected or {}).get("economy_price_reference_date")
+            if isinstance(selected, dict)
+            else None
+        ),
+        "economy_ranking_basis": (
+            (selected or {}).get("economy_ranking_basis")
+            if isinstance(selected, dict) and (selected or {}).get("economy_ranking_basis")
+            else candidate.economy_metrics.get("economy_ranking_basis") if candidate else None
+        ),
+        "pricing_status": (
+            (selected or {}).get("pricing_status")
+            if isinstance(selected, dict) and (selected or {}).get("pricing_status")
+            else candidate.economy_metrics.get("pricing_status") if candidate else None
+        ),
+        "price_book_table_id": (selected or {}).get("price_book_table_id") if isinstance(selected, dict) else None,
+        "price_book_revision": (selected or {}).get("price_book_revision") if isinstance(selected, dict) else None,
+        "comprehensive_cost_status": (
+            (selected or {}).get("comprehensive_cost_status")
+            if isinstance(selected, dict) and (selected or {}).get("comprehensive_cost_status")
+            else candidate.economy_metrics.get("comprehensive_cost_status") if candidate else None
+        ),
         "controlling_ratio": controlling_ratio,
-        "final_controlling_ratio": final_controlling_ratio,
+        "final_controlling_ratio": final_chapter6_controlling_ratio,
+        "final_section_selection_ratio": final_section_selection_ratio,
+        "final_chapter6_controlling_ratio": final_chapter6_controlling_ratio,
         "final_square_support_ratio": final_square_support_ratio,
         "trial_controlling_ratio": trial_controlling_ratio,
+        "trial_section_selection_ratio": trial_section_selection_ratio,
         "trial_square_support_ratio": trial_square_support_ratio,
-        "ratio_source": "evaluation_summary.json" if final_controlling_ratio is not None else "square_section_selection_trial",
+        "ratio_source": "evaluation_summary.json:all deterministic stress ratios" if final_chapter6_controlling_ratio is not None else "square_section_selection_trial",
         "ratio_consistency_status": ratio_consistency_status,
         "ratio_consistency_message": ratio_consistency_message,
         "ratio_consistency_tolerance": TRIAL_FINAL_RATIO_TOLERANCE,
@@ -130,7 +188,11 @@ def write_square_section_selection_summary(job_dir: Path | str) -> dict[str, Any
         "selection_status": metadata.get("square_section_selection_status") or previous_selection.get("status") or "reported_or_source_command",
         "selection_policy": (
             previous_selection.get("policy")
-            or "If intake column I is empty, try candidate square SECT files and select ratio < 1.0 closest to 1.0; never select ratio == 1.0."
+            or (
+                "If intake column I is empty, use a bounded fresh-ANSYS search and select the lowest traceable "
+                "square-tube material-quantity pass inside the allowed SECT list. The 0.60-0.9999 interval is only "
+                "a utilization review band, not a feasibility or economy gate."
+            )
         ),
         "source_ref": "generated_model.mac SECREAD / input.json metadata / square_section_selection.json",
     }

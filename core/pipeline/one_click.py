@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import math
 import shutil
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any, Callable
 
 from core.ansys.artifact_cleanup import cleanup_heavy_solver_artifacts
 from core.ansys.auto_config import ensure_ansys_config
+from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
 from core.ansys.runner import run_real_ansys
 from core.apdl.modal_policy import (
     MODAL_RETRY_SEQUENCE,
@@ -23,6 +25,7 @@ from core.audit.job_state import fail_job_state, update_job_state
 from core.intake.job_input_builder import create_jobs_from_intake_workbook
 from core.optimizer.square_section_workflow import (
     result_validation_needs_square_section_clean_reselection,
+    result_validation_needs_final_ratio_section_recovery,
     result_validation_needs_square_section_upgrade,
     select_and_apply_square_section,
     square_section_auto_selection_required,
@@ -39,6 +42,58 @@ from core.spectra.config_wizard import confirm_spectrum_config
 from core.spectra.response_spectrum_writer import write_segmented_response_spectrum_mac
 
 MODAL_RETRY_MAX_FORMAL_RERUNS = 4
+AUTO_SUPPORT_GEOMETRY_RECOVERY_ENABLED = False
+ANSYS_FORMAL_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
+ANSYS_LICENSE_FAILURE_TOKENS = (
+    "ansys license manager error",
+    "ansys license not available",
+    "ansysli exited",
+    "could not read server port ansysli",
+)
+
+
+def _square_section_selection_failure_message(selection: dict[str, Any]) -> str:
+    reason = str(selection.get("reason") or "未找到通过完整门禁的候选方钢截面。")
+    early_stop = selection.get("early_stop") if isinstance(selection.get("early_stop"), dict) else {}
+    candidate_rows = selection.get("candidate_results") or []
+    summaries: list[str] = []
+    if isinstance(candidate_rows, list):
+        for row in candidate_rows[:8]:
+            if not isinstance(row, dict):
+                continue
+            section_name = row.get("section_name") or row.get("candidate_section") or "unknown"
+            ratio = row.get("controlling_ratio")
+            if ratio is None:
+                ratio_text = "未取得"
+            else:
+                try:
+                    ratio_text = f"{float(ratio):.3f}"
+                except (TypeError, ValueError):
+                    ratio_text = str(ratio)
+            status = row.get("status") or row.get("result_gate_status") or row.get("run_status") or "unknown"
+            diagnosis = row.get("diagnosis") if isinstance(row.get("diagnosis"), dict) else {}
+            failed_checks = row.get("failed_non_ratio_checks") or diagnosis.get("failed_checks") or []
+            failed_text = ""
+            if failed_checks:
+                failed_text = f", failed_checks={','.join(str(item) for item in failed_checks[:5])}"
+            trial_dir = row.get("trial_dir")
+            trial_text = f", trial_dir={trial_dir}" if trial_dir else ""
+            summaries.append(f"{section_name}: ratio={ratio_text}, status={status}{failed_text}{trial_text}")
+    summary_text = "；".join(summaries) if summaries else "无候选摘要"
+    early_detail = ""
+    if early_stop:
+        early_detail = (
+            f" early_stop candidate={early_stop.get('candidate_section') or 'unknown'}, "
+            f"run_status={early_stop.get('run_status') or 'unknown'}, "
+            f"domains={','.join(str(item) for item in early_stop.get('domains') or []) or 'none'}, "
+            f"failed_checks={','.join(str(item) for item in early_stop.get('failed_checks') or []) or 'none'}, "
+            f"trial_dir={early_stop.get('trial_dir') or 'unknown'}."
+        )
+    return (
+        f"方钢截面自动选型未通过：{reason}。候选概要：{summary_text}。{early_detail}"
+        "正式计算已阻断并保留 job 目录；请检查 result_validation.json、ansys_run_audit.json、"
+        "ansys_stdout.log/ansys_stderr.log 和上面列出的 trial_dir。"
+    )
 
 
 def _progress_stage_cap(stage: str) -> int:
@@ -58,9 +113,12 @@ def _progress_stage_cap(stage: str) -> int:
         "running_ansys": 82,
         "ansys_startup_retry": 82,
         "ansys_resource_retry": 82,
+        "ansys_license_retry": 82,
         "rerunning_ansys_after_modal_retry": 84,
         "rerunning_ansys_after_section_reselection": 84,
         "rerunning_ansys_after_section_upgrade": 84,
+        "final_ratio_section_recovery": 94,
+        "rerunning_ansys_after_final_ratio_recovery": 84,
         "ansys_output_monitor": 85,
         "exporting_connection_nodes": 86,
         "exporting_figures": 88,
@@ -518,6 +576,66 @@ def _write_spectrum_mac_if_needed(
     )
 
 
+def _persist_spectrum_selection_features(
+    job_dir: Path,
+    spectrum_audit: dict[str, Any],
+    analysis_method: str,
+) -> dict[str, Any]:
+    """Persist compact spectrum/load-intensity features for candidate ordering only."""
+
+    input_path = job_dir / "input.json"
+    payload = _read_json(input_path)
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    zpa = spectrum_audit.get("static_acceleration_source")
+    if not isinstance(zpa, dict):
+        zpa = metadata.get("static_acceleration_source") if isinstance(metadata.get("static_acceleration_source"), dict) else {}
+    peaks: dict[str, float] = {}
+    points_path = job_dir / "spectrum_points.json"
+    if analysis_method != "static" and points_path.exists():
+        points_payload = _read_json(points_path)
+        for step in points_payload.get("load_steps") or []:
+            if not isinstance(step, dict):
+                continue
+            key = f"{str(step.get('level') or '').lower()}_{str(step.get('direction') or '').lower()}"
+            values = []
+            for point in step.get("points") or []:
+                if not isinstance(point, dict):
+                    continue
+                try:
+                    values.append(abs(float(point.get("acceleration_g"))))
+                except (TypeError, ValueError):
+                    continue
+            if values:
+                peaks[key] = round(max(values), 9)
+    workbook_sha = zpa.get("workbook_sha256")
+    features = {
+        "schema_version": "spectrum-selection-features-v1",
+        "analysis_method": analysis_method,
+        "workbook_sha256": workbook_sha,
+        "sheet": spectrum_audit.get("sheet") or zpa.get("sheet"),
+        "requested_elevation_m": spectrum_audit.get("requested_elevation") or zpa.get("requested_elevation"),
+        "selected_elevation_m": spectrum_audit.get("selected_elevation") or zpa.get("selected_elevation"),
+        "peak_acceleration_g_by_level_direction": peaks,
+        "peak_acceleration_g": round(max(peaks.values()), 9) if peaks else None,
+        "zpa_obe_max_g": max(
+            [float(zpa.get(key) or 0.0) for key in ("zpa_obe_x_g", "zpa_obe_y_g", "zpa_obe_z_g")],
+            default=0.0,
+        ),
+        "zpa_sse_max_g": max(
+            [float(zpa.get(key) or 0.0) for key in ("zpa_sse_x_g", "zpa_sse_y_g", "zpa_sse_z_g")],
+            default=0.0,
+        ),
+        "source_ref": "spectrum_audit.json + spectrum_points.json; candidate ordering only",
+        "authority": "ordering_feature_only_not_a_calculation_result",
+    }
+    metadata["spectrum_selection_features"] = features
+    payload["metadata"] = metadata
+    input_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return features
+
+
 def _read_validation_status(job_dir: Path) -> dict[str, Any]:
     path = job_dir / "result_validation.json"
     if not path.exists():
@@ -540,6 +658,91 @@ def _ensure_publishable_result(job_dir: Path) -> None:
     ]
     detail = ", ".join(failed[:8]) if failed else str(validation.get("reason") or validation.get("status"))
     raise RuntimeError(f"Result validation failed; production publication is blocked: {detail}")
+
+
+def _sync_square_section_row_result_from_summary(row_result: dict[str, Any], job_dir: Path) -> None:
+    summary_path = job_dir / "square_section_selection_summary.json"
+    if not summary_path.exists():
+        return
+    try:
+        summary = _read_json(summary_path)
+    except Exception:
+        return
+    section_name = summary.get("section_name")
+    final_ratio = summary.get("final_section_selection_ratio")
+    controlling_ratio = summary.get("controlling_ratio")
+    trial_ratio = summary.get("trial_controlling_ratio")
+    if section_name:
+        row_result["square_section_selected"] = section_name
+    if controlling_ratio is not None:
+        row_result["square_section_selected_ratio"] = controlling_ratio
+    if final_ratio is not None:
+        row_result["square_section_final_section_selection_ratio"] = final_ratio
+    if trial_ratio is not None:
+        row_result["square_section_trial_controlling_ratio"] = trial_ratio
+    row_result["square_section_ratio_consistency_status"] = summary.get("ratio_consistency_status")
+
+
+def _last_ansys_audit(job_dir: Path) -> dict[str, Any]:
+    path = job_dir / "ansys_run_audit.json"
+    if not path.exists():
+        return {}
+    try:
+        return _read_json(path)
+    except Exception:
+        return {}
+
+
+def _post_export_figure_failure_after_main_success(audit: dict[str, Any]) -> bool:
+    failure = audit.get("post_export_failure") if isinstance(audit.get("post_export_failure"), dict) else {}
+    return (
+        audit.get("status") == "failed"
+        and (audit.get("completion_marker_detection") or {}).get("status") == "pass"
+        and str(failure.get("name") or "") == "figure_export"
+    )
+
+
+def _job_text_contains_license_failure(job_dir: Path) -> bool:
+    text = ""
+    for name in ("export_figures.out", "figure_export_stdout.log", "figure_export_stderr.log", "CableTrayAI_Run.err"):
+        path = job_dir / name
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            text += "\n" + path.read_text(encoding="utf-8", errors="replace")[-8000:]
+        except OSError:
+            continue
+    lower = text.lower()
+    return any(token in lower for token in ANSYS_LICENSE_FAILURE_TOKENS)
+
+
+def _ansys_license_failure(audit: dict[str, Any], job_dir: Path) -> bool:
+    if audit.get("status") in {"success", "pass"}:
+        return False
+    payload = {
+        "status": audit.get("status"),
+        "failure_reason": audit.get("failure_reason"),
+        "failure_category": audit.get("failure_category"),
+        "fatal_output_detection": audit.get("fatal_output_detection"),
+        "stderr_tail": audit.get("stderr_tail"),
+        "stdout_tail": audit.get("stdout_tail"),
+    }
+    text = json.dumps(payload, ensure_ascii=False).lower()
+    return any(token in text for token in ANSYS_LICENSE_FAILURE_TOKENS) or _job_text_contains_license_failure(job_dir)
+
+
+def _retain_solver_artifacts_after_failure(job_dir: Path) -> bool:
+    audit = _last_ansys_audit(job_dir)
+    return bool(
+        audit.get("post_export_license_unavailable")
+        or (
+            _post_export_figure_failure_after_main_success(audit)
+            and (
+                "license" in json.dumps(audit.get("figure_export_audit") or {}, ensure_ascii=False).lower()
+                or _job_text_contains_license_failure(job_dir)
+            )
+        )
+    )
 
 
 def run_operator_one_click(
@@ -637,6 +840,8 @@ def run_operator_one_click(
             "analysis_method": analysis_method,
             "status": "created",
         }
+        row_result["geometry_recovery_policy"] = "support_spacing_and_support_length_fixed"
+        row_result["overlimit_operator_action"] = "revise_confirmed_tray_line_load_and_rerun"
         try:
             if not spectrum_text:
                 raise ValueError("Every production job requires an operator-selected project spectrum workbook; static jobs use it to derive audited equivalent-static acceleration coefficients.")
@@ -657,14 +862,50 @@ def run_operator_one_click(
                 progress("write_spectrum", f"{item['job_id']}：生成 ansys_spectrum.mac 和 ZPA 参数", base_progress + 10, job_id=item["job_id"])
                 spectrum_audit = _write_spectrum_mac_if_needed(job_dir, spectrum_text, analysis_method, source_root=source_root)
                 row_result["spectrum_status"] = spectrum_audit.get("status")
+                row_result["spectrum_selection_features"] = _persist_spectrum_selection_features(
+                    job_dir,
+                    spectrum_audit,
+                    analysis_method,
+                )
             else:
                 row_result["spectrum_status"] = "deferred_until_real_run"
             progress("render_commands", f"{item['job_id']}：生成建模/计算/提取三份命令流", base_progress + 18, job_id=item["job_id"])
             render_audit = _render_commands(job_dir, jobs_dir, source_package_id, source_root=Path(source_root), template_dir=Path(template_dir))
             row_result["command_source"] = render_audit.get("command_source")
             row_result["command_status"] = render_audit.get("status")
+            render_result = render_audit.get("render_result") if isinstance(render_audit.get("render_result"), dict) else {}
+            row_result["tray_load_command_audit"] = render_result.get("tray_load_command_audit")
+            if render_audit.get("status") != "pass":
+                load_audit = render_result.get("tray_load_command_audit") or {}
+                if load_audit.get("status") == "fail":
+                    raise RuntimeError(
+                        "Tray line-load synchronization failed; ANSYS was not started because the operator values, "
+                        "normalized input, and generated model density commands are not identical."
+                    )
+                raise RuntimeError("Generated command package failed deterministic audit; ANSYS was not started.")
             update_job_state(job_dir, "apdl_rendered", "operator one-click command streams rendered")
             if execute_real:
+                def forward_section_progress(event: dict[str, Any]) -> None:
+                    candidate_index = int(event.get("candidate_index") or event.get("completed_candidate_count") or 0)
+                    candidate_count = max(1, int(event.get("candidate_count") or 1))
+                    local_progress = min(42, 30 + int(candidate_index * 12 / candidate_count))
+                    progress(
+                        "select_square_section",
+                        str(event.get("message") or f"{item['job_id']}: square-section auto-selection"),
+                        min(base_progress + local_progress, base_progress + 44),
+                        job_id=item["job_id"],
+                        candidate_section=event.get("candidate_section"),
+                        candidate_index=candidate_index,
+                        candidate_count=candidate_count,
+                        trial_dir=event.get("trial_dir"),
+                        trial_status_file=event.get("trial_status_file"),
+                        elapsed_seconds=event.get("elapsed_seconds"),
+                        no_output_seconds=event.get("no_output_seconds"),
+                        total_output_bytes=event.get("total_output_bytes"),
+                        process_running=event.get("process_running"),
+                        ansys_pid=event.get("ansys_pid"),
+                    )
+
                 if square_section_auto_selection_required(job_dir):
                     progress("select_square_section", f"{item['job_id']}：候选方钢截面自动选型", base_progress + 30, job_id=item["job_id"])
 
@@ -680,6 +921,13 @@ def run_operator_one_click(
                             candidate_section=event.get("candidate_section"),
                             candidate_index=candidate_index,
                             candidate_count=candidate_count,
+                            trial_dir=event.get("trial_dir"),
+                            trial_status_file=event.get("trial_status_file"),
+                            elapsed_seconds=event.get("elapsed_seconds"),
+                            no_output_seconds=event.get("no_output_seconds"),
+                            total_output_bytes=event.get("total_output_bytes"),
+                            process_running=event.get("process_running"),
+                            ansys_pid=event.get("ansys_pid"),
                         )
 
                     selection = select_and_apply_square_section(
@@ -697,9 +945,7 @@ def run_operator_one_click(
                         row_result["square_section_selected"] = selected.get("section_name")
                         row_result["square_section_selected_ratio"] = selected.get("controlling_ratio")
                     if selection.get("status") != "pass":
-                        raise RuntimeError(
-                            "Square section auto-selection failed; formal calculation is blocked until a section with ratio <= 1.0 is found."
-                        )
+                        raise RuntimeError(_square_section_selection_failure_message(selection))
                 progress("running_ansys", f"{item['job_id']}：正在运行 ANSYS，耗时取决于模型规模和机器核数", base_progress + 45, job_id=item["job_id"])
                 cache_hit: dict[str, Any] = {
                     "status": "disabled",
@@ -720,6 +966,7 @@ def run_operator_one_click(
                     copy_exact_cached_outputs(Path(str(cache_hit["source_job_dir"])), job_dir)
                     assemble_result(job_dir)
                     _ensure_publishable_result(job_dir)
+                    _sync_square_section_row_result_from_summary(row_result, job_dir)
                     update_job_state(job_dir, "evaluated", "exact-input real ANSYS outputs reused and parsed")
                 else:
 
@@ -800,6 +1047,23 @@ def run_operator_one_click(
                             return audit
 
                         audit_payload = run_attempt(config, "primary")
+                        if _ansys_license_failure(audit_payload, job_dir):
+                            for retry_index, delay in enumerate(ANSYS_FORMAL_LICENSE_RETRY_DELAYS_SECONDS, start=1):
+                                progress(
+                                    "ansys_license_retry",
+                                    (
+                                        f"{item['job_id']}: ANSYS license is temporarily unavailable; "
+                                        f"waiting {int(delay)}s before retry {retry_index}."
+                                    ),
+                                    min(base_progress + 69, base_progress + 70),
+                                    job_id=item["job_id"],
+                                )
+                                _clean_regenerable_outputs_for_rerun(job_dir)
+                                cleanup_stale_ansys_locks(job_dir)
+                                time.sleep(max(0, int(delay)))
+                                audit_payload = run_attempt(config, f"license_retry_{retry_index}")
+                                if not _ansys_license_failure(audit_payload, job_dir):
+                                    break
                         retryable_startup_statuses = {"startup_no_output_timeout", "output_stall_timeout"}
                         if (
                             audit_payload.get("status") in retryable_startup_statuses
@@ -846,6 +1110,17 @@ def run_operator_one_click(
                         row_result["ansys_run_attempts"] = attempts
                         row_result["ansys_run_status"] = audit_payload.get("status")
                         if audit_payload.get("status") != "success":
+                            if _post_export_figure_failure_after_main_success(audit_payload):
+                                try:
+                                    assemble_result(job_dir)
+                                    row_result["partial_result_assembly_status"] = "pass"
+                                    row_result["partial_result_assembly_policy"] = (
+                                        "Main ANSYS solve completed, but post-only figure export failed. "
+                                        "Numeric LIS/OUP results are assembled for diagnosis; publication still requires the figure gate to pass."
+                                    )
+                                except Exception as partial_exc:
+                                    row_result["partial_result_assembly_status"] = "failed"
+                                    row_result["partial_result_assembly_reason"] = str(partial_exc)
                             reason = audit_payload.get("failure_reason") or audit_payload.get("failure_category") or "see ansys_run_audit.json"
                             raise RuntimeError(f"ANSYS real run did not finish successfully: {audit_payload.get('status')} - {reason}")
                         progress(
@@ -974,7 +1249,9 @@ def run_operator_one_click(
                         run_formal_ansys_once("(after clean square-section reselection)")
                     row_result["square_section_clean_reselection_attempts"] = clean_reselection_attempts
                     for upgrade_attempt in range(1, 4):
-                        if not result_validation_needs_square_section_upgrade(job_dir):
+                        section_ratio_recovery = result_validation_needs_square_section_upgrade(job_dir)
+                        final_ratio_recovery = result_validation_needs_final_ratio_section_recovery(job_dir)
+                        if not section_ratio_recovery and not final_ratio_recovery:
                             break
                         if provided_square_section_frozen:
                             row_result["square_section_upgrade_status"] = "skipped_frozen_provided_section"
@@ -983,13 +1260,25 @@ def run_operator_one_click(
                                 "Automatic economic section upgrades are reserved for new intake rows whose column I is blank."
                             )
                             break
+                        recovery_mode = "square_section_ratio_gate" if section_ratio_recovery else "final_ratio_design_recovery"
+                        recovery_reason = (
+                            "Final deterministic Chapter 6.1 square-section ratio exceeded 1.0."
+                            if section_ratio_recovery
+                            else "Final deterministic weld/bolt/global ratio gate exceeded 1.0; trying a larger allowed section as design recovery."
+                        )
+                        recovery_stage = (
+                            "upgrade_square_section"
+                            if section_ratio_recovery
+                            else "final_ratio_section_recovery"
+                        )
+                        rerun_stage = (
+                            "rerunning_ansys_after_section_upgrade"
+                            if section_ratio_recovery
+                            else "rerunning_ansys_after_final_ratio_recovery"
+                        )
                         progress(
-                            "upgrade_square_section",
-                            (
-                                f"{item['job_id']}：评定后触发重跑，原因=方钢截面应力比超过 1.0；"
-                                f"改选更大 SECT 并重跑（第 {upgrade_attempt} 次）。"
-                                "这不是卡死，是截面门禁要求。"
-                            ),
+                            recovery_stage,
+                            f"{item['job_id']}: {recovery_reason} Rerun with a larger reviewed SECT (attempt {upgrade_attempt}).",
                             min(base_progress + 78, 92),
                             job_id=item["job_id"],
                         )
@@ -1000,22 +1289,41 @@ def run_operator_one_click(
                             confirm_user=confirm_user,
                             source_root=source_root,
                             limit=square_section_candidate_limit,
+                            section_selection_only=section_ratio_recovery,
+                            upgrade_reason=recovery_reason,
                         )
-                        row_result["square_section_upgrade_status"] = upgrade.get("status")
-                        row_result["rerun_reason"] = "square_section_ratio_gate"
-                        row_result["rerun_reason_detail"] = (
-                            "Final square-support ratio gate exceeded 1.0; production output cannot be published before a larger audited section passes."
+                        status_key = (
+                            "square_section_upgrade_status"
+                            if section_ratio_recovery
+                            else "final_ratio_section_recovery_status"
                         )
+                        row_result[status_key] = upgrade.get("status")
+                        row_result["rerun_reason"] = recovery_mode
+                        row_result["rerun_reason_detail"] = recovery_reason
                         selected_upgrade = upgrade.get("selected") or {}
                         if selected_upgrade:
                             row_result["square_section_selected"] = selected_upgrade.get("section_name")
                             row_result["square_section_selected_ratio"] = selected_upgrade.get("controlling_ratio")
                         if upgrade.get("status") != "pass":
-                            raise RuntimeError(f"Square section upgrade failed after final ratio gate: {upgrade.get('reason') or upgrade.get('status')}")
+                            row_result["support_spacing_recovery_status"] = "disabled_by_fixed_geometry_policy"
+                            row_result["operator_recovery"] = {
+                                "status": "input_revision_required",
+                                "fixed_fields": ["support_spacing_m", "support_height_m"],
+                                "allowed_action": "revise_confirmed_tray_line_load_and_rerun",
+                                "reason": upgrade.get("reason") or upgrade.get("status"),
+                            }
+                            raise RuntimeError(
+                                "All applicable square-section recovery attempts failed while support spacing and support "
+                                "length are fixed by upstream layout. Automatic spacing/length reduction is disabled. "
+                                "Review and explicitly revise the tray line load in the calculation workspace, then rerun."
+                            )
                         cleanup_heavy_solver_artifacts(job_dir)
                         progress(
-                            "rerunning_ansys_after_section_upgrade",
-                            f"{item['job_id']}：已改用 {selected_upgrade.get('section_name')}，重新运行正式 ANSYS",
+                            rerun_stage,
+                            (
+                                f"{item['job_id']}: selected {selected_upgrade.get('section_name')} for "
+                                f"{recovery_mode}; rerun formal ANSYS."
+                            ),
                             min(base_progress + 80, 94),
                             job_id=item["job_id"],
                         )
@@ -1028,7 +1336,10 @@ def run_operator_one_click(
                                 "failure or a historical source conflict after report comparison."
                             )
                         raise RuntimeError("Square section upgrade loop ended but final square-support ratio is still above 1.0.")
+                    if result_validation_needs_final_ratio_section_recovery(job_dir):
+                        raise RuntimeError("Final ratio section-recovery loop ended while a larger allowed section was still available.")
                     _ensure_publishable_result(job_dir)
+                    _sync_square_section_row_result_from_summary(row_result, job_dir)
                     modal_learning = record_modal_mode_count_learning(job_dir)
                     row_result["modal_learning_status"] = modal_learning.get("status")
                     row_result["modal_learning_recommended_mt"] = modal_learning.get("recommended_modal_mode_count")
@@ -1061,9 +1372,16 @@ def run_operator_one_click(
             row_result["status"] = "pass" if execute_real else "dry_run"
         except Exception as exc:
             if execute_real and job_dir.exists():
-                artifact_cleanup = cleanup_heavy_solver_artifacts(job_dir)
-                row_result["solver_artifact_cleanup_status"] = artifact_cleanup.get("status")
-                row_result["solver_artifact_removed_gb"] = artifact_cleanup.get("removed_gb")
+                if _retain_solver_artifacts_after_failure(job_dir):
+                    row_result["solver_artifact_cleanup_status"] = "skipped_post_export_license_failure"
+                    row_result["solver_artifact_cleanup_policy"] = (
+                        "Main ANSYS results are retained because the failure happened in post-only figure export "
+                        "after a license-manager error. Keeping DB/RST allows a later figure-export retry without rerunning the solve."
+                    )
+                else:
+                    artifact_cleanup = cleanup_heavy_solver_artifacts(job_dir)
+                    row_result["solver_artifact_cleanup_status"] = artifact_cleanup.get("status")
+                    row_result["solver_artifact_removed_gb"] = artifact_cleanup.get("removed_gb")
             fail_job_state(job_dir, str(exc))
             row_result["status"] = "fail"
             row_result["failure_reason"] = str(exc)

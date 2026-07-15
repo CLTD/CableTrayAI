@@ -62,7 +62,7 @@ Get-ChildItem -Path $extract -Recurse -File -ErrorAction SilentlyContinue |
     } |
     ForEach-Object { throw "Unsafe update package contains local config: $($_.FullName)" }
 
-$paths = @("apps", "core", "templates", "data", "scripts", "docs", ".agents", "config", "runtime")
+$paths = @("apps", "core", "templates", "data", "scripts", "docs", "resources", ".agents", "config", "runtime")
 $files = @("README.md", "AGENTS.md", "pyproject.toml", "requirements.txt", ".gitignore", "CableTrayAI.exe")
 
 foreach ($path in $paths) {
@@ -128,6 +128,7 @@ $audit = [ordered]@{
     applied_at = (Get-Date).ToString("s")
     protected_paths_preserved = $protected
     minimal_source_materials_applied = (Test-Path $sourceSrc)
+    resources_applied = (Test-Path (Join-Path $extract "resources"))
     local_configs_preserved = $true
     removed_stale_files = $removedStaleFiles
 }

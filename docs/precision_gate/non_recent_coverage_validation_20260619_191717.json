@@ -1,0 +1,351 @@
+{
+  "status": "fail",
+  "dataset": "intake_as_new_report_level",
+  "policy": "Treat each baseline report as one validation case. Select the representative intake row by report design facts and intake fields, then generate commands from the current software only.",
+  "tolerance": 0.05,
+  "nproc": 0,
+  "run_real": true,
+  "jobs_root": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\workspaces",
+  "spectrum_file": "C:\\Users\\duxy\\Desktop\\2\\1818\\楼层谱1818 ANSYS格式 标高线性.xlsm",
+  "available_report_count": 6,
+  "selected_case_count": 6,
+  "case_count": 6,
+  "passed_case_count": 0,
+  "baseline_conflict_case_count": 5,
+  "failed_case_count": 1,
+  "blocked_case_count": 0,
+  "ready_case_count": 0,
+  "max_gate_error": null,
+  "selection_blocked": [],
+  "failure_count": 1,
+  "results": [
+    {
+      "report_no": "18185NI-LXSJ4120",
+      "workspace_id": "18185NI-LXSJ4120",
+      "intake_row_number": 17,
+      "intake_serial": 16,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4120\\18185NI-LXSJ4120.docx",
+      "selection_score": 31,
+      "selection_tie_count": 1,
+      "selection_conflict_status": "pass",
+      "status": "fail",
+      "job_dir": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\workspaces\\18185NI-LXSJ4120",
+      "command_source": "intake_parameterized_standard_command_family",
+      "render_status": "pass",
+      "source_conflict_resolution_status": "not_applicable",
+      "command_readiness_status": "pass",
+      "command_failure_count": 0,
+      "connection_node_export_required": false,
+      "lock_cleanup_status": "pass",
+      "ansys_status": "rejected",
+      "returncode": null,
+      "ansys_nproc_request": 0,
+      "failure_reason": "ANSYS status rejected",
+      "solver_artifact_cleanup_status": "pass",
+      "solver_artifact_removed_gb": 0.0
+    },
+    {
+      "report_no": "18185NI-LXSJ4131",
+      "workspace_id": "18185NI-LXSJ4131",
+      "intake_row_number": 98,
+      "intake_serial": 97,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4131\\18185NI-LXSJ4131.docx",
+      "selection_score": 27,
+      "selection_tie_count": 3,
+      "selection_conflict_status": "conflict",
+      "status": "baseline_conflict",
+      "failure_reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            13.5
+          ],
+          "expected": [
+            7.5,
+            13.5
+          ],
+          "source": {
+            "source": "report_text",
+            "source_refs": [],
+            "report_spectrum_elevations": [
+              7.5,
+              13.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "policy": "This case is excluded from the numerical precision gate because the historical intake row and report design facts conflict before ANSYS is run. It is not a model-tuning target."
+    },
+    {
+      "report_no": "18185NI-LXSJ4139",
+      "workspace_id": "18185NI-LXSJ4139",
+      "intake_row_number": 157,
+      "intake_serial": 156,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\18185NI-LXSJ4139.docx",
+      "selection_score": 23,
+      "selection_tie_count": 1,
+      "selection_conflict_status": "conflict",
+      "status": "baseline_conflict",
+      "failure_reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.2,
+          "expected": 2.0
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            -3.5
+          ],
+          "expected": [
+            3.6,
+            7.5,
+            -3.5
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 70,
+                "text": "!SL-1(XY) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 93,
+                "text": "!SL-1(Z) 7%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 126,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 149,
+                "text": "!SL-2(XY) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4139\\计算文件\\02 计算用命令流.mac",
+                "line": 172,
+                "text": "!SL-2(Z) 10%  Envelop:(NS环形区_1818,3.6) (NS环形区_1818,7.5) (NE电气区_1818,-3.5)",
+                "elevations": [
+                  3.6,
+                  7.5,
+                  -3.5
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              3.6,
+              7.5,
+              -3.5
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "policy": "This case is excluded from the numerical precision gate because the historical intake row and report design facts conflict before ANSYS is run. It is not a model-tuning target."
+    },
+    {
+      "report_no": "18185NI-LXSJ4142",
+      "workspace_id": "18185NI-LXSJ4142",
+      "intake_row_number": 133,
+      "intake_serial": 132,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4142\\18185NI-LXSJ4142.docx",
+      "selection_score": 12,
+      "selection_tie_count": 2,
+      "selection_conflict_status": "conflict",
+      "status": "baseline_conflict",
+      "failure_reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.8,
+          "expected": 2.0
+        }
+      ],
+      "policy": "This case is excluded from the numerical precision gate because the historical intake row and report design facts conflict before ANSYS is run. It is not a model-tuning target."
+    },
+    {
+      "report_no": "18185NI-LXSJ4143",
+      "workspace_id": "18185NI-LXSJ4143",
+      "intake_row_number": 135,
+      "intake_serial": 134,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4143\\18185NI-LXSJ4143.docx",
+      "selection_score": 27,
+      "selection_tie_count": 1,
+      "selection_conflict_status": "conflict",
+      "status": "baseline_conflict",
+      "failure_reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.0,
+          "expected": 1.1
+        }
+      ],
+      "policy": "This case is excluded from the numerical precision gate because the historical intake row and report design facts conflict before ANSYS is run. It is not a model-tuning target."
+    },
+    {
+      "report_no": "18185NI-LXSJ4155",
+      "workspace_id": "18185NI-LXSJ4155",
+      "intake_row_number": 165,
+      "intake_serial": 164,
+      "baseline_report": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\18185NI-LXSJ4155.docx",
+      "selection_score": 19,
+      "selection_tie_count": 1,
+      "selection_conflict_status": "conflict",
+      "status": "baseline_conflict",
+      "failure_reason": "No intake row fully matches the report design facts; this report-number validation case is a historical intake/report conflict and must not be used to tune production logic.",
+      "failed_required_checks": [
+        {
+          "check_id": "support_height_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.8,
+          "expected": 2.0
+        },
+        {
+          "check_id": "support_spacing_m",
+          "status": "fail",
+          "weight": 4,
+          "value": 1.6,
+          "expected": 1.8
+        },
+        {
+          "check_id": "spectrum_elevation_m",
+          "status": "fail",
+          "weight": 4,
+          "value": [
+            16.95
+          ],
+          "expected": [
+            22.0,
+            16.95
+          ],
+          "source": {
+            "source": "command_envelope_line",
+            "source_refs": [
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 46,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 67,
+                "text": "!SL-1(XY) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 88,
+                "text": "!SL-1(Z) 7%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 120,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 141,
+                "text": "!SL-2(XY) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              },
+              {
+                "file": "E:\\CODEX\\tray_platform\\CableTrayAI\\jobs\\non_recent_coverage_validation_20260619_191717\\source_mirror\\报告及模型命令流\\18185NI-LXSJ4155\\计算文件\\02 计算用命令流AR  8.55 7-10.mac",
+                "line": 162,
+                "text": "!SL-2(Z) 10%  Envelop:(NL_1818,22) (NL_1818,16.95)",
+                "elevations": [
+                  22.0,
+                  16.95
+                ],
+                "evidence": "command_envelope_line"
+              }
+            ],
+            "report_spectrum_elevations": [
+              16.95,
+              22.0
+            ],
+            "report_command_spectrum_conflict": false
+          }
+        }
+      ],
+      "policy": "This case is excluded from the numerical precision gate because the historical intake row and report design facts conflict before ANSYS is run. It is not a model-tuning target."
+    }
+  ]
+}

@@ -12,8 +12,8 @@
 - 每个导图点使用 `/SHOW,PNG` 在批处理模式下生成真实 PNG。
 - 生成后的顺序 PNG 按标准 PIP 图名复制为命名文件，例如：
   - `MOTAI-1.PNG` ~ `MOTAI-4.PNG`
-  - `SQ-B1SDIR1.PNG`
-  - `SQ-D3SBEND.PNG`
+  - `B1SDIR1.PNG`
+  - `D3SBEND.PNG`
   - `TB1SDIR1.PNG`
   - `TD4SHEAR.PNG`
 
@@ -66,7 +66,8 @@
 ## 分类
 
 - `MOTAI-*`：附录 A，模态图。
-- `SQ-*`：附录 B，方钢立柱/方钢构件应力图。
+- `B*` / `D*`：附录 B 主应力图，选择集等价于科室 `TYPE=1`，即方钢 + 托臂，不含托盘和螺栓。
+- `SQ-*`：历史方钢专项图名，不再作为正式附录图件发布；方钢专项只保留 `SQUAREBEAMSTRESS.LIS` 数值源。
 - `TB*` / `TD*`：附录 C，托臂应力图。
 - `SHITI`：整体模型图，报告图 5.1。
 - `TBMODEL`：托臂模型图，报告图 5.2。

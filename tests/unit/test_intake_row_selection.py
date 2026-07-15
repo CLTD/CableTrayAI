@@ -19,6 +19,32 @@ def test_row_override_number_fallback_ignores_engineering_serial() -> None:
     assert [row["provisional_intake_id"] for row in selected] == ["row_4"]
 
 
+def test_row_override_uses_physical_row_before_duplicate_report_identity() -> None:
+    rows = [
+        {
+            "intake_row_number": 3,
+            "report_number": "18185NI-LXSJ4211",
+            "calculation_batch": "18185NI-LXSJ4211",
+            "description": "single side 2 layers 500",
+            "provisional_intake_id": "row_3",
+        },
+        {
+            "intake_row_number": 10,
+            "report_number": "18185NI-LXSJ4211",
+            "calculation_batch": "18185NI-LXSJ4211",
+            "description": "single side 2 layers 100",
+            "provisional_intake_id": "row_10",
+        },
+    ]
+
+    selected = builder._select_rows_from_overrides(
+        rows,
+        [{"intake_row_number": 3, "report_number": "18185NI-LXSJ4211"}],
+    )
+
+    assert [row["provisional_intake_id"] for row in selected] == ["row_3"]
+
+
 def test_safe_job_id_is_ascii_for_ansys_parallel_workdirs() -> None:
     job_id = builder._safe_job_id("1818 S2支架需求汇总20240711_副本_S2形式_row_6")
 
@@ -78,3 +104,25 @@ def test_allowed_square_sections_are_extracted_from_calculation_note_without_unl
         "160-160-8",
     ]
     assert "120-120-8" not in found["allowed_square_section_ids"]
+
+
+def test_project_code_falls_back_to_formal_report_number_before_workbook_name(tmp_path) -> None:
+    row = {
+        "序号": 1,
+        "支架形式": "S2",
+        "支架间距": "2m",
+        "方钢长度": "1.8m",
+        "托盘载荷": "单侧2层600",
+        "厂房": "NR",
+        "标高": 8.5,
+        "报告号": "18185NI-LXSJ4215",
+    }
+
+    payload = reader._normalise_table_row(
+        row,
+        source_file=tmp_path / "intake_renamed_by_user.xlsx",
+        sheet_name="S2",
+        row_number=2,
+    )
+
+    assert payload["project_code"] == "1818"

@@ -16,6 +16,7 @@ from core.ansys.figure_export import run_figure_export
 from core.ansys.lock_cleanup import cleanup_stale_ansys_locks
 from core.ansys.preflight import run_preflight
 from core.ansys.real_run_guard import evaluate_real_run_guard, write_rejected_real_run_audit
+from core.apdl.numeric_post import NUMERIC_POST_MACRO, build_numeric_post_macro
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -67,7 +68,80 @@ _ANSYS_BLOCKING_OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
 ]
 
-_LIVE_OUTPUT_SUFFIXES = {".out", ".err", ".rst", ".db", ".lis", ".oup", ".bmp", ".png", ".log"}
+_LIVE_OUTPUT_SUFFIXES = {".out", ".err", ".rst", ".db", ".lis", ".oup", ".bmp", ".png", ".log", ".txt"}
+
+MIN_REAL_RUN_TIMEOUT_MINUTES = 120
+MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS = 90
+MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS = 300
+POST_COMPLETION_EXIT_GRACE_SECONDS = 15
+FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS = (20, 45)
+
+
+def _positive_int(value: Any, default: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number > 0 else default
+
+
+def _nonnegative_int(value: Any, default: int) -> int:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    return number if number >= 0 else default
+
+
+def _effective_real_run_timeout_policy(config: AnsysLocalConfig) -> dict[str, Any]:
+    """Return code-level minimum ANSYS watchdog settings for production runs.
+
+    Update packages intentionally preserve unit-site ``ansys.local.toml`` files.
+    That means stale local timeout settings can otherwise kill a valid ANSYS
+    solve before APDL/PIP post-processing writes result JSON.  The configured
+    values are still recorded for traceability, but real production runs use a
+    hard minimum that matches the acceptance runs.
+    """
+
+    configured_timeout_minutes = _positive_int(
+        getattr(config.ansys, "timeout_minutes", None),
+        MIN_REAL_RUN_TIMEOUT_MINUTES,
+    )
+    configured_startup = _positive_int(
+        getattr(config.ansys, "startup_no_output_timeout_seconds", None),
+        MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+    )
+    configured_stall = _nonnegative_int(
+        getattr(config.ansys, "output_stall_timeout_seconds", None),
+        MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+    )
+    effective_timeout_minutes = max(configured_timeout_minutes, MIN_REAL_RUN_TIMEOUT_MINUTES)
+    effective_startup = max(configured_startup, MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS)
+    effective_stall = 0 if configured_stall == 0 else max(configured_stall, MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS)
+    return {
+        "status": "clamped" if (
+            effective_timeout_minutes != configured_timeout_minutes
+            or effective_startup != configured_startup
+            or effective_stall != configured_stall
+        ) else "unchanged",
+        "configured_timeout_minutes": configured_timeout_minutes,
+        "configured_timeout_seconds": configured_timeout_minutes * 60,
+        "timeout_minutes": effective_timeout_minutes,
+        "timeout_seconds": effective_timeout_minutes * 60,
+        "minimum_timeout_minutes": MIN_REAL_RUN_TIMEOUT_MINUTES,
+        "minimum_timeout_seconds": MIN_REAL_RUN_TIMEOUT_MINUTES * 60,
+        "configured_startup_no_output_timeout_seconds": configured_startup,
+        "startup_no_output_timeout_seconds": effective_startup,
+        "minimum_startup_no_output_timeout_seconds": MIN_REAL_RUN_STARTUP_NO_OUTPUT_TIMEOUT_SECONDS,
+        "configured_output_stall_timeout_seconds": configured_stall,
+        "output_stall_timeout_seconds": effective_stall,
+        "output_stall_hard_kill_enabled": effective_stall > 0,
+        "minimum_output_stall_timeout_seconds": MIN_REAL_RUN_OUTPUT_STALL_TIMEOUT_SECONDS,
+        "policy": (
+            "Real ANSYS production runs use code-level minimum watchdogs so "
+            "unit-site preserved local configs cannot terminate a valid solve before results are produced."
+        ),
+    }
 
 _IGNORED_SELECTION_WARNING_RE = re.compile(
     r"\b(?:Entity\s+\d+\s+is\s+undefined\.\s+)?(?:The\s+)?"
@@ -78,6 +152,12 @@ _IGNORED_SELECTION_WARNING_RE = re.compile(
 _IGNORED_GRAPHICS_WARNING_RE = re.compile(
     r"/IMAGE\s+requires\s+/MENU,\s*(?:ON|GRPH)|\bCommand\s+ignored\b",
     re.IGNORECASE,
+)
+
+_IGNORED_ALREADY_MESHED_LINE_WARNING_RE = re.compile(
+    r"There\s+are\s+no\s+selected\s+unmeshed\s+lines\.\s+The\s+LATT\s+command\s+is\s+ignored\b|"
+    r"All\s+of\s+the\s+selected\s+lines\b.*\balready\s+meshed\b",
+    re.IGNORECASE | re.DOTALL,
 )
 
 _MPI_CWD_IGNORED_RE = re.compile(
@@ -151,6 +231,147 @@ def _read_text_tail(path: Path, max_chars: int = 12000) -> str:
         return ""
 
 
+_ANSYS_COMPLETION_MARKERS = (
+    re.compile(r"\*{5}\s+ROUTINE\s+COMPLETED\s+\*{5}", re.IGNORECASE),
+    re.compile(r"\bEXIT\s+ANSYS\s+WITHOUT\s+SAVING\s+DATABASE\b", re.IGNORECASE),
+)
+_ANSYS_ERROR_COUNT_RE = re.compile(r"NUMBER\s+OF\s+ERROR\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+_ANSYS_WARNING_COUNT_RE = re.compile(r"NUMBER\s+OF\s+WARNING\s+MESSAGES\s+ENCOUNTERED\s*=\s*(\d+)", re.IGNORECASE)
+
+
+def _ansys_completion_candidate_paths(job_dir: Path, command: dict[str, Any]) -> list[Path]:
+    output_file = Path(command.get("output_file") or job_dir / "ansys.out")
+    candidates: list[Path] = [
+        output_file,
+        job_dir / "ansys.out",
+        job_dir / "ansys_stdout.log",
+        job_dir / "ansys_stderr.log",
+    ]
+    candidates.extend(sorted(job_dir.glob("*.out")))
+    candidates.extend(sorted(job_dir.glob("*.err")))
+    candidates.extend(sorted(job_dir.glob("*.log")))
+    candidates.extend(sorted(job_dir.glob("*.txt")))
+    candidates.extend(sorted(job_dir.glob("*.TXT")))
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for candidate in candidates:
+        try:
+            resolved = candidate.resolve()
+        except OSError:
+            resolved = candidate
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique.append(candidate)
+    return unique
+
+
+def _path_is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _cleanup_stale_completion_outputs(job_dir: Path, command: dict[str, Any]) -> dict[str, Any]:
+    """Remove stale ANSYS text/log outputs before a new real run.
+
+    Completion-marker detection is intentionally tolerant of ANSYS 18.2
+    launcher return codes.  That tolerance must only read files produced by the
+    current run, so reruns in the same job directory clear old completion
+    marker candidates first.
+    """
+
+    root = job_dir.resolve()
+    removed: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for path in _ansys_completion_candidate_paths(job_dir, command):
+        if not path.exists() or not path.is_file():
+            continue
+        if not _path_is_relative_to(path, root):
+            skipped.append({"file": str(path), "reason": "outside_job_dir"})
+            continue
+        try:
+            size = path.stat().st_size
+            path.unlink()
+            removed.append({"file": str(path.resolve().relative_to(root)), "size": size})
+        except OSError as exc:
+            skipped.append({"file": str(path), "reason": str(exc)})
+    audit = {
+        "status": "pass" if not skipped else "warning",
+        "removed_count": len(removed),
+        "removed_bytes": sum(int(item["size"]) for item in removed),
+        "removed": removed,
+        "skipped": skipped,
+        "policy": (
+            "Before a real ANSYS rerun, stale output/log/TXT files that can contain old completion markers are "
+            "removed so the current run cannot be accepted based on a previous ROUTINE COMPLETED message."
+        ),
+    }
+    _write_json(job_dir / "ansys_stale_completion_cleanup.json", audit)
+    return audit
+
+
+def _detect_ansys_completion_marker(job_dir: Path, command: dict[str, Any]) -> dict[str, Any]:
+    """Detect a completed MAPDL command stream even when the launcher code is nonzero.
+
+    ANSYS 18.2 on some unit machines can leave the process with return code
+    ``4294967295`` after the APDL stream has already written ``ROUTINE
+    COMPLETED`` and ``EXIT ANSYS WITHOUT SAVING DATABASE`` to a redirected
+    ``*.TXT`` output.  Treating that as a hard run failure makes satisfying
+    square-section candidates appear stuck or failed.  This detector is only a
+    positive completion signal; missing LIS/OUP/result files are still blocked
+    by the deterministic downstream gates.
+    """
+
+    checked: list[str] = []
+    matches: list[dict[str, Any]] = []
+    partial_matches: list[dict[str, Any]] = []
+    for path in _ansys_completion_candidate_paths(job_dir, command):
+        if not path.exists() or not path.is_file():
+            continue
+        checked.append(str(path))
+        text = _read_text_tail(path, max_chars=40000)
+        if not text:
+            continue
+        marker_names = [
+            pattern.pattern
+            for pattern in _ANSYS_COMPLETION_MARKERS
+            if pattern.search(text)
+        ]
+        if not marker_names:
+            continue
+        error_counts = [int(value) for value in _ANSYS_ERROR_COUNT_RE.findall(text)]
+        warning_counts = [int(value) for value in _ANSYS_WARNING_COUNT_RE.findall(text)]
+        payload = {
+            "file": str(path),
+            "markers": marker_names,
+            "error_count": error_counts[-1] if error_counts else None,
+            "warning_count": warning_counts[-1] if warning_counts else None,
+        }
+        if error_counts and error_counts[-1] == 0:
+            matches.append(payload)
+        else:
+            partial_matches.append(payload)
+
+    return {
+        "status": "pass" if matches else "not_detected",
+        "matches": matches,
+        "partial_matches": partial_matches,
+        "checked_files": checked,
+        "policy": (
+            "A nonzero ANSYS launcher return code can be accepted only when a real MAPDL "
+            "completion marker and zero MAPDL error count are present. Downstream result "
+            "validation still controls publishability."
+        ),
+    }
+
+
+def _ansys_main_stream_succeeded(returncode: int | None, completion_detection: dict[str, Any] | None) -> bool:
+    return returncode == 0 or (completion_detection or {}).get("status") == "pass"
+
+
 def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> bool:
     """Return true for MAPDL warnings that should not block parsing.
 
@@ -162,9 +383,15 @@ def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> 
     figures. ERROR/FATAL contexts remain blocking.
     """
 
-    if category != "command_stream_error":
-        return False
     if "*** ERROR ***" in context.upper() or "*** FATAL ***" in context.upper():
+        return False
+    if category == "file_or_permission_error":
+        # MAPDL sometimes emits WARNING-level file probes while checking optional
+        # scratch, graphics, or export targets.  Do not fail the real run at this
+        # text-scan layer for warnings only; required files, blank tables, and
+        # figures remain blocked by the deterministic result validation gate.
+        return "*** WARNING ***" in context.upper()
+    if category != "command_stream_error":
         return False
     if _MPI_CWD_IGNORED_RE.search(message) or _MPI_CWD_IGNORED_RE.search(context):
         return True
@@ -175,6 +402,7 @@ def _is_nonblocking_ansys_warning(category: str, message: str, context: str) -> 
         for pattern in (
             _IGNORED_SELECTION_WARNING_RE,
             _IGNORED_GRAPHICS_WARNING_RE,
+            _IGNORED_ALREADY_MESHED_LINE_WARNING_RE,
         )
     )
 
@@ -296,6 +524,101 @@ def _failed_post_export_audit(name: str, exc: BaseException) -> dict[str, Any]:
     }
 
 
+def _tail_text(path: Path, limit: int = 8000) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    return text[-limit:]
+
+
+def _figure_export_license_unavailable(job_dir: Path, audit: dict[str, Any] | None) -> bool:
+    if not audit or audit.get("status") == "success":
+        return False
+    evidence = json.dumps(audit, ensure_ascii=False)
+    for name in (
+        "export_figures.out",
+        "figure_export_stdout.log",
+        "figure_export_stderr.log",
+        "CableTrayAI_Run.err",
+    ):
+        evidence += "\n" + _tail_text(job_dir / name)
+    lower = evidence.lower()
+    return any(
+        token in lower
+        for token in (
+            "ansys license manager error",
+            "ansys license not available",
+            "ansysli exited",
+            "could not read server port ansysli",
+        )
+    )
+
+
+def _run_figure_export_with_license_retries(
+    job_dir: Path,
+    config: AnsysLocalConfig,
+    *,
+    timeout_minutes: int,
+    progress_callback: Callable[[dict[str, Any]], None] | None = None,
+) -> dict[str, Any]:
+    attempts: list[dict[str, Any]] = []
+    retry_delays = list(FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS)
+    attempt_index = 0
+    while True:
+        attempt_index += 1
+        audit = run_figure_export(
+            job_dir,
+            config,
+            timeout_minutes=timeout_minutes,
+            progress_callback=progress_callback,
+        )
+        license_busy = _figure_export_license_unavailable(job_dir, audit)
+        attempts.append(
+            {
+                "attempt": attempt_index,
+                "status": audit.get("status"),
+                "returncode": audit.get("returncode"),
+                "figure_count": audit.get("figure_count"),
+                "missing_required_figures": audit.get("missing_required_figures"),
+                "license_unavailable": license_busy,
+            }
+        )
+        if audit.get("status") == "success" or not license_busy or not retry_delays:
+            break
+        delay = int(retry_delays.pop(0))
+        if progress_callback:
+            progress_callback(
+                {
+                    "stage": "exporting_figures",
+                    "message": (
+                        "ANSYS figure export license was temporarily unavailable; "
+                        f"waiting {delay}s before retry {attempt_index + 1}."
+                    ),
+                    "figure_export_retry_attempt": attempt_index + 1,
+                    "license_retry_delay_seconds": delay,
+                }
+            )
+        cleanup_stale_ansys_locks(job_dir)
+        time.sleep(max(0, delay))
+    if len(attempts) > 1:
+        audit = dict(audit)
+        audit["license_retry_policy"] = {
+            "status": "applied",
+            "retry_delays_seconds": list(FIGURE_EXPORT_LICENSE_RETRY_DELAYS_SECONDS),
+            "reason": "post-only ANSYS figure export reported a temporary license-manager failure",
+            "policy": (
+                "The main solve is not rerun for a post-only license miss. "
+                "CableTrayAI retries the figure export after short waits, then keeps the retained job evidence if the license remains unavailable."
+            ),
+        }
+        audit["license_retry_attempts"] = attempts
+        _write_json(job_dir / "figure_export_audit.json", audit)
+    return audit
+
+
 def _write_final_live_status(
     job_dir: Path,
     *,
@@ -307,6 +630,7 @@ def _write_final_live_status(
     failure_reason: str | None,
     failure_category: str | None,
     figure_count: int | None,
+    timeout_policy: dict[str, Any] | None = None,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     stage = "ansys_finished" if status == "success" else "ansys_failed"
@@ -319,6 +643,9 @@ def _write_final_live_status(
         "failure_reason": failure_reason,
         "failure_category": failure_category,
         "figure_count": figure_count,
+        "timeout_seconds": (timeout_policy or {}).get("timeout_seconds"),
+        "configured_timeout_seconds": (timeout_policy or {}).get("configured_timeout_seconds"),
+        "timeout_policy": timeout_policy,
         "nproc": command.get("resources", {}).get("nproc"),
         "nproc_source": command.get("resources", {}).get("nproc_source"),
         "command_line": command.get("command_line"),
@@ -487,13 +814,17 @@ def run_mock_ansys(job_dir: Path | str) -> dict:
         "MOTAI-3.bmp",
         "MOTAI-4.bmp",
         "SHITI.bmp",
+        "TBMODEL.bmp",
         "A1SDIR1-101.bmp",
         "A2SDIR2-102.bmp",
         "A3SBEND1+103.bmp",
         "A4SHEAR+104.bmp",
         "B1SDIR1-201.bmp",
+        "B2SDIR2-202.bmp",
         "B3SBEND1+203.bmp",
+        "B4SHEAR+204.bmp",
         "D1SDIR1-301.bmp",
+        "D2SDIR2-302.bmp",
         "D3SBEND1+303.bmp",
         "D4SHEAR+304.bmp",
         "A-SDIR1.bmp",
@@ -502,14 +833,14 @@ def run_mock_ansys(job_dir: Path | str) -> dict:
         "A-SBEND.bmp",
         "B-SBEND.bmp",
         "D-SBEND.bmp",
-        "SQ-B1SDIR1.bmp",
-        "SQ-B2SDIR2.bmp",
-        "SQ-B3SBEND.bmp",
-        "SQ-B4SHEAR.bmp",
-        "SQ-D1SDIR1.bmp",
-        "SQ-D2SDIR2.bmp",
-        "SQ-D3SBEND.bmp",
-        "SQ-D4SHEAR.bmp",
+        "B1SDIR1.bmp",
+        "B2SDIR2.bmp",
+        "B3SBEND.bmp",
+        "B4SHEAR.bmp",
+        "D1SDIR1.bmp",
+        "D2SDIR2.bmp",
+        "D3SBEND.bmp",
+        "D4SHEAR.bmp",
     ]
     for figure_name in figure_names:
         _write_placeholder_bmp(job_dir / figure_name, figure_name)
@@ -612,7 +943,13 @@ def run_real_ansys(
 ) -> dict:
     job_dir = Path(job_dir)
     config = config or load_ansys_config()
-    command = build_ansys_command(config, job_dir)
+    numeric_post_audit = build_numeric_post_macro(job_dir)
+    post_macro_name = (
+        str(numeric_post_audit.get("target") or NUMERIC_POST_MACRO)
+        if numeric_post_audit.get("status") == "pass"
+        else "generated_post.mac"
+    )
+    command = build_ansys_command(config, job_dir, post_macro_name=post_macro_name)
     write_run_script(command, job_dir)
     preflight = run_preflight(job_dir, config=config)
     guard = evaluate_real_run_guard(
@@ -626,9 +963,13 @@ def run_real_ansys(
     if not guard["accepted"]:
         return write_rejected_real_run_audit(job_dir, guard, preflight_status=preflight["status"])
 
+    stale_completion_cleanup = _cleanup_stale_completion_outputs(job_dir, command)
     lock_cleanup = cleanup_stale_ansys_locks(job_dir)
     started = datetime.now(timezone.utc)
-    timeout_seconds = max(1, int(config.ansys.timeout_minutes * 60))
+    timeout_policy = _effective_real_run_timeout_policy(config)
+    timeout_seconds = int(timeout_policy["timeout_seconds"])
+    startup_timeout = int(timeout_policy["startup_no_output_timeout_seconds"])
+    stall_timeout = int(timeout_policy["output_stall_timeout_seconds"])
     creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     stdout_path = job_dir / "ansys_stdout.log"
     stderr_path = job_dir / "ansys_stderr.log"
@@ -637,6 +978,10 @@ def run_real_ansys(
     output_stall_timeout = False
     timeout_cleanup: dict[str, Any] | None = None
     job_cleanup: dict[str, Any] | None = None
+    completion_marker_detection: dict[str, Any] | None = None
+    completion_marker_seen_at: float | None = None
+    completion_marker_cleanup: dict[str, Any] | None = None
+    completed_by_marker_cleanup = False
     started_monotonic = time.monotonic()
     last_progress = 0.0
     with stdout_path.open("w", encoding="utf-8", errors="replace") as stdout_handle, stderr_path.open(
@@ -661,6 +1006,8 @@ def run_real_ansys(
                     "ansys_pid": process.pid,
                     "elapsed_seconds": round(elapsed, 1),
                     "timeout_seconds": timeout_seconds,
+                    "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                    "timeout_policy": timeout_policy,
                     "nproc": command.get("resources", {}).get("nproc"),
                     "nproc_source": command.get("resources", {}).get("nproc_source"),
                     "command_line": command.get("command_line"),
@@ -672,7 +1019,69 @@ def run_real_ansys(
                 last_progress = elapsed
             if returncode is not None:
                 break
-            startup_timeout = int(getattr(config.ansys, "startup_no_output_timeout_seconds", 0) or 0)
+            marker_probe = _detect_ansys_completion_marker(job_dir, command)
+            if marker_probe.get("status") == "pass":
+                completion_marker_detection = marker_probe
+                if completion_marker_seen_at is None:
+                    completion_marker_seen_at = time.monotonic()
+                    marker_status = {
+                        "stage": "ansys_completion_marker_seen",
+                        "process_running": True,
+                        "ansys_pid": process.pid,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "timeout_seconds": timeout_seconds,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
+                        "nproc": command.get("resources", {}).get("nproc"),
+                        "nproc_source": command.get("resources", {}).get("nproc_source"),
+                        "command_line": command.get("command_line"),
+                        "completion_marker_detection": completion_marker_detection,
+                        "message": (
+                            "ANSYS APDL completion marker was detected; waiting briefly for the "
+                            "launcher to exit before cleanup."
+                        ),
+                        **_job_output_activity(job_dir, command, started_monotonic),
+                    }
+                    _write_json(job_dir / "ansys_live_status.json", marker_status)
+                    if progress_callback:
+                        progress_callback(marker_status)
+                elif time.monotonic() - completion_marker_seen_at >= POST_COMPLETION_EXIT_GRACE_SECONDS:
+                    completion_marker_cleanup = {
+                        "status": "completed_marker_cleanup",
+                        "reason": (
+                            "MAPDL completion marker and zero MAPDL error count were written, "
+                            "but the launcher did not exit during the post-completion grace window."
+                        ),
+                        "grace_seconds": POST_COMPLETION_EXIT_GRACE_SECONDS,
+                        "process_tree_cleanup": _kill_process_tree(process.pid),
+                    }
+                    job_cleanup = _kill_ansys_processes_for_job(job_dir)
+                    completion_marker_cleanup["job_process_cleanup"] = job_cleanup
+                    try:
+                        process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        pass
+                    completed_by_marker_cleanup = True
+                    cleanup_status = {
+                        "stage": "ansys_completion_marker_cleanup",
+                        "process_running": False,
+                        "ansys_pid": process.pid,
+                        "elapsed_seconds": round(elapsed, 1),
+                        "timeout_seconds": timeout_seconds,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
+                        "nproc": command.get("resources", {}).get("nproc"),
+                        "nproc_source": command.get("resources", {}).get("nproc_source"),
+                        "command_line": command.get("command_line"),
+                        "completion_marker_detection": completion_marker_detection,
+                        "completion_marker_cleanup": completion_marker_cleanup,
+                        "message": "ANSYS APDL stream completed; lingering launcher process was cleaned up for this job.",
+                        **_job_output_activity(job_dir, command, started_monotonic),
+                    }
+                    _write_json(job_dir / "ansys_live_status.json", cleanup_status)
+                    if progress_callback:
+                        progress_callback(cleanup_status)
+                    break
             if startup_timeout > 0 and elapsed > startup_timeout:
                 activity = _job_output_activity(job_dir, command, started_monotonic)
                 if int(activity.get("total_output_bytes") or 0) <= 0:
@@ -690,6 +1099,8 @@ def run_real_ansys(
                         "elapsed_seconds": round(elapsed, 1),
                         "timeout_seconds": timeout_seconds,
                         "startup_no_output_timeout_seconds": startup_timeout,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
                         "nproc": command.get("resources", {}).get("nproc"),
                         "nproc_source": command.get("resources", {}).get("nproc_source"),
                         "message": "ANSYS process produced no output bytes during startup window and was stopped for safe retry.",
@@ -699,7 +1110,6 @@ def run_real_ansys(
                     if progress_callback:
                         progress_callback(live_status)
                     break
-            stall_timeout = int(getattr(config.ansys, "output_stall_timeout_seconds", 0) or 0)
             if stall_timeout > 0:
                 activity = _job_output_activity(job_dir, command, started_monotonic)
                 quiet_seconds = float(activity.get("no_output_seconds") or 0.0)
@@ -719,6 +1129,8 @@ def run_real_ansys(
                         "elapsed_seconds": round(elapsed, 1),
                         "timeout_seconds": timeout_seconds,
                         "output_stall_timeout_seconds": stall_timeout,
+                        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+                        "timeout_policy": timeout_policy,
                         "nproc": command.get("resources", {}).get("nproc"),
                         "nproc_source": command.get("resources", {}).get("nproc_source"),
                         "message": "ANSYS output files stopped changing during the stall window and the process was stopped for safe retry.",
@@ -743,9 +1155,18 @@ def run_real_ansys(
     connection_export_audit = None
     post_export_failure = None
     returncode = process.returncode
+    if completion_marker_detection is None:
+        completion_marker_detection = _detect_ansys_completion_marker(job_dir, command)
     fatal_detection = _detect_ansys_fatal_outputs(job_dir, [stdout_path, stderr_path])
     fatal_found = fatal_detection["status"] == "failed"
-    if not timed_out and returncode == 0 and not fatal_found and run_post_exports:
+    main_stream_success = (
+        not timed_out
+        and not startup_no_output_timeout
+        and not output_stall_timeout
+        and not fatal_found
+        and _ansys_main_stream_succeeded(returncode, completion_marker_detection)
+    )
+    if main_stream_success and run_post_exports:
         if progress_callback:
             progress_callback(
                 {
@@ -769,7 +1190,12 @@ def run_real_ansys(
             )
         try:
             post_timeout_minutes = max(1, min(int(config.ansys.timeout_minutes or 120), 20))
-            figure_export_audit = run_figure_export(job_dir, config, timeout_minutes=post_timeout_minutes)
+            figure_export_audit = _run_figure_export_with_license_retries(
+                job_dir,
+                config,
+                timeout_minutes=post_timeout_minutes,
+                progress_callback=progress_callback,
+            )
         except Exception as exc:  # pragma: no cover - defensive guard for external ANSYS subprocess failures
             figure_export_audit = _failed_post_export_audit("figure_export", exc)
             _write_json(job_dir / "figure_export_audit.json", figure_export_audit)
@@ -783,7 +1209,8 @@ def run_real_ansys(
             job_dir / "export_figures.out",
         ]
         post_export_detection = _detect_ansys_fatal_outputs(job_dir, post_export_paths)
-        if post_export_detection["status"] == "failed":
+        post_export_license_unavailable = _figure_export_license_unavailable(job_dir, figure_export_audit)
+        if post_export_detection["status"] == "failed" and not post_export_license_unavailable:
             fatal_detection = post_export_detection
             fatal_found = True
         if progress_callback:
@@ -811,7 +1238,7 @@ def run_real_ansys(
     elif post_export_failure:
         status = "failed"
         failure_reason = f"ANSYS post-export failed: {post_export_failure['name']} {post_export_failure['status']} - {post_export_failure['reason']}"
-    elif returncode == 0:
+    elif main_stream_success:
         status = "success"
         failure_reason = None
     else:
@@ -839,12 +1266,30 @@ def run_real_ansys(
         "duration_seconds": (finished - started).total_seconds(),
         "returncode": returncode,
         "timeout_seconds": timeout_seconds,
-        "startup_no_output_timeout_seconds": getattr(config.ansys, "startup_no_output_timeout_seconds", None),
-        "output_stall_timeout_seconds": getattr(config.ansys, "output_stall_timeout_seconds", None),
+        "configured_timeout_seconds": timeout_policy["configured_timeout_seconds"],
+        "configured_timeout_minutes": timeout_policy["configured_timeout_minutes"],
+        "startup_no_output_timeout_seconds": startup_timeout,
+        "configured_startup_no_output_timeout_seconds": timeout_policy[
+            "configured_startup_no_output_timeout_seconds"
+        ],
+        "output_stall_timeout_seconds": stall_timeout,
+        "configured_output_stall_timeout_seconds": timeout_policy["configured_output_stall_timeout_seconds"],
+        "timeout_policy": timeout_policy,
         "failure_reason": failure_reason,
         "failure_category": failure_category,
         "fatal_output_detection": fatal_detection,
+        "completion_marker_detection": completion_marker_detection,
+        "completion_marker_cleanup": completion_marker_cleanup,
+        "completed_by_marker_cleanup": completed_by_marker_cleanup,
+        "returncode_accepted_by_completion_marker": bool(
+            returncode != 0 and (completion_marker_detection or {}).get("status") == "pass"
+        ),
+        "numeric_post_macro_audit": numeric_post_audit,
+        "stale_completion_cleanup": stale_completion_cleanup,
         "post_export_failure": post_export_failure,
+        "post_export_license_unavailable": (
+            _figure_export_license_unavailable(job_dir, figure_export_audit) if figure_export_audit else False
+        ),
         "command_file": "ansys_command.json",
         "command_line": command.get("command_line"),
         "resources": command.get("resources", {}),
@@ -879,6 +1324,7 @@ def run_real_ansys(
         failure_reason=failure_reason,
         failure_category=failure_category,
         figure_count=(figure_export_audit or {}).get("figure_count"),
+        timeout_policy=timeout_policy,
         progress_callback=progress_callback,
     )
     return audit

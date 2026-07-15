@@ -24,7 +24,7 @@
 | 支架螺栓应力评定 | bolt evaluator from connection loads | same tray-arm connection source | 拉伸、剪切和组合比按已确认公式或 Excel 权威结果输出。 |
 | 模态频率 | `Mode.oup` | modal solve output | 按模态阶次比较和展示。 |
 | 附录A 模态图 | `MOTAI-1.PNG` to `MOTAI-4.PNG` | ANSYS image export | 必须是非空白真实 ANSYS 图。 |
-| 附录B 方钢应力图 | `SQ-B*.PNG`, `SQ-D*.PNG` | section-1 square support image export | 必须与方钢立柱/方钢构件选择集一致。 |
+| 附录B 主应力图 | `B*.PNG`, `D*.PNG` | 科室 `TYPE=1` 等价选择集：方钢 + 托臂，不含托盘和螺栓 | `SQUAREBEAMSTRESS.LIS` 仅用于方钢专项数值评定，不再生成或替代 `SQ-*` 云图。 |
 | 附录C 托臂应力图 | `TB*.PNG`, `TD*.PNG` | tray-arm type family image export | 仅方钢外边长 `<=120 mm` 需要。 |
 | 附录C 焊缝评定原理 | no TB/TD image requirement | weld-principle branch | 仅方钢外边长 `>120 mm` 需要。 |
 
