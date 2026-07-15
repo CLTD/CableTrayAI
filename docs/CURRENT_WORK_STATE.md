@@ -1,5 +1,14 @@
 # CableTrayAI ??????
 
+## 2026-07-15 login cover redesign
+
+1. The login cover is now a light, quiet engineering-workbench layout instead of a dark form-plus-preview split. The left side is a compact authentication workspace; the right side is an unframed, full-height real finite-element model field.
+2. The model field preserves the load-path animation, moving response point, three response hotspots and reduced-motion fallback. The source image border, source screenshot number and decorative outer preview card are no longer visible.
+3. Desktop username/password/button width is bounded at `328-352 px`; the full login block is vertically centered. Mobile uses a bordered white login surface over a low-opacity model background.
+4. Authentication requests, remembered-account behavior, credentials, launcher behavior and all engineering calculation logic are unchanged.
+5. Browser review passed at `1600 x 900`, `1366 x 768` and `390 x 844`; full `tests/unit` and `tests/integration` passed `304` tests.
+6. The full deployment package and local `D:/CableTrayAI` installation are refreshed from this source state; use the adjacent package SHA256 sidecar as transfer authority.
+
 ## 2026-07-15 login layout width redesign
 
 1. Decoupled the left reading column from form-control width. Headings and explanatory copy retain `390-420 px`, while username, password, action row, submit button and help content use `320-360 px` on desktop.

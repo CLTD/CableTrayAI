@@ -1,5 +1,18 @@
 # CableTrayAI ??????
 
+## 2026-07-15 login cover redesign queue
+
+Resolved/verified:
+
+1. Replaced the dark split-panel cover with a light engineering-workbench composition using a white login surface and a full-height finite-element model field.
+2. Removed the visible source-image frame and ANSYS screenshot marker from the presentation layer while retaining the real model silhouette, moving load path, response hotspots and reduced-motion support.
+3. Kept desktop controls at `328-352 px`, moved the login group to the vertical center and added a dedicated mobile login surface.
+4. Browser review passed at 1600x900, 1366x768 and 390x844; full unit/integration tests passed 304 tests.
+
+Open:
+
+1. No source or deployment blocker remains. The full package and local installation are refreshed from this source state; use the adjacent SHA256 sidecar as transfer authority.
+
 ## 2026-07-15 login width redesign queue
 
 Resolved/verified:

@@ -25,9 +25,12 @@ def test_login_animation_has_accessible_reduced_motion_and_mobile_layout() -> No
     assert "prefers-reduced-motion: reduce" in text
     assert "@media (max-width: 760px)" in text
     assert 'aria-live="polite"' in text
-    assert "width: clamp(390px, 25vw, 420px);" in text
-    assert text.count("width: clamp(320px, 21.5vw, 360px);") == 2
-    assert "left: clamp(64px, 5.5vw, 96px);" in text
+    assert "color-scheme: light;" in text
+    assert 'preserveAspectRatio="xMidYMid slice"' in text
+    assert "width: clamp(380px, 24vw, 410px);" in text
+    assert text.count("width: clamp(328px, 21.5vw, 352px);") == 2
+    assert "left: clamp(72px, 6vw, 112px);" in text
+    assert 'class="ct-v3-scene-label"' in text
     assert "#ct-login-hero-v3 .ct-v3-help { width: 100%; }" in text
     assert text.count("min-height: 48px;") >= 2
     assert ".form-control,\n      #ct-login-hero-v3 .btn { min-height: 48px; }" in text
